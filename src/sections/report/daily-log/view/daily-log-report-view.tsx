@@ -108,7 +108,7 @@ export function DailyLogReportView() {
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
-    const [employee, setEmployee] = useState('all');
+    const [employee, setEmployee] = useState<string[]>([]);
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('login_date_desc');
     const [day, setDay] = useState('all');
@@ -209,7 +209,7 @@ export function DailyLogReportView() {
             const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
             setIsHR(hasHRRole);
             if (!hasHRRole && user.employee) {
-                setEmployee(user.employee);
+                setEmployee([user.employee]);
             }
         }
     }, [user]);
@@ -219,7 +219,7 @@ export function DailyLogReportView() {
     }, []);
 
     useEffect(() => {
-        if (employee === 'all' && currentView === 'calendar') {
+        if (employee.length !== 1 && currentView === 'calendar') {
             setCurrentView('list');
         }
     }, [employee, currentView]);
@@ -239,7 +239,7 @@ export function DailyLogReportView() {
                 '',
                 status,
                 sortBy,
-                employee,
+                employee.length > 0 ? JSON.stringify(employee) : 'all',
                 day,
                 '',
                 fromDate?.format('YYYY-MM-DD') || '',
@@ -417,9 +417,9 @@ export function DailyLogReportView() {
         setFromDate(null);
         setToDate(null);
         if (isHR) {
-            setEmployee('all');
+            setEmployee([]);
         } else if (user?.employee) {
-            setEmployee(user.employee);
+            setEmployee([user.employee]);
         }
         setStatus('all');
         setDay('all');
@@ -1058,43 +1058,6 @@ export function DailyLogReportView() {
                             />
                         </LocalizationProvider>
 
-                        <Autocomplete
-                            size="small"
-                            sx={{ flexGrow: 1, minWidth: 200 }}
-                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-                            getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
-                            value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
-                            onChange={(event, newValue) => {
-                                setEmployee(newValue?.name || 'all');
-                            }}
-                            disabled={!isHR}
-                            renderOption={(props, option) => (
-                                <li {...props} key={option.name}>
-                                    {option.name === 'all' ? (
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                            {option.employee_name}
-                                        </Typography>
-                                    ) : (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                                {option.employee_name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                                ID: {option.name}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Employee"
-                                    placeholder="Select Employee"
-                                />
-                            )}
-                        />
-
                         <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                             <Select
                                 value={status}
@@ -1135,6 +1098,43 @@ export function DailyLogReportView() {
                                 <MenuItem value="working_hours_asc">Working Hrs: Low to High</MenuItem>
                             </Select>
                         </FormControl>
+
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            options={employeeOptions}
+                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            isOptionEqualToValue={(option, value) => option.name === value.name}
+                            value={employeeOptions.filter((opt) => employee.includes(opt.name))}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue.map((opt) => opt.name));
+                            }}
+                            disabled={!isHR}
+                            renderOption={(props, option, { selected: isSelected }) => (
+                                <li {...props} key={option.name}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Box>
+                                    {isSelected && (
+                                        <Iconify icon={"solar:check-circle-bold" as any} width={20} sx={{ color: 'primary.main', ml: 1 }} />
+                                    )}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    placeholder="Select Employee(s)"
+                                />
+                            )}
+                        />
 
                         <Box sx={{ flexGrow: 1 }} />
                         <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
@@ -1201,7 +1201,7 @@ export function DailyLogReportView() {
                             border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                         }}
                     >
-                        {(employee === 'all'
+                        {(employee.length !== 1
                             ? [
                                 { value: 'list', label: 'List View', icon: 'solar:list-bold' },
                                 { value: 'muster', label: 'Muster Roll View', icon: 'material-symbols:grid-on' }
@@ -1347,10 +1347,10 @@ export function DailyLogReportView() {
                     </Card>
                 )}
 
-                {currentView === 'calendar' && employee !== 'all' && (
+                {currentView === 'calendar' && employee.length === 1 && (
                     <DailyLogCalendar
                         reportData={reportData}
-                        employee={employee}
+                        employee={employee[0]}
                         fromDate={fromDate}
                         toDate={toDate}
                         onEventClick={handleViewDetails}
