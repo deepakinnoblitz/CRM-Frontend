@@ -122,7 +122,7 @@ export function AttendanceReportView() {
 
     // Open details dialog only when user clicked (not dragged)
     const handleMusterCellClick = (attendanceName: string) => {
-        if (musterDragMoved.current > 5) return; // was a drag, not a click
+        if (musterDragMoved.current > 15) return; // was a drag, not a click
         handleViewDetails(attendanceName);
     };
 
@@ -1057,21 +1057,6 @@ export function AttendanceReportView() {
                                                 {loading ? (
                                                     <TableRow>
                                                         <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                            {!isFilterApplied ? (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        Please select a date filter to view attendance
-                                                                    </Typography>
-                                                                </Stack>
-                                                            ) : (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        No data found
-                                                                    </Typography>
-                                                                </Stack>
-                                                            )}
                                                             <CircularProgress sx={{ color: '#08a3cd' }} />
                                                         </TableCell>
                                                     </TableRow>
@@ -1126,44 +1111,51 @@ export function AttendanceReportView() {
                                                         {visibleReportData.length === 0 && (
                                                             <TableRow>
                                                                 <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                                    <Stack spacing={1} alignItems="center">
-                                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                            No data found
-                                                                        </Typography>
-                                                                    </Stack>
+                                                                    {!isFilterApplied ? (
+                                                                        <Stack spacing={1} alignItems="center">
+                                                                            <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                                Please select a date filter to view attendance
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    ) : (
+                                                                        <Stack spacing={1} alignItems="center">
+                                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                                No data found
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    )}
                                                                 </TableCell>
                                                             </TableRow>
                                                         )}
                                                     </>
                                                 )}
-                                            </>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </Scrollbar>
-                        </TableContainer>
-                        <TablePagination
-                            component="div"
-                            count={visibleReportData.length}
-                            page={page}
-                            onPageChange={onChangePage}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={onChangeRowsPerPage}
-                            rowsPerPageOptions={[10, 25, 50]}
-                        />
-                    </Card>
-                )}
+                                            </TableBody>
+                                        </Table>
+                                    </Scrollbar>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={visibleReportData.length}
+                                    page={page}
+                                    onPageChange={onChangePage}
+                                    rowsPerPage={rowsPerPage}
+                                    onRowsPerPageChange={onChangeRowsPerPage}
+                                    rowsPerPageOptions={[10, 25, 50]}
+                                />
+                            </Card>
+                        )}
 
-                {currentView === 'calendar' && employee.length === 1 && (
-                    <AttendanceCalendar
-                         reportData={reportData}
-                         employee={employee[0]}
-                         fromDate={fromDate}
-                         toDate={toDate}
-                         onEventClick={handleViewDetails}
-                     />
-                )}
+                        {currentView === 'calendar' && employee.length === 1 && (
+                            <AttendanceCalendar
+                                 reportData={reportData}
+                                 employee={employee[0]}
+                                 fromDate={fromDate}
+                                 toDate={toDate}
+                                 onEventClick={handleViewDetails}
+                             />
+                        )}
 
                         {currentView === 'muster' && (
                             <Card sx={{ p: 2.5 }}>
@@ -1188,43 +1180,6 @@ export function AttendanceReportView() {
                                                     fontSize: '0.7rem',
                                                 }}
                                             >
-                                                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-                                                    {date.format('MMM')}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
-                                                    {date.format('ddd')}
-                                                </Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16  }}>
-                                                    {date.format('DD')}
-                                                </Typography>
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={dates.length + 1} sx={{ py: 10, position: 'relative', border: 0 }}>
-                                                <Box
-                                                    sx={{
-                                                        position: 'sticky',
-                                                        left: '50%',
-                                                        transform: 'translateX(-50%)',
-                                                        display: 'flex',
-                                                        justifyContent: 'center',
-                                                        alignItems: 'center',
-                                                        width: 'max-content',
-                                                        maxWidth: '100%',
-                                                    }}
-                                                >
-                                                    <CircularProgress sx={{ color: '#08a3cd' }} />
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        <>
-                                            {paginatedEmployees.map((emp, empIndex) => (
-                                                <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
                                                 {item.hideValue ? '' : item.value}
                                             </Box>
                                             <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
@@ -1300,8 +1255,21 @@ export function AttendanceReportView() {
                                         <TableBody>
                                             {loading ? (
                                                 <TableRow>
-                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
-                                                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                                                    <TableCell colSpan={dates.length + 1} sx={{ py: 10, position: 'relative', border: 0 }}>
+                                                        <Box
+                                                            sx={{
+                                                                position: 'sticky',
+                                                                left: '50%',
+                                                                transform: 'translateX(-50%)',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                width: 'max-content',
+                                                                maxWidth: '100%',
+                                                            }}
+                                                        >
+                                                            <CircularProgress sx={{ color: '#08a3cd' }} />
+                                                        </Box>
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
@@ -1414,51 +1382,39 @@ export function AttendanceReportView() {
                                                     ))}
                                                     {paginatedEmployees.length === 0 && (
                                                         <TableRow>
-                                                            <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        No data found
-                                                                    </Typography>
-                                                                </Stack>
+                                                            <TableCell colSpan={dates.length + 1} sx={{ py: 10, position: 'relative', border: 0 }}>
+                                                                <Box
+                                                                    sx={{
+                                                                        position: 'sticky',
+                                                                        left: '50%',
+                                                                        transform: 'translateX(-50%)',
+                                                                        display: 'flex',
+                                                                        justifyContent: 'center',
+                                                                        alignItems: 'center',
+                                                                        width: 'max-content',
+                                                                        maxWidth: '100%',
+                                                                    }}
+                                                                >
+                                                                    {!isFilterApplied ? (
+                                                                        <Stack spacing={1} alignItems="center">
+                                                                            <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                                Please select a date filter to view attendance
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    ) : (
+                                                                        <Stack spacing={1} alignItems="center">
+                                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                                No data found
+                                                                            </Typography>
+                                                                        </Stack>
+                                                                    )}
+                                                                </Box>
                                                             </TableCell>
-                                                        );
-                                                    })}
-                                                </TableRow>
-                                            ))}
-                                            {paginatedEmployees.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={dates.length + 1} sx={{ py: 10, position: 'relative', border: 0 }}>
-                                                        <Box
-                                                            sx={{
-                                                                position: 'sticky',
-                                                                left: '50%',
-                                                                transform: 'translateX(-50%)',
-                                                                display: 'flex',
-                                                                justifyContent: 'center',
-                                                                alignItems: 'center',
-                                                                width: 'max-content',
-                                                                maxWidth: '100%',
-                                                            }}
-                                                        >
-                                                            {!isFilterApplied ? (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        Please select a date filter to view attendance
-                                                                    </Typography>
-                                                                </Stack>
-                                                            ) : (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        No data found
-                                                                    </Typography>
-                                                                </Stack>
-                                                            )}
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
+                                                        </TableRow>
+                                                    )}
+                                                </>
                                             )}
                                         </TableBody>
                                     </Table>
