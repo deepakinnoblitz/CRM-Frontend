@@ -24,6 +24,16 @@ import { getDeal, updateDeal } from 'src/api/deals';
 import { fetchRelatedInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchRelatedEstimations } from 'src/api/estimation';
+import { getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
+
+import { Iconify } from 'src/components/iconify';
+import { Scrollbar } from 'src/components/scrollbar';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { EmailAutomationDialog } from 'src/sections/lead/email-automation-dialog';
+import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
+
+import { DealRelatedList } from '../deal-related-list';
 
 const STAGE_OPTIONS = [
     { value: 'Just In', label: 'Just In' },
@@ -46,15 +56,6 @@ const getClipPath = (index: number, total: number) => {
     }
     return 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
 };
-import { getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage } from 'src/api/leads';
-
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/confirm-dialog';
-
-import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
-
-import { DealRelatedList } from '../deal-related-list';
 
 // ----------------------------------------------------------------------
 
@@ -77,6 +78,8 @@ export function DealDetailsView() {
 
     const [automationData, setAutomationData] = useState<any>(null);
     const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
+    const [emailAutomationData, setEmailAutomationData] = useState<any>(null);
+    const [openEmailAutomationDialog, setOpenEmailAutomationDialog] = useState(false);
 
     useEffect(() => {
         if (deal && deal.stage) {
@@ -109,6 +112,20 @@ export function DealDetailsView() {
                 }
             } catch (automationErr: any) {
                 console.error('Failed to fetch WhatsApp automation preview:', automationErr);
+            }
+            try {
+                const emailPreview = await getEmailAutomationPreview(
+                    "Deal",
+                    deal.name,
+                    previousStage
+                );
+
+                if (emailPreview?.show_confirmation) {
+                    setEmailAutomationData(emailPreview);
+                    setOpenEmailAutomationDialog(true);
+                }
+            } catch (err) {
+                console.error(err);
             }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
@@ -163,6 +180,39 @@ export function DealDetailsView() {
             throw err;
         }
     }, [deal, automationData]);
+
+    const handleSendEmailAutomation = useCallback(async (proposalName: string | null) => {
+
+        if (!deal || !emailAutomationData) return;
+
+        try {
+
+            await sendEmailAutomationMessage(
+                emailAutomationData.automation_name,
+                "Deal",
+                deal.name,
+                proposalName
+            );
+
+            setSnackbar({
+                open: true,
+                message: "Email sent successfully.",
+                severity: "success",
+            });
+
+        } catch (err: any) {
+
+            setSnackbar({
+                open: true,
+                message: err.message || "Failed to send Email.",
+                severity: "error",
+            });
+
+            throw err;
+        }
+    },
+        [deal, emailAutomationData]
+    );
 
     const handleStageUpdateClick = useCallback(async () => {
         if (!deal || !selectedStage) return;
@@ -542,6 +592,19 @@ export function DealDetailsView() {
                     automation={automationData}
                     lead={deal}
                     onSend={handleSendAutomationMessage}
+                />
+            )}
+
+            {emailAutomationData && (
+                <EmailAutomationDialog
+                    open={openEmailAutomationDialog}
+                    onClose={() => {
+                        setOpenEmailAutomationDialog(false);
+                        setEmailAutomationData(null);
+                    }}
+                    automation={emailAutomationData}
+                    lead={deal}
+                    onSend={handleSendEmailAutomation}
                 />
             )}
 

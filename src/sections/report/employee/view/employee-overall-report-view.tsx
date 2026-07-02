@@ -68,7 +68,7 @@ export function EmployeeOverallReportView() {
   const [filterDepartment, setFilterDepartment] = useState('all');
   const [filterDesignation, setFilterDesignation] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filterEmployee, setFilterEmployee] = useState('all');
+  const [filterEmployee, setFilterEmployee] = useState<string[]>([]);
 
   const { data: departments } = useDepartments(1, 100);
   const { data: designations } = useDesignations(1, 100);
@@ -119,9 +119,20 @@ export function EmployeeOverallReportView() {
       if (filterStatus !== 'all') filters.push(['Employee', 'status', '=', filterStatus]);
       if (joiningDateFrom) filters.push(['Employee', 'date_of_joining', '>=', joiningDateFrom.format('YYYY-MM-DD')]);
       if (joiningDateTo) filters.push(['Employee', 'date_of_joining', '<=', joiningDateTo.format('YYYY-MM-DD')]);
-      if (filterEmployee !== 'all') {
-        or_filters.push(['Employee', 'name', '=', filterEmployee]);
-        or_filters.push(['Employee', 'employee_id', '=', filterEmployee]);
+      if (filterEmployee.length > 0) {
+        or_filters.push([
+          'Employee',
+          'name',
+          'in',
+          filterEmployee,
+        ]);
+
+        or_filters.push([
+          'Employee',
+          'employee_id',
+          'in',
+          filterEmployee,
+        ]);
       }
 
       const getCount = async (status?: string) => {
@@ -199,16 +210,64 @@ export function EmployeeOverallReportView() {
   const [exportingPdf, setExportingPdf] = useState(false);
 
   const handleExport = async () => {
-    const employeesToExport = selected.length > 0
-      ? data.filter(emp => selected.includes(emp.name))
-      : data;
+    const filters: any[] = [];
+    const or_filters: any[] = [];
+
+    if (filterDepartment !== 'all') {
+        filters.push(['Employee', 'department', '=', filterDepartment]);
+    }
+
+    if (filterDesignation !== 'all') {
+        filters.push(['Employee', 'designation', 'like', `%${filterDesignation}%`]);
+    }
+
+    if (filterStatus !== 'all') {
+        filters.push(['Employee', 'status', '=', filterStatus]);
+    }
+
+    if (joiningDateFrom) {
+        filters.push([
+            'Employee',
+            'date_of_joining',
+            '>=',
+            joiningDateFrom.format('YYYY-MM-DD'),
+        ]);
+    }
+
+    if (joiningDateTo) {
+        filters.push([
+            'Employee',
+            'date_of_joining',
+            '<=',
+            joiningDateTo.format('YYYY-MM-DD'),
+        ]);
+    }
+
+    if (filterEmployee.length > 0) {
+        or_filters.push(['Employee', 'name', 'in', filterEmployee]);
+        or_filters.push(['Employee', 'employee_id', 'in', filterEmployee]);
+    }
+
+    const { data: allEmployees } = await fetchFrappeList('Employee', {
+        page: 1,
+        page_size: 100000,
+        filters,
+        or_filters,
+        orderBy,
+        order,
+    });
+
+    const employeesToExport =
+        selected.length > 0
+            ? allEmployees.filter((emp: any) => selected.includes(emp.name))
+            : allEmployees;
 
     if (employeesToExport.length === 0) return;
 
     setExporting(true);
 
     try {
-      const employeeIds = employeesToExport.map(e => e.name);
+      const employeeIds = employeesToExport.map((e: any) => e.name);
 
       // Fetch related data in bulk - No deep fetching for speed
       const [attendance, leaves, assets, checkins, salaries, sessions] = await Promise.all([
@@ -274,7 +333,7 @@ export function EmployeeOverallReportView() {
 
       // Fetch Timesheet Report data
       const timesheetResults = await Promise.all(
-        employeeIds.map(id => runReport('Timesheet Report', { employee: id }))
+        employeeIds.map((id:string) => runReport('Timesheet Report', { employee: id }))
       );
       const timesheetData = timesheetResults.flatMap(res => res.result || []).filter(t => t.timesheet_date !== 'TOTAL');
 
@@ -538,7 +597,7 @@ export function EmployeeOverallReportView() {
       } else {
         detailsSheet.columns = EXPORT_FIELDS.map(f => ({ header: f.label, key: f.key }));
 
-        finalEmployees.forEach(emp => {
+        finalEmployees.forEach((emp: any)=> {
           const rowData: any = {};
           EXPORT_FIELDS.forEach(f => {
             rowData[f.key] = formatValue(emp, f);
@@ -574,7 +633,7 @@ export function EmployeeOverallReportView() {
       attendanceSheet.columns = attColumns;
 
       attendance.data.forEach((att: any) => {
-        const empInfo = employeesToExport.find(e => e.name === att.employee);
+        const empInfo = employeesToExport.find((e: any) => e.name === att.employee);
         const attCheckins = (checkins?.data || []).filter((c: any) => c.attendance === att.name || (c.employee === att.employee && dayjs(c.time).format('YYYY-MM-DD') === att.attendance_date));
         const inCheckins = attCheckins.filter((c: any) => c.log_type === 'IN').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
         const outCheckins = attCheckins.filter((c: any) => c.log_type === 'OUT').sort((a: any, b: any) => dayjs(a.time).diff(dayjs(b.time)));
@@ -925,7 +984,7 @@ export function EmployeeOverallReportView() {
 
   const handleExportPdf = async () => {
     const employeesToExport = selected.length > 0
-      ? data.filter(emp => selected.includes(emp.name))
+      ? data.filter((emp: any) => selected.includes(emp.name))
       : data;
 
     if (employeesToExport.length === 0) return;
@@ -933,7 +992,7 @@ export function EmployeeOverallReportView() {
     setExportingPdf(true);
 
     try {
-      const employeeIds = employeesToExport.map(e => e.name);
+      const employeeIds = employeesToExport.map((e: any) => e.name);
 
       // 1. Fetch ALL data in parallel (Same as Excel)
       const [attendance, leaves, assets, checkins, salaries, sessions] = await Promise.all([
@@ -1303,7 +1362,7 @@ export function EmployeeOverallReportView() {
     setFilterDepartment('all');
     setFilterDesignation('all');
     setFilterStatus('all');
-    setFilterEmployee('all');
+    setFilterEmployee([]);
     setOrder('desc');
   };
 
@@ -1368,7 +1427,7 @@ export function EmployeeOverallReportView() {
                     InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
-                      minWidth: 190,
+                      maxWidth: 200,
                     },
                   },
                 }}
@@ -1384,55 +1443,12 @@ export function EmployeeOverallReportView() {
                     InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
-                      minWidth: 190,
+                      maxWidth: 200,
                     },
                   },
                 }}
               />
             </LocalizationProvider>
-
-            <Autocomplete
-              size="small"
-              sx={{ flexGrow: 1, minWidth: 200 }}
-              options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`;
-              }}
-              isOptionEqualToValue={(option, value) => option.name === value.name}
-              value={filterEmployee === 'all'
-                ? { name: 'all', employee_name: 'All Employees' }
-                : (employeeOptions.find((opt) => opt.name === filterEmployee) || null)
-              }
-              onChange={(event, newValue) => {
-                setFilterEmployee(newValue?.name || 'all');
-              }}
-              renderOption={(props, option) => (
-                <li {...props} key={option.name}>
-                  {option.name === 'all' ? (
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                      {option.employee_name}
-                    </Typography>
-                  ) : (
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                        {option.employee_name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                        ID: {option.name}
-                      </Typography>
-                    </Box>
-                  )}
-                </li>
-              )}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Employee"
-                  placeholder="Select Employee"
-                />
-              )}
-            />
 
             <Autocomplete
               size="small"
@@ -1493,6 +1509,44 @@ export function EmployeeOverallReportView() {
                 <MenuItem value="asc">Oldest First</MenuItem>
               </Select>
             </FormControl>
+
+            <Autocomplete
+              multiple
+              disableCloseOnSelect
+              size="small"
+              sx={{ flexGrow: 1, minWidth: 350 }}
+              options={employeeOptions}
+              getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+              isOptionEqualToValue={(option, value) => option.name === value.name}
+              value={employeeOptions.filter((emp) =>
+                filterEmployee.includes(emp.name)
+              )}
+              onChange={(event, newValue) => {
+                setFilterEmployee(newValue.map((emp) => emp.name));
+              }}
+              renderOption={(props, option, { selected: isSelected }) => (
+                <li {...props} key={option.name}>
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                      {option.employee_name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                      ID: {option.name}
+                    </Typography>
+                  </Box>
+                  {isSelected && (
+                    <Iconify icon={"solar:check-circle-bold" as any} width={20} sx={{ color: 'primary.main', ml: 1 }} />
+                  )}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Employee"
+                  placeholder="Select Employee(s)"
+                />
+              )}
+            />
 
             <Stack direction="row" spacing={1}>
               <Button

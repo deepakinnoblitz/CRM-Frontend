@@ -182,12 +182,15 @@ export function WFHAttendanceTableFiltersDrawer({
             <Autocomplete
                 fullWidth
                 size="small"
-                options={[{ name: 'all', employee_name: 'All Employees' }, ...options.employees]}
-                getOptionLabel={(option: any) => option.employee_name || option.name || ''}
-                isOptionEqualToValue={(option: any, value: any) => option.name === (value.name || value)}
-                value={options.employees.find((emp: any) => emp.name === filters.employee) || (filters.employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : null)}
+                options={['all', ...options.employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const emp = options.employees.find((e) => e.name === option);
+                    return emp ? `${emp.employee_name} (${emp.name})` : option;
+                }}
+                value={filters.employee || 'all'}
                 onChange={(event: any, newValue: any) => {
-                    handleFilterChange('employee', newValue?.name || 'all');
+                    handleFilterChange('employee', newValue || 'all');
                 }}
                 renderInput={(params: any) => (
                     <TextField
@@ -201,6 +204,30 @@ export function WFHAttendanceTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const emp = options.employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                    {emp?.employee_name}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    ID: {emp?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );

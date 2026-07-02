@@ -17,6 +17,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createEmailTemplate, fetchEmailTemplateVariables, EmailTemplateVariable } from 'src/api/email-template';
 
@@ -97,6 +98,23 @@ export function EmailTemplateCreateView() {
 
         setIsSaving(true);
         try {
+            // Upload raw files only when the save button (API trigger) is clicked
+            const uploadedAttachments = await Promise.all(
+                attachments.map(async (att) => {
+                    if (att.isRaw) {
+                        const result = await uploadFile(att.file);
+                        return {
+                            file: result.file_url,
+                            description: att.description || '',
+                        };
+                    }
+                    return {
+                        file: att.file,
+                        description: att.description || '',
+                    };
+                })
+            );
+
             await createEmailTemplate({
                 template_name: templateName,
                 category,
@@ -109,7 +127,7 @@ export function EmailTemplateCreateView() {
                 reply_to_email: '',
                 is_active: 1,
                 is_default: 0,
-                attachments,
+                attachments: uploadedAttachments,
             });
 
             setSnackbar({
@@ -136,7 +154,15 @@ export function EmailTemplateCreateView() {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        setAttachments((prev) => [...prev, file]);
+        setAttachments((prev) => [
+            ...prev,
+            {
+                file,
+                isRaw: true,
+                name: file.name,
+                description: '',
+            },
+        ]);
     };
 
     const handleRemoveAttachment = (index: number) => {

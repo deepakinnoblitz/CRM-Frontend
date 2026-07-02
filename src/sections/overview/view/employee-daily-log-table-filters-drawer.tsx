@@ -37,6 +37,7 @@ type Props = {
     onFilterEndDate: (value: string) => void;
     canReset: boolean;
     onResetFilters: () => void;
+    isHR?: boolean;
     options: {
         status: { value: string; label: string }[];
         employees: { value: string; label: string }[];
@@ -60,6 +61,7 @@ export function EmployeeDailyLogTableFiltersDrawer({
     onFilterEndDate,
     canReset,
     onResetFilters,
+    isHR = true,
     options,
 }: Props) {
 
@@ -146,9 +148,14 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Autocomplete
                 fullWidth
                 size="small"
+                disabled={!isHR}
                 options={[{ value: 'all', label: 'All Employees' }, ...options.employees]}
                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
-                value={options.employees.find((emp) => emp.value === filterEmployee) || { value: 'all', label: 'All Employees' }}
+                value={
+                    isHR
+                        ? (options.employees.find((emp) => emp.value === filterEmployee) || { value: 'all', label: 'All Employees' })
+                        : (options.employees.find((emp) => emp.value === filterEmployee) || { value: filterEmployee, label: filterEmployee })
+                }
                 onChange={(event, newValue) => {
                     onFilterEmployee(newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : 'all');
                 }}
@@ -156,13 +163,13 @@ export function EmployeeDailyLogTableFiltersDrawer({
                     <TextField
                         {...params}
                         size="small"
-                        placeholder="Search Employee..."
+                        placeholder={isHR ? 'Search Employee...' : ''}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 bgcolor: 'background.neutral',
                                 '&:hover': {
-                                    bgcolor: 'action.hover',
+                                    bgcolor: isHR ? 'action.hover' : 'background.neutral',
                                 },
                             },
                         }}
@@ -299,7 +306,7 @@ export function EmployeeDailyLogTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {options.employees.length > 0 && renderEmployee}
+                    {renderEmployee}
                     {renderDate}
                     {renderDay}
                     {renderStatus}

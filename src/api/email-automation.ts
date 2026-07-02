@@ -15,11 +15,21 @@ export interface EmailAutomation {
     name: string;
     automation_name: string;
     is_active: number;
+    for_status_change: number;
+    for_campaigns: number;
     status: string;
     description?: string;
     email_template: string;
     subject_override?: string;
     target_type: string;
+    trigger_event: string;
+    workflow_state: string;
+    previous_workflow_state: string;
+    current_deal_stage: string;
+    previous_deal_stage: string;
+    show_confirmation_dialog: number;
+    dialog_title: string;
+    dialog_message: string;
     filters?: AutomationFilter[];
     frequency: string;
     start_date: string;
@@ -29,6 +39,7 @@ export interface EmailAutomation {
     day_of_month?: number;
     create_separate_campaign: number;
     send_immediately: number;
+    auto_send: number;
     auto_pause_on_error: number;
     max_retry_count: number;
     last_run_on?: string;
@@ -99,9 +110,10 @@ export async function fetchEmailAutomations(params: FetchEmailAutomationsParams)
     const query = new URLSearchParams({
         doctype: 'CRM Email Automation',
         fields: JSON.stringify([
-            'name', 'automation_name', 'is_active', 'status', 'description',
-            'email_template', 'target_type', 'frequency', 'start_date', 'end_date',
-            'run_time', 'last_run_on', 'next_run_on',
+            'name', 'automation_name', 'is_active', 'for_status_change', 'for_campaigns', 'status', 'description',
+            'email_template', 'target_type', 'workflow_state', 'previous_workflow_state', 'current_deal_stage',
+            'previous_deal_stage', 'show_confirmation_dialog', 'dialog_title', 'dialog_message', 'trigger_event',
+            'frequency', 'start_date', 'end_date', 'run_time', 'last_run_on', 'next_run_on',
             'total_runs', 'total_emails_sent', 'total_failed',
             'creation', 'modified',
         ]),
@@ -214,4 +226,16 @@ export async function toggleAutomationActive(name: string, isActive: boolean) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to toggle automation'));
     return json.message;
+}
+
+export async function getAutomationOptions(targetType: string, triggerEvent: string) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_automation_options?target_type=${encodeURIComponent(targetType)}&trigger_event=${encodeURIComponent(triggerEvent)}`
+    );
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch automation options");
+    }
+
+    return (await res.json()).message;
 }
