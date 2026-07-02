@@ -64,7 +64,7 @@ export function TimesheetsReportView() {
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
-    const [employee, setEmployee] = useState('all');
+    const [employee, setEmployee] = useState<string[]>([]);
     const [project, setProject] = useState('all');
     const [activityType, setActivityType] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');
@@ -89,7 +89,7 @@ export function TimesheetsReportView() {
     const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
 
     useEffect(() => {
-        if (employee === 'all') {
+        if (employee.length !== 1) {
             setCurrentView('list');
         }
     }, [employee]);
@@ -100,10 +100,10 @@ export function TimesheetsReportView() {
             const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
             setIsHR(hasHRRole);
             if (!hasHRRole && user.employee) {
-                setEmployee(user.employee);
+                setEmployee([user.employee]);
             }
         }
-    }, [user, employee]);
+    }, [user]);
 
     const handleViewDetails = async (name: string) => {
         setLoadingDetails(true);
@@ -152,7 +152,7 @@ export function TimesheetsReportView() {
             const filters: any = {};
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
-            if (employee !== 'all') filters.employee = employee;
+            if (employee.length > 0) filters.employee = employee;
             if (project !== 'all') filters.project = project;
             if (activityType !== 'all') filters.activity_type = activityType;
 
@@ -204,9 +204,9 @@ export function TimesheetsReportView() {
         setFromDate(null);
         setToDate(null);
         if (isHR) {
-            setEmployee('all');
+            setEmployee([]);
         } else if (user?.employee) {
-            setEmployee(user.employee);
+            setEmployee([user.employee]);
         }
         setProject('all');
         setActivityType('all');
@@ -562,46 +562,6 @@ export function TimesheetsReportView() {
                             />
                         </LocalizationProvider>
 
-                        {/* Employee */}
-                        <Autocomplete
-                            size="small"
-                            sx={{ flexGrow: 1, minWidth: 200 }}
-                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-                            getOptionLabel={(option) =>
-                                option.name === 'all'
-                                    ? option.employee_name
-                                    : `${option.employee_name} (${option.name})`
-                            }
-                            value={
-                                employee === 'all'
-                                    ? { name: 'all', employee_name: 'All Employees' }
-                                    : employeeOptions.find((opt) => opt.name === employee) || null
-                            }
-                            onChange={(event, newValue) => setEmployee(newValue?.name || 'all')}
-                            disabled={!isHR}
-                            renderOption={(props, option) => (
-                                <Box component="li" {...props} sx={{ fontSize: '0.85rem' }}>
-                                    {option.name === 'all' ? (
-                                        option.employee_name
-                                    ) : (
-                                        <Stack spacing={0.5}>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                                {option.employee_name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                                ID: {option.name}
-                                            </Typography>
-                                        </Stack>
-                                    )}
-                                </Box>
-                            )}
-
-                            renderInput={(params) => (
-                                <TextField {...params} label="Employee" placeholder="Select Employee" />
-                            )}
-                        />
-
-
                         {/* Project */}
                         <Autocomplete
                             size="small"
@@ -656,6 +616,44 @@ export function TimesheetsReportView() {
                             </Select>
                         </FormControl>
 
+                        {/* Employee */}
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            options={employeeOptions}
+                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            isOptionEqualToValue={(option, value) => option.name === value.name}
+                            value={employeeOptions.filter((opt) => employee.includes(opt.name))}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue.map((opt) => opt.name));
+                            }}
+                            disabled={!isHR}
+                            renderOption={(props, option, { selected: isSelected }) => (
+                                <li {...props} key={option.name}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Box>
+                                    {isSelected && (
+                                        <Iconify icon={"solar:check-circle-bold" as any} width={20} sx={{ color: 'primary.main', ml: 1 }} />
+                                    )}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    placeholder="Select Employee(s)"
+                                />
+                            )}
+                        />
+
                         <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
                             <Button
                                 variant="contained"
@@ -709,7 +707,7 @@ export function TimesheetsReportView() {
                     <SummaryCard item={{ label: 'Total Hours', value: totalHours, indicator: 'green', suffix: 'hrs' }} />
                 </Box>
 
-                {employee !== 'all' && (
+                {employee.length === 1 && (
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                         <Box
                             sx={{
