@@ -79,35 +79,52 @@ export function AttendanceReportView() {
     const [selectedExportView, setSelectedExportView] = useState<'list' | 'muster'>('list');
     const [preparing, setPreparing] = useState(false);
 
-    // --- Muster Roll drag-scroll ---
+    // --- Muster Roll drag-scroll (ref-based — zero React re-renders) ---
     const musterScrollRef = useRef<HTMLDivElement>(null);
-    const [musterIsDragging, setMusterIsDragging] = useState(false);
-    const [musterDragStartX, setMusterDragStartX] = useState(0);
-    const [musterScrollLeft, setMusterScrollLeft] = useState(0);
+    const isDraggingMuster = useRef(false);
+    const musterDragStartX = useRef(0);
+    const musterScrollStartLeft = useRef(0);
+    const musterDragMoved = useRef(0); // tracks how far mouse moved during drag
 
     const handleMusterMouseDown = (e: React.MouseEvent) => {
-        if (!musterScrollRef.current) return;
-        setMusterIsDragging(true);
-        setMusterDragStartX(e.pageX - musterScrollRef.current.offsetLeft);
-        setMusterScrollLeft(musterScrollRef.current.scrollLeft);
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDraggingMuster.current = true;
+        musterDragStartX.current = e.clientX;
+        musterScrollStartLeft.current = el.scrollLeft;
+        musterDragMoved.current = 0;
+        el.style.cursor = 'grabbing';
     };
 
     const handleMusterMouseLeave = () => {
-        setMusterIsDragging(false);
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDraggingMuster.current = false;
+        el.style.cursor = 'grab';
     };
 
     const handleMusterMouseUp = () => {
-        setMusterIsDragging(false);
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDraggingMuster.current = false;
+        el.style.cursor = 'grab';
     };
 
     const handleMusterMouseMove = (e: React.MouseEvent) => {
-        if (!musterIsDragging || !musterScrollRef.current) return;
-        e.preventDefault();
-        const x = e.pageX - musterScrollRef.current.offsetLeft;
-        const walk = (x - musterDragStartX) * 2;
-        musterScrollRef.current.scrollLeft = musterScrollLeft - walk;
+        if (!isDraggingMuster.current) return;
+        const el = musterScrollRef.current;
+        if (!el) return;
+        const dx = e.clientX - musterDragStartX.current;
+        musterDragMoved.current = Math.abs(dx);
+        el.scrollLeft = musterScrollStartLeft.current - dx;
     };
     // --- end drag-scroll ---
+
+    // Open details dialog only when user clicked (not dragged)
+    const handleMusterCellClick = (attendanceName: string) => {
+        if (musterDragMoved.current > 5) return; // was a drag, not a click
+        handleViewDetails(attendanceName);
+    };
 
     const handleViewChange = useCallback((newView: 'list' | 'calendar' | 'muster') => {
         if (newView === currentView) return;
@@ -1002,366 +1019,372 @@ export function AttendanceReportView() {
                     <>
                         {currentView === 'list' && (
                             <Card>
-                        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-                            <Scrollbar>
-                                <Table
-                                    size="medium"
-                                    stickyHeader
-                                    sx={{ borderCollapse: 'collapse' }}
-                                >
-                                    <TableHead>
-                                        <TableRow sx={{ bgcolor: '#f4f6f8' }}>
-                                            <TableCell padding="checkbox">
-                                                <Checkbox
-                                                    indeterminate={
-                                                        selected.length > 0 &&
-                                                        selected.length < visibleReportData.length
-                                                    }
-                                                    checked={
-                                                        visibleReportData.length > 0 &&
-                                                        selected.length === visibleReportData.length
-                                                    }
-                                                    onChange={handleSelectAllClick}
-                                                />
-                                            </TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee ID</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }} />
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {loading ? (
-                                            <TableRow>
-                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                    <CircularProgress sx={{ color: '#08a3cd' }} />
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            <>
-                                                {visibleReportData
-                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                                                    .map((row) => {
-                                                        const isSelected = selected.indexOf(row.name) !== -1;
-                                                        return (
-                                                            <TableRow
-                                                                key={row.name}
-                                                                hover
-                                                                selected={isSelected}
-                                                                sx={{ '&:hover': { bgcolor: 'action.hover' } }}
-                                                            >
-                                                                <TableCell padding="checkbox">
-                                                                    <Checkbox
-                                                                        checked={isSelected}
-                                                                        onClick={(event) => handleClick(event, row.name)}
-                                                                    />
-                                                                </TableCell>
-                                                                <TableCell>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
-                                                                <TableCell sx={{ fontWeight: 600 }}>{row.employee_name}</TableCell>
-                                                                <TableCell>{row.employee}</TableCell>
-                                                                <TableCell>
-                                                                    <Label
-                                                                        variant="soft"
-                                                                        color={
-                                                                            (row.status === 'Present' && 'success') ||
-                                                                            (row.status === 'Absent' && 'error') ||
-                                                                            (row.status === 'Half Day' && 'warning') ||
-                                                                            (row.status === 'On Leave' && 'info') ||
-                                                                            (row.status === 'Holiday' && 'secondary') ||
-                                                                            'default'
-                                                                        }
-                                                                    >
-                                                                        {row.status}
-                                                                    </Label>
-                                                                </TableCell>
-                                                                <TableCell>{row.in_time || '---'}</TableCell>
-                                                                <TableCell>{row.out_time || '---'}</TableCell>
-                                                                <TableCell>{row.working_hours_display || '---'}</TableCell>
-                                                                <TableCell align="right">
-                                                                    <IconButton onClick={() => handleViewDetails(row.name)}>
-                                                                        <Iconify icon={"solar:eye-bold" as any} width={20} sx={{ color: '#08a3cd' }} />
-                                                                    </IconButton>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    })}
-                                                {visibleReportData.length === 0 && (
+                                <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                                    <Scrollbar>
+                                        <Table
+                                            size="medium"
+                                            stickyHeader
+                                            sx={{ borderCollapse: 'collapse' }}
+                                        >
+                                            <TableHead>
+                                                <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                                    <TableCell padding="checkbox">
+                                                        <Checkbox
+                                                            indeterminate={
+                                                                selected.length > 0 &&
+                                                                selected.length < visibleReportData.length
+                                                            }
+                                                            checked={
+                                                                visibleReportData.length > 0 &&
+                                                                selected.length === visibleReportData.length
+                                                            }
+                                                            onChange={handleSelectAllClick}
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee ID</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
+                                                    <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }} />
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {loading ? (
                                                     <TableRow>
                                                         <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                            <Stack spacing={1} alignItems="center">
-                                                                <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                    No data found
-                                                                </Typography>
-                                                            </Stack>
+                                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                                         </TableCell>
                                                     </TableRow>
+                                                ) : (
+                                                    <>
+                                                        {visibleReportData
+                                                            .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                            .map((row) => {
+                                                                const isSelected = selected.indexOf(row.name) !== -1;
+                                                                return (
+                                                                    <TableRow
+                                                                        key={row.name}
+                                                                        hover
+                                                                        selected={isSelected}
+                                                                        sx={{ '&:hover': { bgcolor: 'action.hover' } }}
+                                                                    >
+                                                                        <TableCell padding="checkbox">
+                                                                            <Checkbox
+                                                                                checked={isSelected}
+                                                                                onClick={(event) => handleClick(event, row.name)}
+                                                                            />
+                                                                        </TableCell>
+                                                                        <TableCell>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
+                                                                        <TableCell sx={{ fontWeight: 600 }}>{row.employee_name}</TableCell>
+                                                                        <TableCell>{row.employee}</TableCell>
+                                                                        <TableCell>
+                                                                            <Label
+                                                                                variant="soft"
+                                                                                color={
+                                                                                    (row.status === 'Present' && 'success') ||
+                                                                                    (row.status === 'Absent' && 'error') ||
+                                                                                    (row.status === 'Half Day' && 'warning') ||
+                                                                                    (row.status === 'On Leave' && 'info') ||
+                                                                                    (row.status === 'Holiday' && 'secondary') ||
+                                                                                    'default'
+                                                                                }
+                                                                            >
+                                                                                {row.status}
+                                                                            </Label>
+                                                                        </TableCell>
+                                                                        <TableCell>{row.in_time || '---'}</TableCell>
+                                                                        <TableCell>{row.out_time || '---'}</TableCell>
+                                                                        <TableCell>{row.working_hours_display || '---'}</TableCell>
+                                                                        <TableCell align="right">
+                                                                            <IconButton onClick={() => handleViewDetails(row.name)}>
+                                                                                <Iconify icon={"solar:eye-bold" as any} width={20} sx={{ color: '#08a3cd' }} />
+                                                                            </IconButton>
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                );
+                                                            })}
+                                                        {visibleReportData.length === 0 && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                                    <Stack spacing={1} alignItems="center">
+                                                                        <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                        <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                            No data found
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </>
                                                 )}
-                                            </>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </Scrollbar>
-                        </TableContainer>
-                        <TablePagination
-                            component="div"
-                            count={visibleReportData.length}
-                            page={page}
-                            onPageChange={onChangePage}
-                            rowsPerPage={rowsPerPage}
-                            onRowsPerPageChange={onChangeRowsPerPage}
-                            rowsPerPageOptions={[10, 25, 50]}
-                        />
-                    </Card>
-                )}
+                                            </TableBody>
+                                        </Table>
+                                    </Scrollbar>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={visibleReportData.length}
+                                    page={page}
+                                    onPageChange={onChangePage}
+                                    rowsPerPage={rowsPerPage}
+                                    onRowsPerPageChange={onChangeRowsPerPage}
+                                    rowsPerPageOptions={[10, 25, 50]}
+                                />
+                            </Card>
+                        )}
 
-                {currentView === 'calendar' && employee !== 'all' && (
-                    <AttendanceCalendar
-                         reportData={reportData}
-                         employee={employee}
-                         fromDate={fromDate}
-                         toDate={toDate}
-                         onEventClick={handleViewDetails}
-                     />
-                )}
+                        {currentView === 'calendar' && employee !== 'all' && (
+                            <AttendanceCalendar
+                                reportData={reportData}
+                                employee={employee}
+                                fromDate={fromDate}
+                                toDate={toDate}
+                                onEventClick={handleViewDetails}
+                            />
+                        )}
 
-                {currentView === 'muster' && (
-                    <Card sx={{ p: 2.5 }}>
-                        <Stack direction="row" spacing={2} sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
-                            {[
-                                { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
-                                { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
-                                { label: 'Half Day', value: 'HD', color: 'rgba(254, 240, 138, 0.5)', textColor: '#854d0e' },
-                            ].map((item) => (
-                                <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
-                                    <Box
-                                        sx={{
-                                            width: 24,
-                                            height: 24,
-                                            borderRadius: '6px',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            bgcolor: item.color,
-                                            color: item.textColor,
-                                            fontWeight: 700,
-                                            fontSize: '0.7rem',
-                                        }}
-                                    >
-                                        {item.hideValue ? '' : item.value}
-                                    </Box>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                        {item.label}
-                                    </Typography>
-                                </Stack>
-                            ))}
-                        </Stack>
-
-                        <TableContainer
-                            ref={musterScrollRef}
-                            onMouseDown={handleMusterMouseDown}
-                            onMouseLeave={handleMusterMouseLeave}
-                            onMouseUp={handleMusterMouseUp}
-                            onMouseMove={handleMusterMouseMove}
-                            sx={{
-                                position: 'relative',
-                                overflowX: 'auto',
-                                borderRadius: '12px',
-                                border: (t) => `1px solid ${t.palette.divider}`,
-                                bgcolor: 'background.paper',
-                                cursor: musterIsDragging ? 'grabbing' : 'grab',
-                                userSelect: 'none',
-                                '&::-webkit-scrollbar': { height: 8 },
-                                '&::-webkit-scrollbar-thumb': {
-                                    backgroundColor: 'rgba(145,158,171,0.30)',
-                                    borderRadius: 999,
-                                },
-                                '&::-webkit-scrollbar-thumb:hover': {
-                                    backgroundColor: 'rgba(145,158,171,0.50)',
-                                },
-                            }}
-                        >
-                            <Table size="medium" sx={{ borderCollapse: 'collapse', minWidth: 800 }}>
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f4f6f8' }}>
-                                        <TableCell
-                                            sx={{
-                                                position: 'sticky',
-                                                left: 0,
-                                                bgcolor: '#f4f6f8',
-                                                zIndex: 12,
-                                                minWidth: 220,
-                                                fontWeight: 700,
-                                                borderRight: (t) => `1px solid ${t.palette.divider}`
-                                            }}
-                                        >
-                                            Employee
-                                        </TableCell>
-                                        {dates.map((date) => (
-                                            <TableCell
-                                                key={date.format('YYYY-MM-DD')}
-                                                align="center"
+                        {currentView === 'muster' && (
+                            <Card sx={{ p: 2.5 }}>
+                                <Stack direction="row" spacing={2} sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
+                                    {[
+                                        { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
+                                        { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
+                                        { label: 'Half Day', value: 'HD', color: 'rgba(254, 240, 138, 0.5)', textColor: '#854d0e' },
+                                    ].map((item) => (
+                                        <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
+                                            <Box
                                                 sx={{
-                                                    minWidth: 120,
-                                                    p: 1.5,
-                                                    borderRight: (t) => `1px solid ${t.palette.divider}`
+                                                    width: 24,
+                                                    height: 24,
+                                                    borderRadius: '6px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    bgcolor: item.color,
+                                                    color: item.textColor,
+                                                    fontWeight: 700,
+                                                    fontSize: '0.7rem',
                                                 }}
                                             >
-                                                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.85rem' }}>
-                                                    {date.format('MMM')}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
-                                                    {date.format('ddd')}
-                                                </Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16  }}>
-                                                    {date.format('DD')}
-                                                </Typography>
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {loading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
-                                                <CircularProgress sx={{ color: '#08a3cd' }} />
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        <>
-                                            {paginatedEmployees.map((emp, empIndex) => (
-                                                <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
+                                                {item.hideValue ? '' : item.value}
+                                            </Box>
+                                            <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                {item.label}
+                                            </Typography>
+                                        </Stack>
+                                    ))}
+                                </Stack>
+
+                                <TableContainer
+                                    ref={musterScrollRef}
+                                    onMouseDown={handleMusterMouseDown}
+                                    onMouseLeave={handleMusterMouseLeave}
+                                    onMouseUp={handleMusterMouseUp}
+                                    onMouseMove={handleMusterMouseMove}
+                                    sx={{
+                                        position: 'relative',
+                                        overflowX: 'auto',
+                                        borderRadius: '12px',
+                                        border: (t) => `1px solid ${t.palette.divider}`,
+                                        bgcolor: 'background.paper',
+                                        cursor: 'grab',
+                                        userSelect: 'none',
+                                        '&::-webkit-scrollbar': { height: 8 },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            backgroundColor: 'rgba(145,158,171,0.30)',
+                                            borderRadius: 999,
+                                        },
+                                        '&::-webkit-scrollbar-thumb:hover': {
+                                            backgroundColor: 'rgba(145,158,171,0.50)',
+                                        },
+                                    }}
+                                >
+                                    <Table size="medium" sx={{ borderCollapse: 'collapse', minWidth: 800 }}>
+                                        <TableHead>
+                                            <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                                <TableCell
+                                                    sx={{
+                                                        position: 'sticky',
+                                                        left: 0,
+                                                        bgcolor: '#f4f6f8',
+                                                        zIndex: 12,
+                                                        minWidth: 220,
+                                                        fontWeight: 700,
+                                                        borderRight: (t) => `1px solid ${t.palette.divider}`
+                                                    }}
+                                                >
+                                                    Employee
+                                                </TableCell>
+                                                {dates.map((date) => (
                                                     <TableCell
+                                                        key={date.format('YYYY-MM-DD')}
+                                                        align="center"
                                                         sx={{
-                                                            position: 'sticky',
-                                                            left: 0,
-                                                            bgcolor: 'background.paper',
-                                                            zIndex: 10,
-                                                            borderRight: (t) => `1px solid ${t.palette.divider}`,
-                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
-                                                            boxShadow: '4px 0 8px -4px rgba(0,0,0,0.12)'
+                                                            minWidth: 120,
+                                                            p: 1.5,
+                                                            borderRight: (t) => `1px solid ${t.palette.divider}`
                                                         }}
                                                     >
-                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{emp.id}</Typography>
+                                                        <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+                                                            {date.format('MMM')}
+                                                        </Typography>
+                                                        <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
+                                                            {date.format('ddd')}
+                                                        </Typography>
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16 }}>
+                                                            {date.format('DD')}
+                                                        </Typography>
                                                     </TableCell>
-                                                    {dates.map((date) => {
-                                                        const isHoliday = isDateHoliday(date);
-                                                        if (isHoliday) {
-                                                            if (empIndex === 0) {
+                                                ))}
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {loading ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                <>
+                                                    {paginatedEmployees.map((emp, empIndex) => (
+                                                        <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
+                                                            <TableCell
+                                                                sx={{
+                                                                    position: 'sticky',
+                                                                    left: 0,
+                                                                    bgcolor: 'background.paper',
+                                                                    zIndex: 10,
+                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                                    boxShadow: '4px 0 8px -4px rgba(0,0,0,0.12)'
+                                                                }}
+                                                            >
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
+                                                                <Typography variant="caption" sx={{ color: 'text.disabled' }}>{emp.id}</Typography>
+                                                            </TableCell>
+                                                            {dates.map((date) => {
+                                                                const isHoliday = isDateHoliday(date);
+                                                                if (isHoliday) {
+                                                                    if (empIndex === 0) {
+                                                                        return (
+                                                                            <TableCell
+                                                                                key={date.format('YYYY-MM-DD')}
+                                                                                rowSpan={paginatedEmployees.length}
+                                                                                align="center"
+                                                                                sx={{
+                                                                                    minWidth: 120,
+                                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                                                    bgcolor: 'rgba(244, 63, 94, 0.08)',
+                                                                                    p: 0,
+                                                                                    verticalAlign: 'middle'
+                                                                                }}
+                                                                            >
+                                                                                <Box
+                                                                                    sx={{
+                                                                                        display: 'flex',
+                                                                                        flexDirection: 'column',
+                                                                                        alignItems: 'center',
+                                                                                        justifyContent: 'center',
+                                                                                        height: '100%',
+                                                                                        minHeight: 80,
+                                                                                        textTransform: 'uppercase',
+                                                                                        letterSpacing: 1.5,
+                                                                                        fontSize: '0.825rem',
+                                                                                        fontWeight: 800,
+                                                                                        color: '#9f1239',
+                                                                                    }}
+                                                                                >
+                                                                                    Holiday
+                                                                                </Box>
+                                                                            </TableCell>
+                                                                        );
+                                                                    } else {
+                                                                        return null;
+                                                                    }
+                                                                }
+
+                                                                const cellStatus = getAttendanceStatus(emp.id, date);
+                                                                const showTime = cellStatus === 'P' || cellStatus === 'HD';
+                                                                const times = showTime ? getAttendanceTimes(emp.id, date) : null;
+                                                                const record = getAttendanceRecord(emp.id, date);
+                                                                const isClickable = !!record?.name;
                                                                 return (
                                                                     <TableCell
                                                                         key={date.format('YYYY-MM-DD')}
-                                                                        rowSpan={paginatedEmployees.length}
                                                                         align="center"
                                                                         sx={{
                                                                             minWidth: 120,
                                                                             borderRight: (t) => `1px solid ${t.palette.divider}`,
-                                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
-                                                                            bgcolor: 'rgba(244, 63, 94, 0.08)',
-                                                                            p: 0,
-                                                                            verticalAlign: 'middle'
+                                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`
                                                                         }}
                                                                     >
                                                                         <Box
+                                                                            onClick={isClickable ? () => handleMusterCellClick(record.name) : undefined}
                                                                             sx={{
-                                                                                display: 'flex',
-                                                                                flexDirection: 'column',
+                                                                                px: showTime ? 1 : 0,
+                                                                                py: showTime ? 0.75 : 0,
+                                                                                width: showTime ? 90 : 32,
+                                                                                minHeight: 32,
+                                                                                borderRadius: '8px',
+                                                                                display: 'inline-flex',
                                                                                 alignItems: 'center',
                                                                                 justifyContent: 'center',
-                                                                                height: '100%',
-                                                                                minHeight: 80,
-                                                                                textTransform: 'uppercase',
-                                                                                letterSpacing: 1.5,
-                                                                                fontSize: '0.825rem',
-                                                                                fontWeight: 800,
-                                                                                color: '#9f1239',
+                                                                                fontSize: '0.725rem',
+                                                                                cursor: isClickable ? 'pointer' : 'inherit',
+                                                                                transition: 'opacity 0.15s',
+                                                                                '&:hover': isClickable ? { opacity: 0.78, transform: 'scale(1.06)' } : {},
+                                                                                ...getStatusStyles(cellStatus),
                                                                             }}
                                                                         >
-                                                                            Holiday
+                                                                            {showTime && times ? (
+                                                                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+                                                                                    <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.inTime}</Box>
+                                                                                    <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
+                                                                                    <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
+                                                                                </Box>
+                                                                            ) : (
+                                                                                cellStatus
+                                                                            )}
                                                                         </Box>
                                                                     </TableCell>
                                                                 );
-                                                            } else {
-                                                                return null;
-                                                            }
-                                                        }
-
-                                                        const cellStatus = getAttendanceStatus(emp.id, date);
-                                                        const showTime = cellStatus === 'P' || cellStatus === 'HD';
-                                                        const times = showTime ? getAttendanceTimes(emp.id, date) : null;
-                                                        return (
-                                                            <TableCell
-                                                                key={date.format('YYYY-MM-DD')}
-                                                                align="center"
-                                                                sx={{
-                                                                    minWidth: 120,
-                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
-                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`
-                                                                }}
-                                                            >
-                                                                <Box
-                                                                    sx={{
-                                                                        px: showTime ? 1 : 0,
-                                                                        py: showTime ? 0.75 : 0,
-                                                                        width: showTime ? 90 : 32,
-                                                                        minHeight: 32,
-                                                                        borderRadius: '8px',
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        justifyContent: 'center',
-                                                                        fontSize: '0.725rem',
-                                                                        ...getStatusStyles(cellStatus),
-                                                                    }}
-                                                                >
-                                                                    {showTime && times ? (
-                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
-                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.inTime}</Box>
-                                                                            <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
-                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
-                                                                        </Box>
-                                                                    ) : (
-                                                                        cellStatus
-                                                                    )}
-                                                                </Box>
+                                                            })}
+                                                        </TableRow>
+                                                    ))}
+                                                    {paginatedEmployees.length === 0 && (
+                                                        <TableRow>
+                                                            <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        No data found
+                                                                    </Typography>
+                                                                </Stack>
                                                             </TableCell>
-                                                        );
-                                                    })}
-                                                </TableRow>
-                                            ))}
-                                            {paginatedEmployees.length === 0 && (
-                                                <TableRow>
-                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
-                                                        <Stack spacing={1} alignItems="center">
-                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                No data found
-                                                            </Typography>
-                                                        </Stack>
-                                                    </TableCell>
-                                                </TableRow>
+                                                        </TableRow>
+                                                    )}
+                                                </>
                                             )}
-                                        </>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                        <TablePagination
-                            component="div"
-                            count={uniqueEmployees.length}
-                            page={musterPage}
-                            onPageChange={(e, newPage) => setMusterPage(newPage)}
-                            rowsPerPage={musterRowsPerPage}
-                            onRowsPerPageChange={(e) => {
-                                setMusterRowsPerPage(parseInt(e.target.value, 10));
-                                setMusterPage(0);
-                            }}
-                            rowsPerPageOptions={[10, 25, 50, 100]}
-                        />
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <TablePagination
+                                    component="div"
+                                    count={uniqueEmployees.length}
+                                    page={musterPage}
+                                    onPageChange={(e, newPage) => setMusterPage(newPage)}
+                                    rowsPerPage={musterRowsPerPage}
+                                    onRowsPerPageChange={(e) => {
+                                        setMusterRowsPerPage(parseInt(e.target.value, 10));
+                                        setMusterPage(0);
+                                    }}
+                                    rowsPerPageOptions={[10, 25, 50, 100]}
+                                />
                             </Card>
                         )}
                     </>
@@ -1382,7 +1405,7 @@ export function AttendanceReportView() {
                                 position: 'absolute',
                                 right: 12,
                                 top: 12,
-                                 color: (t) => t.palette.grey[500],
+                                color: (t) => t.palette.grey[500],
                             }}
                         >
                             <Iconify icon={"mingcute:close-line" as any} />
@@ -1416,7 +1439,7 @@ export function AttendanceReportView() {
                                 sx={{
                                     pt: 2,
                                     mt: 1,
-                                     borderTop: (t) => `1px solid ${t.palette.divider}`,
+                                    borderTop: (t) => `1px solid ${t.palette.divider}`,
                                     mb: 2,
                                     alignItems: 'flex-start'
                                 }}
@@ -1477,14 +1500,14 @@ export function AttendanceReportView() {
                             <Button
                                 variant="contained"
                                 onClick={() => {
-                                            setOpenExportDialog(false);
-                                            handleExport('muster');
-                                        }}
+                                    setOpenExportDialog(false);
+                                    handleExport('muster');
+                                }}
                                 sx={{
-                                            bgcolor: '#0ea5e9',
-                                            color: 'common.white',
-                                            '&:hover': { bgcolor: '#0284c7' }
-                                        }}
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' }
+                                }}
                             >
                                 Export Excel
                             </Button>
