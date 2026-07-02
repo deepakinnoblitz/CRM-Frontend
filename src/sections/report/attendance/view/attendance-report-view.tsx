@@ -874,7 +874,7 @@ export function AttendanceReportView() {
                             multiple
                             disableCloseOnSelect
                             size="small"
-                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            sx={{ flexGrow: 1, minWidth: 350 }}
                             options={employeeOptions}
                             getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
                             isOptionEqualToValue={(option, value) => option.name === value.name}

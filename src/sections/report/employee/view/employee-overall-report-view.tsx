@@ -1368,7 +1368,7 @@ export function EmployeeOverallReportView() {
                     InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
-                      minWidth: 190,
+                      maxWidth: 200,
                     },
                   },
                 }}
@@ -1384,55 +1384,12 @@ export function EmployeeOverallReportView() {
                     InputLabelProps: { shrink: true },
                     sx: {
                       flexGrow: 1,
-                      minWidth: 190,
+                      maxWidth: 200,
                     },
                   },
                 }}
               />
             </LocalizationProvider>
-
-            <Autocomplete
-              size="small"
-              sx={{ flexGrow: 1, minWidth: 200 }}
-              options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`;
-              }}
-              isOptionEqualToValue={(option, value) => option.name === value.name}
-              value={filterEmployee === 'all'
-                ? { name: 'all', employee_name: 'All Employees' }
-                : (employeeOptions.find((opt) => opt.name === filterEmployee) || null)
-              }
-              onChange={(event, newValue) => {
-                setFilterEmployee(newValue?.name || 'all');
-              }}
-              renderOption={(props, option) => (
-                <li {...props} key={option.name}>
-                  {option.name === 'all' ? (
-                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                      {option.employee_name}
-                    </Typography>
-                  ) : (
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                        {option.employee_name}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                        ID: {option.name}
-                      </Typography>
-                    </Box>
-                  )}
-                </li>
-              )}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Employee"
-                  placeholder="Select Employee"
-                />
-              )}
-            />
 
             <Autocomplete
               size="small"
@@ -1493,6 +1450,49 @@ export function EmployeeOverallReportView() {
                 <MenuItem value="asc">Oldest First</MenuItem>
               </Select>
             </FormControl>
+
+            <Autocomplete
+              size="small"
+              sx={{ flexGrow: 1, minWidth: 200 }}
+              options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
+              getOptionLabel={(option) => {
+                if (typeof option === 'string') return option;
+                return option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`;
+              }}
+              isOptionEqualToValue={(option, value) => option.name === value.name}
+              value={filterEmployee === 'all'
+                ? { name: 'all', employee_name: 'All Employees' }
+                : (employeeOptions.find((opt) => opt.name === filterEmployee) || null)
+              }
+              onChange={(event, newValue) => {
+                setFilterEmployee(newValue?.name || 'all');
+              }}
+              renderOption={(props, option) => (
+                <li {...props} key={option.name}>
+                  {option.name === 'all' ? (
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                      {option.employee_name}
+                    </Typography>
+                  ) : (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        {option.employee_name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                        ID: {option.name}
+                      </Typography>
+                    </Box>
+                  )}
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Employee"
+                  placeholder="Select Employee"
+                />
+              )}
+            />
 
             <Stack direction="row" spacing={1}>
               <Button
