@@ -39,6 +39,7 @@ export interface EmailAutomation {
     day_of_month?: number;
     create_separate_campaign: number;
     send_immediately: number;
+    auto_send: number;
     auto_pause_on_error: number;
     max_retry_count: number;
     last_run_on?: string;

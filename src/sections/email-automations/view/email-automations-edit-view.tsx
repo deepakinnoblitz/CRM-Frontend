@@ -34,11 +34,11 @@ import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { getEmailAutomation, updateEmailAutomation } from 'src/api/email-automation';
+import { getEmailAutomation, updateEmailAutomation, getAutomationOptions } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 
-import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';  
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 
 export function EmailAutomationsEditView() {
@@ -71,6 +71,24 @@ export function EmailAutomationsEditView() {
     const [sendImmediately, setSendImmediately] = useState(false);
     const [autoPauseOnError, setAutoPauseOnError] = useState(true);
     const [maxRetryCount, setMaxRetryCount] = useState<number | ''>(3);
+    const [isForStatusChange, setIsForStatusChange] = useState(true);
+    const [isForCampaigns, setIsForCampaigns] = useState(false);
+
+    const [triggerEvent, setTriggerEvent] = useState('');
+
+    const [workflowState, setWorkflowState] = useState('');
+    const [previousWorkflowState, setPreviousWorkflowState] = useState('');
+
+    const [currentDealStage, setCurrentDealStage] = useState('');
+    const [previousDealStage, setPreviousDealStage] = useState('');
+
+    const [workflowStates, setWorkflowStates] = useState<string[]>([]);
+    const [dealStages, setDealStages] = useState<string[]>([]);
+
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(true);
+    const [dialogTitle, setDialogTitle] = useState('Send Email?');
+    const [dialogMessage, setDialogMessage] = useState('Do you want to send the email?');
+    const [autoSend, setAutoSend] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
@@ -91,6 +109,22 @@ export function EmailAutomationsEditView() {
                 setSendImmediately(data.send_immediately === 1);
                 setAutoPauseOnError(data.auto_pause_on_error === 1);
                 setMaxRetryCount(data.max_retry_count ?? '');
+                setIsForStatusChange(data.for_status_change === 1);
+                setIsForCampaigns(data.for_campaigns === 1);
+
+                setTriggerEvent(data.trigger_event || "Lead Workflow State Change");
+
+                setWorkflowState(data.workflow_state || "");
+                setPreviousWorkflowState(data.previous_workflow_state || "");
+
+                setCurrentDealStage(data.current_deal_stage || "");
+                setPreviousDealStage(data.previous_deal_stage || "");
+
+                setShowConfirmationDialog(data.show_confirmation_dialog === 1);
+
+                setDialogTitle(data.dialog_title || "Send Email?");
+                setDialogMessage(data.dialog_message || "Do you want to send the Email?");
+                setAutoSend(data.auto_send === 1);
                 if (data.filters && Array.isArray(data.filters) && data.filters.length > 0) {
                     setFilters(data.filters);
                 } else {
@@ -108,13 +142,34 @@ export function EmailAutomationsEditView() {
         }
     }, [id]);
 
+    useEffect(() => {
+        if (!isForStatusChange) return;
+
+        getAutomationOptions(targetType, triggerEvent)
+            .then((res) => {
+                setWorkflowStates(res.lead_workflow_states || []);
+                setDealStages(res.deal_stages || []);
+            })
+            .catch(console.error);
+    }, [targetType, triggerEvent, isForStatusChange]);
+
     const [errors, setErrors] = useState<{
         automationName?: boolean;
         emailTemplate?: boolean;
         targetType?: boolean;
+        triggerEvent?: boolean;
         frequency?: boolean;
         runTime?: boolean;
         startDate?: boolean;
+
+        workflowState?: boolean;
+        previousWorkflowState?: boolean;
+
+        currentDealStage?: boolean;
+        previousDealStage?: boolean;
+
+        dialogTitle?: boolean;
+        dialogMessage?: boolean;
     }>({});
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -122,6 +177,20 @@ export function EmailAutomationsEditView() {
         message: '',
         severity: 'success',
     });
+
+    const handleStatusChange = (checked: boolean) => {
+        if (checked) {
+            setIsForStatusChange(true);
+            setIsForCampaigns(false);
+        }
+    };
+
+    const handleCampaignChange = (checked: boolean) => {
+        if (checked) {
+            setIsForCampaigns(true);
+            setIsForStatusChange(false);
+        }
+    };
 
     const handleCloseSnackbar = () => {
         setSnackbar((prev) => ({ ...prev, open: false }));
@@ -143,18 +212,69 @@ export function EmailAutomationsEditView() {
             newErrors.targetType = true;
             missingFields.push('Target Type');
         }
-        if (!frequency) {
-            newErrors.frequency = true;
-            missingFields.push('Frequency');
+        if (isForCampaigns) {
+            if (!frequency) {
+                newErrors.frequency = true;
+                missingFields.push("Frequency");
+            }
+
+            if (!startDate) {
+                newErrors.startDate = true;
+                missingFields.push("Start Date");
+            }
+
+            if (!runTime) {
+                newErrors.runTime = true;
+                missingFields.push("Run Time");
+            }
         }
-        if (!startDate) {
-            newErrors.startDate = true;
-            missingFields.push('Start Date');
+
+        if (isForStatusChange) {
+
+            if (!triggerEvent) {
+                newErrors.triggerEvent = true;
+                missingFields.push("Trigger Event");
+            }
+
+            if (triggerEvent === "Lead Workflow State Change") {
+
+                if (!previousWorkflowState) {
+                    newErrors.previousWorkflowState = true;
+                    missingFields.push("Previous Workflow State");
+                }
+
+                if (!workflowState) {
+                    newErrors.workflowState = true;
+                    missingFields.push("Workflow State");
+                }
+
+            } else if (triggerEvent === "Deal Stage Change") {
+
+                if (!previousDealStage) {
+                    newErrors.previousDealStage = true;
+                    missingFields.push("Previous Deal Stage");
+                }
+
+                if (!currentDealStage) {
+                    newErrors.currentDealStage = true;
+                    missingFields.push("Current Deal Stage");
+                }
+            }
+
+            if (showConfirmationDialog) {
+
+                if (!dialogTitle) {
+                    newErrors.dialogTitle = true;
+                    missingFields.push("Dialog Title");
+                }
+
+                if (!dialogMessage) {
+                    newErrors.dialogMessage = true;
+                    missingFields.push("Dialog Message");
+                }
+            }
         }
-        if (!runTime) {
-            newErrors.runTime = true;
-            missingFields.push('Run Time');
-        }
+
 
         setErrors(newErrors);
 
@@ -173,20 +293,40 @@ export function EmailAutomationsEditView() {
         const data = {
             automation_name: automationName,
             status,
+            description,
+
             email_template: emailTemplate,
+            subject_override: subjectOverride,
+
             target_type: targetType,
+            trigger_event: triggerEvent,
+
+            workflow_state: workflowState,
+            previous_workflow_state: previousWorkflowState,
+
+            current_deal_stage: currentDealStage,
+            previous_deal_stage: previousDealStage,
+
+            show_confirmation_dialog: showConfirmationDialog ? 1 : 0,
+            dialog_title: dialogTitle,
+            dialog_message: dialogMessage,
+            auto_send: autoSend ? 1 : 0,
+
+            filters,
+
             frequency,
             start_date: startDate,
             end_date: endDate,
             run_time: runTime,
-            filters,
-            description,
-            is_active: isActive ? 1 : 0,
-            subject_override: subjectOverride,
+
             create_separate_campaign: createSeparateCampaign ? 1 : 0,
             send_immediately: sendImmediately ? 1 : 0,
             auto_pause_on_error: autoPauseOnError ? 1 : 0,
-            max_retry_count: maxRetryCount ? Number(maxRetryCount) : 0,
+            max_retry_count: Number(maxRetryCount) || 0,
+
+            is_active: isActive ? 1 : 0,
+            for_status_change: isForStatusChange ? 1 : 0,
+            for_campaigns: isForCampaigns ? 1 : 0,
         };
 
         updateEmailAutomation(id, data)
@@ -221,49 +361,80 @@ export function EmailAutomationsEditView() {
         <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
-                <Stack spacing={0.5}>
-                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        Edit Automation
-                    </Typography>
+                    <Stack spacing={0.5}>
+                        <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                            Edit Automation
+                        </Typography>
+                    </Stack>
+                    <Stack direction="row" spacing={2}>
+                        <Button
+                            variant="outlined"
+                            color="inherit"
+                            onClick={() => router.back()}
+                            startIcon={<IoMdArrowBack size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 2.5,
+                            }}
+                        >
+                            Go Back
+                        </Button>
+                        <LoadingButton
+                            variant="contained"
+                            onClick={handleSave}
+                            loading={isSaving}
+                            sx={{
+                                borderRadius: 1.5,
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' },
+                            }}
+                        >
+                            Save Automation
+                        </LoadingButton>
+                    </Stack>
                 </Stack>
-                <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        color="inherit"
-                        onClick={() => router.back()}
-                        startIcon={<IoMdArrowBack size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 2.5,
-                        }}
-                    >
-                        Go Back
-                    </Button>
-                    <LoadingButton
-                        variant="contained"
-                        onClick={handleSave}
-                        loading={isSaving}
-                        sx={{
-                            borderRadius: 1.5,
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' },
-                        }}
-                    >
-                        Save Automation
-                    </LoadingButton>
-                </Stack>
-            </Stack>
 
-            <Box>
+                <Box>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
+                        <Stack direction="row" spacing={4} alignItems="center" sx={{ mb: 3 }}>
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={isActive}
+                                        onChange={(e) => setIsActive(e.target.checked)}
+                                    />
+                                }
+                                label="Is Active"
+                            />
+
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={isForStatusChange}
+                                        onChange={(e) => handleStatusChange(e.target.checked)}
+                                    />
+                                }
+                                label="For Status Change"
+                            />
+
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={isForCampaigns}
+                                        onChange={(e) => handleCampaignChange(e.target.checked)}
+                                    />
+                                }
+                                label="For Campaigns"
+                            />
+                        </Stack>
                         <Stack spacing={3}>
-                            <TextField 
-                                fullWidth 
-                                label="Automation Name" 
+                            <TextField
+                                fullWidth
+                                label="Automation Name"
                                 required
                                 value={automationName}
                                 onChange={(e) => {
@@ -273,29 +444,26 @@ export function EmailAutomationsEditView() {
                                 error={errors.automationName}
                                 helperText={errors.automationName ? 'This field is required' : ''}
                             />
+                            {isForCampaigns && (
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Status"
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                >
+                                    {['Draft', 'Active', 'Paused', 'Completed', 'Cancelled', 'Failed'].map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
                             <TextField
-                                select
                                 fullWidth
-                                label="Status"
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                            >
-                                {['Draft', 'Active', 'Paused', 'Completed', 'Cancelled', 'Failed'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
-                            <TextField 
-                                fullWidth 
-                                multiline 
-                                rows={3} 
-                                label="Description" 
+                                multiline
+                                rows={3}
+                                label="Description"
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
-                                label="Is Active" 
-                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
                             />
                         </Stack>
                     </Card>
@@ -308,9 +476,16 @@ export function EmailAutomationsEditView() {
                                 options={templateOptions}
                                 getOptionLabel={(option) => option.template_name || option.name || ''}
                                 value={templateOptions.find((opt) => opt.name === emailTemplate) || null}
-                                onChange={(_e, newValue) => {
+                                onChange={(_, newValue) => {
                                     setEmailTemplate(newValue?.name || '');
-                                    if (newValue?.name) setErrors(prev => ({ ...prev, emailTemplate: false }));
+                                    setSubjectOverride(newValue?.subject || '');
+
+                                    if (newValue?.name) {
+                                        setErrors(prev => ({
+                                            ...prev,
+                                            emailTemplate: false,
+                                        }));
+                                    }
                                 }}
                                 renderInput={(params) => (
                                     <TextField
@@ -337,16 +512,16 @@ export function EmailAutomationsEditView() {
                                     );
                                 }}
                             />
-                            <TextField 
-                                fullWidth 
-                                label="Subject Override" 
+                            <TextField
+                                fullWidth
+                                label="Subject Override"
                                 value={subjectOverride}
                                 onChange={(e) => setSubjectOverride(e.target.value)}
                             />
-                            <TextField 
+                            <TextField
                                 select
-                                fullWidth 
-                                label="Target Type" 
+                                fullWidth
+                                label="Target Type"
                                 required
                                 value={targetType}
                                 onChange={(e) => {
@@ -360,229 +535,379 @@ export function EmailAutomationsEditView() {
                                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                 ))}
                             </TextField>
-                        </Stack>
-                    </Card>
+                            {isForStatusChange && (
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Trigger Event"
+                                    required
+                                    value={triggerEvent}
+                                    onChange={(e) => {
+                                        setTriggerEvent(e.target.value);
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, triggerEvent: false }));
+                                    }}
+                                    error={errors.triggerEvent}
+                                    helperText={errors.triggerEvent ? 'This field is required' : ''}
+                                >
+                                    {['Lead Workflow State Change', 'Deal Stage Change'].map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                            )}
+                            {isForStatusChange && triggerEvent === 'Lead Workflow State Change' && (
+                                <Stack direction="row" spacing={3}>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Previous Workflow State"
+                                        value={previousWorkflowState}
+                                        onChange={(e) => setPreviousWorkflowState(e.target.value)}
+                                        error={errors.previousWorkflowState}
+                                        helperText={errors.previousWorkflowState ? 'This field is required' : ''}
+                                    >
+                                        {workflowStates.map((state) => (
+                                            <MenuItem key={state} value={state}>
+                                                {state}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
 
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Audience Filters</Typography>
-                        <Stack spacing={3}>
-                            <TableContainer sx={{
-                                overflow: 'unset',
-                                border: (theme) => `1px solid ${theme.palette.divider}`,
-                                borderRadius: 1.5,
-                                bgcolor: 'background.paper',
-                                boxShadow: (theme) => theme.customShadows.z8,
-                            }}>
-                                <Table sx={{ minWidth: 960 }}>
-                                    <TableHead sx={{
-                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                        '& th:first-of-type': { borderTopLeftRadius: 11 },
-                                        '& th:last-of-type': { borderTopRightRadius: 11 }
-                                    }}>
-                                        <TableRow>
-                                            <TableCell width={60} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>No.</TableCell>
-                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Field</TableCell>
-                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Operator</TableCell>
-                                            <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Value</TableCell>
-                                            <TableCell width={60} />
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {filters.length === 0 ? (
-                                            <TableRow>
-                                                <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                                                    <Stack alignItems="center" spacing={1}>
-                                                        <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ color: 'text.secondary' }} />
-                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>No Data</Typography>
-                                                    </Stack>
-                                                </TableCell>
-                                            </TableRow>
-                                        ) : (
-                                            filters.map((filter, index) => (
-                                                <TableRow key={index} sx={{
-                                                    verticalAlign: 'top',
-                                                    transition: (theme) => theme.transitions.create('background-color'),
-                                                    '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
-                                                    '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
-                                                }}>
-                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                                        <Box sx={{ py: 1, px: 1 }}>{index + 1}</Box>
-                                                    </TableCell>
-                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                        <TextField 
-                                                            variant="standard"
-                                                            fullWidth
-                                                            value={filter.field_name}
-                                                            onChange={(e) => {
-                                                                const newFilters = [...filters];
-                                                                newFilters[index].field_name = e.target.value;
-                                                                setFilters(newFilters);
-                                                            }}
-                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                        <TextField 
-                                                            variant="standard"
-                                                            select
-                                                            fullWidth
-                                                            value={filter.operator}
-                                                            onChange={(e) => {
-                                                                const newFilters = [...filters];
-                                                                newFilters[index].operator = e.target.value;
-                                                                setFilters(newFilters);
-                                                            }}
-                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                        >
-                                                            {['=', '!=', '<', '>', '<=', '>=', 'in', 'not in', 'like', 'not like'].map(opt => (
-                                                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                                            ))}
-                                                        </TextField>
-                                                    </TableCell>
-                                                    <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
-                                                        <TextField 
-                                                            variant="standard"
-                                                            fullWidth
-                                                            value={filter.value}
-                                                            onChange={(e) => {
-                                                                const newFilters = [...filters];
-                                                                newFilters[index].value = e.target.value;
-                                                                setFilters(newFilters);
-                                                            }}
-                                                            InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
-                                                        />
-                                                    </TableCell>
-                                                    <TableCell sx={{ px: 1, py: 1 }}>
-                                                        <IconButton color="error" onClick={() => {
-                                                            const newFilters = [...filters];
-                                                            newFilters.splice(index, 1);
-                                                            setFilters(newFilters);
-                                                        }} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </TableContainer>
-                            <Button 
-                                startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                                onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
-                                sx={{ alignSelf: 'flex-start' }}
-                            >
-                                Add Row
-                            </Button>
-                        </Stack>
-                    </Card>
-
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Schedule</Typography>
-                        <Stack spacing={3}>
-                            <TextField 
-                                select
-                                fullWidth 
-                                label="Frequency" 
-                                required
-                                value={frequency}
-                                onChange={(e) => {
-                                    setFrequency(e.target.value);
-                                    if (e.target.value) setErrors((prev) => ({ ...prev, frequency: false }));
-                                }}
-                                error={errors.frequency}
-                                helperText={errors.frequency ? 'This field is required' : ''}
-                            >
-                                {['Once', 'Daily', 'Weekly', 'Monthly', 'Yearly'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
-                            {frequency && (
-                                <>
-                                    <Stack direction="row" spacing={2}>
-                                        <DatePicker
-                                            label="Start Date *"
-                                            format="DD-MM-YYYY"
-                                            value={startDate ? dayjs(startDate) : null}
-                                            onChange={(newValue) => {
-                                                const formatted = newValue ? newValue.format('DD-MM-YYYY') : '';
-                                                setStartDate(formatted);
-                                                if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
-                                            }}
-                                            slotProps={{
-                                                textField: {
-                                                    fullWidth: true,
-                                                    error: errors.startDate,
-                                                    helperText: errors.startDate ? 'This field is required' : ''
-                                                }
-                                            }}
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Workflow State"
+                                        value={workflowState}
+                                        onChange={(e) => setWorkflowState(e.target.value)}
+                                        error={errors.workflowState}
+                                        helperText={errors.workflowState ? 'This field is required' : ''}
+                                    >
+                                        {workflowStates.map((state) => (
+                                            <MenuItem key={state} value={state}>
+                                                {state}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Stack>
+                            )}
+                            {isForStatusChange && (
+                                <FormControlLabel
+                                    control={
+                                        <CustomSwitch
+                                            checked={showConfirmationDialog}
+                                            onChange={(e) => setShowConfirmationDialog(e.target.checked)}
                                         />
-                                        {['Daily', 'Weekly', 'Monthly', 'Yearly'].includes(frequency) && (
-                                            <DatePicker
-                                                label="End Date"
-                                                format="DD-MM-YYYY"
-                                                value={endDate ? dayjs(endDate) : null}
-                                                onChange={(newValue) => setEndDate(newValue ? newValue.format('DD-MM-YYYY') : '')}
-                                                slotProps={{ textField: { fullWidth: true } }}
-                                            />
-                                        )}
-                                    </Stack>
-                                    <TimePicker
-                                        label="Run Time *"
-                                        value={runTime ? dayjs(`2000-01-01T${runTime}`) : null}
-                                        onChange={(newValue) => {
-                                            const formatted = newValue ? newValue.format('HH:mm:ss') : '';
-                                            setRunTime(formatted);
-                                            if (formatted) setErrors((prev) => ({ ...prev, runTime: false }));
-                                        }}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true,
-                                                error: errors.runTime,
-                                                helperText: errors.runTime ? 'This field is required' : ''
-                                            }
-                                        }}
+                                    }
+                                    label="Show Confirmation Dialog"
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                />
+                            )}
+                            {isForStatusChange && triggerEvent === 'Deal Stage Change' && (
+                                <Stack direction="row" spacing={3}>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Previous Deal Stage"
+                                        value={previousDealStage}
+                                        onChange={(e) => setPreviousDealStage(e.target.value)}
+                                        error={errors.previousDealStage}
+                                        helperText={errors.previousDealStage ? 'This field is required' : ''}
+                                    >
+                                        {dealStages.map((stage) => (
+                                            <MenuItem key={stage} value={stage}>
+                                                {stage}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Current Deal Stage"
+                                        value={currentDealStage}
+                                        onChange={(e) => setCurrentDealStage(e.target.value)}
+                                        error={errors.currentDealStage}
+                                        helperText={errors.currentDealStage ? 'This field is required' : ''}
+                                    >
+                                        {dealStages.map((stage) => (
+                                            <MenuItem key={stage} value={stage}>
+                                                {stage}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Stack>
+                            )}
+
+                            {isForStatusChange && showConfirmationDialog && (
+                                <Stack spacing={3}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        label="Dialog Title"
+                                        value={dialogTitle}
+                                        onChange={(e) => setDialogTitle(e.target.value)}
+                                        error={errors.dialogTitle}
+                                        helperText={errors.dialogTitle ? "This field is required" : ""}
                                     />
-                                    {frequency === 'Weekly' && <TextField fullWidth label="Week Day" />}
-                                    {frequency === 'Monthly' && <TextField fullWidth label="Day Of Month" />}
-                                </>
+
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        multiline
+                                        rows={4}
+                                        label="Dialog Message"
+                                        value={dialogMessage}
+                                        onChange={(e) => setDialogMessage(e.target.value)}
+                                        error={errors.dialogMessage}
+                                        helperText={errors.dialogMessage ? "This field is required" : ""}
+                                    />
+
+                                    <Stack direction="row" spacing={3}>
+                                        <FormControlLabel
+                                            control={
+                                                <CustomSwitch
+                                                    checked={autoSend}
+                                                    onChange={(e) => setAutoSend(e.target.checked)}
+                                                />
+                                            }
+                                            label="Auto Send"
+                                            sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                        />
+                                    </Stack>
+                                </Stack>
                             )}
                         </Stack>
                     </Card>
 
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
-                        <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
-                            <Stack spacing={2}>
-                                <FormControlLabel 
-                                    control={<CustomSwitch checked={createSeparateCampaign} onChange={(e) => setCreateSeparateCampaign(e.target.checked)} />} 
-                                    label="Create Separate Campaign" 
-                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
-                                />
-                                <FormControlLabel 
-                                    control={<CustomSwitch checked={sendImmediately} onChange={(e) => setSendImmediately(e.target.checked)} />} 
-                                    label="Send Immediately" 
-                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
-                                />
+                    {isForCampaigns && (
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>Audience Filters</Typography>
+                            <Stack spacing={3}>
+                                <TableContainer sx={{
+                                    overflow: 'unset',
+                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                    borderRadius: 1.5,
+                                    bgcolor: 'background.paper',
+                                    boxShadow: (theme) => theme.customShadows.z8,
+                                }}>
+                                    <Table sx={{ minWidth: 960 }}>
+                                        <TableHead sx={{
+                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            '& th:first-of-type': { borderTopLeftRadius: 11 },
+                                            '& th:last-of-type': { borderTopRightRadius: 11 }
+                                        }}>
+                                            <TableRow>
+                                                <TableCell width={60} sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>No.</TableCell>
+                                                <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Field</TableCell>
+                                                <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Operator</TableCell>
+                                                <TableCell sx={{ borderRight: (theme) => `1px solid ${theme.palette.divider}`, py: 1.5, fontWeight: 'fontWeightSemiBold' }}>Value</TableCell>
+                                                <TableCell width={60} />
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {filters.length === 0 ? (
+                                                <TableRow>
+                                                    <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
+                                                        <Stack alignItems="center" spacing={1}>
+                                                            <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ color: 'text.secondary' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>No Data</Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ) : (
+                                                filters.map((filter, index) => (
+                                                    <TableRow key={index} sx={{
+                                                        verticalAlign: 'top',
+                                                        transition: (theme) => theme.transitions.create('background-color'),
+                                                        '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) },
+                                                        '&:nth-of-type(even)': { bgcolor: (theme) => alpha(theme.palette.grey[500], 0.02) },
+                                                    }}>
+                                                        <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
+                                                            <Box sx={{ py: 1, px: 1 }}>{index + 1}</Box>
+                                                        </TableCell>
+                                                        <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
+                                                            <TextField
+                                                                variant="standard"
+                                                                fullWidth
+                                                                value={filter.field_name}
+                                                                onChange={(e) => {
+                                                                    const newFilters = [...filters];
+                                                                    newFilters[index].field_name = e.target.value;
+                                                                    setFilters(newFilters);
+                                                                }}
+                                                                InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
+                                                            <TextField
+                                                                variant="standard"
+                                                                select
+                                                                fullWidth
+                                                                value={filter.operator}
+                                                                onChange={(e) => {
+                                                                    const newFilters = [...filters];
+                                                                    newFilters[index].operator = e.target.value;
+                                                                    setFilters(newFilters);
+                                                                }}
+                                                                InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                            >
+                                                                {['=', '!=', '<', '>', '<=', '>=', 'in', 'not in', 'like', 'not like'].map(opt => (
+                                                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                                                ))}
+                                                            </TextField>
+                                                        </TableCell>
+                                                        <TableCell sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}`, transition: (theme) => theme.transitions.create(['background-color', 'box-shadow']), '&:focus-within': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05) } }}>
+                                                            <TextField
+                                                                variant="standard"
+                                                                fullWidth
+                                                                value={filter.value}
+                                                                onChange={(e) => {
+                                                                    const newFilters = [...filters];
+                                                                    newFilters[index].value = e.target.value;
+                                                                    setFilters(newFilters);
+                                                                }}
+                                                                InputProps={{ disableUnderline: true, sx: { typography: 'body2' } }}
+                                                            />
+                                                        </TableCell>
+                                                        <TableCell sx={{ px: 1, py: 1 }}>
+                                                            <IconButton color="error" onClick={() => {
+                                                                const newFilters = [...filters];
+                                                                newFilters.splice(index, 1);
+                                                                setFilters(newFilters);
+                                                            }} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))
+                                            )}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                                <Button
+                                    startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                                    onClick={() => setFilters([...filters, { field_name: '', operator: '=', value: '' }])}
+                                    sx={{ alignSelf: 'flex-start' }}
+                                >
+                                    Add Row
+                                </Button>
                             </Stack>
-                            <Stack spacing={2}>
-                                <FormControlLabel 
-                                    control={<CustomSwitch checked={autoPauseOnError} onChange={(e) => setAutoPauseOnError(e.target.checked)} />} 
-                                    label="Auto Pause On Error" 
-                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
-                                />
-                                <TextField 
-                                    fullWidth 
-                                    type="number" 
-                                    label="Max Retry Count" 
-                                    value={maxRetryCount}
-                                    onChange={(e) => setMaxRetryCount(e.target.value ? Number(e.target.value) : '')}
-                                />
+                        </Card>
+                    )}
+
+                    {isForCampaigns && (
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>Schedule</Typography>
+                            <Stack spacing={3}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Frequency"
+                                    required
+                                    value={frequency}
+                                    onChange={(e) => {
+                                        setFrequency(e.target.value);
+                                        if (e.target.value) setErrors((prev) => ({ ...prev, frequency: false }));
+                                    }}
+                                    error={errors.frequency}
+                                    helperText={errors.frequency ? 'This field is required' : ''}
+                                >
+                                    {['Once', 'Daily', 'Weekly', 'Monthly', 'Yearly'].map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                {frequency && (
+                                    <>
+                                        <Stack direction="row" spacing={2}>
+                                            <DatePicker
+                                                label="Start Date *"
+                                                format="DD-MM-YYYY"
+                                                value={startDate ? dayjs(startDate) : null}
+                                                onChange={(newValue) => {
+                                                    const formatted = newValue ? newValue.format('DD-MM-YYYY') : '';
+                                                    setStartDate(formatted);
+                                                    if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
+                                                }}
+                                                slotProps={{
+                                                    textField: {
+                                                        fullWidth: true,
+                                                        error: errors.startDate,
+                                                        helperText: errors.startDate ? 'This field is required' : ''
+                                                    }
+                                                }}
+                                            />
+                                            {['Daily', 'Weekly', 'Monthly', 'Yearly'].includes(frequency) && (
+                                                <DatePicker
+                                                    label="End Date"
+                                                    format="DD-MM-YYYY"
+                                                    value={endDate ? dayjs(endDate) : null}
+                                                    onChange={(newValue) => setEndDate(newValue ? newValue.format('DD-MM-YYYY') : '')}
+                                                    slotProps={{ textField: { fullWidth: true } }}
+                                                />
+                                            )}
+                                        </Stack>
+                                        <TimePicker
+                                            label="Run Time *"
+                                            value={runTime ? dayjs(`2000-01-01T${runTime}`) : null}
+                                            onChange={(newValue) => {
+                                                const formatted = newValue ? newValue.format('HH:mm:ss') : '';
+                                                setRunTime(formatted);
+                                                if (formatted) setErrors((prev) => ({ ...prev, runTime: false }));
+                                            }}
+                                            slotProps={{
+                                                textField: {
+                                                    fullWidth: true,
+                                                    error: errors.runTime,
+                                                    helperText: errors.runTime ? 'This field is required' : ''
+                                                }
+                                            }}
+                                        />
+                                        {frequency === 'Weekly' && <TextField fullWidth label="Week Day" />}
+                                        {frequency === 'Monthly' && <TextField fullWidth label="Day Of Month" />}
+                                    </>
+                                )}
                             </Stack>
-                        </Box>
-                    </Card>
-            </Box>
-            
+                        </Card>
+                    )}
+
+                    {isForCampaigns && (
+                        <Card sx={{ p: 3, mb: 3 }}>
+                            <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
+                            <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
+                                <Stack spacing={2}>
+                                    <FormControlLabel
+                                        control={<CustomSwitch checked={createSeparateCampaign} onChange={(e) => setCreateSeparateCampaign(e.target.checked)} />}
+                                        label="Create Separate Campaign"
+                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                    />
+                                    <FormControlLabel
+                                        control={<CustomSwitch checked={sendImmediately} onChange={(e) => setSendImmediately(e.target.checked)} />}
+                                        label="Send Immediately"
+                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                    />
+                                </Stack>
+                                <Stack spacing={2}>
+                                    <FormControlLabel
+                                        control={<CustomSwitch checked={autoPauseOnError} onChange={(e) => setAutoPauseOnError(e.target.checked)} />}
+                                        label="Auto Pause On Error"
+                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                    />
+                                    <TextField
+                                        fullWidth
+                                        type="number"
+                                        label="Max Retry Count"
+                                        value={maxRetryCount}
+                                        onChange={(e) => setMaxRetryCount(e.target.value ? Number(e.target.value) : '')}
+                                    />
+                                </Stack>
+                            </Box>
+                        </Card>
+                    )}
+                </Box>
+
                 <Snackbar
                     open={snackbar.open}
                     autoHideDuration={6000}
