@@ -31,7 +31,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchEmailTemplates } from 'src/api/email-template';
-import { createEmailAutomation } from 'src/api/email-automation';
+import { createEmailAutomation, getAutomationOptions } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -55,6 +55,7 @@ export function EmailAutomationsCreateView() {
     const [status, setStatus] = useState('Draft');
     const [emailTemplate, setEmailTemplate] = useState('');
     const [targetType, setTargetType] = useState('Lead');
+    const [triggerEvent, setTriggerEvent] = useState('Lead Workflow State Change');
     const [frequency, setFrequency] = useState('');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
@@ -62,20 +63,66 @@ export function EmailAutomationsCreateView() {
     const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [isForStatusChange, setIsForStatusChange] = useState(true);
+    const [isForCampaigns, setIsForCampaigns] = useState(false);
     const [subjectOverride, setSubjectOverride] = useState('');
     const [createSeparateCampaign, setCreateSeparateCampaign] = useState(true);
     const [sendImmediately, setSendImmediately] = useState(false);
     const [autoPauseOnError, setAutoPauseOnError] = useState(true);
     const [maxRetryCount, setMaxRetryCount] = useState<number | ''>(3);
+    const [workflowState, setWorkflowState] = useState('');
+    const [previousWorkflowState, setPreviousWorkflowState] = useState('');
+    const [currentDealStage, setCurrentDealStage] = useState('');
+    const [previousDealStage, setPreviousDealStage] = useState('');
+    const [workflowStates, setWorkflowStates] = useState<string[]>([]);
+    const [dealStages, setDealStages] = useState<string[]>([]);
+    const [showConfirmationDialog, setShowConfirmationDialog] = useState(true);
+    const [dialogTitle, setDialogTitle] = useState("Send Email?");
+    const [dialogMessage, setDialogMessage] = useState("Do you want to send the Email?");
+    const [autoSend, setAutoSend] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+
+    useEffect(() => {
+        if (!isForStatusChange) return;
+
+        getAutomationOptions(targetType, triggerEvent)
+            .then((res) => {
+                console.log(res);
+
+                setWorkflowStates(res.lead_workflow_states || []);
+                setDealStages(res.deal_stages || []);
+            })
+            .catch(console.error);
+    }, [targetType, triggerEvent, isForStatusChange]);
+
+    const handleStatusChange = (checked: boolean) => {
+        if (checked) {
+            setIsForStatusChange(true);
+            setIsForCampaigns(false);
+        }
+    };
+
+    const handleCampaignChange = (checked: boolean) => {
+        if (checked) {
+            setIsForCampaigns(true);
+            setIsForStatusChange(false);
+        }
+    };
 
     const [errors, setErrors] = useState<{
         automationName?: boolean;
         emailTemplate?: boolean;
         targetType?: boolean;
+        triggerEvent?: boolean;
         frequency?: boolean;
         runTime?: boolean;
         startDate?: boolean;
+        workflowState?: boolean;
+        previousWorkflowState?: boolean;
+        currentDealStage?: boolean;
+        previousDealStage?: boolean;
+        dialogTitle?: boolean;
+        dialogMessage?: boolean;
     }>({});
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -104,17 +151,67 @@ export function EmailAutomationsCreateView() {
             newErrors.targetType = true;
             missingFields.push('Target Type');
         }
-        if (!frequency) {
-            newErrors.frequency = true;
-            missingFields.push('Frequency');
+        if (isForCampaigns) {
+            if (!frequency) {
+                newErrors.frequency = true;
+                missingFields.push('Frequency');
+            }
+
+            if (!startDate) {
+                newErrors.startDate = true;
+                missingFields.push('Start Date');
+            }
+
+            if (!runTime) {
+                newErrors.runTime = true;
+                missingFields.push('Run Time');
+            }
         }
-        if (!startDate) {
-            newErrors.startDate = true;
-            missingFields.push('Start Date');
-        }
-        if (!runTime) {
-            newErrors.runTime = true;
-            missingFields.push('Run Time');
+
+        if (isForStatusChange) {
+
+            if (!triggerEvent) {
+                newErrors.triggerEvent = true;
+                missingFields.push("Trigger Event");
+            }
+
+            if (triggerEvent === "Lead Workflow State Change") {
+
+                if (!previousWorkflowState) {
+                    newErrors.previousWorkflowState = true;
+                    missingFields.push("Previous Workflow State");
+                }
+
+                if (!workflowState) {
+                    newErrors.workflowState = true;
+                    missingFields.push("Workflow State");
+                }
+
+            } else if (triggerEvent === "Deal Stage Change") {
+
+                if (!previousDealStage) {
+                    newErrors.previousDealStage = true;
+                    missingFields.push("Previous Deal Stage");
+                }
+
+                if (!currentDealStage) {
+                    newErrors.currentDealStage = true;
+                    missingFields.push("Current Deal Stage");
+                }
+            }
+
+            if (showConfirmationDialog) {
+
+                if (!dialogTitle) {
+                    newErrors.dialogTitle = true;
+                    missingFields.push("Dialog Title");
+                }
+
+                if (!dialogMessage) {
+                    newErrors.dialogMessage = true;
+                    missingFields.push("Dialog Message");
+                }
+            }
         }
 
         setErrors(newErrors);
@@ -132,20 +229,40 @@ export function EmailAutomationsCreateView() {
         const data = {
             automation_name: automationName,
             status,
+            description,
+
             email_template: emailTemplate,
+            subject_override: subjectOverride,
+
             target_type: targetType,
+            trigger_event: triggerEvent,
+
+            workflow_state: workflowState,
+            previous_workflow_state: previousWorkflowState,
+
+            current_deal_stage: currentDealStage,
+            previous_deal_stage: previousDealStage,
+
+            show_confirmation_dialog: showConfirmationDialog ? 1 : 0,
+            dialog_title: dialogTitle,
+            dialog_message: dialogMessage,
+            auto_send: autoSend ? 1 : 0,
+
+            filters,
+
             frequency,
             start_date: startDate,
             end_date: endDate,
             run_time: runTime,
-            filters,
-            description,
-            is_active: isActive ? 1 : 0,
-            subject_override: subjectOverride,
+
             create_separate_campaign: createSeparateCampaign ? 1 : 0,
             send_immediately: sendImmediately ? 1 : 0,
             auto_pause_on_error: autoPauseOnError ? 1 : 0,
-            max_retry_count: maxRetryCount ? Number(maxRetryCount) : 0,
+            max_retry_count: Number(maxRetryCount) || 0,
+
+            is_active: isActive ? 1 : 0,
+            for_status_change: isForStatusChange ? 1 : 0,
+            for_campaigns: isForCampaigns ? 1 : 0,
         };
 
         createEmailAutomation(data)
@@ -219,6 +336,23 @@ export function EmailAutomationsCreateView() {
             <Box>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
+                        <Stack direction="row" spacing={4} alignItems="center" sx={{ mb: 3 }}>  
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
+                                label="Is Active" 
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                            />
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={isForStatusChange} onChange={(e) => handleStatusChange(e.target.checked)} />} 
+                                label="For Status Change" 
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                            />
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={isForCampaigns} onChange={(e) => handleCampaignChange(e.target.checked)} />} 
+                                label="For Campaigns" 
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                            />
+                        </Stack>
                         <Stack spacing={3}>
                             <TextField 
                                 fullWidth 
@@ -232,6 +366,7 @@ export function EmailAutomationsCreateView() {
                                 error={errors.automationName}
                                 helperText={errors.automationName ? 'This field is required' : ''}
                             />
+                            {isForCampaigns && (
                             <TextField
                                 select
                                 fullWidth
@@ -243,6 +378,7 @@ export function EmailAutomationsCreateView() {
                                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                 ))}
                             </TextField>
+                            )}
                             <TextField 
                                 fullWidth 
                                 multiline 
@@ -250,11 +386,6 @@ export function EmailAutomationsCreateView() {
                                 label="Description" 
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value)}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
-                                label="Is Active" 
-                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
                             />
                         </Stack>
                     </Card>
@@ -269,7 +400,11 @@ export function EmailAutomationsCreateView() {
                                 value={templateOptions.find((opt) => opt.name === emailTemplate) || null}
                                 onChange={(_e, newValue) => {
                                     setEmailTemplate(newValue?.name || '');
-                                    if (newValue?.name) setErrors(prev => ({ ...prev, emailTemplate: false }));
+                                    setSubjectOverride(newValue?.subject || '');
+
+                                    if (newValue?.name) {
+                                        setErrors((prev) => ({ ...prev, emailTemplate: false }));
+                                    }
                                 }}
                                 renderInput={(params) => (
                                     <TextField
@@ -285,20 +420,20 @@ export function EmailAutomationsCreateView() {
                                     return (
                                         <li key={key || option.name} {...optionProps}>
                                             <Box>
-                                                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                                                <Typography variant="subtitle2">
                                                     {option.template_name || option.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                                                    {option.category || 'No Category'}
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {option.subject || 'No Category'}
                                                 </Typography>
                                             </Box>
                                         </li>
                                     );
                                 }}
                             />
-                            <TextField 
-                                fullWidth 
-                                label="Subject Override" 
+                            <TextField
+                                fullWidth
+                                label="Subject Override"
                                 value={subjectOverride}
                                 onChange={(e) => setSubjectOverride(e.target.value)}
                             />
@@ -319,9 +454,153 @@ export function EmailAutomationsCreateView() {
                                     <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                 ))}
                             </TextField>
+                            {isForStatusChange && (
+                            <TextField 
+                                select
+                                fullWidth 
+                                label="Trigger Event" 
+                                required
+                                value={triggerEvent}
+                                onChange={(e) => {
+                                    setTriggerEvent(e.target.value);
+                                    if (e.target.value) setErrors((prev) => ({ ...prev, triggerEvent: false }));
+                                }}
+                                error={errors.triggerEvent}
+                                helperText={errors.triggerEvent ? 'This field is required' : ''}
+                            >
+                                {['Lead Workflow State Change', 'Deal Stage Change'].map(opt => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </TextField>
+                            )}
+                                {isForStatusChange && triggerEvent === 'Lead Workflow State Change' && (
+                                    <Stack direction="row" spacing={3}>
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            required
+                                            label="Previous Workflow State"
+                                            value={previousWorkflowState}
+                                            onChange={(e) => setPreviousWorkflowState(e.target.value)}
+                                            error={errors.previousWorkflowState}
+                                            helperText={errors.previousWorkflowState ? 'This field is required' : ''}
+                                        >
+                                            {workflowStates.map((state) => (
+                                                <MenuItem key={state} value={state}>
+                                                    {state}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            required
+                                            label="Workflow State"
+                                            value={workflowState}
+                                            onChange={(e) => setWorkflowState(e.target.value)}
+                                            error={errors.workflowState}
+                                            helperText={errors.workflowState ? 'This field is required' : ''}
+                                        >
+                                            {workflowStates.map((state) => (
+                                                <MenuItem key={state} value={state}>
+                                                    {state}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Stack>
+                                )}
+                                {isForStatusChange && (
+                                <FormControlLabel
+                                    control={
+                                        <CustomSwitch
+                                            checked={showConfirmationDialog}
+                                            onChange={(e) => setShowConfirmationDialog(e.target.checked)}
+                                        />
+                                    }
+                                    label="Show Confirmation Dialog"
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                />
+                                )}
+                                {isForStatusChange && triggerEvent === 'Deal Stage Change' && (
+                                    <Stack direction="row" spacing={3}>
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            required
+                                            label="Previous Deal Stage"
+                                            value={previousDealStage}
+                                            onChange={(e) => setPreviousDealStage(e.target.value)}
+                                            error={errors.previousDealStage}
+                                            helperText={errors.previousDealStage ? 'This field is required' : ''}
+                                        >
+                                            {dealStages.map((stage) => (
+                                                <MenuItem key={stage} value={stage}>
+                                                    {stage}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+
+                                        <TextField
+                                            select
+                                            fullWidth
+                                            required
+                                            label="Current Deal Stage"
+                                            value={currentDealStage}
+                                            onChange={(e) => setCurrentDealStage(e.target.value)}
+                                            error={errors.currentDealStage}
+                                            helperText={errors.currentDealStage ? 'This field is required' : ''}
+                                        >
+                                            {dealStages.map((stage) => (
+                                                <MenuItem key={stage} value={stage}>
+                                                    {stage}
+                                                </MenuItem>
+                                            ))}
+                                        </TextField>
+                                    </Stack>
+                                )}
+
+                                {isForStatusChange && showConfirmationDialog && (
+                                    <Stack spacing={3}>
+                                        <TextField
+                                            fullWidth
+                                            required
+                                            label="Dialog Title"
+                                            value={dialogTitle}
+                                            onChange={(e) => setDialogTitle(e.target.value)}
+                                            error={errors.dialogTitle}
+                                            helperText={errors.dialogTitle ? "This field is required" : ""}
+                                        />
+
+                                        <TextField
+                                            fullWidth
+                                            required
+                                            multiline
+                                            rows={4}
+                                            label="Dialog Message"
+                                            value={dialogMessage}
+                                            onChange={(e) => setDialogMessage(e.target.value)}
+                                            error={errors.dialogMessage}
+                                            helperText={errors.dialogMessage ? "This field is required" : ""}
+                                        />
+
+                                        <Stack direction="row" spacing={3}>
+                                            <FormControlLabel
+                                                control={
+                                                    <CustomSwitch
+                                                        checked={autoSend}
+                                                        onChange={(e) => setAutoSend(e.target.checked)}
+                                                    />
+                                                }
+                                                label="Auto Send"
+                                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                            />
+                                        </Stack>
+                                    </Stack>
+                                )}
                         </Stack>
                     </Card>
-
+                    {isForCampaigns && (
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Audience Filters</Typography>
                         <Stack spacing={3}>
@@ -447,7 +726,9 @@ export function EmailAutomationsCreateView() {
                             </Button>
                         </Stack>
                     </Card>
+                    )}
 
+                    {isForCampaigns && (
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Schedule</Typography>
                         <Stack spacing={3}>
@@ -520,7 +801,9 @@ export function EmailAutomationsCreateView() {
                             )}
                         </Stack>
                     </Card>
+                    )}
 
+                    {isForCampaigns && (
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Execution Settings</Typography>
                         <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(2, 1fr)' }} gap={3}>
@@ -552,6 +835,7 @@ export function EmailAutomationsCreateView() {
                             </Stack>
                         </Box>
                     </Card>
+                    )}
             </Box>
             
                 <Snackbar

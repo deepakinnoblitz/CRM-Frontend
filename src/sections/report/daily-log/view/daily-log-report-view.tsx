@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -60,6 +60,42 @@ import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-
 export function DailyLogReportView() {
     const theme = useTheme();
     const { user } = useAuth();
+
+    // -----------------------------------------------------------------
+    // Drag-to-scroll for Muster Roll table (ref-based, zero re-renders)
+    // -----------------------------------------------------------------
+    const musterScrollRef = useRef<HTMLDivElement | null>(null);
+    const isDragging = useRef(false);
+    const dragStartX = useRef(0);
+    const scrollStartLeft = useRef(0);
+
+    const musterDragMoved = useRef(0);
+
+    const handleMusterMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDragging.current = true;
+        dragStartX.current = e.clientX;
+        scrollStartLeft.current = el.scrollLeft;
+        musterDragMoved.current = 0;
+        el.style.cursor = 'grabbing';
+    };
+
+    const handleMusterMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isDragging.current) return;
+        const el = musterScrollRef.current;
+        if (!el) return;
+        const dx = e.clientX - dragStartX.current;
+        musterDragMoved.current = Math.abs(dx);
+        el.scrollLeft = scrollStartLeft.current - dx;
+    };
+
+    const handleMusterMouseUp = () => {
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDragging.current = false;
+        el.style.cursor = 'grab';
+    };
 
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -229,6 +265,18 @@ export function DailyLogReportView() {
     useEffect(() => {
         fetchReport();
     }, [fetchReport]);
+
+    const getSessionRecord = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return reportData.find(
+            (row) => row.employee === employeeId && row.login_date === dateStr
+        );
+    }, [reportData]);
+
+    const handleMusterCellClick = (session: any) => {
+        if (musterDragMoved.current > 5) return;
+        handleViewDetails(session);
+    };
 
     const getAttendanceStatus = useCallback((employeeId: string, date: dayjs.Dayjs) => {
         const dateStr = date.format('YYYY-MM-DD');
@@ -1342,12 +1390,19 @@ export function DailyLogReportView() {
                         </Stack>
 
                         <TableContainer
+                            ref={musterScrollRef}
+                            onMouseDown={handleMusterMouseDown}
+                            onMouseMove={handleMusterMouseMove}
+                            onMouseUp={handleMusterMouseUp}
+                            onMouseLeave={handleMusterMouseUp}
                             sx={{
                                 position: 'relative',
                                 overflowX: 'auto',
                                 borderRadius: '12px',
                                 border: (t) => `1px solid ${t.palette.divider}`,
-                                bgcolor: 'background.paper'
+                                bgcolor: 'background.paper',
+                                cursor: 'grab',
+                                userSelect: 'none',
                             }}
                         >
                             <Table size="medium" sx={{ borderCollapse: 'collapse', minWidth: 800 }}>
@@ -1382,7 +1437,7 @@ export function DailyLogReportView() {
                                                 <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
                                                     {date.format('ddd')}
                                                 </Typography>
-                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16  }}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16 }}>
                                                     {date.format('DD')}
                                                 </Typography>
                                             </TableCell>
@@ -1459,6 +1514,8 @@ export function DailyLogReportView() {
                                                         const cellStatus = getAttendanceStatus(emp.id, date);
                                                         const showTime = cellStatus === 'P' || cellStatus === 'HD';
                                                         const times = showTime ? getAttendanceTimes(emp.id, date) : null;
+                                                        const record = getSessionRecord(emp.id, date);
+                                                        const isClickable = !!record;
                                                         return (
                                                             <TableCell
                                                                 key={date.format('YYYY-MM-DD')}
@@ -1470,6 +1527,7 @@ export function DailyLogReportView() {
                                                                 }}
                                                             >
                                                                 <Box
+                                                                    onClick={isClickable ? () => handleMusterCellClick(record) : undefined}
                                                                     sx={{
                                                                         px: showTime ? 1 : 0,
                                                                         py: showTime ? 0.75 : 0,
@@ -1480,6 +1538,9 @@ export function DailyLogReportView() {
                                                                         alignItems: 'center',
                                                                         justifyContent: 'center',
                                                                         fontSize: '0.725rem',
+                                                                        cursor: isClickable ? 'pointer' : 'inherit',
+                                                                        transition: 'opacity 0.15s',
+                                                                        '&:hover': isClickable ? { opacity: 0.78, transform: 'scale(1.06)' } : {},
                                                                         ...getStatusStyles(cellStatus),
                                                                     }}
                                                                 >
@@ -1535,7 +1596,7 @@ export function DailyLogReportView() {
                 open={openDetails}
                 onClose={() => {
                     setOpenDetails(false);
-                    setSelectedSession(null);
+                    setTimeout(() => setSelectedSession(null), 200);
                 }}
                 session={selectedSession}
             />
@@ -1555,7 +1616,7 @@ export function DailyLogReportView() {
                             position: 'absolute',
                             right: 12,
                             top: 12,
-                             color: (t) => t.palette.grey[500],
+                            color: (t) => t.palette.grey[500],
                         }}
                     >
                         <Iconify icon={"mingcute:close-line" as any} />
@@ -1589,7 +1650,7 @@ export function DailyLogReportView() {
                             sx={{
                                 pt: 2,
                                 mt: 1,
-                                 borderTop: (t) => `1px solid ${t.palette.divider}`,
+                                borderTop: (t) => `1px solid ${t.palette.divider}`,
                                 mb: 2,
                                 alignItems: 'flex-start'
                             }}
