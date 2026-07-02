@@ -84,6 +84,10 @@ export function DailyLogReportView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
+    // Muster Roll Pagination
+    const [musterPage, setMusterPage] = useState(0);
+    const [musterRowsPerPage, setMusterRowsPerPage] = useState(50);
+
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -207,6 +211,7 @@ export function DailyLogReportView() {
             );
             setReportData(result.data || []);
             setPage(0);
+            setMusterPage(0);
         } catch (error) {
             console.error('Failed to fetch daily log report:', error);
         } finally {
@@ -353,6 +358,11 @@ export function DailyLogReportView() {
         new Map(
             reportData.map((row) => [row.employee, { id: row.employee, name: row.employee_name }])
         ).values()
+    );
+
+    const paginatedEmployees = uniqueEmployees.slice(
+        musterPage * musterRowsPerPage,
+        musterPage * musterRowsPerPage + musterRowsPerPage
     );
 
     const handleReset = () => {
@@ -1388,7 +1398,7 @@ export function DailyLogReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {uniqueEmployees.map((emp, empIndex) => (
+                                            {paginatedEmployees.map((emp, empIndex) => (
                                                 <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
                                                     <TableCell
                                                         sx={{
@@ -1397,6 +1407,7 @@ export function DailyLogReportView() {
                                                             bgcolor: 'background.paper',
                                                             zIndex: 10,
                                                             borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
                                                             boxShadow: '4px 0 8px -4px rgba(0,0,0,0.12)'
                                                         }}
                                                     >
@@ -1410,7 +1421,7 @@ export function DailyLogReportView() {
                                                                 return (
                                                                     <TableCell
                                                                         key={date.format('YYYY-MM-DD')}
-                                                                        rowSpan={uniqueEmployees.length}
+                                                                        rowSpan={paginatedEmployees.length}
                                                                         align="center"
                                                                         sx={{
                                                                             minWidth: 120,
@@ -1454,7 +1465,8 @@ export function DailyLogReportView() {
                                                                 align="center"
                                                                 sx={{
                                                                     minWidth: 120,
-                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`
+                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`
                                                                 }}
                                                             >
                                                                 <Box
@@ -1486,7 +1498,7 @@ export function DailyLogReportView() {
                                                     })}
                                                 </TableRow>
                                             ))}
-                                            {uniqueEmployees.length === 0 && (
+                                            {paginatedEmployees.length === 0 && (
                                                 <TableRow>
                                                     <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
                                                         <Stack spacing={1} alignItems="center">
@@ -1503,6 +1515,18 @@ export function DailyLogReportView() {
                                 </TableBody>
                             </Table>
                         </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={uniqueEmployees.length}
+                            page={musterPage}
+                            onPageChange={(e, newPage) => setMusterPage(newPage)}
+                            rowsPerPage={musterRowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                                setMusterRowsPerPage(parseInt(e.target.value, 10));
+                                setMusterPage(0);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50, 100]}
+                        />
                     </Card>
                 )}
             </Stack>

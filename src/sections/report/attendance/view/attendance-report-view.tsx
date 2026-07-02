@@ -4,14 +4,16 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -21,17 +23,22 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
+import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
-import { fDate, formatPatterns } from 'src/utils/format-time';
+import { fDate } from 'src/utils/format-time';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
@@ -64,13 +71,59 @@ export function AttendanceReportView() {
     const [employee, setEmployee] = useState('all');
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('date_asc');
-    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+    const [currentView, setCurrentView] = useState<'list' | 'calendar' | 'muster'>('list');
+    const [musterPage, setMusterPage] = useState(0);
+    const [musterRowsPerPage, setMusterRowsPerPage] = useState(50);
+    const [openExportDialog, setOpenExportDialog] = useState(false);
+    const [exportType, setExportType] = useState<'excel' | 'pdf'>('excel');
+    const [selectedExportView, setSelectedExportView] = useState<'list' | 'muster'>('list');
+    const [preparing, setPreparing] = useState(false);
+
+    // --- Muster Roll drag-scroll ---
+    const musterScrollRef = useRef<HTMLDivElement>(null);
+    const [musterIsDragging, setMusterIsDragging] = useState(false);
+    const [musterDragStartX, setMusterDragStartX] = useState(0);
+    const [musterScrollLeft, setMusterScrollLeft] = useState(0);
+
+    const handleMusterMouseDown = (e: React.MouseEvent) => {
+        if (!musterScrollRef.current) return;
+        setMusterIsDragging(true);
+        setMusterDragStartX(e.pageX - musterScrollRef.current.offsetLeft);
+        setMusterScrollLeft(musterScrollRef.current.scrollLeft);
+    };
+
+    const handleMusterMouseLeave = () => {
+        setMusterIsDragging(false);
+    };
+
+    const handleMusterMouseUp = () => {
+        setMusterIsDragging(false);
+    };
+
+    const handleMusterMouseMove = (e: React.MouseEvent) => {
+        if (!musterIsDragging || !musterScrollRef.current) return;
+        e.preventDefault();
+        const x = e.pageX - musterScrollRef.current.offsetLeft;
+        const walk = (x - musterDragStartX) * 2;
+        musterScrollRef.current.scrollLeft = musterScrollLeft - walk;
+    };
+    // --- end drag-scroll ---
+
+    const handleViewChange = useCallback((newView: 'list' | 'calendar' | 'muster') => {
+        if (newView === currentView) return;
+        setPreparing(true);
+        setTimeout(() => {
+            setCurrentView(newView);
+            setPreparing(false);
+        }, 100);
+    }, [currentView]);
+
 
     useEffect(() => {
-        if (employee === 'all') {
+        if (employee === 'all' && currentView === 'calendar') {
             setCurrentView('list');
         }
-    }, [employee]);
+    }, [employee, currentView]);
 
     useEffect(() => {
         if (user && user.roles) {
@@ -94,6 +147,8 @@ export function AttendanceReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
+    const visibleReportData = reportData.filter((row) => row.status !== 'Missing');
+
     // Details Dialog
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedAttendanceName, setSelectedAttendanceName] = useState<string | null>(null);
@@ -105,7 +160,7 @@ export function AttendanceReportView() {
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
-            const newSelected = reportData.map((n) => n.name);
+            const newSelected = visibleReportData.map((n) => n.name);
             setSelected(newSelected);
             return;
         }
@@ -129,6 +184,157 @@ export function AttendanceReportView() {
             );
         }
         setSelected(newSelected);
+    };
+
+    const dates = useMemo(() => {
+        const startStr = fromDate ? fromDate.format('YYYY-MM-DD') : (reportData.length > 0
+            ? reportData.reduce((min, p) => p.attendance_date < min ? p.attendance_date : min, reportData[0].attendance_date)
+            : dayjs().startOf('month').format('YYYY-MM-DD'));
+        const endStr = toDate ? toDate.format('YYYY-MM-DD') : (reportData.length > 0
+            ? reportData.reduce((max, p) => p.attendance_date > max ? p.attendance_date : max, reportData[0].attendance_date)
+            : dayjs().endOf('month').format('YYYY-MM-DD'));
+
+        const start = dayjs(startStr);
+        const end = dayjs(endStr);
+
+        const dateArray: dayjs.Dayjs[] = [];
+        let cur = start;
+        const maxDays = 366;
+        let count = 0;
+        while ((cur.isBefore(end) || cur.isSame(end, 'day')) && count < maxDays) {
+            dateArray.push(cur);
+            cur = cur.add(1, 'day');
+            count++;
+        }
+        return dateArray;
+    }, [fromDate, toDate, reportData]);
+
+    const uniqueEmployees = useMemo(() => {
+        const activeEmployees = new Set(
+            reportData
+                .filter((row) => row.status !== 'Missing')
+                .map((row) => row.employee)
+        );
+
+        return Array.from(
+            new Map(
+                reportData
+                    .filter((row) => activeEmployees.has(row.employee))
+                    .map((row) => [row.employee, { id: row.employee, name: row.employee_name }])
+            ).values()
+        );
+    }, [reportData]);
+
+    const paginatedEmployees = useMemo(() => uniqueEmployees.slice(
+        musterPage * musterRowsPerPage,
+        musterPage * musterRowsPerPage + musterRowsPerPage
+    ), [uniqueEmployees, musterPage, musterRowsPerPage]);
+
+    const attendanceMap = useMemo(() => {
+        const map = new Map<string, any>();
+        reportData.forEach((row) => {
+            if (row.employee && row.attendance_date) {
+                const dateStr = dayjs(row.attendance_date).format('YYYY-MM-DD');
+                map.set(`${row.employee}_${dateStr}`, row);
+            }
+        });
+        return map;
+    }, [reportData]);
+
+    const holidayDatesSet = useMemo(() => {
+        const set = new Set<string>();
+        reportData.forEach((row) => {
+            if (row.status === 'Holiday' && row.attendance_date) {
+                set.add(dayjs(row.attendance_date).format('YYYY-MM-DD'));
+            }
+        });
+        return set;
+    }, [reportData]);
+
+    const getAttendanceRecord = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return attendanceMap.get(`${employeeId}_${dateStr}`);
+    }, [attendanceMap]);
+
+    const getAttendanceStatus = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const record = getAttendanceRecord(employeeId, date);
+        if (!record) return '';
+        if (record.status === 'Missing') return '';
+        if (record.status === 'Present') return 'P';
+        if (record.status === 'Absent') return 'A';
+        if (record.status === 'Half Day') return 'HD';
+        if (record.status === 'Holiday') return 'H';
+        return record.status;
+    }, [getAttendanceRecord]);
+
+    const getAttendanceTimes = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const record = getAttendanceRecord(employeeId, date);
+        if (!record) return { inTime: '---', outTime: '---' };
+
+        const formatTime = (timeStr: any) => {
+            if (!timeStr || timeStr === '---') return '---';
+            const str = String(timeStr);
+            if (str.includes('AM') || str.includes('PM') || str.includes('am') || str.includes('pm')) {
+                return str;
+            }
+            const parsed = dayjs(`2026-07-01 ${str}`);
+            if (parsed.isValid()) {
+                return parsed.format('hh:mm A');
+            }
+            return str;
+        };
+
+        return {
+            inTime: formatTime(record.in_time),
+            outTime: formatTime(record.out_time)
+        };
+    }, [getAttendanceRecord]);
+
+    const isDateHoliday = useCallback((date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return holidayDatesSet.has(dateStr);
+    }, [holidayDatesSet]);
+
+
+    const getStatusStyles = (cellStatus: 'P' | 'A' | 'HD' | 'H' | string) => {
+        switch (cellStatus) {
+            case 'P':
+                return {
+                    bgcolor: 'rgba(34, 197, 94, 0.14)',
+                    color: '#166534',
+                    fontWeight: 'bold',
+                };
+            case 'A':
+                return {
+                    bgcolor: 'rgba(239, 68, 68, 0.14)',
+                    color: '#991b1b',
+                    fontWeight: 'bold',
+                };
+            case 'HD':
+                return {
+                    bgcolor: 'rgba(254, 240, 138, 0.5)',
+                    color: '#854d0e',
+                    fontWeight: 'bold',
+                };
+            case 'H':
+                return {
+                    bgcolor: 'rgba(244, 63, 94, 0.14)',
+                    color: '#9f1239',
+                    fontWeight: 'bold',
+                };
+            default:
+                return {};
+        }
+    };
+
+    const handleOpenExportDialog = (type: 'excel' | 'pdf') => {
+        setExportType(type);
+        if (type === 'pdf') {
+            setSelectedExportView('list');
+        } else {
+            setSelectedExportView(currentView === 'muster' ? 'muster' : 'list');
+        }
+        setOpenExportDialog(true);
     };
 
     const fetchReport = useCallback(async () => {
@@ -213,9 +419,113 @@ export function AttendanceReportView() {
         getDoctypeList('Employee', ['name', 'employee_name']).then(setEmployeeOptions);
     }, []);
 
-    const handleExport = async () => {
+    const handleExport = async (targetView?: 'list' | 'muster') => {
+        const viewToExport = targetView || (currentView === 'muster' ? 'muster' : 'list');
         setExportingExcel(true);
         try {
+            if (viewToExport === 'muster') {
+                const workbook = new ExcelJS.Workbook();
+                const sheet = workbook.addWorksheet('Muster Roll Report');
+
+                const columns = [
+                    { header: 'Employee ID', key: 'employee_id', width: 15 },
+                    { header: 'Employee', key: 'employee_name', width: 25 }
+                ];
+
+                dates.forEach((date) => {
+                    columns.push({
+                        header: date.format('DD MMM (ddd)'),
+                        key: date.format('YYYY-MM-DD'),
+                        width: 20
+                    });
+                });
+
+                sheet.columns = columns;
+
+                for (let i = 1; i <= columns.length; i++) {
+                    const cell = sheet.getRow(1).getCell(i);
+                    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                }
+                sheet.getRow(1).height = 25;
+
+                uniqueEmployees.forEach((emp) => {
+                    const rowData: any = {
+                        employee_id: emp.id,
+                        employee_name: emp.name
+                    };
+                    dates.forEach((date) => {
+                        rowData[date.format('YYYY-MM-DD')] = getAttendanceStatus(emp.id, date);
+                    });
+
+                    const excelRow = sheet.addRow(rowData);
+                    excelRow.height = 60;
+
+                    for (let i = 3; i <= columns.length; i++) {
+                        const cell = excelRow.getCell(i);
+                        const date = dates[i - 3];
+                        const cellStatus = getAttendanceStatus(emp.id, date);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+                        if (cellStatus === 'P') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
+                            cell.font = { color: { argb: 'FF385723' }, bold: true };
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'A') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE4D6' } };
+                            cell.font = { color: { argb: 'FFC65911' }, bold: true };
+                        } else if (cellStatus === 'HD') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+                            cell.font = { color: { argb: 'FF7F6000' }, bold: true };
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'H') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                            cell.font = { color: { argb: 'FF595959' }, bold: true };
+                        }
+                    }
+                });
+
+                // Merge Holiday columns
+                if (uniqueEmployees.length > 0) {
+                    dates.forEach((date, index) => {
+                        if (isDateHoliday(date)) {
+                            const colIndex = index + 3;
+                            sheet.mergeCells(2, colIndex, uniqueEmployees.length + 1, colIndex);
+                            const topCell = sheet.getRow(2).getCell(colIndex);
+                            topCell.value = 'HOLIDAY';
+                            topCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                            topCell.font = { color: { argb: 'FF595959' }, bold: true, size: 10 };
+                            topCell.alignment = { textRotation: 90, vertical: 'middle', horizontal: 'center', wrapText: true };
+                        }
+                    });
+                }
+
+                sheet.eachRow((row, rowNumber) => {
+                    for (let i = 1; i <= columns.length; i++) {
+                        const cell = row.getCell(i);
+                        if (rowNumber > 1 && i <= 2) {
+                            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                });
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                saveAs(new Blob([buffer]), `Muster_Roll_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+                enqueueSnackbar('Muster Roll Excel exported successfully!', { variant: 'success' });
+                return;
+            }
+
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Attendance Report');
 
@@ -329,7 +639,7 @@ export function AttendanceReportView() {
         }
     };
 
-    const handleExportPdf = async () => {
+    const handleExportPdf = async (targetView?: 'list' | 'muster') => {
         setExportingPdf(true);
         try {
             const doc = new jsPDF('landscape');
@@ -456,18 +766,7 @@ export function AttendanceReportView() {
         setPage(0);
     }, []);
 
-    const totalDaysPresent = reportData.filter(d => d.status === 'Present').length;
-    const totalEntries = reportData.length;
 
-    const getStatusColor = (s: string) => {
-        switch (s) {
-            case 'Present': return 'success';
-            case 'Absent': return 'error';
-            case 'On Leave': return 'info';
-            case 'Half Day': return 'warning';
-            default: return 'default';
-        }
-    };
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -594,7 +893,7 @@ export function AttendanceReportView() {
                             <Button
                                 variant="contained"
                                 startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
-                                onClick={handleExport}
+                                onClick={() => handleOpenExportDialog('excel')}
                                 disabled={reportData.length === 0 || exportingExcel}
                                 sx={{
                                     bgcolor: '#0ea5e9',
@@ -610,7 +909,7 @@ export function AttendanceReportView() {
                             <Button
                                 variant="contained"
                                 startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                                onClick={handleExportPdf}
+                                onClick={() => handleOpenExportDialog('pdf')}
                                 disabled={reportData.length === 0 || exportingPdf}
                                 sx={{
                                     bgcolor: '#f43f5e',
@@ -645,53 +944,64 @@ export function AttendanceReportView() {
                     <SummaryCard item={{ label: 'Holiday', value: reportData.filter(d => d.status === 'Holiday').length, indicator: 'blue' }} />
                 </Box>
 
-                {employee !== 'all' && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                bgcolor: alpha(theme.palette.grey[500], 0.06),
-                                p: 0.5,
-                                borderRadius: '24px',
-                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                            }}
-                        >
-                            {[
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            bgcolor: alpha(theme.palette.grey[500], 0.06),
+                            p: 0.5,
+                            borderRadius: '24px',
+                            border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                        }}
+                    >
+                        {(employee === 'all'
+                            ? [
                                 { value: 'list', label: 'List View', icon: 'solar:list-bold' },
-                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
-                            ].map((tab) => {
-                                const isActive = currentView === tab.value;
-                                return (
-                                    <Button
-                                        key={tab.value}
-                                        onClick={() => setCurrentView(tab.value as any)}
-                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
-                                        sx={{
-                                            borderRadius: '20px',
-                                            px: 3,
-                                            py: 0.75,
-                                            fontSize: '0.825rem',
-                                            fontWeight: isActive ? 700 : 600,
-                                            color: isActive ? '#fff' : theme.palette.text.secondary,
-                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
-                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
-                                            textTransform: 'capitalize',
-                                            transition: 'all 0.2s ease-in-out',
-                                            '&:hover': {
-                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
-                                            }
-                                        }}
-                                    >
-                                        {tab.label}
-                                    </Button>
-                                );
-                            })}
-                        </Box>
+                                { value: 'muster', label: 'Muster Roll View', icon: 'material-symbols:grid-on' }
+                            ]
+                            : [
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' },
+                                { value: 'muster', label: 'Muster Roll View', icon: 'material-symbols:grid-on' }
+                            ]
+                        ).map((tab) => {
+                            const isActive = currentView === tab.value;
+                            return (
+                                <Button
+                                    key={tab.value}
+                                    onClick={() => handleViewChange(tab.value as any)}
+                                    startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 3,
+                                        py: 0.75,
+                                        fontSize: '0.825rem',
+                                        fontWeight: isActive ? 700 : 600,
+                                        color: isActive ? '#fff' : theme.palette.text.secondary,
+                                        bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                        boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                        }
+                                    }}
+                                >
+                                    {tab.label}
+                                </Button>
+                            );
+                        })}
                     </Box>
-                )}
+                </Box>
 
-                {currentView === 'list' ? (
-                    <Card>
+                {preparing ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                    </Box>
+                ) : (
+                    <>
+                        {currentView === 'list' && (
+                            <Card>
                         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                             <Scrollbar>
                                 <Table
@@ -703,88 +1013,91 @@ export function AttendanceReportView() {
                                         <TableRow sx={{ bgcolor: '#f4f6f8' }}>
                                             <TableCell padding="checkbox">
                                                 <Checkbox
-                                                    indeterminate={selected.length > 0 && selected.length < reportData.length}
-                                                    checked={reportData.length > 0 && selected.length === reportData.length}
+                                                    indeterminate={
+                                                        selected.length > 0 &&
+                                                        selected.length < visibleReportData.length
+                                                    }
+                                                    checked={
+                                                        visibleReportData.length > 0 &&
+                                                        selected.length === visibleReportData.length
+                                                    }
                                                     onChange={handleSelectAllClick}
                                                 />
                                             </TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Employee ID</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>In Time</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Out Time</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Working Hours</TableCell>
-                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }} />
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {loading ? (
                                             <TableRow>
-                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
                                                     <CircularProgress sx={{ color: '#08a3cd' }} />
                                                 </TableCell>
                                             </TableRow>
                                         ) : (
                                             <>
-                                                {reportData
-                                                    .slice(page * rowsPerPage, (page + 1) * rowsPerPage)
-                                                    .map((row, index) => {
+                                                {visibleReportData
+                                                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                                                    .map((row) => {
                                                         const isSelected = selected.indexOf(row.name) !== -1;
                                                         return (
                                                             <TableRow
-                                                                key={`${row.employee}-${row.attendance_date}-${index}`}
+                                                                key={row.name}
                                                                 hover
-                                                                role="checkbox"
-                                                                aria-checked={isSelected}
                                                                 selected={isSelected}
-                                                                sx={{
-                                                                    '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` },
-                                                                    '&:last-child td, &:last-child th': { borderBottom: 0 },
-                                                                }}
+                                                                sx={{ '&:hover': { bgcolor: 'action.hover' } }}
                                                             >
                                                                 <TableCell padding="checkbox">
-                                                                    <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
+                                                                    <Checkbox
+                                                                        checked={isSelected}
+                                                                        onClick={(event) => handleClick(event, row.name)}
+                                                                    />
                                                                 </TableCell>
-                                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
+                                                                <TableCell>{fDate(row.attendance_date, 'DD-MM-YYYY')}</TableCell>
+                                                                <TableCell sx={{ fontWeight: 600 }}>{row.employee_name}</TableCell>
+                                                                <TableCell>{row.employee}</TableCell>
                                                                 <TableCell>
-                                                                    <Typography variant="subtitle2">{row.employee_name}</Typography>
-                                                                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>{row.employee}</Typography>
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Label color={getStatusColor(row.status)} variant="soft">
+                                                                    <Label
+                                                                        variant="soft"
+                                                                        color={
+                                                                            (row.status === 'Present' && 'success') ||
+                                                                            (row.status === 'Absent' && 'error') ||
+                                                                            (row.status === 'Half Day' && 'warning') ||
+                                                                            (row.status === 'On Leave' && 'info') ||
+                                                                            (row.status === 'Holiday' && 'secondary') ||
+                                                                            'default'
+                                                                        }
+                                                                    >
                                                                         {row.status}
                                                                     </Label>
                                                                 </TableCell>
                                                                 <TableCell>{row.in_time || '---'}</TableCell>
                                                                 <TableCell>{row.out_time || '---'}</TableCell>
-                                                                <TableCell sx={{ fontWeight: 'bold' }}>{row.working_hours_display || '---'}</TableCell>
-                                                                <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
-                                                                    {row.status !== 'Holiday' && (
-                                                                        <IconButton onClick={() => handleViewDetails(row.name)} sx={{ color: 'info.main' }}>
-                                                                            <Iconify icon={"solar:eye-bold" as any} />
-                                                                        </IconButton>
-                                                                    )}
+                                                                <TableCell>{row.working_hours_display || '---'}</TableCell>
+                                                                <TableCell align="right">
+                                                                    <IconButton onClick={() => handleViewDetails(row.name)}>
+                                                                        <Iconify icon={"solar:eye-bold" as any} width={20} sx={{ color: '#08a3cd' }} />
+                                                                    </IconButton>
                                                                 </TableCell>
                                                             </TableRow>
                                                         );
                                                     })}
-
-                                                {reportData.length === 0 && (
+                                                {visibleReportData.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                                                            {!fromDate || !toDate ? (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                        Please Select Filters
-                                                                    </Typography>
-                                                                </Stack>
-                                                            ) : (
-                                                                <Stack spacing={1} alignItems="center">
-                                                                    <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                    <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
-                                                                </Stack>
-                                                            )}
+                                                        <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                            <Stack spacing={1} alignItems="center">
+                                                                <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                    No data found
+                                                                </Typography>
+                                                            </Stack>
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
@@ -796,7 +1109,7 @@ export function AttendanceReportView() {
                         </TableContainer>
                         <TablePagination
                             component="div"
-                            count={reportData.length}
+                            count={visibleReportData.length}
                             page={page}
                             onPageChange={onChangePage}
                             rowsPerPage={rowsPerPage}
@@ -804,7 +1117,9 @@ export function AttendanceReportView() {
                             rowsPerPageOptions={[10, 25, 50]}
                         />
                     </Card>
-                ) : (
+                )}
+
+                {currentView === 'calendar' && employee !== 'all' && (
                     <AttendanceCalendar
                          reportData={reportData}
                          employee={employee}
@@ -813,6 +1128,369 @@ export function AttendanceReportView() {
                          onEventClick={handleViewDetails}
                      />
                 )}
+
+                {currentView === 'muster' && (
+                    <Card sx={{ p: 2.5 }}>
+                        <Stack direction="row" spacing={2} sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
+                            {[
+                                { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
+                                { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
+                                { label: 'Half Day', value: 'HD', color: 'rgba(254, 240, 138, 0.5)', textColor: '#854d0e' },
+                            ].map((item) => (
+                                <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
+                                    <Box
+                                        sx={{
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: item.color,
+                                            color: item.textColor,
+                                            fontWeight: 700,
+                                            fontSize: '0.7rem',
+                                        }}
+                                    >
+                                        {item.hideValue ? '' : item.value}
+                                    </Box>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                        {item.label}
+                                    </Typography>
+                                </Stack>
+                            ))}
+                        </Stack>
+
+                        <TableContainer
+                            ref={musterScrollRef}
+                            onMouseDown={handleMusterMouseDown}
+                            onMouseLeave={handleMusterMouseLeave}
+                            onMouseUp={handleMusterMouseUp}
+                            onMouseMove={handleMusterMouseMove}
+                            sx={{
+                                position: 'relative',
+                                overflowX: 'auto',
+                                borderRadius: '12px',
+                                border: (t) => `1px solid ${t.palette.divider}`,
+                                bgcolor: 'background.paper',
+                                cursor: musterIsDragging ? 'grabbing' : 'grab',
+                                userSelect: 'none',
+                                '&::-webkit-scrollbar': { height: 8 },
+                                '&::-webkit-scrollbar-thumb': {
+                                    backgroundColor: 'rgba(145,158,171,0.30)',
+                                    borderRadius: 999,
+                                },
+                                '&::-webkit-scrollbar-thumb:hover': {
+                                    backgroundColor: 'rgba(145,158,171,0.50)',
+                                },
+                            }}
+                        >
+                            <Table size="medium" sx={{ borderCollapse: 'collapse', minWidth: 800 }}>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                        <TableCell
+                                            sx={{
+                                                position: 'sticky',
+                                                left: 0,
+                                                bgcolor: '#f4f6f8',
+                                                zIndex: 12,
+                                                minWidth: 220,
+                                                fontWeight: 700,
+                                                borderRight: (t) => `1px solid ${t.palette.divider}`
+                                            }}
+                                        >
+                                            Employee
+                                        </TableCell>
+                                        {dates.map((date) => (
+                                            <TableCell
+                                                key={date.format('YYYY-MM-DD')}
+                                                align="center"
+                                                sx={{
+                                                    minWidth: 120,
+                                                    p: 1.5,
+                                                    borderRight: (t) => `1px solid ${t.palette.divider}`
+                                                }}
+                                            >
+                                                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+                                                    {date.format('MMM')}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
+                                                    {date.format('ddd')}
+                                                </Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16  }}>
+                                                    {date.format('DD')}
+                                                </Typography>
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {loading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        <>
+                                            {paginatedEmployees.map((emp, empIndex) => (
+                                                <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
+                                                    <TableCell
+                                                        sx={{
+                                                            position: 'sticky',
+                                                            left: 0,
+                                                            bgcolor: 'background.paper',
+                                                            zIndex: 10,
+                                                            borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                            boxShadow: '4px 0 8px -4px rgba(0,0,0,0.12)'
+                                                        }}
+                                                    >
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{emp.id}</Typography>
+                                                    </TableCell>
+                                                    {dates.map((date) => {
+                                                        const isHoliday = isDateHoliday(date);
+                                                        if (isHoliday) {
+                                                            if (empIndex === 0) {
+                                                                return (
+                                                                    <TableCell
+                                                                        key={date.format('YYYY-MM-DD')}
+                                                                        rowSpan={paginatedEmployees.length}
+                                                                        align="center"
+                                                                        sx={{
+                                                                            minWidth: 120,
+                                                                            borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                                            bgcolor: 'rgba(244, 63, 94, 0.08)',
+                                                                            p: 0,
+                                                                            verticalAlign: 'middle'
+                                                                        }}
+                                                                    >
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                flexDirection: 'column',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                height: '100%',
+                                                                                minHeight: 80,
+                                                                                textTransform: 'uppercase',
+                                                                                letterSpacing: 1.5,
+                                                                                fontSize: '0.825rem',
+                                                                                fontWeight: 800,
+                                                                                color: '#9f1239',
+                                                                            }}
+                                                                        >
+                                                                            Holiday
+                                                                        </Box>
+                                                                    </TableCell>
+                                                                );
+                                                            } else {
+                                                                return null;
+                                                            }
+                                                        }
+
+                                                        const cellStatus = getAttendanceStatus(emp.id, date);
+                                                        const showTime = cellStatus === 'P' || cellStatus === 'HD';
+                                                        const times = showTime ? getAttendanceTimes(emp.id, date) : null;
+                                                        return (
+                                                            <TableCell
+                                                                key={date.format('YYYY-MM-DD')}
+                                                                align="center"
+                                                                sx={{
+                                                                    minWidth: 120,
+                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`
+                                                                }}
+                                                            >
+                                                                <Box
+                                                                    sx={{
+                                                                        px: showTime ? 1 : 0,
+                                                                        py: showTime ? 0.75 : 0,
+                                                                        width: showTime ? 90 : 32,
+                                                                        minHeight: 32,
+                                                                        borderRadius: '8px',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        fontSize: '0.725rem',
+                                                                        ...getStatusStyles(cellStatus),
+                                                                    }}
+                                                                >
+                                                                    {showTime && times ? (
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.inTime}</Box>
+                                                                            <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
+                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
+                                                                        </Box>
+                                                                    ) : (
+                                                                        cellStatus
+                                                                    )}
+                                                                </Box>
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            ))}
+                                            {paginatedEmployees.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                No data found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={uniqueEmployees.length}
+                            page={musterPage}
+                            onPageChange={(e, newPage) => setMusterPage(newPage)}
+                            rowsPerPage={musterRowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                                setMusterRowsPerPage(parseInt(e.target.value, 10));
+                                setMusterPage(0);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50, 100]}
+                        />
+                            </Card>
+                        )}
+                    </>
+                )}
+
+                <Dialog
+                    open={openExportDialog}
+                    onClose={() => setOpenExportDialog(false)}
+                    maxWidth="sm"
+                    fullWidth
+                >
+                    <DialogTitle sx={{ m: 0, p: 3, fontWeight: 700, fontSize: '1.25rem' }}>
+                        Export Report
+                        <IconButton
+                            aria-label="close"
+                            onClick={() => setOpenExportDialog(false)}
+                            sx={{
+                                position: 'absolute',
+                                right: 12,
+                                top: 12,
+                                 color: (t) => t.palette.grey[500],
+                            }}
+                        >
+                            <Iconify icon={"mingcute:close-line" as any} />
+                        </IconButton>
+                    </DialogTitle>
+                    <DialogContent sx={{ py: 1.5 }}>
+                        <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                            {selectedExportView === 'muster'
+                                ? 'Please choose which data view you would like to export (Muster Roll is only available in Excel format):'
+                                : `Please choose which data view you would like to export to ${exportType === 'excel' ? 'Excel' : 'PDF'}:`
+                            }
+                        </Typography>
+                        <RadioGroup
+                            value={selectedExportView}
+                            onChange={(e) => setSelectedExportView(e.target.value as 'list' | 'muster')}
+                        >
+                            <FormControlLabel
+                                value="list"
+                                control={<Radio color="primary" />}
+                                label={
+                                    <Box sx={{ ml: 0.5 }}>
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                            <Iconify icon={"solar:list-bold" as any} width={18} sx={{ color: 'text.secondary' }} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>List View</Typography>
+                                        </Stack>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                            Exports detailed attendance logs, including employee names, statuses, in-times, out-times, and working hours.
+                                        </Typography>
+                                    </Box>
+                                }
+                                sx={{
+                                    pt: 2,
+                                    mt: 1,
+                                     borderTop: (t) => `1px solid ${t.palette.divider}`,
+                                    mb: 2,
+                                    alignItems: 'flex-start'
+                                }}
+                            />
+                            {exportType !== 'pdf' && (
+                                <FormControlLabel
+                                    value="muster"
+                                    control={<Radio color="primary" />}
+                                    label={
+                                        <Box sx={{ ml: 0.5 }}>
+                                            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                                <Iconify icon={"material-symbols:grid-on" as any} width={18} sx={{ color: 'text.secondary' }} />
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Muster Roll View</Typography>
+                                            </Stack>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                Exports grid-based color-coded attendance grid with detailed in/out times, absent markers, and merged holidays for the selected dates (Excel format only).
+                                            </Typography>
+                                        </Box>
+                                    }
+                                    sx={{ alignItems: 'flex-start' }}
+                                />
+                            )}
+                        </RadioGroup>
+                    </DialogContent>
+                    <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end', gap: 1.5 }}>
+                        {selectedExportView === 'list' ? (
+                            <>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        setOpenExportDialog(false);
+                                        handleExport('list');
+                                    }}
+                                    sx={{
+                                        bgcolor: '#0ea5e9',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#0284c7' }
+                                    }}
+                                >
+                                    Export Excel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        setOpenExportDialog(false);
+                                        handleExportPdf('list');
+                                    }}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' }
+                                    }}
+                                >
+                                    Export PDF
+                                </Button>
+                            </>
+                        ) : (
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                            setOpenExportDialog(false);
+                                            handleExport('muster');
+                                        }}
+                                sx={{
+                                            bgcolor: '#0ea5e9',
+                                            color: 'common.white',
+                                            '&:hover': { bgcolor: '#0284c7' }
+                                        }}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                    </DialogActions>
+                </Dialog>
             </Stack>
 
             <AttendanceDetailsDialog
