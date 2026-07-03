@@ -48,6 +48,8 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { LeaveAllocationDetailsDialog } from 'src/sections/leaves/allocations/leave-allocation-details-dialog';
+
 import { useAuth } from 'src/auth/auth-context';
 
 const isRowInMonth = (row: any, month: dayjs.Dayjs) => {
@@ -134,6 +136,19 @@ export function LeaveAllocationReportView() {
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
+
+    const [openDetails, setOpenDetails] = useState(false);
+    const [selectedAllocationId, setSelectedAllocationId] = useState<string | null>(null);
+
+    const handleViewDetails = (row: any) => {
+        setSelectedAllocationId(row.name);
+        setOpenDetails(true);
+    };
+
+    const handleMusterCellClick = (alloc: any) => {
+        if (musterDragMoved.current > 5) return;
+        handleViewDetails(alloc);
+    };
 
     useEffect(() => {
         if (user && user.roles) {
@@ -741,7 +756,7 @@ export function LeaveAllocationReportView() {
                         gridTemplateColumns: {
                             xs: 'repeat(1, 1fr)',
                             sm: 'repeat(2, 1fr)',
-                            md: 'repeat(6, 1fr)',
+                            md: 'repeat(4, 1fr)',
                         },
                     }}
                 >
@@ -749,8 +764,6 @@ export function LeaveAllocationReportView() {
                     <SummaryCard item={{ label: 'Total Allocated', value: stats.totalAllocated, indicator: 'blue' }} />
                     <SummaryCard item={{ label: 'Total Used', value: stats.totalUsed, indicator: 'orange' }} />
                     <SummaryCard item={{ label: 'Total Balance', value: stats.totalBalance, indicator: 'green' }} />
-                    <SummaryCard item={{ label: 'Pending Requests', value: pendingCount, indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Expired Leaves', value: stats.expiredLeaves, indicator: 'red' }} />
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -826,13 +839,14 @@ export function LeaveAllocationReportView() {
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Used Days</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Balance Days</TableCell>
                                             <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Carry Forward</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Expiry Date</TableCell>
+                                            <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Duration</TableCell>
+                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', pr: 3 }}>Actions</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {loading ? (
                                             <TableRow>
-                                                <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
                                                     <CircularProgress sx={{ color: '#08a3cd' }} />
                                                 </TableCell>
                                             </TableRow>
@@ -886,8 +900,16 @@ export function LeaveAllocationReportView() {
                                                                         {row.carry_forward ? 'Yes' : 'No'}
                                                                     </Label>
                                                                 </TableCell>
-                                                                <TableCell>
-                                                                    {row.to_date ? fDate(row.to_date, 'DD-MM-YYYY') : '---'}
+                                                                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                                                                    <Typography variant="body2">
+                                                                     {row.from_date ? fDate(row.from_date, 'DD-MM-YYYY') : '---'} to{' '}
+                                                                     {row.to_date ? fDate(row.to_date, 'DD-MM-YYYY') : '---'}
+                                                                </Typography>
+                                                                </TableCell>
+                                                                <TableCell align="right" sx={{ pr: 2 }}>
+                                                                    <IconButton onClick={() => handleViewDetails(row)} sx={{ color: 'info.main' }}>
+                                                                        <Iconify icon={"solar:eye-bold" as any} />
+                                                                    </IconButton>
                                                                 </TableCell>
                                                             </TableRow>
                                                         );
@@ -895,7 +917,7 @@ export function LeaveAllocationReportView() {
 
                                                 {visibleReportData.length === 0 && (
                                                     <TableRow>
-                                                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                                                        <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
                                                             <Stack spacing={1} alignItems="center">
                                                                 <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                                 <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
@@ -1041,22 +1063,30 @@ export function LeaveAllocationReportView() {
                                                                             {matching.map((alloc) => (
                                                                                 <Box
                                                                                     key={alloc.name}
+                                                                                    onClick={() => handleMusterCellClick(alloc)}
                                                                                     sx={{
                                                                                         p: 1,
                                                                                         borderRadius: 1,
                                                                                         bgcolor: 'background.neutral',
                                                                                         border: (t) => `1px solid ${t.palette.divider}`,
+                                                                                        cursor: 'pointer',
+                                                                                        '&:hover': {
+                                                                                            bgcolor: (t) => alpha(t.palette.primary.main, 0.04),
+                                                                                        },
+                                                                                        transition: (t) => t.transitions.create(['background-color'], {
+                                                                                            duration: t.transitions.duration.shortest,
+                                                                                        }),
                                                                                     }}
                                                                                 >
                                                                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>
                                                                                         {alloc.leave_type}
                                                                                     </Typography>
-                                                                                    <Stack direction="row" spacing={1} justifyContent="space-between">
-                                                                                        <Label variant="soft" color="warning" sx={{ fontSize: '0.675rem', px: 0.5 }}>
+                                                                                    <Stack direction="row" spacing={1} justifyContent="space-between" sx={{ width: '100%' }}>
+                                                                                        <Label variant="soft" color="warning" sx={{ fontSize: '0.675rem', px: 0.5, flex: 1, justifyContent: 'center', textAlign: 'center' }}>
                                                                                             {alloc.total_leaves_allocated}
                                                                                         </Label>
-                                                                                        <Label variant="soft" color="success" sx={{ fontSize: '0.675rem', px: 0.5 }}>
-                                                                                            {alloc.total_leaves_taken} Used
+                                                                                        <Label variant="soft" color="success" sx={{ fontSize: '0.675rem', px: 0.5, flex: 1, justifyContent: 'center', textAlign: 'center' }}>
+                                                                                            {alloc.total_leaves_taken} USED
                                                                                         </Label>
                                                                                     </Stack>
                                                                                 </Box>
@@ -1194,6 +1224,16 @@ export function LeaveAllocationReportView() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <LeaveAllocationDetailsDialog
+                open={openDetails}
+                onClose={() => {
+                    setOpenDetails(false);
+                    setTimeout(() => setSelectedAllocationId(null), 200);
+                }}
+                allocationId={selectedAllocationId}
+                onRefresh={fetchReport}
+            />
         </DashboardContent>
     );
 }
