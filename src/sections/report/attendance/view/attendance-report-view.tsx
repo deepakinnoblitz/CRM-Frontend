@@ -553,8 +553,8 @@ export function AttendanceReportView() {
 
             sheet.columns = [
                 { header: 'Date', key: 'date', width: 15 },
-                { header: 'Employee', key: 'employee_name', width: 25 },
                 { header: 'Employee ID', key: 'employee', width: 15 },
+                { header: 'Employee', key: 'employee_name', width: 25 },
                 { header: 'Status', key: 'status', width: 15 },
                 { header: 'In Time', key: 'in_time', width: 15 },
                 { header: 'Out Time', key: 'out_time', width: 15 },
