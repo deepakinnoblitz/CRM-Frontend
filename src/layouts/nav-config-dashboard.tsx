@@ -275,7 +275,6 @@ export const employeeNavData = [
     icon: <CgNotes size={20} />,
     children: [
       { title: 'My Attendance Report', path: '/reports/attendance' },
-      { title: 'My Leave Allocation Report', path: '/reports/leave-allocation' },
       { title: 'My Daily Log Report', path: '/reports/daily-log' },
       { title: 'My Timesheet Report', path: '/timesheet-reports' },
     ],
