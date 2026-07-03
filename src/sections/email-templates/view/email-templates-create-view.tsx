@@ -312,19 +312,63 @@ export function EmailTemplateCreateView() {
                                     value={templatefor}
                                     onChange={(e) => handleTemplateForChange(e.target.value as string[])}
                                     input={<OutlinedInput label="Template For" />}
-                                    renderValue={(selected) =>
+                                    renderValue={(selected) => (
                                         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                             {(selected as string[]).map((val) => {
-                                                const opt = templateForOptions.find(o => o.value === val);
-                                                return <Chip key={val} label={opt?.label || val} size="small" />;
+                                                const opt = templateForOptions.find((o) => o.value === val);
+                                                return (
+                                                    <Chip
+                                                        key={val}
+                                                        label={opt?.label || val}
+                                                        size="small"
+                                                    />
+                                                );
                                             })}
                                         </Box>
-                                    }
+                                    )}
+                                    MenuProps={{
+                                        PaperProps: {
+                                            sx: {
+                                                p: 0.5,
+                                                maxHeight: 350,
+                                                borderRadius: 2,
+                                            },
+                                        },
+                                    }}
                                 >
                                     {templateForOptions.map((option) => (
-                                        <MenuItem key={option.value} value={option.value}>
-                                            <Checkbox checked={templatefor.includes(option.value)} />
-                                            <ListItemText primary={option.label} />
+                                        <MenuItem
+                                            key={option.value}
+                                            value={option.value}
+                                            sx={{
+                                                py: 1.5,
+                                                px: 2,
+                                                borderRadius: 0.5,
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                '&.Mui-selected': {
+                                                    bgcolor: 'action.selected',
+                                                },
+                                                '&.Mui-selected:hover': {
+                                                    bgcolor: 'action.selected',
+                                                },
+                                            }}
+                                        >
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{ fontWeight: 600, fontSize: 14 }}
+                                            >
+                                                {option.label}
+                                            </Typography>
+
+                                            {templatefor.includes(option.value) && (
+                                                <Iconify
+                                                    icon="solar:check-circle-bold"
+                                                    width={20}
+                                                    sx={{ color: 'primary.main' }}
+                                                />
+                                            )}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -595,39 +639,35 @@ export function EmailTemplateCreateView() {
                                                 overflow: 'hidden',
                                             }}
                                         >
-                                            <Typography
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    overflow: 'hidden',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                <Box
-                                                    component="span"
+                                            <Box sx={{ flex: 1 }}>
+                                                <Typography
+                                                    variant="subtitle2"
                                                     sx={{
-                                                        fontWeight: 600,
+                                                        fontWeight: 700,
                                                         color: 'text.primary',
-                                                        overflow: 'hidden',
-                                                        textOverflow: 'ellipsis',
-                                                        fontSize: '0.85rem',
                                                     }}
                                                 >
                                                     {label}
-                                                </Box>
+                                                </Typography>
 
                                                 <Box
-                                                    component="span"
                                                     sx={{
-                                                        color: 'text.secondary',
-                                                        fontFamily: 'monospace',
-                                                        fontSize: '0.75rem',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
                                                     }}
                                                 >
-                                                    {item.variable}
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: 'monospace',
+                                                            fontSize: 12,
+                                                            color: 'primary.main',
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        {item.variable}
+                                                    </Typography>
                                                 </Box>
-                                            </Typography>
+                                            </Box>
                                         </Box>
                                     </Button>
                                 );
