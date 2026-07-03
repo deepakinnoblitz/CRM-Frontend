@@ -481,19 +481,67 @@ export function WhatsAppTemplateEditView() {
                                         value={usedFor}
                                         onChange={(e) => setUsedFor(e.target.value as string[])}
                                         input={<OutlinedInput label="Used For" />}
-                                        renderValue={(selected) =>
+                                        renderValue={(selected) => (
                                             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                                 {(selected as string[]).map((val) => {
-                                                    const opt = USED_FOR_OPTIONS.find(o => o.value === val);
-                                                    return <Chip key={val} label={opt?.label || val} size="small" />;
+                                                    const opt = USED_FOR_OPTIONS.find((o) => o.value === val);
+                                                    return (
+                                                        <Chip
+                                                            key={val}
+                                                            label={opt?.label || val}
+                                                            size="small"
+                                                        />
+                                                    );
                                                 })}
                                             </Box>
-                                        }
+                                        )}
+                                        MenuProps={{
+                                            PaperProps: {
+                                                sx: {
+                                                    p: 0.5,
+                                                    maxHeight: 350,
+                                                    borderRadius: 2,
+                                                },
+                                            },
+                                        }}
                                     >
                                         {USED_FOR_OPTIONS.map((option) => (
-                                            <MenuItem key={option.value} value={option.value}>
-                                                <Checkbox checked={usedFor.includes(option.value)} />
-                                                <ListItemText primary={option.label} />
+                                            <MenuItem
+                                                key={option.value}
+                                                value={option.value}
+                                                sx={{
+                                                    py: 1.5,
+                                                    px: 2,
+                                                    m: 0.5,
+                                                    borderRadius: 0.5,
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    '&.Mui-selected': {
+                                                        bgcolor: 'action.selected',
+                                                    },
+                                                    '&.Mui-selected:hover': {
+                                                        bgcolor: 'action.selected',
+                                                    },
+                                                }}
+                                            >
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        fontWeight: 600,
+                                                        fontSize: 14,
+                                                    }}
+                                                >
+                                                    {option.label}
+                                                </Typography>
+
+                                                {usedFor.includes(option.value) && (
+                                                    <Iconify
+                                                        icon="solar:check-circle-bold"
+                                                        width={20}
+                                                        sx={{ color: 'primary.main' }}
+                                                    />
+                                                )}
                                             </MenuItem>
                                         ))}
                                     </Select>
@@ -882,38 +930,43 @@ export function WhatsAppTemplateEditView() {
                                             }}
                                         >
                                             <Box sx={{ flex: 1, textAlign: 'left', overflow: 'hidden' }}>
-                                                <Typography
+                                                <Box
                                                     sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        gap: 1,
+                                                        flex: 1,
+                                                        textAlign: 'left',
                                                         overflow: 'hidden',
-                                                        whiteSpace: 'nowrap',
                                                     }}
                                                 >
-                                                    <Box
-                                                        component="span"
-                                                        sx={{
-                                                            fontWeight: 600,
-                                                            color: 'text.primary',
-                                                            overflow: 'hidden',
-                                                            textOverflow: 'ellipsis',
-                                                            fontSize: '0.85rem',
-                                                        }}
-                                                    >
-                                                        {label}
+                                                    <Box sx={{ flex: 1 }}>
+                                                        <Typography
+                                                            variant="subtitle2"
+                                                            sx={{
+                                                                fontWeight: 700,
+                                                                color: 'text.primary',
+                                                            }}
+                                                        >
+                                                            {label}
+                                                        </Typography>
+
+                                                        <Box
+                                                            sx={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                            }}
+                                                        >
+                                                            <Typography
+                                                                sx={{
+                                                                    fontFamily: 'monospace',
+                                                                    fontSize: 12,
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 700,
+                                                                }}
+                                                            >
+                                                                {item.variable}
+                                                            </Typography>
+                                                        </Box>
                                                     </Box>
-                                                    <Box
-                                                        component="span"
-                                                        sx={{
-                                                            color: 'text.secondary',
-                                                            fontFamily: 'monospace',
-                                                            fontSize: '0.75rem',
-                                                        }}
-                                                    >
-                                                        {item.variable}
-                                                    </Box>
-                                                </Typography>
+                                                </Box>
                                             </Box>
                                         </Button>
                                     );
