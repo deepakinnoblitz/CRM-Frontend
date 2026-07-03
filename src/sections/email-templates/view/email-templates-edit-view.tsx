@@ -5,15 +5,23 @@ import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
+import FormControl from '@mui/material/FormControl';
+import ListItemText from '@mui/material/ListItemText';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import FormHelperText from '@mui/material/FormHelperText';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
@@ -35,7 +43,7 @@ import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 export function EmailTemplateEditView() {
   const router = useRouter();
   const { id } = useParams();
-  const [templateFor, setTemplateFor] = useState('Lead');
+  const [templateFor, setTemplateFor] = useState<string[]>(['Lead']);
   const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
   const [emailContent, setEmailContent] = useState('');
   const [footerContent, setFooterContent] = useState('');
@@ -127,7 +135,7 @@ export function EmailTemplateEditView() {
       await updateEmailTemplate(id!, {
         template_name: templateName,
         category,
-        template_for: templateFor,
+        template_for: templateFor.join(','),
         subject,
         email_content: emailContent,
         footer_content: footerContent,
@@ -185,6 +193,8 @@ export function EmailTemplateEditView() {
     { label: 'Lead', value: 'Lead' },
     { label: 'Client', value: 'Contact' },
     { label: 'Company', value: 'Account' },
+    { label: 'Prospects', value: 'Deal' },
+    { label: 'Proposal', value: 'Proposal' },
   ];
 
   const handleCopyVariable = (variable: string) => {
@@ -196,16 +206,15 @@ export function EmailTemplateEditView() {
     });
   };
 
-  const handleTemplateForChange = async (value: string) => {
-    setTemplateFor(value);
+  const handleTemplateForChange = async (values: string[]) => {
+    setTemplateFor(values);
 
-    if (value) {
+    if (values.length > 0) {
       setErrors((prev) => ({ ...prev, templateFor: false }));
     }
 
     try {
-      const data = await fetchEmailTemplateVariables(value as 'Lead' | 'Contact' | 'Account');
-
+      const data = await fetchEmailTemplateVariables(values.join(','));
       setVariables(data);
     } catch (err) {
       console.error(err);
@@ -227,17 +236,19 @@ export function EmailTemplateEditView() {
       setIsActive(doc.is_active ? true : false);
       setIsDefault(doc.is_default ? true : false);
 
-      setTemplateFor(doc.template_for || 'Lead');
+      setTemplateFor(
+        doc.template_for
+          ? doc.template_for.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : ['Lead']
+      );
 
       setEmailContent(doc.email_content || '');
       setFooterContent(doc.footer_content || '');
       setAttachments(doc.attachments || []);
 
       try {
-        const vars = await fetchEmailTemplateVariables(
-          (doc.template_for || 'Lead') as 'Lead' | 'Contact' | 'Account'
-        );
-
+        const savedFor = doc.template_for || 'Lead';
+        const vars = await fetchEmailTemplateVariables(savedFor);
         setVariables(vars);
       } catch (err) {
         console.error(err);
@@ -341,22 +352,33 @@ export function EmailTemplateEditView() {
                   </MenuItem>
                 ))}
               </TextField>
-              <TextField
-                select
-                fullWidth
-                label="Template For"
-                required
-                value={templateFor}
-                onChange={(e) => handleTemplateForChange(e.target.value)}
-                error={errors.templateFor}
-                helperText={errors.templateFor ? 'This field is required' : ''}
-              >
-                {templateForOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <FormControl fullWidth error={errors.templateFor} required>
+                <InputLabel id="template-for-label-edit">Template For</InputLabel>
+                <Select
+                  labelId="template-for-label-edit"
+                  multiple
+                  value={templateFor}
+                  onChange={(e) => handleTemplateForChange(e.target.value as string[])}
+                  input={<OutlinedInput label="Template For" />}
+                  renderValue={(selected) =>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {(selected as string[]).map((val) => {
+                        const opt = templateForOptions.find(o => o.value === val);
+                        return <Chip key={val} label={opt?.label || val} size="small" />;
+                      })}
+                    </Box>
+                  }
+                >
+                  {templateForOptions.map((option) => (
+                    <MenuItem key={option.value} value={option.value}>
+                      <Checkbox checked={templateFor.includes(option.value)} />
+                      <ListItemText primary={option.label} />
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.templateFor && <FormHelperText>This field is required</FormHelperText>}
+              </FormControl>
+
               <TextField
                 fullWidth
                 multiline

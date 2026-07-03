@@ -11,9 +11,11 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
@@ -21,7 +23,12 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
+import FormControl from '@mui/material/FormControl';
+import ListItemText from '@mui/material/ListItemText';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import FormHelperText from '@mui/material/FormHelperText';
 import TableContainer from '@mui/material/TableContainer';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
@@ -52,7 +59,13 @@ const STATUS_OPTIONS = [
 ];
 
 const USED_FOR_OPTIONS = [
-    'Lead', 'Contacts', 'Accounts', 'Deal', 'Proposal', 'Estimation', 'Invoice'
+    { label: 'Lead', value: 'Lead' },
+    { label: 'Client', value: 'Contacts' },
+    { label: 'Company', value: 'Accounts' },
+    { label: 'Prospects', value: 'Deal' },
+    { label: 'Proposal', value: 'Proposal' },
+    { label: 'Estimation', value: 'Estimation' },
+    { label: 'Invoice', value: 'Invoice' },
 ];
 
 const META_STATUS_OPTIONS = [
@@ -75,7 +88,7 @@ export function WhatsAppTemplateCreateView() {
     const [category, setCategory] = useState('');
     const [language, setLanguage] = useState('English');
     const [status, setStatus] = useState('Draft');
-    const [usedFor, setUsedFor] = useState('Lead');
+    const [usedFor, setUsedFor] = useState<string[]>(['Lead']);
     const [headerText, setHeaderText] = useState('');
     const [messageBody, setMessageBody] = useState('');
     const [footerText, setFooterText] = useState('');
@@ -105,12 +118,12 @@ export function WhatsAppTemplateCreateView() {
 
     useEffect(() => {
         const loadVariables = async () => {
-            if (!usedFor) {
+            if (!usedFor || usedFor.length === 0) {
                 setVariables([]);
                 return;
             }
             try {
-                const data = await fetchWhatsAppTemplateVariables(usedFor);
+                const data = await fetchWhatsAppTemplateVariables(usedFor.join(','));
                 setVariables(data);
             } catch (err) {
                 console.error('Failed to load variables:', err);
@@ -238,7 +251,7 @@ export function WhatsAppTemplateCreateView() {
                 category,
                 language,
                 status,
-                used_for: usedFor || undefined,
+                used_for: usedFor.length > 0 ? usedFor.join(',') : undefined,
                 header_text: headerText || undefined,
                 message_body: messageBody,
                 footer_text: footerText || undefined,
@@ -348,17 +361,31 @@ export function WhatsAppTemplateCreateView() {
                                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                     ))}
                                 </TextField>
-                                <TextField
-                                    select
-                                    fullWidth
-                                    label="Used For"
-                                    value={usedFor}
-                                    onChange={(e) => setUsedFor(e.target.value)}
-                                >
-                                    {USED_FOR_OPTIONS.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                    ))}
-                                </TextField>
+                                <FormControl fullWidth>
+                                    <InputLabel id="used-for-label">Used For</InputLabel>
+                                    <Select
+                                        labelId="used-for-label"
+                                        multiple
+                                        value={usedFor}
+                                        onChange={(e) => setUsedFor(e.target.value as string[])}
+                                        input={<OutlinedInput label="Used For" />}
+                                        renderValue={(selected) =>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                                {(selected as string[]).map((val) => {
+                                                    const opt = USED_FOR_OPTIONS.find(o => o.value === val);
+                                                    return <Chip key={val} label={opt?.label || val} size="small" />;
+                                                })}
+                                            </Box>
+                                        }
+                                    >
+                                        {USED_FOR_OPTIONS.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>
+                                                <Checkbox checked={usedFor.includes(option.value)} />
+                                                <ListItemText primary={option.label} />
+                                            </MenuItem>
+                                        ))}
+                                    </Select>
+                                </FormControl>
                             </Box>
                         </Stack>
                     </Card>
@@ -679,7 +706,7 @@ export function WhatsAppTemplateCreateView() {
                                 <Stack alignItems="center" justifyContent="center" sx={{ py: 8, px: 2, color: 'text.secondary', textAlign: 'center' }}>
                                     <Iconify icon={"solar:folder-with-files-outline" as any} width={32} sx={{ mb: 1, opacity: 0.5 }} />
                                     <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                                        {usedFor ? 'No variables available' : 'Select "Used For" to view variables'}
+                                        {usedFor.length > 0 ? 'No variables available' : 'Select "Used For" to view variables'}
                                     </Typography>
                                 </Stack>
                             ) : (
