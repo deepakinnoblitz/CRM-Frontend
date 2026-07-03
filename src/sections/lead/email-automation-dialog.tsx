@@ -34,6 +34,17 @@ interface WhatsappAutomationDialogProps {
   onSend: (proposalName: string | null) => Promise<void>;
 }
 
+const decodeHtml = (str: string) => {
+  if (!str) return '';
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+};
+
 export function EmailAutomationDialog({
   open,
   onClose,
@@ -108,8 +119,6 @@ export function EmailAutomationDialog({
           {automation.message || 'Do you want to send the Email?'}
         </Typography>
 
-
-
         {isProposalSentState && (
           <FormControl fullWidth required error={!!error && !selectedProposal} sx={{ mb: 3 }}>
             <InputLabel id="proposal-select-label">Proposal</InputLabel>
@@ -153,18 +162,17 @@ export function EmailAutomationDialog({
             boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
           }}
         >
-          <Typography
-            variant="body2"
+          <Box
+            dangerouslySetInnerHTML={{ __html: decodeHtml(automation.preview) }}
             sx={{
-              whiteSpace: 'pre-wrap',
-              fontFamily: 'SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-              fontSize: '13.5px',
+              fontSize: '14.5px',
               lineHeight: 1.6,
               color: 'text.primary',
+              '& p': { my: 1 },
+              '& table': { width: '100%', borderCollapse: 'collapse', my: 2 },
+              '& td, & th': { border: '1px solid rgba(0, 0, 0, 0.12)', p: 1 },
             }}
-          >
-            {automation.preview}
-          </Typography>
+          />
         </Box>
       </DialogContent>
       

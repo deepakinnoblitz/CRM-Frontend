@@ -34,6 +34,17 @@ interface WhatsappAutomationDialogProps {
   onSend: (proposalName: string | null) => Promise<void>;
 }
 
+const decodeHtml = (str: string) => {
+  if (!str) return '';
+  return str
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, ' ');
+};
+
 export function WhatsappAutomationDialog({
   open,
   onClose,
@@ -163,7 +174,7 @@ export function WhatsappAutomationDialog({
               color: 'text.primary',
             }}
           >
-            {automation.preview}
+            {decodeHtml(automation.preview)}
           </Typography>
         </Box>
       </DialogContent>
