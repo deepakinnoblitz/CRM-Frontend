@@ -181,7 +181,7 @@ export interface EmailTemplateVariable {
 }
 
 export async function fetchEmailTemplateVariables(
-    templateFor: 'Lead' | 'Contact' | 'Account'
+    templateFor: string
 ): Promise<EmailTemplateVariable[]> {
     const res = await frappeRequest(
         `/api/method/company.company.doctype.crm_email_template.crm_email_template.get_email_template_variables?template_for=${encodeURIComponent(templateFor)}`

@@ -271,20 +271,26 @@ export function WhatsAppAutomationsCreateView() {
                 <Card sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 3 }}>Trigger Configuration</Typography>
                     <Stack spacing={3}>
-                        <TextField 
-                            select
-                            fullWidth 
-                            label="Document Type" 
-                            required
-                            value={documentType}
-                            onChange={(e) => setDocumentType(e.target.value)}
-                            error={errors.documentType}
-                            helperText={errors.documentType ? 'This field is required' : ''}
-                        >
-                            {['Lead', 'Contacts', 'Accounts', 'Deal', 'Proposal'].map(opt => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                            ))}
-                        </TextField>
+                            <TextField 
+                                select
+                                fullWidth 
+                                label="Document Type" 
+                                required
+                                value={documentType}
+                                onChange={(e) => setDocumentType(e.target.value)}
+                                error={errors.documentType}
+                                helperText={errors.documentType ? 'This field is required' : ''}
+                            >
+                                {[
+                                    { value: 'Lead', label: 'Lead' },
+                                    { value: 'Contacts', label: 'Clients' },
+                                    { value: 'Accounts', label: 'Company' },
+                                    { value: 'Deal', label: 'Prospects' },
+                                    { value: 'Proposal', label: 'Proposals' },
+                                ].map(opt => (
+                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                ))}
+                            </TextField>
 
                         <TextField 
                             select

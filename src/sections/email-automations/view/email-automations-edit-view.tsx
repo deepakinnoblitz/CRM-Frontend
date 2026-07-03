@@ -409,6 +409,7 @@ export function EmailAutomationsEditView() {
                                     />
                                 }
                                 label="Is Active"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
 
                             <FormControlLabel
@@ -419,6 +420,7 @@ export function EmailAutomationsEditView() {
                                     />
                                 }
                                 label="For Status Change"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
 
                             <FormControlLabel
@@ -429,6 +431,7 @@ export function EmailAutomationsEditView() {
                                     />
                                 }
                                 label="For Campaigns"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
                         </Stack>
                         <Stack spacing={3}>
@@ -531,8 +534,14 @@ export function EmailAutomationsEditView() {
                                 error={errors.targetType}
                                 helperText={errors.targetType ? 'This field is required' : ''}
                             >
-                                {['Lead', 'Contact', 'Account'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                {[
+                                    { value: 'Lead', label: 'Lead' },
+                                    { value: 'Contact', label: 'Clients' },
+                                    { value: 'Account', label: 'Company' },
+                                    { value: 'Deals', label: 'Prospects' },
+                                    { value: 'Proposals', label: 'Proposals' },
+                                ].map(opt => (
+                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}
                             </TextField>
                             {isForStatusChange && (
@@ -591,18 +600,6 @@ export function EmailAutomationsEditView() {
                                     </TextField>
                                 </Stack>
                             )}
-                            {isForStatusChange && (
-                                <FormControlLabel
-                                    control={
-                                        <CustomSwitch
-                                            checked={showConfirmationDialog}
-                                            onChange={(e) => setShowConfirmationDialog(e.target.checked)}
-                                        />
-                                    }
-                                    label="Show Confirmation Dialog"
-                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                                />
-                            )}
                             {isForStatusChange && triggerEvent === 'Deal Stage Change' && (
                                 <Stack direction="row" spacing={3}>
                                     <TextField
@@ -640,7 +637,18 @@ export function EmailAutomationsEditView() {
                                     </TextField>
                                 </Stack>
                             )}
-
+                            {isForStatusChange && (
+                                <FormControlLabel
+                                    control={
+                                        <CustomSwitch
+                                            checked={showConfirmationDialog}
+                                            onChange={(e) => setShowConfirmationDialog(e.target.checked)}
+                                        />
+                                    }
+                                    label="Show Confirmation Dialog"
+                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                />
+                            )}
                             {isForStatusChange && showConfirmationDialog && (
                                 <Stack spacing={3}>
                                     <TextField

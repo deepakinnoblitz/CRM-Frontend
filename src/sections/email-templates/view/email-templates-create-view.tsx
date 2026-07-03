@@ -4,15 +4,23 @@ import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
+import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
+import FormControl from '@mui/material/FormControl';
+import ListItemText from '@mui/material/ListItemText';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import FormHelperText from '@mui/material/FormHelperText';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
@@ -36,7 +44,7 @@ export function EmailTemplateCreateView() {
 
     const [templateName, setTemplateName] = useState('');
     const [category, setCategory] = useState('');
-    const [templatefor, setTemplatefor] = useState('Lead');
+    const [templatefor, setTemplatefor] = useState<string[]>(['Lead']);
     const [subject, setSubject] = useState('');
     const [description, setDescription] = useState('');
     const [senderName, setSenderName] = useState('');
@@ -70,7 +78,7 @@ export function EmailTemplateCreateView() {
             missingFields.push('Category');
         }
 
-        if (!templatefor) {
+        if (!templatefor || templatefor.length === 0) {
             newErrors.templatefor = true;
             missingFields.push('Template For');
         }
@@ -118,7 +126,7 @@ export function EmailTemplateCreateView() {
             await createEmailTemplate({
                 template_name: templateName,
                 category,
-                template_for: templatefor,
+                template_for: templatefor.join(','),
                 subject,
                 email_content: emailContent,
                 footer_content: footerContent,
@@ -173,20 +181,19 @@ export function EmailTemplateCreateView() {
         { label: 'Lead', value: 'Lead' },
         { label: 'Client', value: 'Contact' },
         { label: 'Company', value: 'Account' },
+        { label: 'Prospects', value: 'Deal' },
+        { label: 'Proposal', value: 'Proposal' },
     ];
 
-    const handleTemplateForChange = async (value: string) => {
-        setTemplatefor(value);
+    const handleTemplateForChange = async (values: string[]) => {
+        setTemplatefor(values);
 
-        if (value) {
+        if (values.length > 0) {
             setErrors((prev) => ({ ...prev, templatefor: false }));
         }
 
         try {
-            const data = await fetchEmailTemplateVariables(
-                value as 'Lead' | 'Contact' | 'Account'
-            );
-
+            const data = await fetchEmailTemplateVariables(values.join(','));
             setVariables(data);
         } catch (err) {
             console.error(err);
@@ -205,10 +212,10 @@ export function EmailTemplateCreateView() {
     useEffect(() => {
         const loadDefaultVariables = async () => {
             try {
-                const data = await fetchEmailTemplateVariables("Lead");
+                const data = await fetchEmailTemplateVariables('Lead');
                 setVariables(data);
             } catch (err) {
-                console.error("Failed to load Lead variables", err);
+                console.error('Failed to load Lead variables', err);
             }
         };
 
@@ -297,22 +304,32 @@ export function EmailTemplateCreateView() {
                                     </MenuItem>
                                 ))}
                             </TextField>
-                            <TextField
-                                select
-                                fullWidth
-                                label="Template For"
-                                required
-                                value={templatefor}
-                                onChange={(e) => handleTemplateForChange(e.target.value)}
-                                error={errors.templatefor}
-                                helperText={errors.templatefor ? 'This field is required' : ''}
-                            >
-                                {templateForOptions.map((option) => (
-                                    <MenuItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
+                            <FormControl fullWidth error={errors.templatefor} required>
+                                <InputLabel id="template-for-label">Template For</InputLabel>
+                                <Select
+                                    labelId="template-for-label"
+                                    multiple
+                                    value={templatefor}
+                                    onChange={(e) => handleTemplateForChange(e.target.value as string[])}
+                                    input={<OutlinedInput label="Template For" />}
+                                    renderValue={(selected) =>
+                                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                            {(selected as string[]).map((val) => {
+                                                const opt = templateForOptions.find(o => o.value === val);
+                                                return <Chip key={val} label={opt?.label || val} size="small" />;
+                                            })}
+                                        </Box>
+                                    }
+                                >
+                                    {templateForOptions.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            <Checkbox checked={templatefor.includes(option.value)} />
+                                            <ListItemText primary={option.label} />
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                                {errors.templatefor && <FormHelperText>This field is required</FormHelperText>}
+                            </FormControl>
                             <TextField fullWidth multiline rows={3} label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
                             <Stack direction="row" spacing={2}>
                                 <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)} />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
