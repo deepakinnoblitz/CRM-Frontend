@@ -23,7 +23,7 @@ import { useRouter } from 'src/routes/hooks';
 import { fDateTime } from 'src/utils/format-time';  
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchEmailTemplates, deleteEmailTemplate } from 'src/api/email-template';
+import { fetchEmailTemplates, deleteEmailTemplate, fetchEmailTemplateCategories } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -60,6 +60,7 @@ export function EmailTemplateListView() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
+    const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -99,6 +100,20 @@ export function EmailTemplateListView() {
             setConfirmDelete({ open: false, id: null });
         }
     };
+
+    useEffect(() => {
+        async function loadCategories() {
+            const categories = await fetchEmailTemplateCategories();
+
+            const map = Object.fromEntries(
+                categories.map((item) => [item.name, item.category])
+            );
+
+            setCategoryMap(map);
+        }
+
+        loadCategories();
+    }, []);
 
     const handleCreateNew = () => router.push('/email-templates/new');
 
@@ -198,7 +213,7 @@ export function EmailTemplateListView() {
                                                 </TableCell>
                                                 <TableCell sx={{ maxWidth: 180 }}>
                                                     <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                                                        {row.category || '—'}
+                                                        {categoryMap[row.category] || '—'}
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell sx={{ maxWidth: 220 }}>

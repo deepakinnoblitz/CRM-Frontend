@@ -111,6 +111,7 @@ export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
+export const LeaveAllocationReportPage = lazy(() => import('src/pages/reports/leave-allocation'));
 export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
 export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
@@ -178,6 +179,8 @@ export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const EmailTemplateCategoryPage = lazy(() => import('../pages/email-template-category'));
+export const WhatsAppTemplateCategoryPage = lazy(() => import('../pages/whatsapp-template-category'));
 export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
 export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
@@ -360,6 +363,8 @@ export const routesSection: RouteObject[] = [
       { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'leave-type', element: <LeaveTypePage /> },
       { path: 'master/lead-from', element: <LeadFromPage /> },
+      { path: 'master/email-template-category', element: <EmailTemplateCategoryPage /> },
+      { path: 'master/whatsapp-template-category', element: <WhatsAppTemplateCategoryPage /> },
       { path: 'master/service', element: <ServicePage /> },
       { path: 'master/item', element: <ItemPage /> },
       { path: 'master/payment-terms', element: <PaymentTermsPage /> },
@@ -432,6 +437,7 @@ export const routesSection: RouteObject[] = [
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
+          { path: 'leave-allocation', element: <LeaveAllocationReportPage /> },
           { path: 'daily-log', element: <DailyLogReportPage /> },
           { path: 'task-manager', element: <TaskReportPage /> },
           { path: 'salary-slip', element: <SalarySlipReportPage /> },

@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { MdContentCopy } from 'react-icons/md';
@@ -5,15 +6,30 @@ import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
+import FormControl from '@mui/material/FormControl';
+import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
+import ListItemText from '@mui/material/ListItemText';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import FormHelperText from '@mui/material/FormHelperText';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
@@ -25,6 +41,9 @@ import {
   fetchEmailTemplateVariables,
   updateEmailTemplate,
   EmailTemplateVariable,
+  fetchEmailTemplateCategories,
+  createEmailTemplateCategory,
+  EmailTemplateCategory 
 } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
@@ -35,7 +54,7 @@ import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 export function EmailTemplateEditView() {
   const router = useRouter();
   const { id } = useParams();
-  const [templateFor, setTemplateFor] = useState('Lead');
+  const [templateFor, setTemplateFor] = useState<string[]>(['Lead']);
   const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
   const [emailContent, setEmailContent] = useState('');
   const [footerContent, setFooterContent] = useState('');
@@ -58,6 +77,14 @@ export function EmailTemplateEditView() {
     subject?: boolean;
     emailContent?: boolean;
   }>({});
+
+  const [categoryOptions, setCategoryOptions] =  useState<EmailTemplateCategory[]>([]);
+
+  const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+
+  const { enqueueSnackbar } = useSnackbar();
 
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
@@ -127,7 +154,7 @@ export function EmailTemplateEditView() {
       await updateEmailTemplate(id!, {
         template_name: templateName,
         category,
-        template_for: templateFor,
+        template_for: templateFor.join(','),
         subject,
         email_content: emailContent,
         footer_content: footerContent,
@@ -135,7 +162,6 @@ export function EmailTemplateEditView() {
         sender_name: senderName,
         reply_to_email: replyToEmail,
         is_active: isActive ? 1 : 0,
-        is_default: isDefault ? 1 : 0,
         attachments: uploadedAttachments,
       });
 
@@ -185,6 +211,8 @@ export function EmailTemplateEditView() {
     { label: 'Lead', value: 'Lead' },
     { label: 'Client', value: 'Contact' },
     { label: 'Company', value: 'Account' },
+    { label: 'Prospects', value: 'Deal' },
+    { label: 'Proposal', value: 'Proposal' },
   ];
 
   const handleCopyVariable = (variable: string) => {
@@ -196,16 +224,15 @@ export function EmailTemplateEditView() {
     });
   };
 
-  const handleTemplateForChange = async (value: string) => {
-    setTemplateFor(value);
+  const handleTemplateForChange = async (values: string[]) => {
+    setTemplateFor(values);
 
-    if (value) {
+    if (values.length > 0) {
       setErrors((prev) => ({ ...prev, templateFor: false }));
     }
 
     try {
-      const data = await fetchEmailTemplateVariables(value as 'Lead' | 'Contact' | 'Account');
-
+      const data = await fetchEmailTemplateVariables(values.join(','));
       setVariables(data);
     } catch (err) {
       console.error(err);
@@ -225,19 +252,20 @@ export function EmailTemplateEditView() {
       setSenderName(doc.sender_name || '');
       setReplyToEmail(doc.reply_to_email || '');
       setIsActive(doc.is_active ? true : false);
-      setIsDefault(doc.is_default ? true : false);
 
-      setTemplateFor(doc.template_for || 'Lead');
+      setTemplateFor(
+        doc.template_for
+          ? doc.template_for.split(',').map((s: string) => s.trim()).filter(Boolean)
+          : ['Lead']
+      );
 
       setEmailContent(doc.email_content || '');
       setFooterContent(doc.footer_content || '');
       setAttachments(doc.attachments || []);
 
       try {
-        const vars = await fetchEmailTemplateVariables(
-          (doc.template_for || 'Lead') as 'Lead' | 'Contact' | 'Account'
-        );
-
+        const savedFor = doc.template_for || 'Lead';
+        const vars = await fetchEmailTemplateVariables(savedFor);
         setVariables(vars);
       } catch (err) {
         console.error(err);
@@ -246,6 +274,53 @@ export function EmailTemplateEditView() {
 
     loadTemplate();
   }, [id]);
+
+  useEffect(() => {
+      loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+      try {
+          const data = await fetchEmailTemplateCategories();
+          setCategoryOptions(data);
+      } catch (err) {
+          console.error(err);
+      }
+  };
+
+  const handleCreateCategorySubmit = async () => {
+      if (!newCategoryName.trim()) return;
+
+      try {
+          setCreatingCategory(true);
+
+          await createEmailTemplateCategory(newCategoryName.trim());
+
+          const data = await fetchEmailTemplateCategories();
+          setCategoryOptions(data);
+
+          setCategory(newCategoryName.trim());
+
+          setCreateCategoryOpen(false);
+          setNewCategoryName('');
+
+          setSnackbar({
+              open: true,
+              severity: 'success',
+              message: 'Category created successfully',
+          });
+
+      } catch (error: any) {
+          enqueueSnackbar(
+              error.message || 'Failed to create category',
+              {
+                  variant: 'error',
+              }
+          );
+      } finally {
+          setCreatingCategory(false);
+      }
+  };
 
   return (
     <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -299,6 +374,18 @@ export function EmailTemplateEditView() {
             <Typography variant="h6" sx={{ mb: 3 }}>
               Basic Information
             </Typography>
+            <Stack direction="row" spacing={2} sx={{ mb: 4 }}>
+                <FormControlLabel
+                  control={
+                    <CustomSwitch
+                      checked={isActive}
+                      onChange={(e) => setIsActive(e.target.checked)}
+                    />
+                  }
+                  label="Is Active"
+                  sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                />
+            </Stack>
             <Stack spacing={3}>
               <TextField
                 fullWidth
@@ -312,51 +399,187 @@ export function EmailTemplateEditView() {
                 error={errors.templateName}
                 helperText={errors.templateName ? 'This field is required' : ''}
               />
-              <TextField
-                select
-                fullWidth
-                label="Category"
-                required
-                value={category}
-                onChange={(e) => {
-                  setCategory(e.target.value);
-                  if (e.target.value) setErrors((prev) => ({ ...prev, category: false }));
-                }}
-                error={errors.category}
-                helperText={errors.category ? 'This field is required' : ''}
-              >
-                {[
-                  'Marketing',
-                  'Newsletter',
-                  'Promotion',
-                  'Welcome',
-                  'Follow Up',
-                  'Proposal',
-                  'Invoice',
-                  'Reminder',
-                  'Custom',
-                ].map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </TextField>
-              <TextField
-                select
-                fullWidth
-                label="Template For"
-                required
-                value={templateFor}
-                onChange={(e) => handleTemplateForChange(e.target.value)}
-                error={errors.templateFor}
-                helperText={errors.templateFor ? 'This field is required' : ''}
-              >
-                {templateForOptions.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </TextField>
+              <Autocomplete
+                  fullWidth
+                  options={categoryOptions}
+                  value={categoryOptions.find((opt) => opt.name === category) || null}
+                  isOptionEqualToValue={(option, value) => option.name === value.name}
+                  onChange={(event, newValue: any) => {
+                      if (typeof newValue === 'string') {
+                          setCategory(newValue);
+                      } else if (newValue?.isNew) {
+                          setNewCategoryName(newValue.inputValue);
+                          setCreateCategoryOpen(true);
+                      } else {
+                          // Store the document name
+                          setCategory(newValue?.name || '');
+                      }
+
+                      setErrors((prev) => ({ ...prev, category: false }));
+                  }}
+                  filterOptions={(options, params) => {
+                      const filtered = [...options];
+                      const { inputValue } = params;
+
+                      const isExisting = options.some(
+                          (option: any) =>
+                              option.category.toLowerCase() === inputValue.toLowerCase()
+                      );
+
+                      if (inputValue !== '' && !isExisting) {
+                          filtered.push({
+                              inputValue,
+                              name: '',
+                              category: inputValue,
+                              isNew: true,
+                          } as any);
+                      } else if (inputValue === '') {
+                          filtered.push({
+                              inputValue: '',
+                              name: '',
+                              category: '',
+                              isNew: true,
+                          } as any);
+                      }
+
+                      return filtered;
+                  }}
+                  getOptionLabel={(option: any) => {
+                      if (typeof option === 'string') return option;
+                      if (option.inputValue) return option.inputValue;
+                      return option.category;
+                  }}
+                  renderOption={(props, option: any) => {
+                      const { key, ...optionProps } = props as any;
+
+                      return (
+                          <Box
+                              component="li"
+                              key={key || option.name || option.category}
+                              {...optionProps}
+                              sx={{
+                                  typography: 'body2',
+                                  ...(option.isNew && {
+                                      color: 'primary.main',
+                                      fontWeight: 600,
+                                      bgcolor: (theme) =>
+                                          alpha(theme.palette.primary.main, 0.08),
+                                      borderTop: (theme) =>
+                                          `1px solid ${theme.palette.divider}`,
+                                      mt: 0.5,
+                                      '&:hover': {
+                                          bgcolor: (theme) =>
+                                              alpha(theme.palette.primary.main, 0.16),
+                                      },
+                                  }),
+                              }}
+                          >
+                              {option.isNew ? (
+                                  <Stack direction="row" spacing={1.5} alignItems="center">
+                                      <Iconify
+                                          icon="solar:add-circle-bold"
+                                          width={22}
+                                      />
+                                      <Typography
+                                          variant="subtitle2"
+                                          sx={{ fontWeight: 700 }}
+                                      >
+                                          {option.inputValue
+                                              ? `Create "${option.inputValue}"`
+                                              : 'Create Category'}
+                                      </Typography>
+                                  </Stack>
+                              ) : (
+                                  option.category
+                              )}
+                          </Box>
+                      );
+                  }}
+                  renderInput={(params) => (
+                      <TextField
+                          {...params}
+                          label="Category"
+                          required
+                          error={errors.category}
+                          helperText={errors.category ? 'This field is required' : ''}
+                      />
+                  )}
+              />
+              <FormControl fullWidth error={errors.templateFor} required>
+                <InputLabel id="template-for-label-edit">Template For</InputLabel>
+                <Select
+                    labelId="template-for-label-edit"
+                    multiple
+                    value={templateFor}
+                    onChange={(e) => handleTemplateForChange(e.target.value as string[])}
+                    input={<OutlinedInput label="Template For" />}
+                    renderValue={(selected) => (
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {(selected as string[]).map((val) => {
+                                const opt = templateForOptions.find((o) => o.value === val);
+                                return (
+                                    <Chip
+                                        key={val}
+                                        label={opt?.label || val}
+                                        size="small"
+                                    />
+                                );
+                            })}
+                        </Box>
+                    )}
+                    MenuProps={{
+                        PaperProps: {
+                            sx: {
+                                p: 0.5,
+                                maxHeight: 350,
+                                borderRadius: 2,
+                            },
+                        },
+                    }}
+                >
+                    {templateForOptions.map((option) => (
+                        <MenuItem
+                            key={option.value}
+                            value={option.value}
+                            sx={{
+                                py: 1.5,
+                                px: 2,
+                                m: 0.5,
+                                borderRadius: 0.5,
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                '&.Mui-selected': {
+                                    bgcolor: 'action.selected',
+                                },
+                                '&.Mui-selected:hover': {
+                                    bgcolor: 'action.selected',
+                                },
+                            }}
+                        >
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    fontWeight: 600,
+                                    fontSize: 14,
+                                }}
+                            >
+                                {option.label}
+                            </Typography>
+
+                            {templateFor.includes(option.value) && (
+                                <Iconify
+                                    icon="solar:check-circle-bold"
+                                    width={20}
+                                    sx={{ color: 'primary.main' }}
+                                />
+                            )}
+                        </MenuItem>
+                    ))}
+                </Select>
+                {errors.templateFor && <FormHelperText>This field is required</FormHelperText>}
+              </FormControl>
+
               <TextField
                 fullWidth
                 multiline
@@ -365,28 +588,6 @@ export function EmailTemplateEditView() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
               />
-              <Stack direction="row" spacing={2}>
-                <FormControlLabel
-                  control={
-                    <CustomSwitch
-                      checked={isActive}
-                      onChange={(e) => setIsActive(e.target.checked)}
-                    />
-                  }
-                  label="Is Active"
-                  sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                />
-                <FormControlLabel
-                  control={
-                    <CustomSwitch
-                      checked={isDefault}
-                      onChange={(e) => setIsDefault(e.target.checked)}
-                    />
-                  }
-                  label="Is Default"
-                  sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                />
-              </Stack>
             </Stack>
           </Card>
 
@@ -693,39 +894,43 @@ export function EmailTemplateEditView() {
                         overflow: 'hidden',
                       }}
                     >
-                      <Typography
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 1,
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                        }}
+                      <Box
+                          sx={{
+                              flex: 1,
+                              textAlign: 'left',
+                              overflow: 'hidden',
+                          }}
                       >
-                        <Box
-                          component="span"
-                          sx={{
-                            fontWeight: 600,
-                            color: 'text.primary',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            fontSize: '0.85rem',
-                          }}
-                        >
-                          {label}
-                        </Box>
+                          <Box sx={{ flex: 1 }}>
+                              <Typography
+                                  variant="subtitle2"
+                                  sx={{
+                                      fontWeight: 700,
+                                      color: 'text.primary',
+                                  }}
+                              >
+                                  {label}
+                              </Typography>
 
-                        <Box
-                          component="span"
-                          sx={{
-                            color: 'text.secondary',
-                            fontFamily: 'monospace',
-                            fontSize: '0.75rem',
-                          }}
-                        >
-                          {item.variable}
-                        </Box>
-                      </Typography>
+                              <Box
+                                  sx={{
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                  }}
+                              >
+                                  <Typography
+                                      sx={{
+                                          fontFamily: 'monospace',
+                                          fontSize: 12,
+                                          color: 'primary.main',
+                                          fontWeight: 700,
+                                      }}
+                                  >
+                                      {item.variable}
+                                  </Typography>
+                              </Box>
+                          </Box>
+                      </Box>
                     </Box>
                   </Button>
                 );
@@ -745,6 +950,68 @@ export function EmailTemplateEditView() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <Dialog
+          open={createCategoryOpen}
+          onClose={() => !creatingCategory && setCreateCategoryOpen(false)}
+          fullWidth
+          maxWidth="xs"
+          PaperProps={{
+              sx: { borderRadius: 2 },
+          }}
+      >
+          <DialogTitle
+              sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  p: 2,
+              }}
+          >
+              <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Create Category
+              </Typography>
+
+              <IconButton
+                  onClick={() =>
+                      !creatingCategory && setCreateCategoryOpen(false)
+                  }
+              >
+                  <Iconify icon="mingcute:close-line" />
+              </IconButton>
+          </DialogTitle>
+
+          <DialogContent sx={{ px: 3, pt: 1 }}>
+              <TextField
+                  fullWidth
+                  autoFocus
+                  required
+                  label="Category Name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  sx={{ mt: 1 }}
+              />
+          </DialogContent>
+
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+              <Button
+                  variant="contained"
+                  onClick={handleCreateCategorySubmit}
+                  disabled={creatingCategory || !newCategoryName.trim()}
+                  sx={{
+                      bgcolor: '#08a3cd',
+                      '&:hover': { bgcolor: '#068fb3' },
+                  }}
+              >
+                  {creatingCategory ? (
+                      <CircularProgress size={22} color="inherit" />
+                  ) : (
+                      'Create'
+                  )}
+              </Button>
+          </DialogActions>
+      </Dialog>
+
     </DashboardContent>
   );
 }

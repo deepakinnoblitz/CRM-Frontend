@@ -1371,4 +1371,196 @@ export async function deletePaymentTypeCustom(name: string) {
     return true;
 }
 
+export interface CrmEmailTemplateCategory {
+    name: string;
+    category: string;
+    creation?: string;
+    modified?: string;
+}
+
+// CRM Email Template Category APIs
+export const fetchCrmEmailTemplateCategories = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["CRM Email Template Category", "category", "like", `%${search}%`],
+        ["CRM Email Template Category", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("CRM Email Template Category", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "category", "modified", "creation"]
+    });
+};
+
+export async function createCrmEmailTemplateCategory(data: Partial<CrmEmailTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "CRM Email Template Category", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create email template category"));
+    return json.message;
+}
+
+export async function updateCrmEmailTemplateCategory(name: string, data: Partial<CrmEmailTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/CRM Email Template Category/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update email template category"));
+    return json.data || json.message;
+}
+
+export async function renameCrmEmailTemplateCategory(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "CRM Email Template Category",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename email template category"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "CRM Email Template Category",
+                name: newName,
+                fieldname: { category: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch CRM Email Template Category after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching CRM Email Template Category after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteCrmEmailTemplateCategory(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "CRM Email Template Category", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete email template category"));
+    return true;
+}
+
+export interface CrmWhatsAppTemplateCategory {
+    name: string;
+    category: string;
+    creation?: string;
+    modified?: string;
+}
+
+// CRM WhatsApp Template Category APIs
+export const fetchCrmWhatsAppTemplateCategories = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["CRM WhatsApp Template Category", "category", "like", `%${search}%`],
+        ["CRM WhatsApp Template Category", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("CRM WhatsApp Template Category", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "category", "modified", "creation"]
+    });
+};
+
+export async function createCrmWhatsAppTemplateCategory(data: Partial<CrmWhatsAppTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "CRM WhatsApp Template Category", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create whatsapp template category"));
+    return json.message;
+}
+
+export async function updateCrmWhatsAppTemplateCategory(name: string, data: Partial<CrmWhatsAppTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/CRM WhatsApp Template Category/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update whatsapp template category"));
+    return json.data || json.message;
+}
+
+export async function renameCrmWhatsAppTemplateCategory(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "CRM WhatsApp Template Category",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename whatsapp template category"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "CRM WhatsApp Template Category",
+                name: newName,
+                fieldname: { category: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch CRM WhatsApp Template Category after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching CRM WhatsApp Template Category after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteCrmWhatsAppTemplateCategory(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "CRM WhatsApp Template Category", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete whatsapp template category"));
+    return true;
+}
+
+
+
 
