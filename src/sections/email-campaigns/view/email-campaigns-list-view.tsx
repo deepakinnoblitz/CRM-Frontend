@@ -102,12 +102,20 @@ export function EmailCampaignsListView() {
             await deleteEmailCampaign(confirmDelete.id);
             setSnackbar({ open: true, message: 'Email Campaign deleted successfully', severity: 'success' });
             await refetch();
-        } catch (e) {
+            setConfirmDelete({ open: false, id: null });
+        } catch (e: any) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete Email Campaign', severity: 'error' });
+            const isLinkError = e?.message && (
+                e.message.includes('LinkExistsError') ||
+                e.message.includes('Cannot delete or cancel because') ||
+                e.message.includes('is linked with')
+            );
+            const msg = isLinkError
+                ? 'This campaign is currently in use and cannot be deleted. Please remove it from any linked records first.'
+                : 'Failed to delete Email Campaign';
+            setSnackbar({ open: true, message: msg, severity: 'error' });
         } finally {
             setDeleting(false);
-            setConfirmDelete({ open: false, id: null });
         }
     };
 
@@ -293,9 +301,10 @@ export function EmailCampaignsListView() {
 
             <ConfirmDialog
                 open={confirmDelete.open}
-                onClose={() => !deleting && setConfirmDelete({ open: false, id: null })}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
                 content="Are you sure you want to delete this Email Campaign?"
+                isLoading={deleting}
                 action={
                     <LoadingButton onClick={handleConfirmDelete} loading={deleting} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                         Delete
