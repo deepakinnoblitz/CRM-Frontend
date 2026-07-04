@@ -294,12 +294,12 @@ export function EmailTemplateEditView() {
       try {
           setCreatingCategory(true);
 
-          await createEmailTemplateCategory(newCategoryName.trim());
+          const created = await createEmailTemplateCategory(newCategoryName.trim());
 
           const data = await fetchEmailTemplateCategories();
           setCategoryOptions(data);
 
-          setCategory(newCategoryName.trim());
+          setCategory(created.name);
 
           setCreateCategoryOpen(false);
           setNewCategoryName('');

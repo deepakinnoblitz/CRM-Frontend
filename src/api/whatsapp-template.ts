@@ -181,3 +181,58 @@ export async function fetchWhatsAppTemplateVariables(usedFor: string): Promise<E
     const data = await res.json();
     return data.message || [];
 }
+
+export interface WhatsAppTemplateCategory {
+    name: string;
+    category: string;
+}
+
+export async function fetchWhatsAppTemplateCategories(): Promise<WhatsAppTemplateCategory[]> {
+    const query = new URLSearchParams({
+        doctype: 'CRM WhatsApp Template Category',
+        fields: JSON.stringify([
+            'name',
+            'category',
+        ]),
+        order_by: 'category desc',
+        limit_page_length: '0',
+    });
+
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?${query.toString()}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch WhatsApp template categories');
+    }
+
+    const json = await res.json();
+
+    return json.message || [];
+}
+
+export async function createWhatsAppTemplateCategory(category: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: 'CRM WhatsApp Template Category',
+                category,
+            },
+        }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        throw new Error(
+            handleFrappeError(json, 'Failed to create WhatsApp template category')
+        );
+    }
+
+    return json.message;
+}
+

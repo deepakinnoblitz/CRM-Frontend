@@ -19,7 +19,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchWhatsAppTemplates, deleteWhatsAppTemplate } from 'src/api/whatsapp-template';
+import { fetchWhatsAppTemplates, deleteWhatsAppTemplate, fetchWhatsAppTemplateCategories } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -84,6 +84,24 @@ export function WhatsAppTemplateListView() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
+
+    const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const categories = await fetchWhatsAppTemplateCategories();
+                setCategoryMap(
+                    Object.fromEntries(
+                        categories.map((item) => [item.name, item.category])
+                    )
+                );
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+            }
+        };
+        loadCategories();
+    }, []);
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -222,7 +240,7 @@ export function WhatsAppTemplateListView() {
                                                 </TableCell>
                                                 <TableCell sx={{ maxWidth: 180 }}>
                                                     <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                                                        {row.category || '—'}
+                                                        {categoryMap[row.category] || '—'}
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell sx={{ maxWidth: 280 }}>

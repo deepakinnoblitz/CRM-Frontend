@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+    import { useState, useEffect } from 'react';
 import { MdContentCopy } from "react-icons/md";
 import { IoMdArrowBack } from 'react-icons/io';
 
@@ -93,7 +93,7 @@ export function EmailTemplateCreateView() {
             setCategoryOptions(categories);
 
             // Auto Select Newly Created Category
-            setCategory(created.category);
+            setCategory(created.name);
 
             // Close Dialog
             setCreateCategoryOpen(false);
@@ -345,7 +345,7 @@ export function EmailTemplateCreateView() {
                             <Autocomplete
                                 fullWidth
                                 options={categoryOptions}
-                                value={category}
+                                value={categoryOptions.find((opt) => opt.name === category) || null}
                                 onChange={(event, newValue: any) => {
                                     if (typeof newValue === 'string') {
                                         setCategory(newValue);
@@ -353,7 +353,7 @@ export function EmailTemplateCreateView() {
                                         setNewCategoryName(newValue.inputValue);
                                         setCreateCategoryOpen(true);
                                     } else {
-                                        setCategory(newValue?.category || '');
+                                        setCategory(newValue?.name || '');
                                         setErrors((prev) => ({
                                             ...prev,
                                             category: false,
