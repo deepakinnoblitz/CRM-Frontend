@@ -6,12 +6,12 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
-import LoadingButton from '@mui/lab/LoadingButton';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -19,8 +19,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useCrmEmailTemplateCategories } from 'src/hooks/use-masters';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deleteCrmEmailTemplateCategory, CrmEmailTemplateCategory } from 'src/api/masters';
 import { fetchEmailTemplates } from 'src/api/email-template';
+import { deleteCrmEmailTemplateCategory, CrmEmailTemplateCategory } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
