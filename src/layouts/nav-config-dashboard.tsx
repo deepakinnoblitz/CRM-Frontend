@@ -165,10 +165,10 @@ export const hrNavData = [
     icon: <CgNotes size={20} />,
     children: [
       { title: 'Attendance Report', path: '/reports/attendance' },
-      { title: 'Leave Allocation Report', path: '/reports/leave-allocation' },
       { title: 'Daily Log Report', path: '/reports/daily-log' },
       { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
+      { title: 'Leave Allocation Report', path: '/reports/leave-allocation' },
       { title: 'Employee Overall Report', path: '/employee-overall-report' },
       { title: 'Salary Slip Report', path: '/reports/salary-slip' },
     ],

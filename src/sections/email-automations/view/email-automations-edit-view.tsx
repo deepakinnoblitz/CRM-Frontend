@@ -208,16 +208,15 @@ export function EmailAutomationsEditView() {
             newErrors.emailTemplate = true;
             missingFields.push('Email Template');
         }
-        if (!targetType) {
-            newErrors.targetType = true;
-            missingFields.push('Target Type');
-        }
         if (isForCampaigns) {
             if (!frequency) {
                 newErrors.frequency = true;
                 missingFields.push("Frequency");
             }
-
+            if (!targetType) {
+                newErrors.targetType = true;
+                missingFields.push('Target Type');
+            }
             if (!startDate) {
                 newErrors.startDate = true;
                 missingFields.push("Start Date");
@@ -521,6 +520,7 @@ export function EmailAutomationsEditView() {
                                 value={subjectOverride}
                                 onChange={(e) => setSubjectOverride(e.target.value)}
                             />
+                            {isForCampaigns && (
                             <TextField
                                 select
                                 fullWidth
@@ -544,6 +544,7 @@ export function EmailAutomationsEditView() {
                                     <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}
                             </TextField>
+                            )}
                             {isForStatusChange && (
                                 <TextField
                                     select
@@ -833,18 +834,29 @@ export function EmailAutomationsEditView() {
                                             <DatePicker
                                                 label="Start Date *"
                                                 format="DD-MM-YYYY"
-                                                value={startDate ? dayjs(startDate) : null}
+                                                value={startDate ? dayjs(startDate, "YYYY-MM-DD") : null}
                                                 onChange={(newValue) => {
-                                                    const formatted = newValue ? newValue.format('DD-MM-YYYY') : '';
+                                                    const formatted = newValue
+                                                        ? newValue.format("YYYY-MM-DD")
+                                                        : "";
+
                                                     setStartDate(formatted);
-                                                    if (formatted) setErrors((prev) => ({ ...prev, startDate: false }));
+
+                                                    if (formatted) {
+                                                        setErrors((prev) => ({
+                                                            ...prev,
+                                                            startDate: false,
+                                                        }));
+                                                    }
                                                 }}
                                                 slotProps={{
                                                     textField: {
                                                         fullWidth: true,
                                                         error: errors.startDate,
-                                                        helperText: errors.startDate ? 'This field is required' : ''
-                                                    }
+                                                        helperText: errors.startDate
+                                                            ? "This field is required"
+                                                            : "",
+                                                    },
                                                 }}
                                             />
                                             {['Daily', 'Weekly', 'Monthly', 'Yearly'].includes(frequency) && (

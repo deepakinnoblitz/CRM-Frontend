@@ -135,6 +135,17 @@ export function EmailAutomationsCreateView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     };
 
+    const triggerEventOptions = [
+        {
+            value: 'Lead Workflow State Change',
+            label: 'Lead Workflow State Change',
+        },
+        {
+            value: 'Deal Stage Change',
+            label: 'Prospects Stage Change',
+        },
+    ];
+
     const handleSave = () => {
         const newErrors: typeof errors = {};
         const missingFields: string[] = [];
@@ -147,11 +158,11 @@ export function EmailAutomationsCreateView() {
             newErrors.emailTemplate = true;
             missingFields.push('Email Template');
         }
-        if (!targetType) {
-            newErrors.targetType = true;
-            missingFields.push('Target Type');
-        }
         if (isForCampaigns) {
+            if (!targetType) {
+                newErrors.targetType = true;
+                missingFields.push('Target Type');
+            }
             if (!frequency) {
                 newErrors.frequency = true;
                 missingFields.push('Frequency');
@@ -264,7 +275,6 @@ export function EmailAutomationsCreateView() {
             for_status_change: isForStatusChange ? 1 : 0,
             for_campaigns: isForCampaigns ? 1 : 0,
         };
-
         createEmailAutomation(data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation created successfully!', severity: 'success' });
@@ -371,6 +381,7 @@ export function EmailAutomationsCreateView() {
                                 select
                                 fullWidth
                                 label="Status"
+                                disabled
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value)}
                             >
@@ -437,175 +448,199 @@ export function EmailAutomationsCreateView() {
                                 value={subjectOverride}
                                 onChange={(e) => setSubjectOverride(e.target.value)}
                             />
-                            <TextField 
+                            <TextField
                                 select
-                                fullWidth 
-                                label="Target Type" 
+                                fullWidth
+                                label="Target Type"
                                 required
                                 value={targetType}
                                 onChange={(e) => {
-                                    setTargetType(e.target.value);
-                                    if (e.target.value) setErrors((prev) => ({ ...prev, targetType: false }));
+                                    const value = e.target.value;
+
+                                    setTargetType(value);
+
+                                    if (isForStatusChange) {
+                                        if (value === 'Lead') {
+                                            setTriggerEvent('Lead Workflow State Change');
+                                        } else if (value === 'Deals') {
+                                            setTriggerEvent('Deal Stage Change');
+                                        } else {
+                                            setTriggerEvent('');
+                                        }
+                                    }
+
+                                    if (value) {
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            targetType: false,
+                                            triggerEvent: false,
+                                        }));
+                                    }
                                 }}
                                 error={errors.targetType}
                                 helperText={errors.targetType ? 'This field is required' : ''}
                             >
-                                {[
-                                    { value: 'Lead', label: 'Lead' },
-                                    { value: 'Contact', label: 'Clients' },
-                                    { value: 'Account', label: 'Company' },
-                                    { value: 'Deals', label: 'Prospects' },
-                                    { value: 'Proposals', label: 'Proposals' },
-                                ].map(opt => (
-                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                {(isForStatusChange
+                                    ? [
+                                        { value: 'Lead', label: 'Lead' },
+                                        { value: 'Deals', label: 'Prospects' },
+                                    ]
+                                    : [
+                                        { value: 'Lead', label: 'Lead' },
+                                        { value: 'Contact', label: 'Clients' },
+                                        { value: 'Account', label: 'Company' }
+                                    ]
+                                ).map((opt) => (
+                                    <MenuItem key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </MenuItem>
                                 ))}
                             </TextField>
                             {isForStatusChange && (
-                            <TextField 
-                                select
-                                fullWidth 
-                                label="Trigger Event" 
-                                required
-                                value={triggerEvent}
-                                onChange={(e) => {
-                                    setTriggerEvent(e.target.value);
-                                    if (e.target.value) setErrors((prev) => ({ ...prev, triggerEvent: false }));
-                                }}
-                                error={errors.triggerEvent}
-                                helperText={errors.triggerEvent ? 'This field is required' : ''}
-                            >
-                                {['Lead Workflow State Change', 'Deal Stage Change'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Trigger Event"
+                                    required
+                                    disabled
+                                    value={triggerEvent}
+                                    error={errors.triggerEvent}
+                                    helperText={errors.triggerEvent ? 'This field is required' : ''}
+                                >
+                                    {triggerEventOptions.map((option) => (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
                             )}
-                                {isForStatusChange && triggerEvent === 'Lead Workflow State Change' && (
+                            {isForStatusChange && triggerEvent === 'Lead Workflow State Change' && (
+                                <Stack direction="row" spacing={3}>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Previous Workflow State"
+                                        value={previousWorkflowState}
+                                        onChange={(e) => setPreviousWorkflowState(e.target.value)}
+                                        error={errors.previousWorkflowState}
+                                        helperText={errors.previousWorkflowState ? 'This field is required' : ''}
+                                    >
+                                        {workflowStates.map((state) => (
+                                            <MenuItem key={state} value={state}>
+                                                {state}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Workflow State"
+                                        value={workflowState}
+                                        onChange={(e) => setWorkflowState(e.target.value)}
+                                        error={errors.workflowState}
+                                        helperText={errors.workflowState ? 'This field is required' : ''}
+                                    >
+                                        {workflowStates.map((state) => (
+                                            <MenuItem key={state} value={state}>
+                                                {state}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Stack>
+                            )}
+
+                            {isForStatusChange && triggerEvent === 'Deal Stage Change' && (
+                                <Stack direction="row" spacing={3}>
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Previous Deal Stage"
+                                        value={previousDealStage}
+                                        onChange={(e) => setPreviousDealStage(e.target.value)}
+                                        error={errors.previousDealStage}
+                                        helperText={errors.previousDealStage ? 'This field is required' : ''}
+                                    >
+                                        {dealStages.map((stage) => (
+                                            <MenuItem key={stage} value={stage}>
+                                                {stage}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+
+                                    <TextField
+                                        select
+                                        fullWidth
+                                        required
+                                        label="Current Deal Stage"
+                                        value={currentDealStage}
+                                        onChange={(e) => setCurrentDealStage(e.target.value)}
+                                        error={errors.currentDealStage}
+                                        helperText={errors.currentDealStage ? 'This field is required' : ''}
+                                    >
+                                        {dealStages.map((stage) => (
+                                            <MenuItem key={stage} value={stage}>
+                                                {stage}
+                                            </MenuItem>
+                                        ))}
+                                    </TextField>
+                                </Stack>
+                            )}
+                            
+                            {isForStatusChange && (
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={showConfirmationDialog}
+                                        onChange={(e) => setShowConfirmationDialog(e.target.checked)}
+                                    />
+                                }
+                                label="Show Confirmation Dialog"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                            />
+                            )}
+
+                            {isForStatusChange && showConfirmationDialog && (
+                                <Stack spacing={3}>
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        label="Dialog Title"
+                                        value={dialogTitle}
+                                        onChange={(e) => setDialogTitle(e.target.value)}
+                                        error={errors.dialogTitle}
+                                        helperText={errors.dialogTitle ? "This field is required" : ""}
+                                    />
+
+                                    <TextField
+                                        fullWidth
+                                        required
+                                        multiline
+                                        rows={4}
+                                        label="Dialog Message"
+                                        value={dialogMessage}
+                                        onChange={(e) => setDialogMessage(e.target.value)}
+                                        error={errors.dialogMessage}
+                                        helperText={errors.dialogMessage ? "This field is required" : ""}
+                                    />
+
                                     <Stack direction="row" spacing={3}>
-                                        <TextField
-                                            select
-                                            fullWidth
-                                            required
-                                            label="Previous Workflow State"
-                                            value={previousWorkflowState}
-                                            onChange={(e) => setPreviousWorkflowState(e.target.value)}
-                                            error={errors.previousWorkflowState}
-                                            helperText={errors.previousWorkflowState ? 'This field is required' : ''}
-                                        >
-                                            {workflowStates.map((state) => (
-                                                <MenuItem key={state} value={state}>
-                                                    {state}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-
-                                        <TextField
-                                            select
-                                            fullWidth
-                                            required
-                                            label="Workflow State"
-                                            value={workflowState}
-                                            onChange={(e) => setWorkflowState(e.target.value)}
-                                            error={errors.workflowState}
-                                            helperText={errors.workflowState ? 'This field is required' : ''}
-                                        >
-                                            {workflowStates.map((state) => (
-                                                <MenuItem key={state} value={state}>
-                                                    {state}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    </Stack>
-                                )}
-
-                                {isForStatusChange && triggerEvent === 'Deal Stage Change' && (
-                                    <Stack direction="row" spacing={3}>
-                                        <TextField
-                                            select
-                                            fullWidth
-                                            required
-                                            label="Previous Deal Stage"
-                                            value={previousDealStage}
-                                            onChange={(e) => setPreviousDealStage(e.target.value)}
-                                            error={errors.previousDealStage}
-                                            helperText={errors.previousDealStage ? 'This field is required' : ''}
-                                        >
-                                            {dealStages.map((stage) => (
-                                                <MenuItem key={stage} value={stage}>
-                                                    {stage}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-
-                                        <TextField
-                                            select
-                                            fullWidth
-                                            required
-                                            label="Current Deal Stage"
-                                            value={currentDealStage}
-                                            onChange={(e) => setCurrentDealStage(e.target.value)}
-                                            error={errors.currentDealStage}
-                                            helperText={errors.currentDealStage ? 'This field is required' : ''}
-                                        >
-                                            {dealStages.map((stage) => (
-                                                <MenuItem key={stage} value={stage}>
-                                                    {stage}
-                                                </MenuItem>
-                                            ))}
-                                        </TextField>
-                                    </Stack>
-                                )}
-                                
-                                {isForStatusChange && (
-                                <FormControlLabel
-                                    control={
-                                        <CustomSwitch
-                                            checked={showConfirmationDialog}
-                                            onChange={(e) => setShowConfirmationDialog(e.target.checked)}
+                                        <FormControlLabel
+                                            control={
+                                                <CustomSwitch
+                                                    checked={autoSend}
+                                                    onChange={(e) => setAutoSend(e.target.checked)}
+                                                />
+                                            }
+                                            label="Auto Send"
+                                            sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                                         />
-                                    }
-                                    label="Show Confirmation Dialog"
-                                    sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                                />
-                                )}
-
-                                {isForStatusChange && showConfirmationDialog && (
-                                    <Stack spacing={3}>
-                                        <TextField
-                                            fullWidth
-                                            required
-                                            label="Dialog Title"
-                                            value={dialogTitle}
-                                            onChange={(e) => setDialogTitle(e.target.value)}
-                                            error={errors.dialogTitle}
-                                            helperText={errors.dialogTitle ? "This field is required" : ""}
-                                        />
-
-                                        <TextField
-                                            fullWidth
-                                            required
-                                            multiline
-                                            rows={4}
-                                            label="Dialog Message"
-                                            value={dialogMessage}
-                                            onChange={(e) => setDialogMessage(e.target.value)}
-                                            error={errors.dialogMessage}
-                                            helperText={errors.dialogMessage ? "This field is required" : ""}
-                                        />
-
-                                        <Stack direction="row" spacing={3}>
-                                            <FormControlLabel
-                                                control={
-                                                    <CustomSwitch
-                                                        checked={autoSend}
-                                                        onChange={(e) => setAutoSend(e.target.checked)}
-                                                    />
-                                                }
-                                                label="Auto Send"
-                                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
-                                            />
-                                        </Stack>
                                     </Stack>
-                                )}
+                                </Stack>
+                            )}
                         </Stack>
                     </Card>
                     {isForCampaigns && (

@@ -45,6 +45,17 @@ const DEAL_STAGES = [
     'Closed'
 ];
 
+const triggerEventOptions = [
+    {
+        value: 'Lead Workflow State Change',
+        label: 'Lead Workflow State Change',
+    },
+    {
+        value: 'Deal Stage Change',
+        label: 'Prospects Stage Change',
+    },
+];
+
 export function WhatsAppAutomationsCreateView() {
     const router = useRouter();
 
@@ -271,39 +282,44 @@ export function WhatsAppAutomationsCreateView() {
                 <Card sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 3 }}>Trigger Configuration</Typography>
                     <Stack spacing={3}>
-                            <TextField 
-                                select
-                                fullWidth 
-                                label="Document Type" 
-                                required
-                                value={documentType}
-                                onChange={(e) => setDocumentType(e.target.value)}
-                                error={errors.documentType}
-                                helperText={errors.documentType ? 'This field is required' : ''}
-                            >
-                                {[
-                                    { value: 'Lead', label: 'Lead' },
-                                    { value: 'Contacts', label: 'Clients' },
-                                    { value: 'Accounts', label: 'Company' },
-                                    { value: 'Deal', label: 'Prospects' },
-                                    { value: 'Proposal', label: 'Proposals' },
-                                ].map(opt => (
-                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                                ))}
-                            </TextField>
-
-                        <TextField 
+                        <TextField
                             select
-                            fullWidth 
-                            label="Trigger Event" 
+                            fullWidth
+                            label="Document Type"
+                            required
+                            value={documentType}
+                            onChange={(e) => {
+                                const value = e.target.value;
+
+                                setDocumentType(value);
+
+                                // Auto-select Trigger Event
+                                if (value === 'Lead') {
+                                    setTriggerEvent('Lead Workflow State Change');
+                                } else if (value === 'Deal') {
+                                    setTriggerEvent('Deal Stage Change');
+                                }
+                            }}
+                            error={errors.documentType}
+                            helperText={errors.documentType ? 'This field is required' : ''}
+                        >
+                            <MenuItem value="Lead">Lead</MenuItem>
+                            <MenuItem value="Deal">Prospects</MenuItem>
+                        </TextField>
+                        <TextField
+                            select
+                            fullWidth
+                            label="Trigger Event"
                             required
                             value={triggerEvent}
-                            onChange={(e) => setTriggerEvent(e.target.value)}
+                            disabled
                             error={errors.triggerEvent}
                             helperText={errors.triggerEvent ? 'This field is required' : ''}
                         >
-                            {['Lead Workflow State Change', 'Deal Stage Change'].map(opt => (
-                                <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                            {triggerEventOptions.map((option) => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
                             ))}
                         </TextField>
 
