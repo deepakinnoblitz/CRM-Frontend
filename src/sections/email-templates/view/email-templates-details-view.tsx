@@ -15,6 +15,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getEmailTemplate } from 'src/api/email-template';
+import { fetchCrmEmailTemplateCategories } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -24,6 +25,17 @@ export function EmailTemplateDetailsView() {
 
     const [template, setTemplate] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
+    const [categories, setCategories] = useState<any[]>([]);
+
+    useEffect(() => {
+        fetchCrmEmailTemplateCategories({ page: 1, page_size: 1000 })
+            .then((res) => {
+                if (res && res.data) {
+                    setCategories(res.data);
+                }
+            })
+            .catch((err) => console.error('Failed to fetch categories:', err));
+    }, []);
 
     useEffect(() => {
         if (id) {
@@ -146,7 +158,9 @@ export function EmailTemplateDetailsView() {
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Category</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{category || '-'}</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
+                                        {categories.find(c => c.name === category)?.category || category || '-'}
+                                    </Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Description</Typography>
