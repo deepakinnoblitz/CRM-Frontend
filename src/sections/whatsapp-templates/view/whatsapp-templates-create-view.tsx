@@ -34,6 +34,7 @@ import OutlinedInput from '@mui/material/OutlinedInput';
 import DialogActions from '@mui/material/DialogActions';
 import FormHelperText from '@mui/material/FormHelperText';
 import TableContainer from '@mui/material/TableContainer';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
@@ -1027,32 +1028,68 @@ export function WhatsAppTemplateCreateView() {
 
             <Dialog
                 open={createCategoryOpen}
-                onClose={() => setCreateCategoryOpen(false)}
+                onClose={() => !creatingCategory && setCreateCategoryOpen(false)}
                 fullWidth
-                maxWidth="sm"
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 },
+                }}
             >
-                <DialogTitle>New WhatsApp Template Category</DialogTitle>
-                <DialogContent dividers>
+                <DialogTitle
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 2,
+                        pb: 2,
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Create Category
+                    </Typography>
+
+                    <IconButton
+                        onClick={() => !creatingCategory && setCreateCategoryOpen(false)}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
                     <TextField
                         fullWidth
                         label="Category Name"
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder="e.g. Authentication"
+                        required
+                        autoFocus
+                        sx={{ mt: 1 }}
                     />
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCreateCategoryOpen(false)}>Cancel</Button>
-                    <LoadingButton
+
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
                         variant="contained"
                         onClick={handleCreateCategorySubmit}
-                        loading={creatingCategory}
-                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                        disabled={creatingCategory || !newCategoryName.trim()}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': {
+                                bgcolor: '#068fb3',
+                            },
+                            borderRadius: 1,
+                        }}
                     >
-                        Create
-                    </LoadingButton>
+                        {creatingCategory ? (
+                            <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            'Create'
+                        )}
+                    </Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog>                    
         </DashboardContent>
     );
 }
