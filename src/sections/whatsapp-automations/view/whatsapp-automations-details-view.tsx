@@ -146,16 +146,16 @@ export function WhatsAppAutomationsDetailsView() {
                         <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Automation Name</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{automation_name || '-'}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Automation Name</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', fontSize: 14 }}>{automation_name || '-'}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Description</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', textAlign: 'right', maxWidth: '60%' }}>{description || '-'}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Description</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', fontSize: 14, textAlign: 'right', maxWidth: '60%' }}>{description || '-'}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Is Active</Typography>
-                                    <Chip label={is_active ? 'Yes' : 'No'} size="small" color={is_active ? 'success' : 'default'} sx={{ borderRadius: 1 }} />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Is Active</Typography>
+                                    <Chip label={is_active ? 'Yes' : 'No'} size="small" color={is_active ? 'success' : 'default'} sx={{ borderRadius: 1, p: 1 }} />
                                 </Stack>
                             </Stack>
                         </Box>
@@ -170,8 +170,8 @@ export function WhatsAppAutomationsDetailsView() {
                         <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">WhatsApp Template</Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{templateName || '-'}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>WhatsApp Template</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', fontSize: 14 }}>{templateName || '-'}</Typography>
                                 </Stack>
                             </Stack>
                         </Box>
@@ -186,34 +186,34 @@ export function WhatsAppAutomationsDetailsView() {
                         <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Document Type</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Document Type</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{document_type || '-'}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Trigger Event</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Trigger Event</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{trigger_event || '-'}</Typography>
                                 </Stack>
                                 {trigger_event === 'Lead Workflow State Change' && (
                                     <>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Workflow State</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{workflow_state || '-'}</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Previous Workflow State</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{previous_workflow_state || '-'}</Typography>
                                         </Stack>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Previous Workflow State</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{previous_workflow_state || '-'}</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Workflow State</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{workflow_state || '-'}</Typography>
                                         </Stack>
                                     </>
                                 )}
                                 {trigger_event === 'Deal Stage Change' && (
                                     <>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Current Deal Stage</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{deal_stage || '-'}</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Previous Deal Stage</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{previous_deal_stage || '-'}</Typography>
                                         </Stack>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Previous Deal Stage</Typography>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{previous_deal_stage || '-'}</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Current Deal Stage</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{deal_stage || '-'}</Typography>
                                         </Stack>
                                     </>
                                 )}
@@ -230,24 +230,24 @@ export function WhatsAppAutomationsDetailsView() {
                         <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.18)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Show Confirmation Dialog</Typography>
-                                    <Chip label={show_confirmation_dialog ? 'Yes' : 'No'} size="small" color={show_confirmation_dialog ? 'info' : 'default'} sx={{ borderRadius: 1 }} />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Show Confirmation Dialog</Typography>
+                                    <Chip label={show_confirmation_dialog ? 'Yes' : 'No'} size="small" color={show_confirmation_dialog ? 'info' : 'default'} sx={{ borderRadius: 1, p: 1 }} />
                                 </Stack>
                                 {show_confirmation_dialog && (
                                     <>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Dialog Title</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Dialog Title</Typography>
                                             <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{dialog_title || '-'}</Typography>
                                         </Stack>
                                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                            <Typography variant="caption" color="text.secondary">Dialog Message</Typography>
+                                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Dialog Message</Typography>
                                             <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', textAlign: 'right', maxWidth: '60%' }}>{dialog_message || '-'}</Typography>
                                         </Stack>
                                     </>
                                 )}
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary">Auto Send</Typography>
-                                    <Chip label={auto_send ? 'Yes' : 'No'} size="small" color={auto_send ? 'success' : 'default'} sx={{ borderRadius: 1 }} />
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>Auto Send</Typography>
+                                    <Chip label={auto_send ? 'Yes' : 'No'} size="small" color={auto_send ? 'success' : 'default'} sx={{ borderRadius: 1, p: 1 }} />
                                 </Stack>
                             </Stack>
                         </Box>

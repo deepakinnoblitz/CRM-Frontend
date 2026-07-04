@@ -174,11 +174,11 @@ export function EmailTemplateDetailsView() {
                                 </Stack>
                                                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Is Active</Typography>
-                                    <Chip label={is_active ? 'Yes' : 'No'} size="small" color={is_active ? 'success' : 'default'} sx={{ borderRadius: 1 }} />
+                                    <Chip label={is_active ? 'Yes' : 'No'} size="small" color={is_active ? 'success' : 'default'} sx={{ borderRadius: 1, p: 1 }} />
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12}}>Is Default</Typography>
-                                    <Chip label={is_default ? 'Yes' : 'No'} size="small" color={is_default ? 'info' : 'default'} sx={{ borderRadius: 1 }} />
+                                    <Chip label={is_default ? 'Yes' : 'No'} size="small" color={is_default ? 'info' : 'default'} sx={{ borderRadius: 1, p: 1 }} />
                                 </Stack>
                             </Stack>
                         </Box>
