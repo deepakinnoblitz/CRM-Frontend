@@ -8,6 +8,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
@@ -15,19 +16,25 @@ import Snackbar from '@mui/material/Snackbar';
 import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
+import DialogTitle from '@mui/material/DialogTitle';
 import ListItemText from '@mui/material/ListItemText';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import FormHelperText from '@mui/material/FormHelperText';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createEmailTemplate, fetchEmailTemplateVariables, EmailTemplateVariable } from 'src/api/email-template';
+import { createEmailTemplate, fetchEmailTemplateVariables, fetchEmailTemplateCategories, EmailTemplateVariable, EmailTemplateCategory, createEmailTemplateCategory } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
 import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
@@ -53,6 +60,12 @@ export function EmailTemplateCreateView() {
     const [isDefault, setIsDefault] = useState(false);
     const [errors, setErrors] = useState<{ templateName?: boolean; category?: boolean; templatefor?: boolean; subject?: boolean; emailContent?: boolean }>({});
     const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
+    const [categoryOptions, setCategoryOptions] = useState<any[]>([]);
+    const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+    const [creatingCategory, setCreatingCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const filter = createFilterOptions<any>();
+    
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
@@ -62,6 +75,35 @@ export function EmailTemplateCreateView() {
 
     const handleCloseSnackbar = () => {
         setSnackbar((prev) => ({ ...prev, open: false }));
+    };
+
+    const handleCreateCategorySubmit = async () => {
+        try {
+            if (!newCategoryName.trim()) return;
+
+            setCreatingCategory(true);
+
+            // Create Category
+            const created = await createEmailTemplateCategory(
+                newCategoryName.trim()
+            );
+
+            // Reload Categories
+            const categories = await fetchEmailTemplateCategories();
+            setCategoryOptions(categories);
+
+            // Auto Select Newly Created Category
+            setCategory(created.category);
+
+            // Close Dialog
+            setCreateCategoryOpen(false);
+            setNewCategoryName('');
+
+        } catch (error: any) {
+            console.error(error);
+        } finally {
+            setCreatingCategory(false);
+        }
     };
 
     const handleSave = async () => {
@@ -134,7 +176,6 @@ export function EmailTemplateCreateView() {
                 sender_name: '',
                 reply_to_email: '',
                 is_active: 1,
-                is_default: 0,
                 attachments: uploadedAttachments,
             });
 
@@ -222,6 +263,19 @@ export function EmailTemplateCreateView() {
         loadDefaultVariables();
     }, []);
 
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const data = await fetchEmailTemplateCategories();
+                setCategoryOptions(data);
+            } catch (err) {
+                console.error('Failed to load categories', err);
+            }
+        };
+
+        loadCategories();
+    }, []);
+
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
@@ -272,6 +326,9 @@ export function EmailTemplateCreateView() {
                 <Box>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
+                        <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
+                            <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)} />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
+                        </Stack>
                         <Stack spacing={3}>
                             <TextField
                                 fullWidth
@@ -285,25 +342,120 @@ export function EmailTemplateCreateView() {
                                 error={errors.templateName}
                                 helperText={errors.templateName ? 'This field is required' : ''}
                             />
-                            <TextField
-                                select
+                            <Autocomplete
                                 fullWidth
-                                label="Category"
-                                required
+                                options={categoryOptions}
                                 value={category}
-                                onChange={(e) => {
-                                    setCategory(e.target.value);
-                                    if (e.target.value) setErrors((prev) => ({ ...prev, category: false }));
+                                onChange={(event, newValue: any) => {
+                                    if (typeof newValue === 'string') {
+                                        setCategory(newValue);
+                                    } else if (newValue && newValue.isNew) {
+                                        setNewCategoryName(newValue.inputValue);
+                                        setCreateCategoryOpen(true);
+                                    } else {
+                                        setCategory(newValue?.category || '');
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            category: false,
+                                        }));
+                                    }
                                 }}
-                                error={errors.category}
-                                helperText={errors.category ? 'This field is required' : ''}
-                            >
-                                {['Marketing', 'Newsletter', 'Promotion', 'Welcome', 'Follow Up', 'Proposal', 'Invoice', 'Reminder', 'Custom'].map((option) => (
-                                    <MenuItem key={option} value={option}>
-                                        {option}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
+                                filterOptions={(options, params) => {
+                                    const filtered = filter(options, params) as any[];
+
+                                    const { inputValue } = params;
+
+                                    const isExisting = options.some(
+                                        (option: any) =>
+                                            option.category.toLowerCase() === inputValue.toLowerCase()
+                                    );
+
+                                    if (inputValue !== '' && !isExisting) {
+                                        filtered.push({
+                                            inputValue,
+                                            category: `+ Create "${inputValue}"`,
+                                            isNew: true,
+                                        });
+                                    } else if (inputValue === '') {
+                                        filtered.push({
+                                            inputValue: '',
+                                            category: '+ Create Category',
+                                            isNew: true,
+                                        });
+                                    }
+
+                                    return filtered;
+                                }}
+                                getOptionLabel={(option: any) => {
+                                    if (typeof option === 'string') return option;
+                                    if (option.inputValue) return option.inputValue;
+                                    return option.category || '';
+                                }}
+                                isOptionEqualToValue={(option, value) =>
+                                    option.name === value.name
+                                }
+                                renderOption={(props, option: any) => {
+                                    const { key, ...optionProps } = props as any;
+
+                                    return (
+                                        <Box
+                                            component="li"
+                                            key={key || option.category}
+                                            {...optionProps}
+                                            sx={{
+                                                typography: 'body2',
+                                                ...(option.isNew && {
+                                                    color: 'primary.main',
+                                                    fontWeight: 600,
+                                                    bgcolor: (theme) =>
+                                                        alpha(theme.palette.primary.main, 0.08),
+                                                    borderTop: (theme) =>
+                                                        `1px solid ${theme.palette.divider}`,
+                                                    mt: 0.5,
+                                                    '&:hover': {
+                                                        bgcolor: (theme) =>
+                                                            alpha(theme.palette.primary.main, 0.16),
+                                                    },
+                                                }),
+                                            }}
+                                        >
+                                            {option.isNew ? (
+                                                <Stack
+                                                    direction="row"
+                                                    spacing={1.5}
+                                                    alignItems="center"
+                                                    sx={{ py: 0.5 }}
+                                                >
+                                                    <Iconify
+                                                        icon="solar:add-circle-bold"
+                                                        width={22}
+                                                    />
+
+                                                    <Typography
+                                                        variant="subtitle2"
+                                                        sx={{ fontWeight: 700 }}
+                                                    >
+                                                        {option.inputValue
+                                                            ? `Create "${option.inputValue}"`
+                                                            : 'Create Category'}
+                                                    </Typography>
+                                                </Stack>
+                                            ) : (
+                                                option.category
+                                            )}
+                                        </Box>
+                                    );
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Category"
+                                        required
+                                        error={errors.category}
+                                        helperText={errors.category ? 'This field is required' : ''}
+                                    />
+                                )}
+                            />
                             <FormControl fullWidth error={errors.templatefor} required>
                                 <InputLabel id="template-for-label">Template For</InputLabel>
                                 <Select
@@ -375,10 +527,6 @@ export function EmailTemplateCreateView() {
                                 {errors.templatefor && <FormHelperText>This field is required</FormHelperText>}
                             </FormControl>
                             <TextField fullWidth multiline rows={3} label="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
-                            <Stack direction="row" spacing={2}>
-                                <FormControlLabel control={<CustomSwitch defaultChecked onChange={(e) => setIsActive(e.target.checked)} />} label="Is Active" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                                <FormControlLabel control={<CustomSwitch onChange={(e) => setIsDefault(e.target.checked)} />} label="Is Default" sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} />
-                            </Stack>
                         </Stack>
                     </Card>
 
@@ -687,6 +835,71 @@ export function EmailTemplateCreateView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <Dialog
+                open={createCategoryOpen}
+                onClose={() => !creatingCategory && setCreateCategoryOpen(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 2,
+                        pb: 2,
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Create Category
+                    </Typography>
+
+                    <IconButton
+                        onClick={() => !creatingCategory && setCreateCategoryOpen(false)}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+
+                <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+                    <TextField
+                        fullWidth
+                        label="Category Name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        required
+                        autoFocus
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateCategorySubmit}
+                        disabled={creatingCategory || !newCategoryName.trim()}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': {
+                                bgcolor: '#068fb3',
+                            },
+                            borderRadius: 1,
+                        }}
+                    >
+                        {creatingCategory ? (
+                            <CircularProgress size={24} color="inherit" />
+                        ) : (
+                            'Create'
+                        )}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }

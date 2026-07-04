@@ -10,7 +10,6 @@ export interface EmailTemplate {
     template_name: string;
     category: string;
     is_active: number;
-    is_default: number;
     description?: string;
     template_for?: string;
     subject: string;
@@ -70,7 +69,7 @@ export async function fetchEmailTemplates(params: FetchEmailTemplatesParams) {
     const query = new URLSearchParams({
         doctype: 'CRM Email Template',
         fields: JSON.stringify([
-            'name', 'template_name', 'category', 'is_active', 'is_default',
+            'name', 'template_name', 'category', 'is_active',
             'subject', 'sender_name', 'description', 'template_for',
             'creation', 'modified', 'owner',
         ]),
@@ -135,7 +134,7 @@ export async function createEmailTemplate(data: Partial<EmailTemplate>) {
 
 export async function updateEmailTemplate(name: string, data: Partial<EmailTemplate>) {
     const headers = await getAuthHeaders();
-    
+
     // Fetch the latest document to merge and prevent field loss/mismatch
     const latestDoc = await getEmailTemplate(name);
     const mergedDoc = {
@@ -200,4 +199,58 @@ export async function fetchEmailTemplateVariables(
     }
 
     return json.message || [];
+}
+
+export interface EmailTemplateCategory {
+    name: string;
+    category: string;
+}
+
+export async function fetchEmailTemplateCategories(): Promise<EmailTemplateCategory[]> {
+    const query = new URLSearchParams({
+        doctype: 'CRM Email Template Category',
+        fields: JSON.stringify([
+            'name',
+            'category',
+        ]),
+        order_by: 'category desc',
+        limit_page_length: '0',
+    });
+
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?${query.toString()}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch email template categories');
+    }
+
+    const json = await res.json();
+
+    return json.message || [];
+}
+
+export async function createEmailTemplateCategory(category: string) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest('/api/method/frappe.client.insert', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: 'CRM Email Template Category',
+                category,
+            },
+        }),
+    });
+
+    const json = await res.json();
+
+    if (!res.ok) {
+        throw new Error(
+            handleFrappeError(json, 'Failed to create category')
+        );
+    }
+
+    return json.message;
 }

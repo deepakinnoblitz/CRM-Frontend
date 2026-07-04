@@ -374,7 +374,6 @@ export function EmailCampaignsCreateView() {
                 <Box
                     sx={{
                         display: 'grid',
-                        margin: '1rem',
                         columnGap: 2,
                         rowGap: 3,
                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
@@ -448,12 +447,13 @@ export function EmailCampaignsCreateView() {
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
-                        mb: 2,
+                        mb: 1,
+                        my: 3,
                         flexWrap: 'wrap',
                         gap: 2,
                     }}
                 >
-                    <Typography sx={{ mb: 3, ml: 1, mt: 2, fontWeight: 700, fontSize: 16 }}>
+                    <Typography sx={{ ml: 1, mt: 1.5, mx: 1, fontWeight: 700, fontSize: 16 }}>
                         Audience
                     </Typography>
 

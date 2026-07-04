@@ -37,11 +37,9 @@ import { EmailAutomationsFiltersDrawer, EmailAutomationsFiltersProps } from '../
 
 const TABLE_HEAD = [
     { id: 'automation_name', label: 'Automation Name' },
+    { id: 'automation_type', label: 'Automation Type' },
     { id: 'email_template', label: 'Email Template' },
     { id: 'target_type', label: 'Target Type' },
-    { id: 'frequency', label: 'Frequency' },
-    { id: 'run_time', label: 'Run Time' },
-    { id: 'start_date', label: 'Start Date' },
     { id: 'status', label: 'Status', align: 'center' },
     { id: 'action', label: 'Actions', align: 'center' },
 ];
@@ -222,6 +220,15 @@ export function EmailAutomationsListView() {
                                                         {row.automation_name}
                                                     </Typography>
                                                 </TableCell>
+                                                <TableCell component="th" scope="row">
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                    {row.for_status_change === 1
+                                                        ? 'Status Change'
+                                                        : row.for_campaigns === 1
+                                                        ? 'Campaign'
+                                                        : '-'}
+                                                </Typography>
+                                                </TableCell>
                                                 <TableCell sx={{ maxWidth: 180 }}>
                                                     <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
                                                         {templatesMap[row.email_template] || row.email_template || '—'}
@@ -230,21 +237,6 @@ export function EmailAutomationsListView() {
                                                 <TableCell sx={{ maxWidth: 150 }}>
                                                     <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
                                                         {row.target_type || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell sx={{ maxWidth: 150 }}>
-                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.frequency || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell sx={{ maxWidth: 150 }}>
-                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.run_time || '—'}
-                                                    </Typography>
-                                                </TableCell>
-                                                <TableCell sx={{ maxWidth: 150 }}>
-                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.start_date ? dayjs(row.start_date).format('DD-MM-YYYY') : '—'}
                                                     </Typography>
                                                 </TableCell>
                                                 <TableCell align="center">
