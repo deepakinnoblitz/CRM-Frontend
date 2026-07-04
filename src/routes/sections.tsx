@@ -179,6 +179,8 @@ export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const EmailTemplateCategoryPage = lazy(() => import('../pages/email-template-category'));
+export const WhatsAppTemplateCategoryPage = lazy(() => import('../pages/whatsapp-template-category'));
 export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
 export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
@@ -361,6 +363,8 @@ export const routesSection: RouteObject[] = [
       { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'leave-type', element: <LeaveTypePage /> },
       { path: 'master/lead-from', element: <LeadFromPage /> },
+      { path: 'master/email-template-category', element: <EmailTemplateCategoryPage /> },
+      { path: 'master/whatsapp-template-category', element: <WhatsAppTemplateCategoryPage /> },
       { path: 'master/service', element: <ServicePage /> },
       { path: 'master/item', element: <ItemPage /> },
       { path: 'master/payment-terms', element: <PaymentTermsPage /> },
