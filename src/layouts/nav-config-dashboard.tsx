@@ -475,6 +475,8 @@ export const crmAndSalesNavData = [
       { title: 'Payment Terms', path: '/master/payment-terms' },
       { title: 'Payment Type', path: '/master/payment-type' },
       { title: 'Company Bank Account', path: '/master/company-bank-account' },
+      { title: 'Email Template Category', path: '/master/email-template-category' },
+      { title: 'WhatsApp Template Category', path: '/master/whatsapp-template-category' },
     ],
   },
   {
