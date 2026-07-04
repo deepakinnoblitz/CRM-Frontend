@@ -31,6 +31,11 @@ import ListItemText from '@mui/material/ListItemText';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import TableContainer from '@mui/material/TableContainer';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
@@ -40,7 +45,7 @@ import { frappeRequest } from 'src/utils/csrf';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { uploadWhatsappAttachment } from 'src/api/whatsapp';
 import { EmailTemplateVariable } from 'src/api/email-template';
-import { getWhatsAppTemplate, updateWhatsAppTemplate, fetchWhatsAppTemplateVariables } from 'src/api/whatsapp-template';
+import { getWhatsAppTemplate, updateWhatsAppTemplate, fetchWhatsAppTemplateVariables, fetchWhatsAppTemplateCategories, createWhatsAppTemplateCategory, WhatsAppTemplateCategory } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
 import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
@@ -112,6 +117,53 @@ export function WhatsAppTemplateEditView() {
         category?: boolean;
         messageBody?: boolean;
     }>({});
+
+    const [categoryOptions, setCategoryOptions] = useState<WhatsAppTemplateCategory[]>([]);
+    const [createCategoryOpen, setCreateCategoryOpen] = useState(false);
+    const [creatingCategory, setCreatingCategory] = useState(false);
+    const [newCategoryName, setNewCategoryName] = useState('');
+    const filter = createFilterOptions<any>();
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const data = await fetchWhatsAppTemplateCategories();
+                setCategoryOptions(data);
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+            }
+        };
+        loadCategories();
+    }, []);
+
+    const handleCreateCategorySubmit = async () => {
+        try {
+            if (!newCategoryName.trim()) return;
+
+            setCreatingCategory(true);
+
+            // Create Category
+            const created = await createWhatsAppTemplateCategory(
+                newCategoryName.trim()
+            );
+
+            // Reload Categories
+            const categories = await fetchWhatsAppTemplateCategories();
+            setCategoryOptions(categories);
+
+            // Auto Select Newly Created Category
+            setCategory(created.name);
+
+            // Close Dialog
+            setCreateCategoryOpen(false);
+            setNewCategoryName('');
+
+        } catch (error: any) {
+            console.error(error);
+        } finally {
+            setCreatingCategory(false);
+        }
+    };
 
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
@@ -442,23 +494,120 @@ export function WhatsAppTemplateEditView() {
                                     error={errors.templateName}
                                     helperText={errors.templateName ? 'This field is required' : ''}
                                 />
-                                <TextField
-                                    select
+                                <Autocomplete
                                     fullWidth
-                                    label="Category"
-                                    required
-                                    value={category}
-                                    onChange={(e) => {
-                                        setCategory(e.target.value);
-                                        if (e.target.value) setErrors((prev) => ({ ...prev, category: false }));
+                                    options={categoryOptions}
+                                    value={categoryOptions.find((opt) => opt.name === category) || null}
+                                    onChange={(event, newValue: any) => {
+                                        if (typeof newValue === 'string') {
+                                            setCategory(newValue);
+                                        } else if (newValue && newValue.isNew) {
+                                            setNewCategoryName(newValue.inputValue);
+                                            setCreateCategoryOpen(true);
+                                        } else {
+                                            setCategory(newValue?.name || '');
+                                            setErrors((prev) => ({
+                                                ...prev,
+                                                category: false,
+                                            }));
+                                        }
                                     }}
-                                    error={errors.category}
-                                    helperText={errors.category ? 'This field is required' : ''}
-                                >
-                                    {CATEGORY_OPTIONS.map((opt) => (
-                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                    ))}
-                                </TextField>
+                                    filterOptions={(options, params) => {
+                                        const filtered = filter(options, params) as any[];
+
+                                        const { inputValue } = params;
+
+                                        const isExisting = options.some(
+                                            (option: any) =>
+                                                option.category.toLowerCase() === inputValue.toLowerCase()
+                                        );
+
+                                        if (inputValue !== '' && !isExisting) {
+                                            filtered.push({
+                                                inputValue,
+                                                category: `+ Create "${inputValue}"`,
+                                                isNew: true,
+                                            });
+                                        } else if (inputValue === '') {
+                                            filtered.push({
+                                                inputValue: '',
+                                                category: '+ Create Category',
+                                                isNew: true,
+                                            });
+                                        }
+
+                                        return filtered;
+                                    }}
+                                    getOptionLabel={(option: any) => {
+                                        if (typeof option === 'string') return option;
+                                        if (option.inputValue) return option.inputValue;
+                                        return option.category || '';
+                                    }}
+                                    isOptionEqualToValue={(option, value) =>
+                                        option.name === value.name
+                                    }
+                                    renderOption={(props, option: any) => {
+                                        const { key, ...optionProps } = props as any;
+
+                                        return (
+                                            <Box
+                                                component="li"
+                                                key={key || option.category}
+                                                {...optionProps}
+                                                sx={{
+                                                    typography: 'body2',
+                                                    ...(option.isNew && {
+                                                        color: 'primary.main',
+                                                        fontWeight: 600,
+                                                        bgcolor: (theme) =>
+                                                            alpha(theme.palette.primary.main, 0.08),
+                                                        borderTop: (theme) =>
+                                                            `1px solid ${theme.palette.divider}`,
+                                                        mt: 0.5,
+                                                        '&:hover': {
+                                                            bgcolor: (theme) =>
+                                                                alpha(theme.palette.primary.main, 0.16),
+                                                        },
+                                                    }),
+                                                }}
+                                            >
+                                                {option.isNew ? (
+                                                    <Stack
+                                                        direction="row"
+                                                        spacing={1.5}
+                                                        alignItems="center"
+                                                        sx={{ py: 0.5 }}
+                                                    >
+                                                        <Iconify
+                                                            icon="solar:add-circle-bold"
+                                                            width={22}
+                                                        />
+
+                                                        <Typography
+                                                            variant="subtitle2"
+                                                            sx={{ fontWeight: 700 }}
+                                                        >
+                                                            {option.inputValue
+                                                                ? `Create "${option.inputValue}"`
+                                                                : 'Create Category'}
+                                                        </Typography>
+                                                    </Stack>
+                                                ) : (
+                                                    option.category
+                                                )}
+                                            </Box>
+                                        );
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Category"
+                                            required
+                                            error={errors.category}
+                                            helperText={errors.category ? 'This field is required' : ''}
+                                        />
+                                    )}
+                                />
                             </Box>
 
                             <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
@@ -987,6 +1136,35 @@ export function WhatsAppTemplateEditView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <Dialog
+                open={createCategoryOpen}
+                onClose={() => setCreateCategoryOpen(false)}
+                fullWidth
+                maxWidth="sm"
+            >
+                <DialogTitle>New WhatsApp Template Category</DialogTitle>
+                <DialogContent dividers>
+                    <TextField
+                        fullWidth
+                        label="Category Name"
+                        value={newCategoryName}
+                        onChange={(e) => setNewCategoryName(e.target.value)}
+                        placeholder="e.g. Authentication"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setCreateCategoryOpen(false)}>Cancel</Button>
+                    <LoadingButton
+                        variant="contained"
+                        onClick={handleCreateCategorySubmit}
+                        loading={creatingCategory}
+                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        Create
+                    </LoadingButton>
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }

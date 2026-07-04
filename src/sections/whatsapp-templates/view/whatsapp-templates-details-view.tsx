@@ -28,7 +28,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { frappeRequest } from 'src/utils/csrf';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getWhatsAppTemplate } from 'src/api/whatsapp-template';
+import { getWhatsAppTemplate, fetchWhatsAppTemplateCategories } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -51,6 +51,24 @@ export function WhatsAppTemplateDetailsView() {
     const [fetching, setFetching] = useState(true);
     const [viewAttachment, setViewAttachment] = useState<any>(null);
     const [attachmentsMeta, setAttachmentsMeta] = useState<Record<string, any>>({});
+
+    const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        const loadCategories = async () => {
+            try {
+                const categories = await fetchWhatsAppTemplateCategories();
+                setCategoryMap(
+                    Object.fromEntries(
+                        categories.map((item) => [item.name, item.category])
+                    )
+                );
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+            }
+        };
+        loadCategories();
+    }, []);
 
     useEffect(() => {
         if (id) {
@@ -230,7 +248,7 @@ export function WhatsAppTemplateDetailsView() {
                         </Stack>
                         <Stack spacing={0.5}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Category</Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{category || '-'}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{categoryMap[category] || category || '-'}</Typography>
                         </Stack>
                         <Stack spacing={0.5}>
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13, fontWeight: 600 }}>Status</Typography>
