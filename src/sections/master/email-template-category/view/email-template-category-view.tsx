@@ -24,7 +24,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { MasterEmptyState } from 'src/sections/master/master-empty-state';
+import { EmptyContent } from 'src/components/empty-content';
 
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -201,10 +201,15 @@ export function EmailTemplateCategoryView() {
                     {notFound && <TableNoData searchQuery={filterName} />}
 
                     {empty && (
-                      <MasterEmptyState
-                        masterName="Email Template Category"
-                        colSpan={3}
-                      />
+                      <TableRow>
+                        <TableCell colSpan={3}>
+                          <EmptyContent
+                            title="No Email Template Category Found"
+                            description="Created records will appear here."
+                            icon="solar:bill-check-bold-duotone"
+                          />
+                        </TableCell>
+                      </TableRow>
                     )}
 
                     {!empty && !notFound && (
