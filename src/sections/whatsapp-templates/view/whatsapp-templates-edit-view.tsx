@@ -434,7 +434,14 @@ export function WhatsAppTemplateEditView() {
 
     if (fetching) {
         return (
-            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <DashboardContent
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '100vh',
+                }}
+            >
                 <CircularProgress />
             </DashboardContent>
         );
@@ -1136,35 +1143,67 @@ export function WhatsAppTemplateEditView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-
+            
             <Dialog
                 open={createCategoryOpen}
-                onClose={() => setCreateCategoryOpen(false)}
+                onClose={() => !creatingCategory && setCreateCategoryOpen(false)}
                 fullWidth
-                maxWidth="sm"
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 },
+                }}
             >
-                <DialogTitle>New WhatsApp Template Category</DialogTitle>
-                <DialogContent dividers>
+                <DialogTitle
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        p: 2,
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        Create Category
+                    </Typography>
+        
+                    <IconButton
+                        onClick={() =>
+                            !creatingCategory && setCreateCategoryOpen(false)
+                        }
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+        
+                <DialogContent sx={{ px: 3, pt: 1 }}>
                     <TextField
                         fullWidth
+                        autoFocus
+                        required
                         label="Category Name"
                         value={newCategoryName}
                         onChange={(e) => setNewCategoryName(e.target.value)}
-                        placeholder="e.g. Authentication"
+                        sx={{ mt: 1 }}
                     />
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setCreateCategoryOpen(false)}>Cancel</Button>
-                    <LoadingButton
+        
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
                         variant="contained"
                         onClick={handleCreateCategorySubmit}
-                        loading={creatingCategory}
-                        sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+                        disabled={creatingCategory || !newCategoryName.trim()}
+                        sx={{
+                            bgcolor: '#08a3cd',
+                            '&:hover': { bgcolor: '#068fb3' },
+                        }}
                     >
-                        Create
-                    </LoadingButton>
+                        {creatingCategory ? (
+                            <CircularProgress size={22} color="inherit" />
+                        ) : (
+                            'Create'
+                        )}
+                    </Button>
                 </DialogActions>
-            </Dialog>
+            </Dialog>               
         </DashboardContent>
     );
 }

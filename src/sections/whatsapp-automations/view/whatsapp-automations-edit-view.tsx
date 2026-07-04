@@ -257,6 +257,11 @@ export function WhatsAppAutomationsEditView() {
                 <Card sx={{ p: 3, mb: 3 }}>
                     <Typography variant="h6" sx={{ mb: 3 }}>Basic Information</Typography>
                     <Stack spacing={3}>
+                        <FormControlLabel 
+                            control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
+                            label="Is Active" 
+                            sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
+                        />
                         <TextField 
                             fullWidth 
                             label="Automation Name" 
@@ -276,11 +281,6 @@ export function WhatsAppAutomationsEditView() {
                             label="Description" 
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                        />
-                        <FormControlLabel 
-                            control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} 
-                            label="Is Active" 
-                            sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }} 
                         />
                     </Stack>
                 </Card>
