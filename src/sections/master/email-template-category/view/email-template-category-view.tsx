@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -6,6 +6,7 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import LoadingButton from '@mui/lab/LoadingButton';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -19,6 +20,7 @@ import { useCrmEmailTemplateCategories } from 'src/hooks/use-masters';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { deleteCrmEmailTemplateCategory, CrmEmailTemplateCategory } from 'src/api/masters';
+import { fetchEmailTemplates } from 'src/api/email-template';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -60,6 +62,31 @@ export function EmailTemplateCategoryView() {
     open: false,
     id: null,
   });
+
+  const [deleting, setDeleting] = useState(false);
+
+  const [templateMap, setTemplateMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const res = await fetchEmailTemplates({
+          page: 1,
+          page_size: 1000,
+        });
+        const map: Record<string, string> = {};
+        res.data.forEach((tpl: any) => {
+          if (tpl.name && tpl.template_name) {
+            map[tpl.name] = tpl.template_name;
+          }
+        });
+        setTemplateMap(map);
+      } catch (err) {
+        console.error('Failed to load Email templates for mapping:', err);
+      }
+    };
+    loadTemplates();
+  }, []);
 
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
     open: false,
@@ -112,14 +139,45 @@ export function EmailTemplateCategoryView() {
 
   const handleConfirmDelete = async () => {
     if (confirmDelete.id) {
+      setDeleting(true);
       try {
         await deleteCrmEmailTemplateCategory(confirmDelete.id);
         setSnackbar({ open: true, message: 'Email Template Category deleted successfully', severity: 'success' });
         refetch();
-      } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete', severity: 'error' });
-      } finally {
         setConfirmDelete({ open: false, id: null });
+      } catch (error: any) {
+        const errorMsg = error?.message || '';
+        const isLinkError = errorMsg && (
+          errorMsg.includes('LinkExistsError') ||
+          errorMsg.includes('Cannot delete or cancel because') ||
+          errorMsg.includes('is linked with')
+        );
+        let msg = 'Failed to delete';
+        if (isLinkError) {
+          msg = 'This category is currently in use and cannot be deleted. Please remove it from any linked Email Templates first.';
+          const index = errorMsg.toLowerCase().indexOf('is linked with');
+          if (index !== -1) {
+            const linkedPart = errorMsg.substring(index + 'is linked with'.length).trim();
+            const cleanLinked = linkedPart.replace(/CRM Email Template\s*/gi, '').trim();
+            if (cleanLinked) {
+              const names = cleanLinked.split(',').map((n: string) => n.trim()).filter(Boolean);
+              
+              const resolvedNames = names.map((name: string) => templateMap[name] || name);
+
+              if (resolvedNames.length === 1) {
+                msg = `This category is currently in use by the Email Template '${resolvedNames[0]}' and cannot be deleted. Please remove or reassign it first.`;
+              } else if (resolvedNames.length > 1) {
+                const formattedNames = resolvedNames.map((n: string) => `'${n}'`).join(', ');
+                msg = `This category is currently in use by Email Templates: ${formattedNames}. Please remove or reassign them first.`;
+              }
+            }
+          }
+        } else if (error.message) {
+          msg = error.message;
+        }
+        setSnackbar({ open: true, message: msg, severity: 'error' });
+      } finally {
+        setDeleting(false);
       }
     }
   };
@@ -265,10 +323,11 @@ export function EmailTemplateCategoryView() {
         onClose={() => setConfirmDelete({ open: false, id: null })}
         title="Confirm Delete"
         content="Are you sure you want to delete this email template category?"
+        isLoading={deleting}
         action={
-          <Button variant="contained" color="error" onClick={handleConfirmDelete}>
-            Delete
-          </Button>
+          <LoadingButton variant="contained" color="error" loading={deleting} onClick={handleConfirmDelete}>
+            {deleting ? 'Deleting...' : 'Delete'}
+          </LoadingButton>
         }
       />
 
