@@ -283,10 +283,7 @@ export function WhatsAppAutomationsCreateView() {
                             >
                                 {[
                                     { value: 'Lead', label: 'Lead' },
-                                    { value: 'Contacts', label: 'Clients' },
-                                    { value: 'Accounts', label: 'Company' },
-                                    { value: 'Deal', label: 'Prospects' },
-                                    { value: 'Proposal', label: 'Proposals' },
+                                    { value: 'Deal', label: 'Prospects' }
                                 ].map(opt => (
                                     <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}

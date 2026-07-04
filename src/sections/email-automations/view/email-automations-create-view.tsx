@@ -147,11 +147,11 @@ export function EmailAutomationsCreateView() {
             newErrors.emailTemplate = true;
             missingFields.push('Email Template');
         }
-        if (!targetType) {
-            newErrors.targetType = true;
-            missingFields.push('Target Type');
-        }
         if (isForCampaigns) {
+            if (!targetType) {
+                newErrors.targetType = true;
+                missingFields.push('Target Type');
+            }
             if (!frequency) {
                 newErrors.frequency = true;
                 missingFields.push('Frequency');
@@ -437,6 +437,7 @@ export function EmailAutomationsCreateView() {
                                 value={subjectOverride}
                                 onChange={(e) => setSubjectOverride(e.target.value)}
                             />
+                            {isForCampaigns && (
                             <TextField 
                                 select
                                 fullWidth 
@@ -460,6 +461,7 @@ export function EmailAutomationsCreateView() {
                                     <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                                 ))}
                             </TextField>
+                            )}
                             {isForStatusChange && (
                             <TextField 
                                 select
