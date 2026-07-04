@@ -263,7 +263,7 @@ export function WhatsAppTemplateDetailsView() {
                                             ? 'default'
                                             : 'warning'
                                     }
-                                    sx={{ borderRadius: 1 }}
+                                    sx={{ borderRadius: 1, p: 1 }}
                                 />
                             </Box>
                         </Stack>
@@ -407,6 +407,7 @@ export function WhatsAppTemplateDetailsView() {
                                                                 icon={<HiOutlineDocumentText size={16} style={{ color: '#ffffff', marginLeft: 8, marginRight: 2 }} />}
                                                                 sx={{
                                                                     height: 'auto',
+                                                                    p: 0.3,
                                                                     bgcolor: '#22c55e',
                                                                     color: '#ffffff',
                                                                     fontWeight: 500,

@@ -151,19 +151,19 @@ export function EmailAutomationsDetailsView() {
                         <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Automation Name</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 14 }}>Automation Name</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{automation_name || '-'}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Description</Typography>
+                                    <Typography variant="caption" color="text.secondary">Description</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold', textAlign: 'right', maxWidth: '60%' }}>{description || '-'}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Is Active</Typography>
+                                    <Typography variant="caption" color="text.secondary">Is Active</Typography>
                                     <Chip label={is_active ? 'Yes' : 'No'} size="small" color={is_active ? 'success' : 'default'} sx={{ borderRadius: 1 }} />
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Status</Typography>
+                                    <Typography variant="caption" color="text.secondary">Status</Typography>
                                     <Box
                                         sx={{
                                             display: 'inline-flex',
