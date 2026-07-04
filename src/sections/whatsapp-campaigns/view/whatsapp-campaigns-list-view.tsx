@@ -104,12 +104,20 @@ export function WhatsAppCampaignsListView() {
             await deleteWhatsAppCampaign(confirmDelete.id);
             setSnackbar({ open: true, message: 'WhatsApp Campaign deleted successfully', severity: 'success' });
             await refetch();
-        } catch (e) {
+            setConfirmDelete({ open: false, id: null });
+        } catch (e: any) {
             console.error(e);
-            setSnackbar({ open: true, message: 'Failed to delete WhatsApp Campaign', severity: 'error' });
+            const isLinkError = e?.message && (
+                e.message.includes('LinkExistsError') ||
+                e.message.includes('Cannot delete or cancel because') ||
+                e.message.includes('is linked with')
+            );
+            const msg = isLinkError
+                ? 'This campaign is currently in use and cannot be deleted. Please remove it from any linked records first.'
+                : 'Failed to delete WhatsApp Campaign';
+            setSnackbar({ open: true, message: msg, severity: 'error' });
         } finally {
             setDeleting(false);
-            setConfirmDelete({ open: false, id: null });
         }
     };
 
@@ -287,9 +295,10 @@ export function WhatsAppCampaignsListView() {
 
             <ConfirmDialog
                 open={confirmDelete.open}
-                onClose={() => !deleting && setConfirmDelete({ open: false, id: null })}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
                 content="Are you sure you want to delete this WhatsApp Campaign?"
+                isLoading={deleting}
                 action={
                     <LoadingButton onClick={handleConfirmDelete} loading={deleting} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
                         Delete

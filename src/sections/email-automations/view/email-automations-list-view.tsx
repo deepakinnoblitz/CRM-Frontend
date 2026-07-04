@@ -13,6 +13,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton'; 
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -104,16 +105,29 @@ export function EmailAutomationsListView() {
         setFilters((prev) => ({ ...prev, ...update }));
     };
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleDeleteRow = async () => {
         if (!confirmDelete.id) return;
+        setIsDeleting(true);
         try {
             await deleteEmailAutomation(confirmDelete.id);
             enqueueSnackbar('Automation deleted successfully', { variant: 'success' });
             await fetchAutomations();
-        } catch (error) {
-            enqueueSnackbar('Failed to delete automation', { variant: 'error' });
-        } finally {
             setConfirmDelete({ open: false, id: null });
+        } catch (error: any) {
+            const isLinkError = error?.message && (
+                error.message.includes('LinkExistsError') ||
+                error.message.includes('Cannot delete or cancel because') ||
+                error.message.includes('is linked with')
+            );
+            if (isLinkError) {
+                enqueueSnackbar('This automation is currently in use and cannot be deleted. Please remove it from any linked records first.', { variant: 'error' });
+            } else {
+                enqueueSnackbar('Failed to delete automation', { variant: 'error' });
+            }
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -330,10 +344,11 @@ export function EmailAutomationsListView() {
                     onClose={() => setConfirmDelete({ open: false, id: null })}
                     title="Delete"
                     content="Are you sure want to delete this email automation?"
+                    isLoading={isDeleting}
                     action={
-                        <Button variant="contained" color="error" onClick={handleDeleteRow}>
+                        <LoadingButton variant="contained" color="error" loading={isDeleting} onClick={handleDeleteRow}>
                             Delete
-                        </Button>
+                        </LoadingButton>
                     }
                 />
 

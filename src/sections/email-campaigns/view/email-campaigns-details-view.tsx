@@ -16,6 +16,7 @@ import TableBody from '@mui/material/TableBody';
 import TableHead from '@mui/material/TableHead';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
@@ -168,11 +169,21 @@ export function EmailCampaignsDetailsView() {
         try {
             await deleteEmailCampaign(id);
             router.push('/email-campaigns');
-        } catch (error) {
+            setConfirmDeleteOpen(false);
+        } catch (error: any) {
             console.error('Failed to delete email campaign:', error);
+            const isLinkError = error?.message && (
+                error.message.includes('LinkExistsError') ||
+                error.message.includes('Cannot delete or cancel because') ||
+                error.message.includes('is linked with')
+            );
+            if (isLinkError) {
+                enqueueSnackbar('This campaign is currently in use and cannot be deleted. Please remove it from any linked records first.', { variant: 'error' });
+            } else {
+                enqueueSnackbar('Failed to delete email campaign', { variant: 'error' });
+            }
         } finally {
             setDeleting(false);
-            setConfirmDeleteOpen(false);
         }
     };
 
@@ -591,19 +602,20 @@ export function EmailCampaignsDetailsView() {
 
             <ConfirmDialog
                 open={confirmDeleteOpen}
-                onClose={() => !deleting && setConfirmDeleteOpen(false)}
+                onClose={() => setConfirmDeleteOpen(false)}
                 title="Confirm Delete"
                 content="Are you sure you want to delete this Email Campaign?"
+                isLoading={deleting}
                 action={
-                    <Button
+                    <LoadingButton
                         variant="contained"
                         color="error"
                         onClick={handleDelete}
-                        disabled={deleting}
+                        loading={deleting}
                         sx={{ borderRadius: 1.5, minWidth: 100 }}
                     >
-                        {deleting ? 'Deleting...' : 'Delete'}
-                    </Button>
+                        Delete
+                    </LoadingButton>
                 }
             />
         </DashboardContent>

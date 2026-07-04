@@ -17,6 +17,7 @@ type Props = {
     onClose: VoidFunction;
     icon?: string;
     iconColor?: string;
+    isLoading?: boolean;
 };
 
 export function ConfirmDialog({
@@ -27,12 +28,14 @@ export function ConfirmDialog({
     onClose,
     icon = "solar:danger-bold",
     iconColor = 'error.main',
+    isLoading = false,
     ...other
 }: Props) {
     return (
         <Dialog
             open={open}
-            onClose={onClose}
+            onClose={isLoading ? undefined : onClose}
+            disableEscapeKeyDown={isLoading}
             PaperProps={{
                 sx: { borderRadius: 2, width: '100%', maxWidth: 400 }
             }}
@@ -52,7 +55,7 @@ export function ConfirmDialog({
             )}
 
             <DialogActions sx={{ px: 3, pb: 4, justifyContent: 'center', gap: 2 }}>
-                <Button variant="outlined" color="inherit" onClick={onClose} sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                <Button variant="outlined" color="inherit" onClick={onClose} disabled={isLoading} sx={{ borderRadius: 1.5, minWidth: 100 }}>
                     Cancel
                 </Button>
                 {action}

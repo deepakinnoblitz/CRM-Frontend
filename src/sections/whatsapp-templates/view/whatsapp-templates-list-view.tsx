@@ -12,6 +12,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton'; 
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -129,16 +130,29 @@ export function WhatsAppTemplateListView() {
         fetchTemplates();
     }, [fetchTemplates]);
 
+    const [isDeleting, setIsDeleting] = useState(false);
+
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
+        setIsDeleting(true);
         try {
             await deleteWhatsAppTemplate(confirmDelete.id);
             enqueueSnackbar('Template deleted successfully', { variant: 'success' });
             await fetchTemplates();
-        } catch (error) {
-            enqueueSnackbar('Failed to delete template', { variant: 'error' });
-        } finally {
             setConfirmDelete({ open: false, id: null });
+        } catch (error: any) {
+            const isLinkError = error?.message && (
+                error.message.includes('LinkExistsError') ||
+                error.message.includes('Cannot delete or cancel because') ||
+                error.message.includes('is linked with')
+            );
+            if (isLinkError) {
+                enqueueSnackbar('This template is currently in use and cannot be deleted. Please remove it from any linked Campaigns/Automations first.', { variant: 'error' });
+            } else {
+                enqueueSnackbar('Failed to delete template', { variant: 'error' });
+            }
+        } finally {
+            setIsDeleting(false);
         }
     };
 
@@ -344,10 +358,11 @@ export function WhatsAppTemplateListView() {
                 onClose={() => setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
                 content="Are you sure you want to delete this WhatsApp template?"
+                isLoading={isDeleting}
                 action={
-                    <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+                    <LoadingButton variant="contained" color="error" loading={isDeleting} onClick={handleConfirmDelete}>
                         Delete
-                    </Button>
+                    </LoadingButton>
                 }
             />
 

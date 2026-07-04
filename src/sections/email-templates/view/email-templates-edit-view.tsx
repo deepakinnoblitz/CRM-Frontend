@@ -84,6 +84,8 @@ export function EmailTemplateEditView() {
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
 
+  const [fetching, setFetching] = useState(true);
+
   const { enqueueSnackbar } = useSnackbar();
 
   const [snackbar, setSnackbar] = useState<{
@@ -243,32 +245,39 @@ export function EmailTemplateEditView() {
     if (!id) return;
 
     const loadTemplate = async () => {
-      const doc = await getEmailTemplate(id);
-
-      setTemplateName(doc.template_name);
-      setCategory(doc.category);
-      setSubject(doc.subject);
-      setDescription(doc.description || '');
-      setSenderName(doc.sender_name || '');
-      setReplyToEmail(doc.reply_to_email || '');
-      setIsActive(doc.is_active ? true : false);
-
-      setTemplateFor(
-        doc.template_for
-          ? doc.template_for.split(',').map((s: string) => s.trim()).filter(Boolean)
-          : ['Lead']
-      );
-
-      setEmailContent(doc.email_content || '');
-      setFooterContent(doc.footer_content || '');
-      setAttachments(doc.attachments || []);
+      setFetching(true);
 
       try {
+        const doc = await getEmailTemplate(id);
+
+        setTemplateName(doc.template_name);
+        setCategory(doc.category);
+        setSubject(doc.subject);
+        setDescription(doc.description || '');
+        setSenderName(doc.sender_name || '');
+        setReplyToEmail(doc.reply_to_email || '');
+        setIsActive(!!doc.is_active);
+
+        setTemplateFor(
+          doc.template_for
+            ? doc.template_for
+                .split(',')
+                .map((s: string) => s.trim())
+                .filter(Boolean)
+            : ['Lead']
+        );
+
+        setEmailContent(doc.email_content || '');
+        setFooterContent(doc.footer_content || '');
+        setAttachments(doc.attachments || []);
+
         const savedFor = doc.template_for || 'Lead';
         const vars = await fetchEmailTemplateVariables(savedFor);
         setVariables(vars);
       } catch (err) {
         console.error(err);
+      } finally {
+        setFetching(false);
       }
     };
 
@@ -321,6 +330,21 @@ export function EmailTemplateEditView() {
           setCreatingCategory(false);
       }
   };
+
+  if (fetching) {
+      return (
+          <DashboardContent
+              sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minHeight: '100vh',
+              }}
+          >
+              <CircularProgress />
+          </DashboardContent>
+      );
+  }
 
   return (
     <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
