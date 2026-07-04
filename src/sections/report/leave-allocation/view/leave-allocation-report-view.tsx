@@ -937,8 +937,9 @@ export function LeaveAllocationReportView() {
                         <Box sx={{ p: 2.5 }}>
                             <Stack direction="row" spacing={2} sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
                                 {[
-                                    { label: 'Allocated', color: 'rgba(239, 183, 15, 0.22)' },
-                                    { label: 'Used', color: 'rgba(30, 220, 100, 0.14)' },
+                                    { label: 'Allocated', color: 'rgba(239, 183, 15, 0.28)' },
+                                    { label: 'Used', color: 'rgba(72, 237, 133, 0.59)' },
+                                    { label: 'Balance', color: 'rgba(7, 132, 190, 0.21)' },
                                 ].map((item) => (
                                     <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
                                         <Box
@@ -1081,12 +1082,15 @@ export function LeaveAllocationReportView() {
                                                                                     <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.secondary', display: 'block', mb: 0.5 }}>
                                                                                         {alloc.leave_type}
                                                                                     </Typography>
-                                                                                    <Stack direction="row" spacing={1} justifyContent="space-between" sx={{ width: '100%' }}>
-                                                                                        <Label variant="soft" color="warning" sx={{ fontSize: '0.675rem', px: 0.5, flex: 1, justifyContent: 'center', textAlign: 'center' }}>
+                                                                                    <Stack direction="row" spacing={1} justifyContent="center" sx={{ width: '100%' }}>
+                                                                                        <Label variant="soft" color="warning" sx={{ fontSize: '0.675rem', px: 0.5, width: 38, minWidth: 38, justifyContent: 'center', textAlign: 'center' }}>
                                                                                             {alloc.total_leaves_allocated}
                                                                                         </Label>
-                                                                                        <Label variant="soft" color="success" sx={{ fontSize: '0.675rem', px: 0.5, flex: 1, justifyContent: 'center', textAlign: 'center' }}>
-                                                                                            {alloc.total_leaves_taken} USED
+                                                                                        <Label variant="soft" color="success" sx={{ fontSize: '0.675rem', px: 0.5, width: 38, minWidth: 38, justifyContent: 'center', textAlign: 'center' }}>
+                                                                                            {alloc.total_leaves_taken}
+                                                                                        </Label>
+                                                                                        <Label variant="soft" color="info" sx={{ fontSize: '0.675rem', px: 0.5, width: 38, minWidth: 38, justifyContent: 'center', textAlign: 'center' }}>
+                                                                                            {alloc.balance_leaves}
                                                                                         </Label>
                                                                                     </Stack>
                                                                                 </Box>
