@@ -22,9 +22,8 @@ import { deleteCrmWhatsAppTemplateCategory, CrmWhatsAppTemplateCategory } from '
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/confirm-dialog';
-
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
