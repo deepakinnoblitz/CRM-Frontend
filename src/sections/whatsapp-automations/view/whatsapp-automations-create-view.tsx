@@ -328,6 +328,26 @@ export function WhatsAppAutomationsCreateView() {
                                 <TextField 
                                     select
                                     fullWidth 
+                                    label="Previous Workflow State" 
+                                    value={previousWorkflowState}
+                                    error={errors.previousWorkflowState}
+                                    helperText={errors.previousWorkflowState ? "This field is required" : ""}
+                                    onChange={(e) => {
+                                        setPreviousWorkflowState(e.target.value);
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            previousWorkflowState: false,
+                                        }));
+                                    }}
+                                >
+                                    <MenuItem value=""><em>None</em></MenuItem>
+                                    {leadWorkflowStates.map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField 
+                                    select
+                                    fullWidth 
                                     label="Workflow State" 
                                     value={workflowState}
                                     error={errors.workflowState}
@@ -346,53 +366,11 @@ export function WhatsAppAutomationsCreateView() {
                                         <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                                     ))}
                                 </TextField>
-
-                                <TextField 
-                                    select
-                                    fullWidth 
-                                    label="Previous Workflow State" 
-                                    value={previousWorkflowState}
-                                    error={errors.previousWorkflowState}
-                                    helperText={errors.previousWorkflowState ? "This field is required" : ""}
-                                    onChange={(e) => {
-                                        setPreviousWorkflowState(e.target.value);
-                                        setErrors((prev) => ({
-                                            ...prev,
-                                            previousWorkflowState: false,
-                                        }));
-                                    }}
-                                >
-                                    <MenuItem value=""><em>None</em></MenuItem>
-                                    {leadWorkflowStates.map(opt => (
-                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                    ))}
-                                </TextField>
                             </Stack>
                         )}
 
                         {triggerEvent === 'Deal Stage Change' && (
                             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                                <TextField 
-                                    select
-                                    fullWidth 
-                                    label="Current Deal Stage" 
-                                    value={dealStage}
-                                    error={errors.dealStage}
-                                    helperText={errors.dealStage ? "This field is required" : ""}
-                                    onChange={(e) => {
-                                        setDealStage(e.target.value)
-                                        setErrors((prev) => ({
-                                            ...prev,
-                                            dealStage: false,
-                                        }));
-                                    }}
-                                >
-                                    <MenuItem value=""><em>None</em></MenuItem>
-                                    {DEAL_STAGES.map(opt => (
-                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                    ))}
-                                </TextField>
-
                                 <TextField 
                                     select
                                     fullWidth 
@@ -405,6 +383,26 @@ export function WhatsAppAutomationsCreateView() {
                                         setErrors((prev) => ({
                                             ...prev,
                                             previousDealStage: false,
+                                        }));
+                                    }}
+                                >
+                                    <MenuItem value=""><em>None</em></MenuItem>
+                                    {DEAL_STAGES.map(opt => (
+                                        <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                    ))}
+                                </TextField>
+                                <TextField 
+                                    select
+                                    fullWidth 
+                                    label="Current Deal Stage" 
+                                    value={dealStage}
+                                    error={errors.dealStage}
+                                    helperText={errors.dealStage ? "This field is required" : ""}
+                                    onChange={(e) => {
+                                        setDealStage(e.target.value)
+                                        setErrors((prev) => ({
+                                            ...prev,
+                                            dealStage: false,
                                         }));
                                     }}
                                 >
