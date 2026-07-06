@@ -263,6 +263,18 @@ export function EmailAutomationsEditView() {
                     missingFields.push("Workflow State");
                 }
 
+                if (previousWorkflowState && workflowState && previousWorkflowState === workflowState) {
+                    newErrors.previousWorkflowState = true;
+                    newErrors.workflowState = true;
+                    setSnackbar({
+                        open: true,
+                        message: "Previous Workflow State and Target Workflow State cannot be the same.",
+                        severity: 'error',
+                    });
+                    setErrors(newErrors);
+                    return;
+                }
+
             } else if (triggerEvent === "Deal Stage Change") {
 
                 if (!previousDealStage) {
@@ -273,6 +285,18 @@ export function EmailAutomationsEditView() {
                 if (!currentDealStage) {
                     newErrors.currentDealStage = true;
                     missingFields.push("Current Deal Stage");
+                }
+
+                if (previousDealStage && currentDealStage && previousDealStage === currentDealStage) {
+                    newErrors.previousDealStage = true;
+                    newErrors.currentDealStage = true;
+                    setSnackbar({
+                        open: true,
+                        message: "Previous Deal Stage and Current Deal Stage cannot be the same.",
+                        severity: 'error',
+                    });
+                    setErrors(newErrors);
+                    return;
                 }
             }
 

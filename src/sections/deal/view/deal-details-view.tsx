@@ -181,7 +181,7 @@ export function DealDetailsView() {
         }
     }, [deal, automationData]);
 
-    const handleSendEmailAutomation = useCallback(async (proposalName: string | null) => {
+    const handleSendEmailAutomation = useCallback(async (proposalName: string | null, attachments?: { file_url: string }[] | null) => {
 
         if (!deal || !emailAutomationData) return;
 
@@ -191,7 +191,8 @@ export function DealDetailsView() {
                 emailAutomationData.automation_name,
                 "Deal",
                 deal.name,
-                proposalName
+                proposalName,
+                attachments
             );
 
             setSnackbar({
@@ -206,7 +207,7 @@ export function DealDetailsView() {
                 open: true,
                 message: err.message || "Failed to send Email.",
                 severity: "error",
-            });
+                });
 
             throw err;
         }
