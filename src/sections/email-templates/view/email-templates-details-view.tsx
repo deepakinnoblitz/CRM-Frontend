@@ -34,6 +34,12 @@ export function EmailTemplateDetailsView() {
         
         let workingStr = input.trim();
 
+        if (workingStr.startsWith('<!--mode:html-->')) {
+            workingStr = workingStr.slice('<!--mode:html-->'.length);
+        } else if (workingStr.startsWith('<!--mode:plain-->')) {
+            workingStr = workingStr.slice('<!--mode:plain-->'.length);
+        }
+
         // 1. Strip surrounding Quill RichText container tags (<div class="ql-editor...">...</div> or similar) 
         // ONLY if the inner content is entity-encoded (meaning it is actually a code template written in Quill).
         const parser = new DOMParser();
@@ -116,7 +122,17 @@ export function EmailTemplateDetailsView() {
     useEffect(() => {
         if (id) {
             getEmailTemplate(id)
-                .then(setTemplate)
+                .then((doc) => {
+                    setTemplate(doc);
+                    const email = doc.email_content || '';
+                    const footer = doc.footer_content || '';
+                    if (email.startsWith('<!--mode:html-->')) {
+                        setIsCodeView(true);
+                    }
+                    if (footer.startsWith('<!--mode:html-->')) {
+                        setIsCodeViewFooter(true);
+                    }
+                })
                 .catch((err) => console.error('Failed to fetch template details:', err))
                 .finally(() => setFetching(false));
         }
