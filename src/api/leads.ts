@@ -442,7 +442,8 @@ export async function sendAutomationMessage(
     automationName: string,
     doctype: string,
     docname: string,
-    proposalName: string | null
+    proposalName: string | null,
+    attachments?: { file_url: string }[] | null
 ): Promise<any> {
     const headers = await getAuthHeaders();
     const res = await frappeRequest(
@@ -455,6 +456,7 @@ export async function sendAutomationMessage(
                 doctype,
                 docname,
                 proposal_name: proposalName,
+                attachments: attachments || null,
             }),
         }
     );
@@ -501,11 +503,25 @@ export async function getEmailAutomationPreview(
     return data.message;
 }
 
+export async function getProposalAttachments(
+    proposalName: string
+): Promise<{ name: string; file_name: string; file_url: string; file_size?: number }[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_email_automation.crm_email_automation.get_proposal_attachments?proposal_name=${encodeURIComponent(proposalName)}`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch proposal attachments");
+    }
+    const data = await res.json();
+    return data.message || [];
+}
+
 export async function sendEmailAutomationMessage(
     automationName: string,
     doctype: string,
     docname: string,
-    proposalName: string | null
+    proposalName: string | null,
+    attachments?: { file_url: string }[] | null
 ): Promise<any> {
     const headers = await getAuthHeaders();
     const res = await frappeRequest(
@@ -518,6 +534,7 @@ export async function sendEmailAutomationMessage(
                 doctype,
                 docname,
                 proposal_name: proposalName,
+                attachments: attachments || null,
             }),
         }
     );
