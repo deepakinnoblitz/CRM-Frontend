@@ -52,6 +52,18 @@ import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
+const isPlainTextEmpty = (val: string) => {
+  if (!val) return true;
+  const doc = new DOMParser().parseFromString(val, 'text/html');
+  const text = doc.body.textContent || '';
+  return text.replace(/\s/g, '').trim() === '';
+};
+
+const isHtmlCodeEmpty = (val: string) => {
+  if (!val) return true;
+  return val.trim() === '';
+};
+
 export function EmailTemplateEditView() {
   const router = useRouter();
   const { id } = useParams();
@@ -730,6 +742,7 @@ export function EmailTemplateEditView() {
                         variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
                         onClick={() => setIsHtmlModeEmail(false)}
                         startIcon={<Iconify icon="solar:document-bold" />}
+                        disabled={isHtmlModeEmail && !isHtmlCodeEmpty(emailContentHtml)}
                         sx={{
                             textTransform: 'none',
                             fontWeight: 600,
@@ -756,27 +769,28 @@ export function EmailTemplateEditView() {
                         variant={isHtmlModeEmail ? 'contained' : 'outlined'}
                         onClick={() => setIsHtmlModeEmail(true)}
                         startIcon={<Iconify icon={"solar:code-bold" as any} />}
-                          sx={{
-                              textTransform: 'none',
-                              fontWeight: 600,
-                              ...(isHtmlModeEmail
-                                  ? {
-                                        bgcolor: '#08a3cd',
-                                        color: 'common.white',
-                                        '&:hover': {
-                                            bgcolor: '#068fb3',
-                                        },
-                                    }
-                                  : {
-                                        bgcolor: 'transparent',
-                                        color: '#08a3cd',
-                                        borderColor: '#08a3cd',
-                                        '&:hover': {
-                                            borderColor: '#068fb3',
-                                            bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                        },
-                                    }),
-                          }}
+                        disabled={!isHtmlModeEmail && !isPlainTextEmpty(emailContent)}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            ...(isHtmlModeEmail
+                                ? {
+                                      bgcolor: '#08a3cd',
+                                      color: 'common.white',
+                                      '&:hover': {
+                                          bgcolor: '#068fb3',
+                                      },
+                                  }
+                                : {
+                                      bgcolor: 'transparent',
+                                      color: '#08a3cd',
+                                      borderColor: '#08a3cd',
+                                      '&:hover': {
+                                          borderColor: '#068fb3',
+                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                      },
+                                  }),
+                        }}
                     >
                         HTML Code
                     </Button>
@@ -833,6 +847,7 @@ export function EmailTemplateEditView() {
                       variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
                       onClick={() => setIsHtmlModeFooter(false)}
                       startIcon={<Iconify icon="solar:document-bold" />}
+                      disabled={isHtmlModeFooter && !isHtmlCodeEmpty(footerContentHtml)}
                       sx={{
                             textTransform: 'none',
                             fontWeight: 600,
@@ -859,6 +874,7 @@ export function EmailTemplateEditView() {
                       variant={isHtmlModeFooter ? 'contained' : 'outlined'}
                       onClick={() => setIsHtmlModeFooter(true)}
                       startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                      disabled={!isHtmlModeFooter && !isPlainTextEmpty(footerContent)}
                       sx={{
                             textTransform: 'none',
                             fontWeight: 600,
