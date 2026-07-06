@@ -58,7 +58,9 @@ export function EmailTemplateEditView() {
   const [templateFor, setTemplateFor] = useState<string[]>(['Lead']);
   const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
   const [emailContent, setEmailContent] = useState('');
+  const [emailContentHtml, setEmailContentHtml] = useState('');
   const [footerContent, setFooterContent] = useState('');
+  const [footerContentHtml, setFooterContentHtml] = useState('');
   const [isHtmlModeEmail, setIsHtmlModeEmail] = useState(false);
   const [isHtmlModeFooter, setIsHtmlModeFooter] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
@@ -88,52 +90,6 @@ export function EmailTemplateEditView() {
   const [newCategoryName, setNewCategoryName] = useState('');
 
   const [fetching, setFetching] = useState(true);
-
-  const decodeHtmlEntities = (input: string) => {
-    if (!input) return '';
-    try {
-      const txt = document.createElement('textarea');
-      txt.innerHTML = input;
-      let val = txt.value;
-      // Clean up Quill wrapper elements if we switch to raw HTML view
-      const qlWrapperRegex = /^<div[^>]*class="[^"]*ql-editor[^"]*"[^>]*>([\s\S]*)<\/div>$/i;
-      const match = val.match(qlWrapperRegex);
-      if (match) {
-        val = match[1];
-      }
-      return val.trim();
-    } catch (e) {
-      return input;
-    }
-  };
-
-  const handleEmailModeChange = (htmlMode: boolean) => {
-    if (htmlMode === isHtmlModeEmail) return;
-    if (htmlMode) {
-      setEmailContent((prev) => decodeHtmlEntities(prev));
-    } else {
-      setEmailContent((prev) => {
-        const trimmed = prev.trim();
-        if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
-        return `<div class="ql-editor read-mode">${trimmed}</div>`;
-      });
-    }
-    setIsHtmlModeEmail(htmlMode);
-  };
-
-  const handleFooterModeChange = (htmlMode: boolean) => {
-    if (htmlMode === isHtmlModeFooter) return;
-    if (htmlMode) {
-      setFooterContent((prev) => decodeHtmlEntities(prev));
-    } else {
-      setFooterContent((prev) => {
-        const trimmed = prev.trim();
-        if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
-        return `<div class="ql-editor read-mode">${trimmed}</div>`;
-      });
-    }
-    setIsHtmlModeFooter(htmlMode);
-  };
 
   const { enqueueSnackbar } = useSnackbar();
 
@@ -167,7 +123,10 @@ export function EmailTemplateEditView() {
       newErrors.subject = true;
       missingFields.push('Subject');
     }
-    if (!emailContent || emailContent === '<p><br></p>' || emailContent.trim() === '') {
+    const currentEmailContent = isHtmlModeEmail ? emailContentHtml : emailContent;
+    const currentFooterContent = isHtmlModeFooter ? footerContentHtml : footerContent;
+
+    if (!currentEmailContent || currentEmailContent === '<p><br></p>' || currentEmailContent.trim() === '') {
       newErrors.emailContent = true;
       missingFields.push('Email Content');
     }
@@ -202,13 +161,28 @@ export function EmailTemplateEditView() {
         })
       );
 
+      const finalEmailContent = isHtmlModeEmail
+        ? `<!--mode:html-->${emailContentHtml}`
+        : `<!--mode:plain-->${emailContent}`;
+
+      let finalFooterContent = '';
+      if (isHtmlModeFooter) {
+        if (footerContentHtml && footerContentHtml.trim() !== '') {
+          finalFooterContent = `<!--mode:html-->${footerContentHtml}`;
+        }
+      } else {
+        if (footerContent && footerContent.trim() !== '' && footerContent !== '<p><br></p>' && footerContent !== '<div class="ql-editor read-mode"></div>' && footerContent !== '<div class="ql-editor read-mode"><p><br></p></div>') {
+          finalFooterContent = `<!--mode:plain-->${footerContent}`;
+        }
+      }
+
       await updateEmailTemplate(id!, {
         template_name: templateName,
         category,
         template_for: templateFor.join(','),
         subject,
-        email_content: emailContent,
-        footer_content: (!footerContent || footerContent.trim() === '' || footerContent === '<p><br></p>' || footerContent === '<div class="ql-editor read-mode"></div>' || footerContent === '<div class="ql-editor read-mode"><p><br></p></div>') ? '' : footerContent,
+        email_content: finalEmailContent,
+        footer_content: finalFooterContent,
         description,
         sender_name: senderName,
         reply_to_email: replyToEmail,
@@ -318,29 +292,37 @@ export function EmailTemplateEditView() {
             : ['Lead']
         );
 
-        // Detect if loaded content is a custom HTML template.
-        // If it contains tag definitions or CSS code blocks, we auto-enable raw HTML mode.
         const rawEmail = doc.email_content || '';
         const rawFooter = doc.footer_content || '';
 
-        const hasEmailHtml = /<[a-z/][^>]*>|href\s*=|style\s*=/i.test(rawEmail) && 
-                             !(rawEmail.includes('class="ql-editor"') && !rawEmail.includes('&lt;'));
-        const hasFooterHtml = /<[a-z/][^>]*>|href\s*=|style\s*=/i.test(rawFooter) && 
-                              !(rawFooter.includes('class="ql-editor"') && !rawFooter.includes('&lt;'));
-
-        if (hasEmailHtml) {
+        if (rawEmail.startsWith('<!--mode:html-->')) {
           setIsHtmlModeEmail(true);
-          // Decoded representation for editor
-          setEmailContent(decodeHtmlEntities(rawEmail));
+          setEmailContentHtml(rawEmail.slice('<!--mode:html-->'.length));
+          setEmailContent('');
+        } else if (rawEmail.startsWith('<!--mode:plain-->')) {
+          setIsHtmlModeEmail(false);
+          setEmailContent(rawEmail.slice('<!--mode:plain-->'.length));
+          setEmailContentHtml('');
         } else {
+          // Fallback for legacy documents
+          setIsHtmlModeEmail(false);
           setEmailContent(rawEmail);
+          setEmailContentHtml('');
         }
 
-        if (hasFooterHtml) {
+        if (rawFooter.startsWith('<!--mode:html-->')) {
           setIsHtmlModeFooter(true);
-          setFooterContent(decodeHtmlEntities(rawFooter));
+          setFooterContentHtml(rawFooter.slice('<!--mode:html-->'.length));
+          setFooterContent('');
+        } else if (rawFooter.startsWith('<!--mode:plain-->')) {
+          setIsHtmlModeFooter(false);
+          setFooterContent(rawFooter.slice('<!--mode:plain-->'.length));
+          setFooterContentHtml('');
         } else {
+          // Fallback for legacy documents
+          setIsHtmlModeFooter(false);
           setFooterContent(rawFooter);
+          setFooterContentHtml('');
         }
 
         setAttachments(doc.attachments || []);
@@ -746,7 +728,7 @@ export function EmailTemplateEditView() {
                     <Button
                         size="small"
                         variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
-                        onClick={() => handleEmailModeChange(false)}
+                        onClick={() => setIsHtmlModeEmail(false)}
                         startIcon={<Iconify icon="solar:document-bold" />}
                         sx={{
                             textTransform: 'none',
@@ -772,7 +754,7 @@ export function EmailTemplateEditView() {
                     <Button
                         size="small"
                         variant={isHtmlModeEmail ? 'contained' : 'outlined'}
-                        onClick={() => handleEmailModeChange(true)}
+                        onClick={() => setIsHtmlModeEmail(true)}
                         startIcon={<Iconify icon={"solar:code-bold" as any} />}
                           sx={{
                               textTransform: 'none',
@@ -819,10 +801,10 @@ export function EmailTemplateEditView() {
                     <Editor
                       height="500px"
                       defaultLanguage="html"
-                      value={emailContent}
+                      value={emailContentHtml}
                       onChange={(val) => {
                         const newValue = val || '';
-                        setEmailContent(newValue);
+                        setEmailContentHtml(newValue);
                         if (newValue.trim())
                           setErrors((prev) => ({ ...prev, emailContent: false }));
                       }}
@@ -849,7 +831,7 @@ export function EmailTemplateEditView() {
                     <Button
                       size="small"
                       variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
-                      onClick={() => handleFooterModeChange(false)}
+                      onClick={() => setIsHtmlModeFooter(false)}
                       startIcon={<Iconify icon="solar:document-bold" />}
                       sx={{
                             textTransform: 'none',
@@ -875,7 +857,7 @@ export function EmailTemplateEditView() {
                     <Button
                       size="small"
                       variant={isHtmlModeFooter ? 'contained' : 'outlined'}
-                      onClick={() => handleFooterModeChange(true)}
+                      onClick={() => setIsHtmlModeFooter(true)}
                       startIcon={<Iconify icon={"solar:code-bold" as any} />}
                       sx={{
                             textTransform: 'none',
@@ -913,8 +895,8 @@ export function EmailTemplateEditView() {
                     <Editor
                       height="300px"
                       defaultLanguage="html"
-                      value={footerContent}
-                      onChange={(val) => setFooterContent(val || '')}
+                      value={footerContentHtml}
+                      onChange={(val) => setFooterContentHtml(val || '')}
                       options={{
                         minimap: { enabled: false },
                         wordWrap: 'on',

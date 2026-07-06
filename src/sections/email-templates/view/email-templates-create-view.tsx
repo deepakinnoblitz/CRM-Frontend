@@ -45,7 +45,9 @@ import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 export function EmailTemplateCreateView() {
     const router = useRouter();
     const [emailContent, setEmailContent] = useState('');
+    const [emailContentHtml, setEmailContentHtml] = useState('');
     const [footerContent, setFooterContent] = useState('');
+    const [footerContentHtml, setFooterContentHtml] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -68,54 +70,6 @@ export function EmailTemplateCreateView() {
     const [creatingCategory, setCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const filter = createFilterOptions<any>();
-
-    const decodeHtmlEntities = (input: string) => {
-        if (!input) return '';
-        try {
-            const txt = document.createElement('textarea');
-            txt.innerHTML = input;
-            let val = txt.value;
-            // Clean up Quill wrapper elements if we switch to raw HTML view
-            const qlWrapperRegex = /^<div[^>]*class="[^"]*ql-editor[^"]*"[^>]*>([\s\S]*)<\/div>$/i;
-            const match = val.match(qlWrapperRegex);
-            if (match) {
-                val = match[1];
-            }
-            return val.trim();
-        } catch (e) {
-            return input;
-        }
-    };
-
-    const handleEmailModeChange = (htmlMode: boolean) => {
-        if (htmlMode === isHtmlModeEmail) return;
-        if (htmlMode) {
-            // Switching to HTML code mode: decode entity representations into actual tags
-            setEmailContent((prev) => decodeHtmlEntities(prev));
-        } else {
-            // Switching to Normal mode: wrap in standard ql-editor container
-            setEmailContent((prev) => {
-                const trimmed = prev.trim();
-                if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
-                return `<div class="ql-editor read-mode">${trimmed}</div>`;
-            });
-        }
-        setIsHtmlModeEmail(htmlMode);
-    };
-
-    const handleFooterModeChange = (htmlMode: boolean) => {
-        if (htmlMode === isHtmlModeFooter) return;
-        if (htmlMode) {
-            setFooterContent((prev) => decodeHtmlEntities(prev));
-        } else {
-            setFooterContent((prev) => {
-                const trimmed = prev.trim();
-                if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
-                return `<div class="ql-editor read-mode">${trimmed}</div>`;
-            });
-        }
-        setIsHtmlModeFooter(htmlMode);
-    };
     
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -181,7 +135,10 @@ export function EmailTemplateCreateView() {
             missingFields.push('Subject');
         }
 
-        if (!emailContent || emailContent === '<p><br></p>' || emailContent.trim() === '') {
+        const currentEmailContent = isHtmlModeEmail ? emailContentHtml : emailContent;
+        const currentFooterContent = isHtmlModeFooter ? footerContentHtml : footerContent;
+
+        if (!currentEmailContent || currentEmailContent === '<p><br></p>' || currentEmailContent.trim() === '') {
             newErrors.emailContent = true;
             missingFields.push('Email Content');
         }
@@ -216,13 +173,28 @@ export function EmailTemplateCreateView() {
                 })
             );
 
+            const finalEmailContent = isHtmlModeEmail
+                ? `<!--mode:html-->${emailContentHtml}`
+                : `<!--mode:plain-->${emailContent}`;
+
+            let finalFooterContent = '';
+            if (isHtmlModeFooter) {
+                if (footerContentHtml && footerContentHtml.trim() !== '') {
+                    finalFooterContent = `<!--mode:html-->${footerContentHtml}`;
+                }
+            } else {
+                if (footerContent && footerContent.trim() !== '' && footerContent !== '<p><br></p>' && footerContent !== '<div class="ql-editor read-mode"></div>' && footerContent !== '<div class="ql-editor read-mode"><p><br></p></div>') {
+                    finalFooterContent = `<!--mode:plain-->${footerContent}`;
+                }
+            }
+
             await createEmailTemplate({
                 template_name: templateName,
                 category,
                 template_for: templatefor.join(','),
                 subject,
-                email_content: emailContent,
-                footer_content: (!footerContent || footerContent.trim() === '' || footerContent === '<p><br></p>' || footerContent === '<div class="ql-editor read-mode"></div>' || footerContent === '<div class="ql-editor read-mode"><p><br></p></div>') ? '' : footerContent,
+                email_content: finalEmailContent,
+                footer_content: finalFooterContent,
                 description: '',
                 sender_name: '',
                 reply_to_email: '',
@@ -617,7 +589,7 @@ export function EmailTemplateCreateView() {
                                         <Button
                                             size="small"
                                             variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
-                                            onClick={() => handleEmailModeChange(false)}
+                                            onClick={() => setIsHtmlModeEmail(false)}
                                             startIcon={<Iconify icon="solar:document-bold" />}
                                             sx={{
                                                 textTransform: 'none',
@@ -643,7 +615,7 @@ export function EmailTemplateCreateView() {
                                         <Button
                                             size="small"
                                             variant={isHtmlModeEmail ? 'contained' : 'outlined'}
-                                            onClick={() => handleEmailModeChange(true)}
+                                            onClick={() => setIsHtmlModeEmail(true)}
                                             startIcon={<Iconify icon={"solar:code-bold" as any} />}
                                             sx={{
                                                 textTransform: 'none',
@@ -686,10 +658,10 @@ export function EmailTemplateCreateView() {
                                         <Editor
                                             height="500px"
                                             defaultLanguage="html"
-                                            value={emailContent}
+                                            value={emailContentHtml}
                                             onChange={(val) => {
                                                 const newValue = val || '';
-                                                setEmailContent(newValue);
+                                                setEmailContentHtml(newValue);
                                                 if (newValue.trim()) setErrors((prev) => ({ ...prev, emailContent: false }));
                                             }}
                                             options={{
@@ -712,7 +684,7 @@ export function EmailTemplateCreateView() {
                                         <Button
                                             size="small"
                                             variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
-                                            onClick={() => handleFooterModeChange(false)}
+                                            onClick={() => setIsHtmlModeFooter(false)}
                                             startIcon={<Iconify icon="solar:document-bold" />}
                                             sx={{
                                                 textTransform: 'none',
@@ -738,7 +710,7 @@ export function EmailTemplateCreateView() {
                                         <Button
                                             size="small"
                                             variant={isHtmlModeFooter ? 'contained' : 'outlined'}
-                                            onClick={() => handleFooterModeChange(true)}
+                                            onClick={() => setIsHtmlModeFooter(true)}
                                             startIcon={<Iconify icon={"solar:code-bold" as any} />}
                                             sx={{
                                                 textTransform: 'none',
@@ -776,8 +748,8 @@ export function EmailTemplateCreateView() {
                                         <Editor
                                             height="300px"
                                             defaultLanguage="html"
-                                            value={footerContent}
-                                            onChange={(val) => setFooterContent(val || '')}
+                                            value={footerContentHtml}
+                                            onChange={(val) => setFooterContentHtml(val || '')}
                                             options={{
                                                 minimap: { enabled: false },
                                                 wordWrap: 'on',
