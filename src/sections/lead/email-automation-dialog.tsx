@@ -16,6 +16,8 @@ import DialogActions from '@mui/material/DialogActions';
 import FormHelperText from '@mui/material/FormHelperText';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { getProposalByLeadId } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
@@ -57,8 +59,15 @@ export function EmailAutomationDialog({
   const [loadingProposals, setLoadingProposals] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [livePreview, setLivePreview] = useState<string>(automation.preview);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   const isProposalSentState = lead?.workflow_state === 'Proposal Sent';
+
+  // Reset live preview when automation changes (i.e. dialog reopens)
+  useEffect(() => {
+    setLivePreview(automation.preview);
+  }, [automation.preview]);
 
   useEffect(() => {
     if (open && isProposalSentState && lead?.name) {
@@ -78,6 +87,23 @@ export function EmailAutomationDialog({
         });
     }
   }, [open, isProposalSentState, lead?.name]);
+
+  // Re-fetch preview when a proposal is selected
+  useEffect(() => {
+    if (!selectedProposal || !lead?.name) return;
+    setLoadingPreview(true);
+    frappeRequest(
+      `/api/method/company.company.doctype.crm_email_automation.crm_email_automation.get_automation_preview?doctype=Lead&docname=${encodeURIComponent(lead.name)}&proposal_name=${encodeURIComponent(selectedProposal)}`
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.message?.preview) {
+          setLivePreview(data.message.preview);
+        }
+      })
+      .catch((err) => console.error('Failed to refresh preview:', err))
+      .finally(() => setLoadingPreview(false));
+  }, [selectedProposal, lead?.name]);
 
   const handleConfirm = async () => {
     if (isProposalSentState && !selectedProposal) {
@@ -160,19 +186,27 @@ export function EmailAutomationDialog({
             borderColor: (theme) => (theme.palette.mode === 'light' ? '#e2e8f0' : 'divider'),
             overflowY: 'auto',
             boxShadow: 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+            position: 'relative',
           }}
         >
-          <Box
-            dangerouslySetInnerHTML={{ __html: decodeHtml(automation.preview) }}
-            sx={{
-              fontSize: '14.5px',
-              lineHeight: 1.6,
-              color: 'text.primary',
-              '& p': { my: 1 },
-              '& table': { width: '100%', borderCollapse: 'collapse', my: 2 },
-              '& td, & th': { border: '1px solid rgba(0, 0, 0, 0.12)', p: 1 },
-            }}
-          />
+          {loadingPreview && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 3 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+          {!loadingPreview && (
+            <Box
+              dangerouslySetInnerHTML={{ __html: decodeHtml(livePreview) }}
+              sx={{
+                fontSize: '14.5px',
+                lineHeight: 1.6,
+                color: 'text.primary',
+                '& p': { my: 1 },
+                '& table': { width: '100%', borderCollapse: 'collapse', my: 2 },
+                '& td, & th': { border: '1px solid rgba(0, 0, 0, 0.12)', p: 1 },
+              }}
+            />
+          )}
         </Box>
       </DialogContent>
       
@@ -209,3 +243,4 @@ export function EmailAutomationDialog({
     </Dialog>
   );
 }
+

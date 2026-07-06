@@ -13,11 +13,6 @@ export interface EmailSettings {
     maximum_retry_count: number;
     auto_retry_failed_emails: number;
     enable_email_automation: number;
-    scheduler_interval: string;
-    create_campaign_history: number;
-    queue_size: number;
-    auto_delete_old_queue_records: number;
-    queue_retention_days: number;
     enable_debug_logs: number;
 }
 
