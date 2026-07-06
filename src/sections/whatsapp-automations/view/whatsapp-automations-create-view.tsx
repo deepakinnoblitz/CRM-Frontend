@@ -181,6 +181,7 @@ export function WhatsAppAutomationsCreateView() {
         createWhatsAppAutomation(data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation created successfully!', severity: 'success' });
+                sessionStorage.setItem('whatsapp_automation_success_message', 'Automation created successfully!');
                 setTimeout(() => {
                     router.push('/whatsapp-automation');
                 }, 1000);

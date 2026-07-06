@@ -322,6 +322,7 @@ export function WhatsAppTemplateCreateView() {
             });
 
             setSnackbar({ open: true, severity: 'success', message: 'WhatsApp Template created successfully.' });
+            sessionStorage.setItem('whatsapp_template_success_message', 'WhatsApp Template created successfully.');
             setTimeout(() => router.push('/whatsapp-templates'), 500);
         } catch (error: any) {
             setSnackbar({ open: true, severity: 'error', message: error.message || 'Failed to create WhatsApp template.' });

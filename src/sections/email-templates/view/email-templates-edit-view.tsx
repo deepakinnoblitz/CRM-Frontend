@@ -177,6 +177,8 @@ export function EmailTemplateEditView() {
         message: 'Template updated successfully',
       });
 
+      sessionStorage.setItem('email_template_success_message', 'Template updated successfully');
+
       setTimeout(() => {
         router.push('/email-templates');
       }, 500);

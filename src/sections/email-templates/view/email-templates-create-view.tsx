@@ -185,6 +185,8 @@ export function EmailTemplateCreateView() {
                 message: 'Email Template created successfully.',
             });
 
+            sessionStorage.setItem('email_template_success_message', 'Email Template created successfully.');
+
             setTimeout(() => {
                 router.push('/email-templates');
             }, 500);

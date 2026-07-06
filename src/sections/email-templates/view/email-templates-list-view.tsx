@@ -3,11 +3,13 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import { alpha } from '@mui/material/styles';
+import Snackbar from '@mui/material/Snackbar';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -62,6 +64,16 @@ export function EmailTemplateListView() {
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
     const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem('email_template_success_message');
+        if (msg) {
+            setSuccessMessage(msg);
+            sessionStorage.removeItem('email_template_success_message');
+        }
+    }, []);
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -342,6 +354,17 @@ export function EmailTemplateListView() {
                 canReset={!!filterName || filters.status !== 'all' || filters.category !== 'all' || !!filters.created_by}
                 onResetFilters={() => { setFilterName(''); setFilters({ status: 'all', category: 'all', created_by: '' }); }}
             />
+
+            <Snackbar
+                open={!!successMessage}
+                autoHideDuration={6000}
+                onClose={() => setSuccessMessage(null)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+                    {successMessage}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }
