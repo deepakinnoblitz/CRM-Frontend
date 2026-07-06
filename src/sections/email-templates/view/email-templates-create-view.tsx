@@ -42,6 +42,18 @@ import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
+const isPlainTextEmpty = (val: string) => {
+    if (!val) return true;
+    const doc = new DOMParser().parseFromString(val, 'text/html');
+    const text = doc.body.textContent || '';
+    return text.replace(/\s/g, '').trim() === '';
+};
+
+const isHtmlCodeEmpty = (val: string) => {
+    if (!val) return true;
+    return val.trim() === '';
+};
+
 export function EmailTemplateCreateView() {
     const router = useRouter();
     const [emailContent, setEmailContent] = useState('');
@@ -589,6 +601,7 @@ export function EmailTemplateCreateView() {
                                             variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
                                             onClick={() => setIsHtmlModeEmail(false)}
                                             startIcon={<Iconify icon="solar:document-bold" />}
+                                            disabled={isHtmlModeEmail && !isHtmlCodeEmpty(emailContentHtml)}
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
@@ -615,6 +628,7 @@ export function EmailTemplateCreateView() {
                                             variant={isHtmlModeEmail ? 'contained' : 'outlined'}
                                             onClick={() => setIsHtmlModeEmail(true)}
                                             startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                                            disabled={!isHtmlModeEmail && !isPlainTextEmpty(emailContent)}
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
@@ -684,6 +698,7 @@ export function EmailTemplateCreateView() {
                                             variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
                                             onClick={() => setIsHtmlModeFooter(false)}
                                             startIcon={<Iconify icon="solar:document-bold" />}
+                                            disabled={isHtmlModeFooter && !isHtmlCodeEmpty(footerContentHtml)}
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
@@ -710,6 +725,7 @@ export function EmailTemplateCreateView() {
                                             variant={isHtmlModeFooter ? 'contained' : 'outlined'}
                                             onClick={() => setIsHtmlModeFooter(true)}
                                             startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                                            disabled={!isHtmlModeFooter && !isPlainTextEmpty(footerContent)}
                                             sx={{
                                                 textTransform: 'none',
                                                 fontWeight: 600,
