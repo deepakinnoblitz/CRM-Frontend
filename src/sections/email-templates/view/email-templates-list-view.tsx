@@ -64,6 +64,7 @@ export function EmailTemplateListView() {
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
     const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+    const [categories, setCategories] = useState<any[]>([]);
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -129,13 +130,16 @@ export function EmailTemplateListView() {
 
     useEffect(() => {
         async function loadCategories() {
-            const categories = await fetchEmailTemplateCategories();
-
-            const map = Object.fromEntries(
-                categories.map((item) => [item.name, item.category])
-            );
-
-            setCategoryMap(map);
+            try {
+                const categoriesData = await fetchEmailTemplateCategories();
+                setCategories(categoriesData);
+                const map = Object.fromEntries(
+                    categoriesData.map((item) => [item.name, item.category])
+                );
+                setCategoryMap(map);
+            } catch (err) {
+                console.error('Failed to load categories:', err);
+            }
         }
 
         loadCategories();
@@ -353,6 +357,7 @@ export function EmailTemplateListView() {
                 onFilters={(update) => setFilters(prev => ({ ...prev, ...update }))}
                 canReset={!!filterName || filters.status !== 'all' || filters.category !== 'all' || !!filters.created_by}
                 onResetFilters={() => { setFilterName(''); setFilters({ status: 'all', category: 'all', created_by: '' }); }}
+                categories={categories}
             />
 
             <Snackbar

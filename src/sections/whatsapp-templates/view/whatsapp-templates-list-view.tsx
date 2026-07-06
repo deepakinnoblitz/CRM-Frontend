@@ -99,14 +99,16 @@ export function WhatsAppTemplateListView() {
     }, []);
 
     const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+    const [categories, setCategories] = useState<any[]>([]);
 
     useEffect(() => {
         const loadCategories = async () => {
             try {
-                const categories = await fetchWhatsAppTemplateCategories();
+                const categoriesData = await fetchWhatsAppTemplateCategories();
+                setCategories(categoriesData);
                 setCategoryMap(
                     Object.fromEntries(
-                        categories.map((item) => [item.name, item.category])
+                        categoriesData.map((item) => [item.name, item.category])
                     )
                 );
             } catch (err) {
@@ -386,6 +388,7 @@ export function WhatsAppTemplateListView() {
                 onFilters={(update) => setFilters(prev => ({ ...prev, ...update }))}
                 canReset={!!filterName || filters.status !== 'all' || filters.category !== 'all'}
                 onResetFilters={() => { setFilterName(''); setFilters({ status: 'all', category: 'all' }); }}
+                categories={categories}
             />
 
             <Snackbar

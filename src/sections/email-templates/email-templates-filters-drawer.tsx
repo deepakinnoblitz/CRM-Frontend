@@ -14,7 +14,6 @@ import { Scrollbar } from 'src/components/scrollbar';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = ['all', 'Active', 'Inactive'];
-const CATEGORY_OPTIONS = ['all', 'Marketing', 'Newsletter', 'Promotion', 'Welcome', 'Follow Up', 'Proposal', 'Invoice', 'Reminder', 'Custom'];
 
 type FiltersProps = {
     category: string;
@@ -30,6 +29,7 @@ type Props = {
     onFilters: (update: Partial<FiltersProps>) => void;
     canReset: boolean;
     onResetFilters: () => void;
+    categories: any[];
 };
 
 export function EmailTemplateFiltersDrawer({
@@ -40,6 +40,7 @@ export function EmailTemplateFiltersDrawer({
     onFilters,
     canReset,
     onResetFilters,
+    categories,
 }: Props) {
     const handleFilterChange = (field: keyof FiltersProps, value: string) => {
         onFilters({ [field]: value });
@@ -103,8 +104,12 @@ export function EmailTemplateFiltersDrawer({
                 onChange={(event, newValue) => {
                     handleFilterChange('category', newValue || 'all');
                 }}
-                options={CATEGORY_OPTIONS}
-                getOptionLabel={(option) => (option === 'all' ? 'All Categories' : option)}
+                options={Array.from(new Set(['all', ...categories.map((c) => c.name), ...(filters.category && filters.category !== 'all' ? [filters.category] : [])]))}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Categories';
+                    const found = categories.find((c) => c.name === option);
+                    return found ? found.category : option;
+                }}
                 renderInput={(params) => (
                     <TextField
                         {...params}
