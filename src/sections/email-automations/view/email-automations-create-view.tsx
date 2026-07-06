@@ -281,6 +281,7 @@ export function EmailAutomationsCreateView() {
         createEmailAutomation(data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation created successfully!', severity: 'success' });
+                sessionStorage.setItem('email_automation_success_message', 'Automation created successfully!');
                 setTimeout(() => {
                     router.push('/email-automations');
                 }, 1000);

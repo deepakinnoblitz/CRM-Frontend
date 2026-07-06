@@ -188,6 +188,7 @@ export function WhatsAppAutomationsEditView() {
         updateWhatsAppAutomation(id, data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation updated successfully!', severity: 'success' });
+                sessionStorage.setItem('whatsapp_automation_success_message', 'Automation updated successfully!');
                 setTimeout(() => {
                     router.push('/whatsapp-automation');
                 }, 1000);

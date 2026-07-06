@@ -331,6 +331,7 @@ export function EmailAutomationsEditView() {
         updateEmailAutomation(id, data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation updated successfully!', severity: 'success' });
+                sessionStorage.setItem('email_automation_success_message', 'Automation updated successfully!');
                 setTimeout(() => {
                     router.push('/email-automations');
                 }, 1000);
