@@ -73,12 +73,6 @@ export function EmailSettingsView() {
         maximum_retry_count: 3,
         auto_retry_failed_emails: 1,
         enable_email_automation: 1,
-        scheduler_interval: 'Hourly',
-        create_campaign_history: 1,
-        queue_size: 1000,
-        auto_delete_old_queue_records: 0,
-        queue_retention_days: 30,
-        enable_debug_logs: 0,
     });
     const [emailAccounts, setEmailAccounts] = useState<{name: string, email_id?: string}[]>([]);
     const [errors, setErrors] = useState<{ default_email_account?: boolean }>({});
@@ -186,7 +180,19 @@ export function EmailSettingsView() {
                             />
                         </Stack>
                     </Card>
+                    <Card sx={{ p: 3, mb: 3 }}>
+                        <Typography variant="h6" sx={{ mb: 3 }}>Automation Configuration</Typography>
+                        <Stack spacing={3}>
+                            <FormControlLabel 
+                                control={<CustomSwitch checked={!!settings.enable_email_automation} onChange={(e) => handleChange('enable_email_automation', e.target.checked ? 1 : 0)} />} 
+                                label="Enable Email Automation (Global)" 
+                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
+                            />
+                        </Stack>
+                    </Card>
+                </Box>
 
+                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
                     <Card sx={{ p: 3, mb: 3 }}>
                         <Typography variant="h6" sx={{ mb: 3 }}>Campaign Configuration</Typography>
                         <Stack spacing={3}>
@@ -214,67 +220,6 @@ export function EmailSettingsView() {
                             <FormControlLabel 
                                 control={<CustomSwitch checked={!!settings.auto_retry_failed_emails} onChange={(e) => handleChange('auto_retry_failed_emails', e.target.checked ? 1 : 0)} />} 
                                 label="Auto Retry Failed Emails" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                        </Stack>
-                    </Card>
-                </Box>
-
-                <Box gridColumn={{ xs: 'span 1', md: 'span 1' }}>
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Queue Configuration</Typography>
-                        <Stack spacing={3}>
-                            <TextField 
-                                fullWidth 
-                                type="number" 
-                                label="Queue Size" 
-                                value={settings.queue_size ?? ''}
-                                onChange={(e) => handleChange('queue_size', Number(e.target.value))}
-                            />
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.auto_delete_old_queue_records} onChange={(e) => handleChange('auto_delete_old_queue_records', e.target.checked ? 1 : 0)} />} 
-                                label="Auto Delete Queue Records" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            {!!settings.auto_delete_old_queue_records && (
-                                <TextField 
-                                    fullWidth 
-                                    type="number" 
-                                    label="Retention Days" 
-                                    value={settings.queue_retention_days ?? ''}
-                                    onChange={(e) => handleChange('queue_retention_days', Number(e.target.value))}
-                                />
-                            )}
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_debug_logs} onChange={(e) => handleChange('enable_debug_logs', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Debug Logs" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                        </Stack>
-                    </Card>
-                    
-                    <Card sx={{ p: 3, mb: 3 }}>
-                        <Typography variant="h6" sx={{ mb: 3 }}>Automation Configuration</Typography>
-                        <Stack spacing={3}>
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.enable_email_automation} onChange={(e) => handleChange('enable_email_automation', e.target.checked ? 1 : 0)} />} 
-                                label="Enable Email Automation" 
-                                sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
-                            />
-                            <TextField 
-                                fullWidth 
-                                select
-                                label="Scheduler Interval" 
-                                value={settings.scheduler_interval || 'Hourly'}
-                                onChange={(e) => handleChange('scheduler_interval', e.target.value)}
-                            >
-                                {['Every 15 Minutes', 'Every 30 Minutes', 'Hourly', 'Daily'].map(opt => (
-                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-                                ))}
-                            </TextField>
-                            <FormControlLabel 
-                                control={<CustomSwitch checked={!!settings.create_campaign_history} onChange={(e) => handleChange('create_campaign_history', e.target.checked ? 1 : 0)} />} 
-                                label="Create Campaign History" 
                                 sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
                         </Stack>

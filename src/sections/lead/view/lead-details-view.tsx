@@ -338,7 +338,7 @@ export function LeadDetailsView() {
     }, [lead, automationData]);
 
         const handleSendEmailAutomation = useCallback(
-        async (proposalName: string | null) => {
+        async (proposalName: string | null, attachments?: { file_url: string }[] | null) => {
             if (!lead || !emailAutomationData) return;
 
             try {
@@ -346,7 +346,8 @@ export function LeadDetailsView() {
                     emailAutomationData.automation_name,
                     "Lead",
                     lead.name,
-                    proposalName
+                    proposalName,
+                    attachments
                 );
 
                 setSnackbar({

@@ -1,4 +1,5 @@
 import { useSnackbar } from 'notistack';
+import Editor from '@monaco-editor/react';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { MdContentCopy } from 'react-icons/md';
@@ -51,13 +52,29 @@ import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
+const isPlainTextEmpty = (val: string) => {
+  if (!val) return true;
+  const doc = new DOMParser().parseFromString(val, 'text/html');
+  const text = doc.body.textContent || '';
+  return text.replace(/\s/g, '').trim() === '';
+};
+
+const isHtmlCodeEmpty = (val: string) => {
+  if (!val) return true;
+  return val.trim() === '';
+};
+
 export function EmailTemplateEditView() {
   const router = useRouter();
   const { id } = useParams();
   const [templateFor, setTemplateFor] = useState<string[]>(['Lead']);
   const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
   const [emailContent, setEmailContent] = useState('');
+  const [emailContentHtml, setEmailContentHtml] = useState('');
   const [footerContent, setFooterContent] = useState('');
+  const [footerContentHtml, setFooterContentHtml] = useState('');
+  const [isHtmlModeEmail, setIsHtmlModeEmail] = useState(false);
+  const [isHtmlModeFooter, setIsHtmlModeFooter] = useState(false);
   const [attachments, setAttachments] = useState<any[]>([]);
   const [uploading, setUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -118,7 +135,10 @@ export function EmailTemplateEditView() {
       newErrors.subject = true;
       missingFields.push('Subject');
     }
-    if (!emailContent || emailContent === '<p><br></p>') {
+    const currentEmailContent = isHtmlModeEmail ? emailContentHtml : emailContent;
+    const currentFooterContent = isHtmlModeFooter ? footerContentHtml : footerContent;
+
+    if (!currentEmailContent || currentEmailContent === '<p><br></p>' || currentEmailContent.trim() === '') {
       newErrors.emailContent = true;
       missingFields.push('Email Content');
     }
@@ -153,13 +173,26 @@ export function EmailTemplateEditView() {
         })
       );
 
+      const finalEmailContent = isHtmlModeEmail
+        ? `<!--mode:html-->${emailContentHtml}`
+        : `<!--mode:plain-->${emailContent}`;
+
+      let finalFooterContent = '';
+      if (isHtmlModeFooter) {
+        finalFooterContent = `<!--mode:html-->${footerContentHtml || ''}`;
+      } else {
+        if (footerContent && footerContent.trim() !== '' && footerContent !== '<p><br></p>' && footerContent !== '<div class="ql-editor read-mode"></div>' && footerContent !== '<div class="ql-editor read-mode"><p><br></p></div>') {
+          finalFooterContent = `<!--mode:plain-->${footerContent}`;
+        }
+      }
+
       await updateEmailTemplate(id!, {
         template_name: templateName,
         category,
         template_for: templateFor.join(','),
         subject,
-        email_content: emailContent,
-        footer_content: footerContent,
+        email_content: finalEmailContent,
+        footer_content: finalFooterContent,
         description,
         sender_name: senderName,
         reply_to_email: replyToEmail,
@@ -176,6 +209,8 @@ export function EmailTemplateEditView() {
         severity: 'success',
         message: 'Template updated successfully',
       });
+
+      sessionStorage.setItem('email_template_success_message', 'Template updated successfully');
 
       setTimeout(() => {
         router.push('/email-templates');
@@ -267,8 +302,41 @@ export function EmailTemplateEditView() {
             : ['Lead']
         );
 
-        setEmailContent(doc.email_content || '');
-        setFooterContent(doc.footer_content || '');
+        const rawEmail = doc.email_content || '';
+        const rawFooter = doc.footer_content || '';
+
+        let emailIsHtml = false;
+        if (rawEmail.startsWith('<!--mode:html-->')) {
+          emailIsHtml = true;
+          setEmailContentHtml(rawEmail.slice('<!--mode:html-->'.length));
+          setEmailContent('');
+        } else if (rawEmail.startsWith('<!--mode:plain-->')) {
+          emailIsHtml = false;
+          setEmailContent(rawEmail.slice('<!--mode:plain-->'.length));
+          setEmailContentHtml('');
+        } else {
+          // Fallback for legacy documents
+          emailIsHtml = false;
+          setEmailContent(rawEmail);
+          setEmailContentHtml('');
+        }
+        setIsHtmlModeEmail(emailIsHtml);
+
+        if (rawFooter.startsWith('<!--mode:html-->')) {
+          setIsHtmlModeFooter(true);
+          setFooterContentHtml(rawFooter.slice('<!--mode:html-->'.length));
+          setFooterContent('');
+        } else if (rawFooter.startsWith('<!--mode:plain-->')) {
+          setIsHtmlModeFooter(false);
+          setFooterContent(rawFooter.slice('<!--mode:plain-->'.length));
+          setFooterContentHtml('');
+        } else {
+          // Fallback for legacy / empty documents: match email content mode
+          setIsHtmlModeFooter(emailIsHtml);
+          setFooterContent(rawFooter);
+          setFooterContentHtml('');
+        }
+
         setAttachments(doc.attachments || []);
 
         const savedFor = doc.template_for || 'Lead';
@@ -655,45 +723,205 @@ export function EmailTemplateEditView() {
             </Typography>
             <Stack spacing={3}>
               <Box>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontWeight: 600,
-                    color: errors.emailContent ? 'error.main' : 'text.secondary',
-                    mb: 1,
-                  }}
-                >
-                  Email Content{' '}
-                  <Box component="span" sx={{ color: 'error.main' }}>
-                    *
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: 600,
+                      color: errors.emailContent ? 'error.main' : 'text.secondary',
+                    }}
+                  >
+                    Email Content{' '}
+                    <Box component="span" sx={{ color: 'error.main' }}>
+                      *
+                    </Box>
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                        size="small"
+                        variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
+                        onClick={() => setIsHtmlModeEmail(false)}
+                        startIcon={<Iconify icon="solar:document-bold" />}
+                        disabled={isHtmlModeEmail && !isHtmlCodeEmpty(emailContentHtml)}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            ...( !isHtmlModeEmail
+                                ? {
+                                      bgcolor: '#08a3cd',
+                                      color: 'common.white',
+                                      '&:hover': {
+                                          bgcolor: '#068fb3',
+                                      },
+                                  }
+                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                      '&:hover': {
+                                          borderColor: '#068fb3',
+                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                      },
+                                  }),
+                        }}
+                    >
+                        Plain Text
+                    </Button>
+                    <Button
+                        size="small"
+                        variant={isHtmlModeEmail ? 'contained' : 'outlined'}
+                        onClick={() => setIsHtmlModeEmail(true)}
+                        startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                        disabled={!isHtmlModeEmail && !isPlainTextEmpty(emailContent)}
+                        sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            ...(isHtmlModeEmail
+                                ? {
+                                      bgcolor: '#08a3cd',
+                                      color: 'common.white',
+                                      '&:hover': {
+                                          bgcolor: '#068fb3',
+                                      },
+                                  }
+                                : {
+                                      bgcolor: 'transparent',
+                                      color: '#08a3cd',
+                                      borderColor: '#08a3cd',
+                                      '&:hover': {
+                                          borderColor: '#068fb3',
+                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                      },
+                                  }),
+                        }}
+                    >
+                        HTML Code
+                    </Button>
+                  </Stack>
+                </Stack>
+
+                {!isHtmlModeEmail ? (
+                  <RichTextEditor
+                    value={emailContent}
+                    onChange={(val: string) => {
+                      setEmailContent(val);
+                      if (val && val !== '<p><br></p>')
+                        setErrors((prev) => ({ ...prev, emailContent: false }));
+                    }}
+                    placeholder="Enter email content..."
+                    error={errors.emailContent}
+                    helperText={errors.emailContent ? 'This field is required' : undefined}
+                    minHeight={600}
+                  />
+                ) : (
+                  <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1, overflow: 'hidden' }}>
+                    <Editor
+                      height="500px"
+                      defaultLanguage="html"
+                      value={emailContentHtml}
+                      onChange={(val) => {
+                        const newValue = val || '';
+                        setEmailContentHtml(newValue);
+                        if (newValue.trim())
+                          setErrors((prev) => ({ ...prev, emailContent: false }));
+                      }}
+                      options={{
+                        minimap: { enabled: false },
+                        wordWrap: 'on',
+                        formatOnPaste: true,
+                        formatOnType: true
+                      }}
+                    />
                   </Box>
-                </Typography>
-                <RichTextEditor
-                  value={emailContent}
-                  onChange={(val: string) => {
-                    setEmailContent(val);
-                    if (val && val !== '<p><br></p>')
-                      setErrors((prev) => ({ ...prev, emailContent: false }));
-                  }}
-                  placeholder="Enter email content..."
-                  error={errors.emailContent}
-                  helperText={errors.emailContent ? 'This field is required' : undefined}
-                  minHeight={600}
-                />
+                )}
               </Box>
+              
               <Box>
-                <Typography
-                  variant="body2"
-                  sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}
-                >
-                  Footer Content
-                </Typography>
-                <RichTextEditor
-                  value={footerContent}
-                  onChange={(val: string) => setFooterContent(val)}
-                  placeholder="Enter footer content..."
-                  minHeight={300}
-                />
+                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: 'text.secondary' }}
+                  >
+                    Footer Content
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small"
+                      variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
+                      onClick={() => setIsHtmlModeFooter(false)}
+                      startIcon={<Iconify icon="solar:document-bold" />}
+                      disabled={isHtmlModeFooter && !isHtmlCodeEmpty(footerContentHtml)}
+                      sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            ...( !isHtmlModeFooter
+                                ? {
+                                      bgcolor: '#08a3cd',
+                                      color: 'common.white',
+                                      '&:hover': {
+                                          bgcolor: '#068fb3',
+                                      },
+                                  }
+                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                      '&:hover': {
+                                          borderColor: '#068fb3',
+                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                      },
+                                  }),
+                        }}
+                    >
+                      Plain Text
+                    </Button>
+                    <Button
+                      size="small"
+                      variant={isHtmlModeFooter ? 'contained' : 'outlined'}
+                      onClick={() => setIsHtmlModeFooter(true)}
+                      startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                      disabled={!isHtmlModeFooter && !isPlainTextEmpty(footerContent)}
+                      sx={{
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            ...(isHtmlModeFooter
+                                ? {
+                                      bgcolor: '#08a3cd',
+                                      color: 'common.white',
+                                      '&:hover': {
+                                          bgcolor: '#068fb3',
+                                      },
+                                  }
+                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                      '&:hover': {
+                                          borderColor: '#068fb3',
+                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                      },
+                                  }),
+                        }}
+                    >
+                      HTML Code
+                    </Button>
+                  </Stack>
+                </Stack>
+
+                {!isHtmlModeFooter ? (
+                  <RichTextEditor
+                    value={footerContent}
+                    onChange={(val: string) => setFooterContent(val)}
+                    placeholder="Enter footer content..."
+                    minHeight={300}
+                  />
+                ) : (
+                  <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1, overflow: 'hidden' }}>
+                    <Editor
+                      height="300px"
+                      defaultLanguage="html"
+                      value={footerContentHtml}
+                      onChange={(val) => setFooterContentHtml(val || '')}
+                      options={{
+                        minimap: { enabled: false },
+                        wordWrap: 'on',
+                        formatOnPaste: true,
+                        formatOnType: true
+                      }}
+                    />
+                  </Box>
+                )}
               </Box>
             </Stack>
           </Card>

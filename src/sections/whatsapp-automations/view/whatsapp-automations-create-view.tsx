@@ -26,8 +26,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { getWorkflowStates } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchWhatsAppTemplates } from 'src/api/whatsapp-template';
 import { createWhatsAppAutomation } from 'src/api/whatsapp-automation';
+import { fetchWhatsAppTemplates, fetchWhatsAppTemplateCategories } from 'src/api/whatsapp-template';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -60,6 +60,7 @@ export function WhatsAppAutomationsCreateView() {
     const router = useRouter();
 
     const [templateOptions, setTemplateOptions] = useState<any[]>([]);
+    const [categories, setCategories] = useState<any[]>([]);
     const [leadWorkflowStates, setLeadWorkflowStates] = useState<string[]>([]);
 
     useEffect(() => {
@@ -67,6 +68,12 @@ export function WhatsAppAutomationsCreateView() {
             setTemplateOptions(res.data);
         }).catch((err) => {
             console.error('Failed to fetch WhatsApp templates:', err);
+        });
+
+        fetchWhatsAppTemplateCategories().then((res) => {
+            setCategories(res);
+        }).catch((err) => {
+            console.error('Failed to fetch WhatsApp template categories:', err);
         });
 
         getWorkflowStates('Lead').then((res) => {
@@ -181,6 +188,7 @@ export function WhatsAppAutomationsCreateView() {
         createWhatsAppAutomation(data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation created successfully!', severity: 'success' });
+                sessionStorage.setItem('whatsapp_automation_success_message', 'Automation created successfully!');
                 setTimeout(() => {
                     router.push('/whatsapp-automation');
                 }, 1000);
@@ -440,6 +448,8 @@ export function WhatsAppAutomationsCreateView() {
                             )}
                             renderOption={(props, option) => {
                                 const { key, ...optionProps } = props as any;
+                                const matchedCategory = categories.find((cat) => cat.name === option.category);
+                                const categoryLabel = matchedCategory ? matchedCategory.category : (option.category || 'No Category');
                                 return (
                                     <li key={key || option.name} {...optionProps}>
                                         <Box>
@@ -447,7 +457,7 @@ export function WhatsAppAutomationsCreateView() {
                                                 {option.template_name || option.name}
                                             </Typography>
                                             <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                                                {option.category || 'No Category'}
+                                                {categoryLabel}
                                             </Typography>
                                         </Box>
                                     </li>

@@ -61,6 +61,8 @@ export function EmailAutomationsCreateView() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [runTime, setRunTime] = useState('');
+    const [weekDay, setWeekDay] = useState('');
+    const [dayOfMonth, setDayOfMonth] = useState<number | ''>('');
     const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
@@ -120,6 +122,8 @@ export function EmailAutomationsCreateView() {
         frequency?: boolean;
         runTime?: boolean;
         startDate?: boolean;
+        weekDay?: boolean;
+        dayOfMonth?: boolean;
         workflowState?: boolean;
         previousWorkflowState?: boolean;
         currentDealStage?: boolean;
@@ -180,6 +184,16 @@ export function EmailAutomationsCreateView() {
                 newErrors.runTime = true;
                 missingFields.push('Run Time');
             }
+
+            if (frequency === 'Weekly' && !weekDay) {
+                newErrors.weekDay = true;
+                missingFields.push('Week Day');
+            }
+
+            if (frequency === 'Monthly' && !dayOfMonth) {
+                newErrors.dayOfMonth = true;
+                missingFields.push('Day Of Month');
+            }
         }
 
         if (isForStatusChange) {
@@ -201,6 +215,18 @@ export function EmailAutomationsCreateView() {
                     missingFields.push("Workflow State");
                 }
 
+                if (previousWorkflowState && workflowState && previousWorkflowState === workflowState) {
+                    newErrors.previousWorkflowState = true;
+                    newErrors.workflowState = true;
+                    setSnackbar({
+                        open: true,
+                        message: "Previous Workflow State and Target Workflow State cannot be the same.",
+                        severity: 'error',
+                    });
+                    setErrors(newErrors);
+                    return;
+                }
+
             } else if (triggerEvent === "Deal Stage Change") {
 
                 if (!previousDealStage) {
@@ -211,6 +237,18 @@ export function EmailAutomationsCreateView() {
                 if (!currentDealStage) {
                     newErrors.currentDealStage = true;
                     missingFields.push("Current Deal Stage");
+                }
+
+                if (previousDealStage && currentDealStage && previousDealStage === currentDealStage) {
+                    newErrors.previousDealStage = true;
+                    newErrors.currentDealStage = true;
+                    setSnackbar({
+                        open: true,
+                        message: "Previous Deal Stage and Current Deal Stage cannot be the same.",
+                        severity: 'error',
+                    });
+                    setErrors(newErrors);
+                    return;
                 }
             }
 
@@ -268,6 +306,8 @@ export function EmailAutomationsCreateView() {
             start_date: startDate,
             end_date: endDate,
             run_time: runTime,
+            week_day: frequency === 'Weekly' ? weekDay : '',
+            day_of_month: frequency === 'Monthly' ? Number(dayOfMonth) : undefined,
 
             create_separate_campaign: createSeparateCampaign ? 1 : 0,
             send_immediately: sendImmediately ? 1 : 0,
@@ -281,6 +321,7 @@ export function EmailAutomationsCreateView() {
         createEmailAutomation(data)
             .then(() => {
                 setSnackbar({ open: true, message: 'Automation created successfully!', severity: 'success' });
+                sessionStorage.setItem('email_automation_success_message', 'Automation created successfully!');
                 setTimeout(() => {
                     router.push('/email-automations');
                 }, 1000);
@@ -937,8 +978,42 @@ export function EmailAutomationsCreateView() {
                                                 }
                                             }}
                                         />
-                                        {frequency === 'Weekly' && <TextField fullWidth label="Week Day" />}
-                                        {frequency === 'Monthly' && <TextField fullWidth label="Day Of Month" />}
+                                        {frequency === 'Weekly' && (
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                label="Week Day *"
+                                                value={weekDay}
+                                                onChange={(e) => {
+                                                    setWeekDay(e.target.value);
+                                                    if (e.target.value) setErrors((prev) => ({ ...prev, weekDay: false }));
+                                                }}
+                                                error={errors.weekDay}
+                                                helperText={errors.weekDay ? 'This field is required' : ''}
+                                            >
+                                                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                                                    <MenuItem key={day} value={day}>
+                                                        {day}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                        {frequency === 'Monthly' && (
+                                            <TextField
+                                                fullWidth
+                                                type="number"
+                                                label="Day Of Month *"
+                                                value={dayOfMonth}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setDayOfMonth(val ? Number(val) : '');
+                                                    if (val) setErrors((prev) => ({ ...prev, dayOfMonth: false }));
+                                                }}
+                                                inputProps={{ min: 1, max: 31 }}
+                                                error={errors.dayOfMonth}
+                                                helperText={errors.dayOfMonth ? 'This field is required (1-31)' : ''}
+                                            />
+                                        )}
                                     </>
                                 )}
                             </Stack>

@@ -4,11 +4,13 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
+import Snackbar from '@mui/material/Snackbar';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
@@ -67,6 +69,16 @@ export function EmailAutomationsListView() {
     const [loading, setLoading] = useState(true);
     const [templatesMap, setTemplatesMap] = useState<Record<string, string>>({});
     const { enqueueSnackbar } = useSnackbar();
+
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem('email_automation_success_message');
+        if (msg) {
+            setSuccessMessage(msg);
+            sessionStorage.removeItem('email_automation_success_message');
+        }
+    }, []);
 
     const fetchAutomations = useCallback(async () => {
         setLoading(true);
@@ -365,6 +377,17 @@ export function EmailAutomationsListView() {
                     }}
                 />
             </Card>
+
+            <Snackbar
+                open={!!successMessage}
+                autoHideDuration={6000}
+                onClose={() => setSuccessMessage(null)}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+            >
+                <Alert onClose={() => setSuccessMessage(null)} severity="success" sx={{ width: '100%' }}>
+                    {successMessage}
+                </Alert>
+            </Snackbar>
         </DashboardContent>
     );
 }
