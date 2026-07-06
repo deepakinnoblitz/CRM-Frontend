@@ -179,9 +179,7 @@ export function EmailTemplateCreateView() {
 
             let finalFooterContent = '';
             if (isHtmlModeFooter) {
-                if (footerContentHtml && footerContentHtml.trim() !== '') {
-                    finalFooterContent = `<!--mode:html-->${footerContentHtml}`;
-                }
+                finalFooterContent = `<!--mode:html-->${footerContentHtml || ''}`;
             } else {
                 if (footerContent && footerContent.trim() !== '' && footerContent !== '<p><br></p>' && footerContent !== '<div class="ql-editor read-mode"></div>' && footerContent !== '<div class="ql-editor read-mode"><p><br></p></div>') {
                     finalFooterContent = `<!--mode:plain-->${footerContent}`;
@@ -610,7 +608,7 @@ export function EmailTemplateCreateView() {
                                                     }),
                                             }}
                                         >
-                                            Normal
+                                            Plain Text
                                         </Button>
                                         <Button
                                             size="small"
@@ -705,7 +703,7 @@ export function EmailTemplateCreateView() {
                                                     }),
                                             }}
                                         >
-                                            Normal
+                                            Plain Text
                                         </Button>
                                         <Button
                                             size="small"
