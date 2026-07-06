@@ -1,4 +1,5 @@
-    import { useState, useEffect } from 'react';
+import Editor from '@monaco-editor/react';
+import { useState, useEffect } from 'react';
 import { MdContentCopy } from "react-icons/md";
 import { IoMdArrowBack } from 'react-icons/io';
 
@@ -58,6 +59,8 @@ export function EmailTemplateCreateView() {
     const [replyToEmail, setReplyToEmail] = useState('');
     const [isActive, setIsActive] = useState(true);
     const [isDefault, setIsDefault] = useState(false);
+    const [isHtmlModeEmail, setIsHtmlModeEmail] = useState(false);
+    const [isHtmlModeFooter, setIsHtmlModeFooter] = useState(false);
     const [errors, setErrors] = useState<{ templateName?: boolean; category?: boolean; templatefor?: boolean; subject?: boolean; emailContent?: boolean }>({});
     const [variables, setVariables] = useState<EmailTemplateVariable[]>([]);
     const [categoryOptions, setCategoryOptions] = useState<any[]>([]);
@@ -65,6 +68,54 @@ export function EmailTemplateCreateView() {
     const [creatingCategory, setCreatingCategory] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
     const filter = createFilterOptions<any>();
+
+    const decodeHtmlEntities = (input: string) => {
+        if (!input) return '';
+        try {
+            const txt = document.createElement('textarea');
+            txt.innerHTML = input;
+            let val = txt.value;
+            // Clean up Quill wrapper elements if we switch to raw HTML view
+            const qlWrapperRegex = /^<div[^>]*class="[^"]*ql-editor[^"]*"[^>]*>([\s\S]*)<\/div>$/i;
+            const match = val.match(qlWrapperRegex);
+            if (match) {
+                val = match[1];
+            }
+            return val.trim();
+        } catch (e) {
+            return input;
+        }
+    };
+
+    const handleEmailModeChange = (htmlMode: boolean) => {
+        if (htmlMode === isHtmlModeEmail) return;
+        if (htmlMode) {
+            // Switching to HTML code mode: decode entity representations into actual tags
+            setEmailContent((prev) => decodeHtmlEntities(prev));
+        } else {
+            // Switching to Normal mode: wrap in standard ql-editor container
+            setEmailContent((prev) => {
+                const trimmed = prev.trim();
+                if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
+                return `<div class="ql-editor read-mode">${trimmed}</div>`;
+            });
+        }
+        setIsHtmlModeEmail(htmlMode);
+    };
+
+    const handleFooterModeChange = (htmlMode: boolean) => {
+        if (htmlMode === isHtmlModeFooter) return;
+        if (htmlMode) {
+            setFooterContent((prev) => decodeHtmlEntities(prev));
+        } else {
+            setFooterContent((prev) => {
+                const trimmed = prev.trim();
+                if (trimmed.startsWith('<div') && trimmed.includes('ql-editor')) return trimmed;
+                return `<div class="ql-editor read-mode">${trimmed}</div>`;
+            });
+        }
+        setIsHtmlModeFooter(htmlMode);
+    };
     
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
@@ -130,7 +181,7 @@ export function EmailTemplateCreateView() {
             missingFields.push('Subject');
         }
 
-        if (!emailContent || emailContent === '<p><br></p>') {
+        if (!emailContent || emailContent === '<p><br></p>' || emailContent.trim() === '') {
             newErrors.emailContent = true;
             missingFields.push('Email Content');
         }
@@ -171,7 +222,7 @@ export function EmailTemplateCreateView() {
                 template_for: templatefor.join(','),
                 subject,
                 email_content: emailContent,
-                footer_content: footerContent,
+                footer_content: (!footerContent || footerContent.trim() === '' || footerContent === '<p><br></p>' || footerContent === '<div class="ql-editor read-mode"></div>' || footerContent === '<div class="ql-editor read-mode"><p><br></p></div>') ? '' : footerContent,
                 description: '',
                 sender_name: '',
                 reply_to_email: '',
@@ -556,31 +607,184 @@ export function EmailTemplateCreateView() {
                         <Typography variant="h6" sx={{ mb: 3 }}>Content</Typography>
                         <Stack spacing={3}>
                             <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: errors.emailContent ? 'error.main' : 'text.secondary', mb: 1 }}>
-                                    Email Content <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                                </Typography>
-                                <RichTextEditor
-                                    value={emailContent}
-                                    onChange={(val: string) => {
-                                        setEmailContent(val);
-                                        if (val && val !== '<p><br></p>') setErrors((prev) => ({ ...prev, emailContent: false }));
-                                    }}
-                                    placeholder="Enter email content..."
-                                    error={errors.emailContent}
-                                    helperText={errors.emailContent ? 'This field is required' : undefined}
-                                    minHeight={600}
-                                />
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: errors.emailContent ? 'error.main' : 'text.secondary' }}>
+                                        Email Content <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                                    </Typography>
+                                    <Stack direction="row" spacing={1}>
+                                        <Button
+                                            size="small"
+                                            variant={!isHtmlModeEmail ? 'contained' : 'outlined'}
+                                            onClick={() => handleEmailModeChange(false)}
+                                            startIcon={<Iconify icon="solar:document-bold" />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                ...( !isHtmlModeEmail
+                                                    ? {
+                                                        bgcolor: '#08a3cd',
+                                                        color: 'common.white',
+                                                        '&:hover': {
+                                                            bgcolor: '#068fb3',
+                                                        },
+                                                    }
+                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                        '&:hover': {
+                                                            borderColor: '#068fb3',
+                                                            bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                        },
+                                                    }),
+                                            }}
+                                        >
+                                            Normal
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant={isHtmlModeEmail ? 'contained' : 'outlined'}
+                                            onClick={() => handleEmailModeChange(true)}
+                                            startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                ...(isHtmlModeEmail
+                                                    ? {
+                                                        bgcolor: '#08a3cd',
+                                                        color: 'common.white',
+                                                        '&:hover': {
+                                                            bgcolor: '#068fb3',
+                                                        },
+                                                    }
+                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                        '&:hover': {
+                                                            borderColor: '#068fb3',
+                                                            bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                        },
+                                                    }),
+                                            }}
+                                        >
+                                            HTML Code
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+
+                                {!isHtmlModeEmail ? (
+                                    <RichTextEditor
+                                        value={emailContent}
+                                        onChange={(val: string) => {
+                                            setEmailContent(val);
+                                            if (val && val !== '<p><br></p>') setErrors((prev) => ({ ...prev, emailContent: false }));
+                                        }}
+                                        placeholder="Enter email content..."
+                                        error={errors.emailContent}
+                                        helperText={errors.emailContent ? 'This field is required' : undefined}
+                                        minHeight={600}
+                                    />
+                                ) : (
+                                    <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1, overflow: 'hidden' }}>
+                                        <Editor
+                                            height="500px"
+                                            defaultLanguage="html"
+                                            value={emailContent}
+                                            onChange={(val) => {
+                                                const newValue = val || '';
+                                                setEmailContent(newValue);
+                                                if (newValue.trim()) setErrors((prev) => ({ ...prev, emailContent: false }));
+                                            }}
+                                            options={{
+                                                minimap: { enabled: false },
+                                                wordWrap: 'on',
+                                                formatOnPaste: true,
+                                                formatOnType: true
+                                            }}
+                                        />
+                                    </Box>
+                                )}
                             </Box>
+                            
                             <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
-                                    Footer Content
-                                </Typography>
-                                <RichTextEditor
-                                    value={footerContent}
-                                    onChange={(val: string) => setFooterContent(val)}
-                                    placeholder="Enter footer content..."
-                                    minHeight={300}
-                                />
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                                        Footer Content
+                                    </Typography>
+                                    <Stack direction="row" spacing={1}>
+                                        <Button
+                                            size="small"
+                                            variant={!isHtmlModeFooter ? 'contained' : 'outlined'}
+                                            onClick={() => handleFooterModeChange(false)}
+                                            startIcon={<Iconify icon="solar:document-bold" />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                ...( !isHtmlModeFooter
+                                                    ? {
+                                                        bgcolor: '#08a3cd',
+                                                        color: 'common.white',
+                                                        '&:hover': {
+                                                            bgcolor: '#068fb3',
+                                                        },
+                                                    }
+                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                        '&:hover': {
+                                                            borderColor: '#068fb3',
+                                                            bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                        },
+                                                    }),
+                                            }}
+                                        >
+                                            Normal
+                                        </Button>
+                                        <Button
+                                            size="small"
+                                            variant={isHtmlModeFooter ? 'contained' : 'outlined'}
+                                            onClick={() => handleFooterModeChange(true)}
+                                            startIcon={<Iconify icon={"solar:code-bold" as any} />}
+                                            sx={{
+                                                textTransform: 'none',
+                                                fontWeight: 600,
+                                                ...(isHtmlModeFooter
+                                                    ? {
+                                                        bgcolor: '#08a3cd',
+                                                        color: 'common.white',
+                                                        '&:hover': {
+                                                            bgcolor: '#068fb3',
+                                                        },
+                                                    }
+                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                        '&:hover': {
+                                                            borderColor: '#068fb3',
+                                                            bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                        },
+                                                    }),
+                                            }}
+                                        >
+                                            HTML Code
+                                        </Button>
+                                    </Stack>
+                                </Stack>
+
+                                {!isHtmlModeFooter ? (
+                                    <RichTextEditor
+                                        value={footerContent}
+                                        onChange={(val: string) => setFooterContent(val)}
+                                        placeholder="Enter footer content..."
+                                        minHeight={300}
+                                    />
+                                ) : (
+                                    <Box sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1, overflow: 'hidden' }}>
+                                        <Editor
+                                            height="300px"
+                                            defaultLanguage="html"
+                                            value={footerContent}
+                                            onChange={(val) => setFooterContent(val || '')}
+                                            options={{
+                                                minimap: { enabled: false },
+                                                wordWrap: 'on',
+                                                formatOnPaste: true,
+                                                formatOnType: true
+                                            }}
+                                        />
+                                    </Box>
+                                )}
                             </Box>
                         </Stack>
                     </Card>

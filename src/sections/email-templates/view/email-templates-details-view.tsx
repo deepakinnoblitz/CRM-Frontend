@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdSettings, IoMdMail, IoMdStats, IoMdDocument, IoMdLink, IoMdCode, IoMdCreate
@@ -26,6 +26,82 @@ export function EmailTemplateDetailsView() {
     const [template, setTemplate] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [categories, setCategories] = useState<any[]>([]);
+    const [isCodeView, setIsCodeView] = useState(false);
+    const [isCodeViewFooter, setIsCodeViewFooter] = useState(false);
+
+    const decodeHtml = (input: string | null | undefined) => {
+        if (!input) return '';
+        
+        let workingStr = input.trim();
+
+        // 1. Strip surrounding Quill RichText container tags (<div class="ql-editor...">...</div> or similar) 
+        // ONLY if the inner content is entity-encoded (meaning it is actually a code template written in Quill).
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(workingStr, 'text/html');
+        const qlEditor = doc.querySelector('.ql-editor');
+        
+        if (qlEditor) {
+            const innerContent = qlEditor.innerHTML.trim();
+            if (innerContent === '' || innerContent === '<p><br></p>') {
+                return '';
+            }
+            if (innerContent.includes('&lt;') || innerContent.includes('&gt;') || innerContent.includes('&amp;')) {
+                workingStr = innerContent;
+            }
+        } else if (workingStr === '<p><br></p>') {
+            return '';
+        }
+
+        // 2. Decode entities. Since templates can be saved with multiple levels of escaping (e.g. &amp;lt;),
+        // we run a decoding loop until no more change occurs, capped at 3 iterations to prevent infinite loops.
+        let decoded = workingStr;
+        let lastDecoded = '';
+        let iterations = 0;
+        
+        const txt = document.createElement('textarea');
+        while (decoded !== lastDecoded && decoded.includes('&') && iterations < 3) {
+            lastDecoded = decoded;
+            try {
+                txt.innerHTML = decoded;
+                decoded = txt.value;
+            } catch (e) {
+                break;
+            }
+            iterations++;
+        }
+
+        // 3. Normalize whitespace entities and remove Quill's paragraph tags wrapping HTML block code.
+        // We replace standard non-breaking spaces that Quill injects into code formatting indentation.
+        const cleaned = decoded
+            .replace(/&nbsp;/g, ' ')
+            .replace(/&amp;/g, '&');
+
+        // Parse HTML to cleanly unwrap any inline paragraph tags wrapper surrounding block-level tags.
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = cleaned;
+
+        const paragraphs = tempDiv.querySelectorAll('p');
+        paragraphs.forEach((p) => {
+            // Unpack paragraphs containing tags (like div, table, a, hr, headers, styles)
+            const hasHtmlTag = p.querySelector('*') || /<[a-z/][^>]*>/i.test(p.innerHTML);
+            const innerHTMLTrimmed = p.innerHTML.trim();
+            
+            if (hasHtmlTag) {
+                while (p.firstChild) {
+                    p.parentNode?.insertBefore(p.firstChild, p);
+                }
+                p.parentNode?.removeChild(p);
+            } else if (innerHTMLTrimmed === '<br>' || innerHTMLTrimmed === '&nbsp;' || innerHTMLTrimmed === '') {
+                p.parentNode?.removeChild(p);
+            }
+        });
+
+        // Clean up empty lines or double quotes escaped by raw database string representations.
+        return tempDiv.innerHTML;
+    };
+
+    const decodedEmailContent = useMemo(() => decodeHtml((template as any)?.email_content), [(template as any)?.email_content]);
+    const decodedFooterContent = useMemo(() => decodeHtml((template as any)?.footer_content), [(template as any)?.footer_content]);
 
     useEffect(() => {
         fetchCrmEmailTemplateCategories({ page: 1, page_size: 1000 })
@@ -48,7 +124,7 @@ export function EmailTemplateDetailsView() {
 
     if (fetching) {
         return (
-            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
                 <CircularProgress />
             </DashboardContent>
         );
@@ -82,6 +158,8 @@ export function EmailTemplateDetailsView() {
         attachments = [],
         available_variables,
     } = template;
+
+    
 
     let parsedAttachments: any[] = [];
     if (typeof attachments === 'string') {
@@ -225,7 +303,148 @@ export function EmailTemplateDetailsView() {
                                         </Box>
                                     </Stack>
                                     <Stack spacing={1}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Email Content</Typography>
+                                        <Stack>
+                                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb : 2 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Email Content</Typography>
+                                                <Stack direction="row" spacing={1}>
+                                                    <Button
+                                                        size="small"
+                                                        variant={!isCodeView ? 'contained' : 'outlined'}
+                                                        onClick={() => setIsCodeView(false)}
+                                                        startIcon={<IoMdDocument size={16} />}
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            ...(!isCodeView
+                                                                ? {
+                                                                      bgcolor: '#08a3cd',
+                                                                      color: 'common.white',
+                                                                      '&:hover': {
+                                                                          bgcolor: '#068fb3',
+                                                                      },
+                                                                  }
+                                                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                                      '&:hover': {
+                                                                          borderColor: '#068fb3',
+                                                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                      },
+                                                                  }),
+                                                        }}
+                                                    >
+                                                        HTML
+                                                    </Button>
+                                                    <Button
+                                                        size="small"
+                                                        variant={isCodeView ? 'contained' : 'outlined'}
+                                                        onClick={() => setIsCodeView(true)}
+                                                        startIcon={<IoMdCode size={16} />}
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            ...(isCodeView
+                                                                ? {
+                                                                      bgcolor: '#08a3cd',
+                                                                      color: 'common.white',
+                                                                      '&:hover': {
+                                                                          bgcolor: '#068fb3',
+                                                                      },
+                                                                  }
+                                                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                                      '&:hover': {
+                                                                          borderColor: '#068fb3',
+                                                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                      },
+                                                                  }),
+                                                        }}
+                                                    >
+                                                        Code
+                                                    </Button>
+                                                </Stack>
+                                            </Stack>
+
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: 'background.paper',
+                                                    borderRadius: 1,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                                    minHeight: 150,
+                                                }}
+                                            >
+                                                {isCodeView ? (
+                                                    <Box component="pre" sx={{ m: 0, fontFamily: 'Monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                        <Box component="code">{decodedEmailContent || 'No content'}</Box>
+                                                    </Box>
+                                                ) : (
+                                                    <Box sx={{ height: '100%' }} dangerouslySetInnerHTML={{ __html: decodedEmailContent || '<p style="color: gray; margin: 0;">No content</p>' }} />
+                                                )}
+                                            </Box>
+                                        </Stack>
+                                    </Stack>
+                                    <Stack spacing={1}>
+                                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb : 2 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Footer Content</Typography>
+                                            <Stack direction="row" spacing={1}>
+                                                <Button
+                                                    size="small"
+                                                    variant={!isCodeViewFooter ? 'contained' : 'outlined'}
+                                                    onClick={() => setIsCodeViewFooter(false)}
+                                                    startIcon={<IoMdDocument size={16} />}
+                                                    sx={{
+                                                        textTransform: 'none',
+                                                        fontWeight: 600,
+                                                        ...(!isCodeViewFooter
+                                                            ? {
+                                                                  bgcolor: '#08a3cd',
+                                                                  color: 'common.white',
+                                                                  '&:hover': {
+                                                                      bgcolor: '#068fb3',
+                                                                  },
+                                                              }
+                                                            : {
+                                                                  bgcolor: 'transparent',
+                                                                  color: '#08a3cd',
+                                                                  borderColor: '#08a3cd',
+                                                                  '&:hover': {
+                                                                      borderColor: '#068fb3',
+                                                                      bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                  },
+                                                              }),
+                                                    }}
+                                                >
+                                                    HTML
+                                                </Button>
+                                                <Button
+                                                    size="small"
+                                                    variant={isCodeViewFooter ? 'contained' : 'outlined'}
+                                                    onClick={() => setIsCodeViewFooter(true)}
+                                                    startIcon={<IoMdCode size={16} />}
+                                                    sx={{
+                                                        textTransform: 'none',
+                                                        fontWeight: 600,
+                                                        ...(isCodeViewFooter
+                                                            ? {
+                                                                  bgcolor: '#08a3cd',
+                                                                  color: 'common.white',
+                                                                  '&:hover': {
+                                                                      bgcolor: '#068fb3',
+                                                                  },
+                                                              }
+                                                            : {
+                                                                  bgcolor: 'transparent',
+                                                                  color: '#08a3cd',
+                                                                  borderColor: '#08a3cd',
+                                                                  '&:hover': {
+                                                                      borderColor: '#068fb3',
+                                                                      bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                  },
+                                                              }),
+                                                    }}
+                                                >
+                                                    Code
+                                                </Button>
+                                            </Stack>
+                                        </Stack>
                                         <Box 
                                             sx={{ 
                                                 p: 2, 
@@ -234,21 +453,15 @@ export function EmailTemplateDetailsView() {
                                                 border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
                                                 minHeight: 150
                                             }}
-                                            dangerouslySetInnerHTML={{ __html: email_content || '<p style="color: gray; margin: 0;">No content</p>' }}
-                                        />
-                                    </Stack>
-                                    <Stack spacing={1}>
-                                        <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Footer Content</Typography>
-                                        <Box 
-                                            sx={{ 
-                                                p: 2, 
-                                                bgcolor: 'background.paper', 
-                                                borderRadius: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
-                                                minHeight: 80
-                                            }}
-                                            dangerouslySetInnerHTML={{ __html: footer_content || '<p style="color: gray; margin: 0;">No footer content</p>' }}
-                                        />
+                                        >
+                                            {isCodeViewFooter ? (
+                                                <Box component="pre" sx={{ m: 0, fontFamily: 'Monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                    <Box component="code">{decodedFooterContent || 'No content'}</Box>
+                                                </Box>
+                                            ) : (
+                                                <Box sx={{ height: '100%' }} dangerouslySetInnerHTML={{ __html: decodedFooterContent || '<p style="color: gray; margin: 0;">No footer content</p>' }} />
+                                            )}
+                                        </Box>
                                     </Stack>
                                 </Stack>
                             </Box>
