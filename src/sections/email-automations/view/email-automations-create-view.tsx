@@ -61,6 +61,8 @@ export function EmailAutomationsCreateView() {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [runTime, setRunTime] = useState('');
+    const [weekDay, setWeekDay] = useState('');
+    const [dayOfMonth, setDayOfMonth] = useState<number | ''>('');
     const [filters, setFilters] = useState<{ field_name: string; operator: string; value: string; }[]>([]);
     const [description, setDescription] = useState('');
     const [isActive, setIsActive] = useState(true);
@@ -120,6 +122,8 @@ export function EmailAutomationsCreateView() {
         frequency?: boolean;
         runTime?: boolean;
         startDate?: boolean;
+        weekDay?: boolean;
+        dayOfMonth?: boolean;
         workflowState?: boolean;
         previousWorkflowState?: boolean;
         currentDealStage?: boolean;
@@ -179,6 +183,16 @@ export function EmailAutomationsCreateView() {
             if (!runTime) {
                 newErrors.runTime = true;
                 missingFields.push('Run Time');
+            }
+
+            if (frequency === 'Weekly' && !weekDay) {
+                newErrors.weekDay = true;
+                missingFields.push('Week Day');
+            }
+
+            if (frequency === 'Monthly' && !dayOfMonth) {
+                newErrors.dayOfMonth = true;
+                missingFields.push('Day Of Month');
             }
         }
 
@@ -268,6 +282,8 @@ export function EmailAutomationsCreateView() {
             start_date: startDate,
             end_date: endDate,
             run_time: runTime,
+            week_day: frequency === 'Weekly' ? weekDay : '',
+            day_of_month: frequency === 'Monthly' ? Number(dayOfMonth) : undefined,
 
             create_separate_campaign: createSeparateCampaign ? 1 : 0,
             send_immediately: sendImmediately ? 1 : 0,
@@ -937,8 +953,42 @@ export function EmailAutomationsCreateView() {
                                                 }
                                             }}
                                         />
-                                        {frequency === 'Weekly' && <TextField fullWidth label="Week Day" />}
-                                        {frequency === 'Monthly' && <TextField fullWidth label="Day Of Month" />}
+                                        {frequency === 'Weekly' && (
+                                            <TextField
+                                                select
+                                                fullWidth
+                                                label="Week Day *"
+                                                value={weekDay}
+                                                onChange={(e) => {
+                                                    setWeekDay(e.target.value);
+                                                    if (e.target.value) setErrors((prev) => ({ ...prev, weekDay: false }));
+                                                }}
+                                                error={errors.weekDay}
+                                                helperText={errors.weekDay ? 'This field is required' : ''}
+                                            >
+                                                {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                                                    <MenuItem key={day} value={day}>
+                                                        {day}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                        {frequency === 'Monthly' && (
+                                            <TextField
+                                                fullWidth
+                                                type="number"
+                                                label="Day Of Month *"
+                                                value={dayOfMonth}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setDayOfMonth(val ? Number(val) : '');
+                                                    if (val) setErrors((prev) => ({ ...prev, dayOfMonth: false }));
+                                                }}
+                                                inputProps={{ min: 1, max: 31 }}
+                                                error={errors.dayOfMonth}
+                                                helperText={errors.dayOfMonth ? 'This field is required (1-31)' : ''}
+                                            />
+                                        )}
                                     </>
                                 )}
                             </Stack>
