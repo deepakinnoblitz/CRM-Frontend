@@ -109,6 +109,15 @@ export function EmailTemplateDetailsView() {
     const decodedEmailContent = useMemo(() => decodeHtml((template as any)?.email_content), [(template as any)?.email_content]);
     const decodedFooterContent = useMemo(() => decodeHtml((template as any)?.footer_content), [(template as any)?.footer_content]);
 
+    const isEmailSavedAsHtml = useMemo(() => ((template as any)?.email_content || '').startsWith('<!--mode:html-->'), [template]);
+    const isFooterSavedAsHtml = useMemo(() => {
+        if (!isEmailSavedAsHtml) return false;
+        const footer = (template as any)?.footer_content || '';
+        if (footer.startsWith('<!--mode:html-->')) return true;
+        if (footer.startsWith('<!--mode:plain-->')) return false;
+        return true;
+    }, [template, isEmailSavedAsHtml]);
+
     useEffect(() => {
         fetchCrmEmailTemplateCategories({ page: 1, page_size: 1000 })
             .then((res) => {
@@ -126,10 +135,12 @@ export function EmailTemplateDetailsView() {
                     setTemplate(doc);
                     const email = doc.email_content || '';
                     const footer = doc.footer_content || '';
-                    if (email.startsWith('<!--mode:html-->')) {
+                    const emailIsHtml = email.startsWith('<!--mode:html-->');
+                    const footerIsHtml = emailIsHtml && (footer.startsWith('<!--mode:html-->') || footer === '' || footer.startsWith('<!--mode:plain-->') === false);
+                    if (emailIsHtml) {
                         setIsCodeView(true);
                     }
-                    if (footer.startsWith('<!--mode:html-->')) {
+                    if (footerIsHtml) {
                         setIsCodeViewFooter(true);
                     }
                 })
@@ -322,60 +333,80 @@ export function EmailTemplateDetailsView() {
                                         <Stack>
                                             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb : 2 }}>
                                                 <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Email Content</Typography>
-                                                <Stack direction="row" spacing={1}>
+                                                {isEmailSavedAsHtml ? (
+                                                    <Stack direction="row" spacing={1}>
+                                                        <Button
+                                                            size="small"
+                                                            variant={!isCodeView ? 'contained' : 'outlined'}
+                                                            onClick={() => setIsCodeView(false)}
+                                                            startIcon={<IoMdDocument size={16} />}
+                                                            sx={{
+                                                                textTransform: 'none',
+                                                                fontWeight: 600,
+                                                                ...(!isCodeView
+                                                                    ? {
+                                                                          bgcolor: '#08a3cd',
+                                                                          color: 'common.white',
+                                                                          '&:hover': {
+                                                                              bgcolor: '#068fb3',
+                                                                          },
+                                                                      }
+                                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                                          '&:hover': {
+                                                                              borderColor: '#068fb3',
+                                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                          },
+                                                                      }),
+                                                            }}
+                                                        >
+                                                            HTML
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant={isCodeView ? 'contained' : 'outlined'}
+                                                            onClick={() => setIsCodeView(true)}
+                                                            startIcon={<IoMdCode size={16} />}
+                                                            sx={{
+                                                                textTransform: 'none',
+                                                                fontWeight: 600,
+                                                                ...(isCodeView
+                                                                    ? {
+                                                                          bgcolor: '#08a3cd',
+                                                                          color: 'common.white',
+                                                                          '&:hover': {
+                                                                              bgcolor: '#068fb3',
+                                                                          },
+                                                                      }
+                                                                    : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
+                                                                          '&:hover': {
+                                                                              borderColor: '#068fb3',
+                                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                          },
+                                                                      }),
+                                                            }}
+                                                        >
+                                                            Code
+                                                        </Button>
+                                                    </Stack>
+                                                ) : (
                                                     <Button
                                                         size="small"
-                                                        variant={!isCodeView ? 'contained' : 'outlined'}
-                                                        onClick={() => setIsCodeView(false)}
+                                                        variant="contained"
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            bgcolor: '#08a3cd',
+                                                            color: 'common.white',
+                                                            pointerEvents: 'none',
+                                                            '&:hover': {
+                                                                bgcolor: '#08a3cd',
+                                                            },
+                                                        }}
                                                         startIcon={<IoMdDocument size={16} />}
-                                                        sx={{
-                                                            textTransform: 'none',
-                                                            fontWeight: 600,
-                                                            ...(!isCodeView
-                                                                ? {
-                                                                      bgcolor: '#08a3cd',
-                                                                      color: 'common.white',
-                                                                      '&:hover': {
-                                                                          bgcolor: '#068fb3',
-                                                                      },
-                                                                  }
-                                                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
-                                                                      '&:hover': {
-                                                                          borderColor: '#068fb3',
-                                                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                                      },
-                                                                  }),
-                                                        }}
                                                     >
-                                                        HTML
+                                                        Plain Text
                                                     </Button>
-                                                    <Button
-                                                        size="small"
-                                                        variant={isCodeView ? 'contained' : 'outlined'}
-                                                        onClick={() => setIsCodeView(true)}
-                                                        startIcon={<IoMdCode size={16} />}
-                                                        sx={{
-                                                            textTransform: 'none',
-                                                            fontWeight: 600,
-                                                            ...(isCodeView
-                                                                ? {
-                                                                      bgcolor: '#08a3cd',
-                                                                      color: 'common.white',
-                                                                      '&:hover': {
-                                                                          bgcolor: '#068fb3',
-                                                                      },
-                                                                  }
-                                                                : { bgcolor: 'transparent', color: '#08a3cd', borderColor: '#08a3cd',
-                                                                      '&:hover': {
-                                                                          borderColor: '#068fb3',
-                                                                          bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                                      },
-                                                                  }),
-                                                        }}
-                                                    >
-                                                        Code
-                                                    </Button>
-                                                </Stack>
+                                                )}
                                             </Stack>
 
                                             <Box
@@ -387,7 +418,7 @@ export function EmailTemplateDetailsView() {
                                                     minHeight: 150,
                                                 }}
                                             >
-                                                {isCodeView ? (
+                                                {isEmailSavedAsHtml && isCodeView ? (
                                                     <Box component="pre" sx={{ m: 0, fontFamily: 'Monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                                                         <Box component="code">{decodedEmailContent || 'No content'}</Box>
                                                     </Box>
@@ -398,86 +429,108 @@ export function EmailTemplateDetailsView() {
                                         </Stack>
                                     </Stack>
                                     <Stack spacing={1}>
-                                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb : 2 }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Footer Content</Typography>
-                                            <Stack direction="row" spacing={1}>
-                                                <Button
-                                                    size="small"
-                                                    variant={!isCodeViewFooter ? 'contained' : 'outlined'}
-                                                    onClick={() => setIsCodeViewFooter(false)}
-                                                    startIcon={<IoMdDocument size={16} />}
-                                                    sx={{
-                                                        textTransform: 'none',
-                                                        fontWeight: 600,
-                                                        ...(!isCodeViewFooter
-                                                            ? {
-                                                                  bgcolor: '#08a3cd',
-                                                                  color: 'common.white',
-                                                                  '&:hover': {
-                                                                      bgcolor: '#068fb3',
-                                                                  },
-                                                              }
-                                                            : {
-                                                                  bgcolor: 'transparent',
-                                                                  color: '#08a3cd',
-                                                                  borderColor: '#08a3cd',
-                                                                  '&:hover': {
-                                                                      borderColor: '#068fb3',
-                                                                      bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                                  },
-                                                              }),
-                                                    }}
-                                                >
-                                                    HTML
-                                                </Button>
-                                                <Button
-                                                    size="small"
-                                                    variant={isCodeViewFooter ? 'contained' : 'outlined'}
-                                                    onClick={() => setIsCodeViewFooter(true)}
-                                                    startIcon={<IoMdCode size={16} />}
-                                                    sx={{
-                                                        textTransform: 'none',
-                                                        fontWeight: 600,
-                                                        ...(isCodeViewFooter
-                                                            ? {
-                                                                  bgcolor: '#08a3cd',
-                                                                  color: 'common.white',
-                                                                  '&:hover': {
-                                                                      bgcolor: '#068fb3',
-                                                                  },
-                                                              }
-                                                            : {
-                                                                  bgcolor: 'transparent',
-                                                                  color: '#08a3cd',
-                                                                  borderColor: '#08a3cd',
-                                                                  '&:hover': {
-                                                                      borderColor: '#068fb3',
-                                                                      bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                                  },
-                                                              }),
-                                                    }}
-                                                >
-                                                    Code
-                                                </Button>
+                                        <Stack>
+                                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb : 2 }}>
+                                                <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>Footer Content</Typography>
+                                                {isFooterSavedAsHtml ? (
+                                                    <Stack direction="row" spacing={1}>
+                                                        <Button
+                                                            size="small"
+                                                            variant={!isCodeViewFooter ? 'contained' : 'outlined'}
+                                                            onClick={() => setIsCodeViewFooter(false)}
+                                                            startIcon={<IoMdDocument size={16} />}
+                                                            sx={{
+                                                                textTransform: 'none',
+                                                                fontWeight: 600,
+                                                                ...(!isCodeViewFooter
+                                                                    ? {
+                                                                          bgcolor: '#08a3cd',
+                                                                          color: 'common.white',
+                                                                          '&:hover': {
+                                                                              bgcolor: '#068fb3',
+                                                                          },
+                                                                      }
+                                                                    : {
+                                                                          bgcolor: 'transparent',
+                                                                          color: '#08a3cd',
+                                                                          borderColor: '#08a3cd',
+                                                                          '&:hover': {
+                                                                              borderColor: '#068fb3',
+                                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                          },
+                                                                      }),
+                                                            }}
+                                                        >
+                                                            HTML
+                                                        </Button>
+                                                        <Button
+                                                            size="small"
+                                                            variant={isCodeViewFooter ? 'contained' : 'outlined'}
+                                                            onClick={() => setIsCodeViewFooter(true)}
+                                                            startIcon={<IoMdCode size={16} />}
+                                                            sx={{
+                                                                textTransform: 'none',
+                                                                fontWeight: 600,
+                                                                ...(isCodeViewFooter
+                                                                    ? {
+                                                                          bgcolor: '#08a3cd',
+                                                                          color: 'common.white',
+                                                                          '&:hover': {
+                                                                              bgcolor: '#068fb3',
+                                                                          },
+                                                                      }
+                                                                    : {
+                                                                          bgcolor: 'transparent',
+                                                                          color: '#08a3cd',
+                                                                          borderColor: '#08a3cd',
+                                                                          '&:hover': {
+                                                                              borderColor: '#068fb3',
+                                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
+                                                                          },
+                                                                      }),
+                                                            }}
+                                                        >
+                                                            Code
+                                                        </Button>
+                                                    </Stack>
+                                                ) : (
+                                                    <Button
+                                                        size="small"
+                                                        variant="contained"
+                                                        sx={{
+                                                            textTransform: 'none',
+                                                            fontWeight: 600,
+                                                            bgcolor: '#08a3cd',
+                                                            color: 'common.white',
+                                                            pointerEvents: 'none',
+                                                            '&:hover': {
+                                                                bgcolor: '#08a3cd',
+                                                            },
+                                                        }}
+                                                        startIcon={<IoMdDocument size={16} />}
+                                                    >
+                                                        Plain Text
+                                                    </Button>
+                                                )}
                                             </Stack>
+                                            <Box 
+                                                sx={{ 
+                                                    p: 2, 
+                                                    bgcolor: 'background.paper', 
+                                                    borderRadius: 1,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                                    minHeight: 150
+                                                }}
+                                            >
+                                                {isFooterSavedAsHtml && isCodeViewFooter ? (
+                                                    <Box component="pre" sx={{ m: 0, fontFamily: 'Monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                        <Box component="code">{decodedFooterContent || 'No content'}</Box>
+                                                    </Box>
+                                                ) : (
+                                                    <Box sx={{ height: '100%' }} dangerouslySetInnerHTML={{ __html: decodedFooterContent || '<p style="color: gray; margin: 0;">No footer content</p>' }} />
+                                                )}
+                                            </Box>
                                         </Stack>
-                                        <Box 
-                                            sx={{ 
-                                                p: 2, 
-                                                bgcolor: 'background.paper', 
-                                                borderRadius: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
-                                                minHeight: 150
-                                            }}
-                                        >
-                                            {isCodeViewFooter ? (
-                                                <Box component="pre" sx={{ m: 0, fontFamily: 'Monospace', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-                                                    <Box component="code">{decodedFooterContent || 'No content'}</Box>
-                                                </Box>
-                                            ) : (
-                                                <Box sx={{ height: '100%' }} dangerouslySetInnerHTML={{ __html: decodedFooterContent || '<p style="color: gray; margin: 0;">No footer content</p>' }} />
-                                            )}
-                                        </Box>
                                     </Stack>
                                 </Stack>
                             </Box>

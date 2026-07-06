@@ -167,9 +167,7 @@ export function EmailTemplateEditView() {
 
       let finalFooterContent = '';
       if (isHtmlModeFooter) {
-        if (footerContentHtml && footerContentHtml.trim() !== '') {
-          finalFooterContent = `<!--mode:html-->${footerContentHtml}`;
-        }
+        finalFooterContent = `<!--mode:html-->${footerContentHtml || ''}`;
       } else {
         if (footerContent && footerContent.trim() !== '' && footerContent !== '<p><br></p>' && footerContent !== '<div class="ql-editor read-mode"></div>' && footerContent !== '<div class="ql-editor read-mode"><p><br></p></div>') {
           finalFooterContent = `<!--mode:plain-->${footerContent}`;
@@ -295,20 +293,22 @@ export function EmailTemplateEditView() {
         const rawEmail = doc.email_content || '';
         const rawFooter = doc.footer_content || '';
 
+        let emailIsHtml = false;
         if (rawEmail.startsWith('<!--mode:html-->')) {
-          setIsHtmlModeEmail(true);
+          emailIsHtml = true;
           setEmailContentHtml(rawEmail.slice('<!--mode:html-->'.length));
           setEmailContent('');
         } else if (rawEmail.startsWith('<!--mode:plain-->')) {
-          setIsHtmlModeEmail(false);
+          emailIsHtml = false;
           setEmailContent(rawEmail.slice('<!--mode:plain-->'.length));
           setEmailContentHtml('');
         } else {
           // Fallback for legacy documents
-          setIsHtmlModeEmail(false);
+          emailIsHtml = false;
           setEmailContent(rawEmail);
           setEmailContentHtml('');
         }
+        setIsHtmlModeEmail(emailIsHtml);
 
         if (rawFooter.startsWith('<!--mode:html-->')) {
           setIsHtmlModeFooter(true);
@@ -319,8 +319,8 @@ export function EmailTemplateEditView() {
           setFooterContent(rawFooter.slice('<!--mode:plain-->'.length));
           setFooterContentHtml('');
         } else {
-          // Fallback for legacy documents
-          setIsHtmlModeFooter(false);
+          // Fallback for legacy / empty documents: match email content mode
+          setIsHtmlModeFooter(emailIsHtml);
           setFooterContent(rawFooter);
           setFooterContentHtml('');
         }
@@ -852,7 +852,7 @@ export function EmailTemplateEditView() {
                                   }),
                         }}
                     >
-                      Normal
+                      Plain Text
                     </Button>
                     <Button
                       size="small"
