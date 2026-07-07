@@ -28,8 +28,8 @@ export default function Page() {
   // HR users see HR dashboard, Sales/CRM see their dashboards, Admin sees CRM dashboard
   const renderDashboard = () => {
     if (hasMultipleRoles) {
-      if (isHRView) return <HRDashboardView />;
-      if (isCRMView) {
+      if (isHRView && isHR) return <HRDashboardView />;
+      if (isCRMView || !isHR) {
         if (isSalesAndCRM || isAdmin) return <CombinedDashboardView />;
         if (isSales) return <SalesDashboardView />;
         if (isCRM) return <CRMDashboard />;
