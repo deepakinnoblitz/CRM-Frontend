@@ -168,10 +168,12 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
             onLoadingChange?.(true);
             if (currentInvoiceCollection) {
                 await updateInvoiceCollection(currentInvoiceCollection.name, submissionData);
-                setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Invoice Collection Update success!', severity: 'success' });
+                sessionStorage.setItem('invoice_collection_success_message', 'Invoice Collection Update success!');
             } else {
                 await createInvoiceCollection(submissionData);
-                setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Invoice Collection Created successfully', severity: 'success' });
+                sessionStorage.setItem('invoice_collection_success_message', 'Invoice Collection Created successfully');
             }
             setTimeout(() => router.push('/deals?tab=invoices&subtab=collections'), 1500);
         } catch (error: any) {

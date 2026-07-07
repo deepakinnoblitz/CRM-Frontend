@@ -1,5 +1,6 @@
 import type dayjs from 'dayjs';
 
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -39,6 +40,7 @@ import { LeadTableToolbar as ExpenseTrackerTableToolbar } from '../../lead/lead-
 // ----------------------------------------------------------------------
 
 export default function ExpenseTrackerView() {
+    const { enqueueSnackbar } = useSnackbar();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -114,13 +116,17 @@ export default function ExpenseTrackerView() {
         try {
             if (currentData) {
                 await updateExpenseTracker(currentData.name, formData);
+                enqueueSnackbar('Expense Tracker entry updated successfully', { variant: 'success' });
             } else {
                 await createExpenseTracker(formData);
+                enqueueSnackbar('Expense Tracker entry created successfully', { variant: 'success' });
             }
             handleCloseDialog();
             refreshData();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const action = currentData ? 'update' : 'create';
+            enqueueSnackbar(error.message || `Failed to ${action} entry, please try again`, { variant: 'error' });
         }
     };
 
@@ -129,9 +135,11 @@ export default function ExpenseTrackerView() {
             try {
                 await deleteExpenseTracker(confirmDelete.id);
                 setConfirmDelete({ open: false, id: null });
+                enqueueSnackbar('Expense Tracker entry deleted successfully', { variant: 'success' });
                 refreshData();
-            } catch (error) {
+            } catch (error: any) {
                 console.error(error);
+                enqueueSnackbar(error.message || 'Failed to delete entry', { variant: 'error' });
             }
         }
     };
