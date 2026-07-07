@@ -122,7 +122,6 @@ export function InvoiceCollectionDetailsView() {
         invoice,
         customer,
         customer_name,
-        company_name,
         collection_date,
         amount_to_pay,
         amount_collected,
@@ -262,16 +261,6 @@ export function InvoiceCollectionDetailsView() {
                                     <Typography variant="caption" color="text.disabled">Name</Typography>
                                 </Stack>
                                 <Typography variant="body2" sx={{ mt: 0.5 }}>{customer_name || '-'}</Typography>
-                                {company_name && (
-                                    <>
-                                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            <IoMdDocument size={14} style={{ color: '#919EAB' }} />
-                                            <Typography variant="caption" color="text.disabled">Company</Typography>
-                                        </Stack>
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>{company_name}</Typography>
-                                    </>
-                                )}
                             </Box>
                         </Stack>
 

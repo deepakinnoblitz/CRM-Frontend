@@ -6,7 +6,6 @@ export interface InvoiceCollection {
     invoice: string;
     customer: string;
     customer_name?: string;
-    company_name?: string;
     collection_date: string;
     amount_to_pay: number;
     amount_collected: number;
@@ -73,7 +72,6 @@ export async function fetchInvoiceCollections(params: {
             "invoice",
             "customer",
             "customer_name",
-            "company_name",
             "collection_date",
             "amount_collected",
             "mode_of_payment",
