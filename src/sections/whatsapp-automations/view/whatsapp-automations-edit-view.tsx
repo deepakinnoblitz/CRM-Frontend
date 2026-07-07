@@ -58,7 +58,7 @@ export function WhatsAppAutomationsEditView() {
 
     useEffect(() => {
         fetchWhatsAppTemplates({ page: 1, page_size: 1000 }).then((res) => {
-            setTemplateOptions(res.data);
+            setTemplateOptions((res.data || []).filter((t: any) => t.status !== 'Draft'));
         }).catch((err) => {
             console.error('Failed to fetch WhatsApp templates:', err);
         });
@@ -335,9 +335,9 @@ export function WhatsAppAutomationsEditView() {
                                 <TextField 
                                     select
                                     fullWidth 
-                                    label="Workflow State" 
-                                    value={workflowState}
-                                    onChange={(e) => setWorkflowState(e.target.value)}
+                                    label="Previous Workflow State" 
+                                    value={previousWorkflowState}
+                                    onChange={(e) => setPreviousWorkflowState(e.target.value)}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {leadWorkflowStates.map(opt => (
@@ -348,9 +348,9 @@ export function WhatsAppAutomationsEditView() {
                                 <TextField 
                                     select
                                     fullWidth 
-                                    label="Previous Workflow State" 
-                                    value={previousWorkflowState}
-                                    onChange={(e) => setPreviousWorkflowState(e.target.value)}
+                                    label="Workflow State" 
+                                    value={workflowState}
+                                    onChange={(e) => setWorkflowState(e.target.value)}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {leadWorkflowStates.map(opt => (
@@ -365,9 +365,9 @@ export function WhatsAppAutomationsEditView() {
                                 <TextField 
                                     select
                                     fullWidth 
-                                    label="Current Deal Stage" 
-                                    value={dealStage}
-                                    onChange={(e) => setDealStage(e.target.value)}
+                                    label="Previous Deal Stage" 
+                                    value={previousDealStage}
+                                    onChange={(e) => setPreviousDealStage(e.target.value)}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {DEAL_STAGES.map(opt => (
@@ -378,9 +378,9 @@ export function WhatsAppAutomationsEditView() {
                                 <TextField 
                                     select
                                     fullWidth 
-                                    label="Previous Deal Stage" 
-                                    value={previousDealStage}
-                                    onChange={(e) => setPreviousDealStage(e.target.value)}
+                                    label="Current Deal Stage" 
+                                    value={dealStage}
+                                    onChange={(e) => setDealStage(e.target.value)}
                                 >
                                     <MenuItem value=""><em>None</em></MenuItem>
                                     {DEAL_STAGES.map(opt => (
@@ -400,6 +400,13 @@ export function WhatsAppAutomationsEditView() {
                             fullWidth
                             options={templateOptions}
                             getOptionLabel={(option) => option.template_name || option.name || ''}
+                            filterOptions={(options, state) => {
+                                const { inputValue } = state;
+                                return options.filter((option) =>
+                                    (option.template_name || '').toLowerCase().includes(inputValue.toLowerCase()) ||
+                                    (option.name || '').toLowerCase().includes(inputValue.toLowerCase())
+                                );
+                            }}
                             value={templateOptions.find((opt) => opt.name === whatsappTemplate) || null}
                             onChange={(_e, newValue) => {
                                 setWhatsappTemplate(newValue?.name || '');
