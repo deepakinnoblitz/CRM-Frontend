@@ -10,6 +10,7 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -79,6 +80,7 @@ export const UserView = forwardRef(
       block_modules: [] as string[],
       send_welcome_email: 1 as 0 | 1,
       new_password: '',
+      user_image: '',
     });
 
     const [snackbar, setSnackbar] = useState({
@@ -93,6 +95,7 @@ export const UserView = forwardRef(
     const [openDelete, setOpenDelete] = useState(false);
     const [userToDelete, setUserToDelete] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const handleOpenCreate = () => {
       setSelectedUser(null);
@@ -110,6 +113,7 @@ export const UserView = forwardRef(
         block_modules: [],
         send_welcome_email: 1,
         new_password: '',
+        user_image: '',
       });
       setOpenCreate(true);
     };
@@ -147,6 +151,7 @@ export const UserView = forwardRef(
           block_modules: blockedModules,
           send_welcome_email: 0,
           new_password: '',
+          user_image: fullUserData.user_image || '',
         });
 
         setOpenCreate(true);
@@ -176,6 +181,7 @@ export const UserView = forwardRef(
             role_profile_name: formData.role_profile_name,
             roles: formData.roles,
             block_modules: formData.block_modules,
+            user_image: formData.user_image,
           });
 
           // Trigger password change if provided during update
@@ -200,6 +206,7 @@ export const UserView = forwardRef(
             block_modules: formData.block_modules,
             send_welcome_email: formData.send_welcome_email,
             new_password: formData.new_password,
+            user_image: formData.user_image,
           });
           setSnackbar({ open: true, message: 'User created successfully', severity: 'success' });
         }
@@ -223,15 +230,17 @@ export const UserView = forwardRef(
 
     const handleConfirmDelete = async () => {
       if (!userToDelete) return;
+      setIsDeleting(true);
       try {
         await deleteUser(userToDelete);
         setSnackbar({ open: true, message: 'User deleted successfully', severity: 'success' });
         refetch();
+        setOpenDelete(false);
+        setUserToDelete(null);
       } catch (error: any) {
         setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
       } finally {
-        setOpenDelete(false);
-        setUserToDelete(null);
+        setIsDeleting(false);
       }
     };
 
@@ -427,13 +436,22 @@ export const UserView = forwardRef(
 
         <ConfirmDialog
           open={openDelete}
-          onClose={() => setOpenDelete(false)}
+          onClose={() => {
+            if (!isDeleting) {
+              setOpenDelete(false);
+            }
+          }}
           title="Delete User"
           content="Are you sure you want to delete this user?"
           action={
-            <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+            <LoadingButton
+              variant="contained"
+              color="error"
+              loading={isDeleting}
+              onClick={handleConfirmDelete}
+            >
               Delete
-            </Button>
+            </LoadingButton>
           }
         />
 
