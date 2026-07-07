@@ -1290,6 +1290,98 @@ export interface PaymentType {
     modified?: string;
 }
 
+export interface TaxType {
+    name: string;
+    tax_name: string;
+    tax_percentage?: number;
+    tax_type: 'GST' | 'IGST';
+    status: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
+
+// Tax Types APIs
+export const fetchTaxTypesCustom = async (params: any) => {
+    const { search } = params;
+
+    const or_filters = search ? [
+        ["Tax Types", "tax_name", "like", `%${search}%`],
+        ["Tax Types", "tax_type", "like", `%${search}%`],
+    ] : undefined;
+
+    let orderByParam = "modified desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            orderByParam = `${params.orderBy} desc`;
+        }
+    }
+
+    const query = new URLSearchParams({
+        fields: JSON.stringify(["name", "tax_name", "tax_percentage", "tax_type", "status", "modified", "creation"]),
+        filters: JSON.stringify([]),
+        or_filters: or_filters ? JSON.stringify(or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam,
+        _: String(Date.now())
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/resource/Tax Types?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Tax Types&filters=${encodeURIComponent(JSON.stringify([]))}&or_filters=${or_filters ? encodeURIComponent(JSON.stringify(or_filters)) : "[]"}`)
+    ]);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to fetch tax types"));
+    }
+
+    const data = await res.json();
+    const countData = await countRes.json();
+
+    return {
+        data: data.data || [],
+        total: countData.message || 0
+    };
+};
+
+export async function createTaxTypeCustom(data: Partial<TaxType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/resource/Tax Types", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
+    return json.data || json.message;
+}
+
+export async function updateTaxTypeCustom(name: string, data: Partial<TaxType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Tax Types/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update tax type"));
+    return json.data || json.message;
+}
+
+export async function deleteTaxTypeCustom(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Tax Types/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete tax type"));
+    return true;
+}
+
 // Payment Type APIs
 export const fetchPaymentTypesCustom = async (params: any) => {
     const { search } = params;

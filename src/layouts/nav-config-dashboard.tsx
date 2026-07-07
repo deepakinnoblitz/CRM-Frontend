@@ -474,6 +474,7 @@ export const crmAndSalesNavData = [
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
       { title: 'Payment Type', path: '/master/payment-type' },
+      { title: 'Tax Types', path: '/master/tax-types' },
       { title: 'Company Bank Account', path: '/master/company-bank-account' },
       { title: 'Email Template Category', path: '/master/email-template-category' },
       { title: 'WhatsApp Template Category', path: '/master/whatsapp-template-category' },
@@ -489,9 +490,9 @@ export const crmAndSalesNavData = [
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
+      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
