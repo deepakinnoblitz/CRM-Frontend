@@ -48,6 +48,22 @@ import { AnalyticsCurrentVisits } from '../analytics-current-visits';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 export function CombinedDashboardView() {
     const theme = useTheme();
     const { user } = useAuth();
@@ -481,7 +497,7 @@ export function CombinedDashboardView() {
                                                             {row.contact_name || row.client_name}
                                                         </Typography>
                                                     </TableCell>
-                                                    <TableCell sx={{ fontWeight: 800 }}>{fCurrency(row.revenue)}</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, fontSize: 15 }}>{renderCurrency(row.revenue)}</TableCell>
                                                     <TableCell align="center" sx={{ fontWeight: 800 }}>{row.order_count}</TableCell>
                                                 </TableRow>
                                             ))
@@ -557,7 +573,7 @@ export function CombinedDashboardView() {
                                                         )}
                                                     </TableCell>
                                                     <TableCell sx={{ fontWeight: 800 }}>{row.due_date || '-'}</TableCell>
-                                                    <TableCell align="right" sx={{ fontWeight: 800 }}>{fCurrency(row.balance_amount)}</TableCell>
+                                                    <TableCell align="right" sx={{ fontWeight: 800 }}>{renderCurrency(row.balance_amount)}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
