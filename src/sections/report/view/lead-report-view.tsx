@@ -433,7 +433,6 @@ export function LeadReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead Name</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Company</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Phone</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Email</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Service</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Leads Type</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Leads From</TableCell>
@@ -470,7 +469,6 @@ export function LeadReportView() {
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.lead_name}</TableCell>
                                                         <TableCell>{row.company_name}</TableCell>
                                                         <TableCell>{row.phone_number}</TableCell>
-                                                        <TableCell>{row.email}</TableCell>
                                                         <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>
                                                             <Box
