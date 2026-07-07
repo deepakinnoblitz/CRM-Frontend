@@ -408,7 +408,11 @@ export function UserFormDialog({
               <Avatar
                 src={formData.user_image || ''}
                 alt={formData.full_name || 'User'}
-                sx={{ width: 80, height: 80 }}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  border: '2px solid rgba(8, 163, 205, 0.3)',
+                }}
               />
               {uploading && (
                 <Box
