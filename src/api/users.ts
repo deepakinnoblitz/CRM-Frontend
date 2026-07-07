@@ -161,6 +161,7 @@ export async function createUser(data: {
     block_modules?: string[];
     send_welcome_email?: 0 | 1;
     new_password?: string;
+    user_image?: string;
 }) {
     const payload: any = {
         doctype: 'User',
@@ -173,7 +174,8 @@ export async function createUser(data: {
         enabled: data.enabled ?? 1,
         user_type: data.user_type || 'System User',
         send_welcome_email: data.send_welcome_email ?? 1,
-        new_password: data.new_password || ''
+        new_password: data.new_password || '',
+        user_image: data.user_image || ''
     };
 
     if (data.role_profile_name) {
@@ -212,33 +214,40 @@ export async function updateUser(name: string, data: {
     role_profile_name?: string;
     roles?: string[];
     block_modules?: string[];
+    user_image?: string;
 }) {
-    const payload: any = {};
+    const userDoc = await getUser(name);
 
-    if (data.first_name !== undefined) payload.first_name = data.first_name;
-    if (data.middle_name !== undefined) payload.middle_name = data.middle_name;
-    if (data.last_name !== undefined) payload.last_name = data.last_name;
-    if (data.full_name !== undefined) payload.full_name = data.full_name;
-    if (data.username !== undefined) payload.username = data.username;
-    if (data.enabled !== undefined) payload.enabled = data.enabled;
-    if (data.user_type !== undefined) payload.user_type = data.user_type;
-    if (data.role_profile_name !== undefined) payload.role_profile_name = data.role_profile_name;
+    if (data.first_name !== undefined) userDoc.first_name = data.first_name;
+    if (data.middle_name !== undefined) userDoc.middle_name = data.middle_name;
+    if (data.last_name !== undefined) userDoc.last_name = data.last_name;
+    if (data.full_name !== undefined) userDoc.full_name = data.full_name;
+    if (data.username !== undefined) userDoc.username = data.username;
+    if (data.enabled !== undefined) userDoc.enabled = data.enabled;
+    if (data.user_type !== undefined) userDoc.user_type = data.user_type;
+    if (data.role_profile_name !== undefined) userDoc.role_profile_name = data.role_profile_name;
+    if (data.user_image !== undefined) userDoc.user_image = data.user_image;
 
     if (data.roles !== undefined) {
-        payload.roles = data.roles.map((role: string) => ({ role }));
+        userDoc.roles = data.roles.map((role: string) => ({ role }));
     }
 
     if (data.block_modules !== undefined) {
-        payload.block_modules = data.block_modules.map((module: string) => ({ module }));
+        userDoc.block_modules = data.block_modules.map((module: string) => ({ module }));
     }
 
-    const res = await frappeRequest('/api/method/frappe.client.set_value', {
+    // Strip metadata/private fields starting with _ or __ to prevent database escape issues
+    Object.keys(userDoc).forEach((key) => {
+        if (key.startsWith('_') || key.startsWith('__')) {
+            delete userDoc[key];
+        }
+    });
+
+    const res = await frappeRequest('/api/method/frappe.client.save', {
         method: 'POST',
         headers: await getAuthHeaders(),
         body: JSON.stringify({
-            doctype: 'User',
-            name,
-            fieldname: payload
+            doc: userDoc
         })
     });
 
