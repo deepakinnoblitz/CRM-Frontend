@@ -546,11 +546,11 @@ export function EmailAutomationsEditView() {
                                     return (
                                         <li key={key || option.name} {...optionProps}>
                                             <Box>
-                                                <Typography variant="subtitle2" sx={{ fontSize: '14px' }}>
+                                                <Typography variant="subtitle2">
                                                     {option.template_name || option.name}
                                                 </Typography>
-                                                <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '12px' }}>
-                                                    {option.category || 'No Category'}
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {option.subject || 'No Category'}
                                                 </Typography>
                                             </Box>
                                         </li>

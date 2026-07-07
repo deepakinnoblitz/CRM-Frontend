@@ -65,7 +65,7 @@ export function WhatsAppAutomationsCreateView() {
 
     useEffect(() => {
         fetchWhatsAppTemplates({ page: 1, page_size: 1000 }).then((res) => {
-            setTemplateOptions(res.data);
+            setTemplateOptions((res.data || []).filter((t: any) => t.status !== 'Draft'));
         }).catch((err) => {
             console.error('Failed to fetch WhatsApp templates:', err);
         });
@@ -432,6 +432,13 @@ export function WhatsAppAutomationsCreateView() {
                             fullWidth
                             options={templateOptions}
                             getOptionLabel={(option) => option.template_name || option.name || ''}
+                            filterOptions={(options, state) => {
+                                const { inputValue } = state;
+                                return options.filter((option) =>
+                                    (option.template_name || '').toLowerCase().includes(inputValue.toLowerCase()) ||
+                                    (option.name || '').toLowerCase().includes(inputValue.toLowerCase())
+                                );
+                            }}
                             value={templateOptions.find((opt) => opt.name === whatsappTemplate) || null}
                             onChange={(_e, newValue) => {
                                 setWhatsappTemplate(newValue?.name || '');
