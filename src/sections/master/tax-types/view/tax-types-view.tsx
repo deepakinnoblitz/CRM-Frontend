@@ -25,11 +25,11 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
-import { TableNoData } from '../../../lead/table-no-data';
 import { TaxTypesDialog } from '../tax-types-dialog';
+import { TableNoData } from '../../../lead/table-no-data';
+import { TaxTypesTableRow } from '../tax-types-table-row';
 import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
-import { TaxTypesTableRow } from '../tax-types-table-row';
 import { LeadTableToolbar } from '../../../lead/lead-table-toolbar';
 
 // ----------------------------------------------------------------------
