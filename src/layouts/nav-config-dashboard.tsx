@@ -489,9 +489,9 @@ export const crmAndSalesNavData = [
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
+      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]

@@ -35,6 +35,22 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { getDeal } from 'src/api/deals';
 import { createItem } from 'src/api/invoice';
 import { getContact } from 'src/api/contacts';
@@ -878,7 +894,7 @@ export function EstimationCreateView() {
                                                                 }
                                                             }}
                                                         >
-                                                            <ToggleButton value="Flat">₹</ToggleButton>
+                                                            <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                                             <ToggleButton value="Percentage">%</ToggleButton>
                                                         </ToggleButtonGroup>
                                                         <TextField
@@ -989,10 +1005,10 @@ export function EstimationCreateView() {
                                             </TableCell>
                                         ))}
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{renderCurrency(row.tax_amount)}</Typography>
                                         </TableCell>
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
+                                            <Typography variant="subtitle2" color="primary.main">{renderCurrency(row.sub_total)}</Typography>
                                         </TableCell>
                                         <TableCell sx={{ px: 1, py: 1 }}>
                                             <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
@@ -1030,7 +1046,7 @@ export function EstimationCreateView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(itemsTotalTaxable)}</Typography>
                             </Stack>
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -1038,7 +1054,7 @@ export function EstimationCreateView() {
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(totalTax)}</Typography>
                             </Stack>
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
@@ -1069,7 +1085,7 @@ export function EstimationCreateView() {
                                         }
                                     }}
                                 >
-                                    <ToggleButton value="Flat">₹</ToggleButton>
+                                    <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                     <ToggleButton value="Percentage">%</ToggleButton>
                                 </ToggleButtonGroup>
                                 <TextField
@@ -1104,7 +1120,7 @@ export function EstimationCreateView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: '#08a3cd' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(grandTotal, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>

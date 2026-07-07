@@ -20,6 +20,22 @@ type Props = {
     };
 };
 
+const renderCurrency = (amount: any, symbolFontSize: string = '25px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 export default function CRMExpenseTrackerStatsCards({ stats }: Props) {
     const ITEMS = [
         {
@@ -88,7 +104,7 @@ export default function CRMExpenseTrackerStatsCards({ stats }: Props) {
                             {item.label}
                         </Typography>
                         <Typography variant="subtitle2" sx={{ fontWeight: 800, fontSize: 24}}>
-                            {fCurrency(item.value)}
+                            {renderCurrency(item.value)}
                         </Typography>
                     </Box>
                 </Card>
