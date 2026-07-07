@@ -28,24 +28,27 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';   
 import { generateLeadPdf } from 'src/components/export/pdf/lead-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { LeadDetailsDialog } from '../lead-details-dialog';
 import { ExportFieldsDialog } from '../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
 export function LeadReportView() {
+    const router = useRouter();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -56,6 +59,7 @@ export function LeadReportView() {
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [leadsType, setLeadsType] = useState('all');
     const [leadsFrom, setLeadsFrom] = useState('all');
+    const [service, setService] = useState('all');
     const [owner, setOwner] = useState('all');
 
     useEffect(() => {
@@ -66,6 +70,7 @@ export function LeadReportView() {
 
     // Options
     const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
+    const [serviceOptions, setServiceOptions] = useState<string[]>([]);
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
 
     // Pagination
@@ -73,8 +78,6 @@ export function LeadReportView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // View Details
-    const [openView, setOpenView] = useState(false);
-    const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -172,9 +175,8 @@ export function LeadReportView() {
     };
 
     const handleViewLead = useCallback((id: string) => {
-        setSelectedLeadId(id);
-        setOpenView(true);
-    }, []);
+        router.push(`/leads/${encodeURIComponent(id)}/view`);
+    }, [router]);
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -193,6 +195,7 @@ export function LeadReportView() {
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (leadsType !== 'all') filters.leads_type = leadsType;
             if (leadsFrom !== 'all') filters.leads_from = leadsFrom;
+            if (service !== 'all') filters.service = service;
             if (owner !== 'all') filters.owner = owner;
 
             const result = await runReport('Lead', filters);
@@ -203,7 +206,7 @@ export function LeadReportView() {
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, leadsType, leadsFrom, owner]);
+    }, [fromDate, toDate, leadsType, leadsFrom, service, owner]);
 
     useEffect(() => {
         fetchReport();
@@ -214,6 +217,7 @@ export function LeadReportView() {
         setToDate(null);
         setLeadsType('all');
         setLeadsFrom('all');
+        setService('all');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -222,6 +226,7 @@ export function LeadReportView() {
     useEffect(() => {
         getDoctypeList('Lead From').then(setLeadsFromOptions);
         getDoctypeList('User').then(setOwnerOptions);
+        getDoctypeList('Service').then((list) => setServiceOptions(list.map((item: any) => item.name || item.label || String(item))));
     }, []);
 
     const totalLeads = reportData.length;
@@ -334,6 +339,35 @@ export function LeadReportView() {
                     />
                     <Autocomplete
                         size="small"
+                        sx={{ minWidth: 200 }}
+                        options={['All Services', ...serviceOptions]}
+                        getOptionLabel={(option) => option || 'All Services'}
+                        value={service === 'all' || !service ? 'All Services' : service}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Services' || !newValue) {
+                                setService('all');
+                            } else {
+                                setService(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Services"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                    <Autocomplete
+                        size="small"
                         sx={{ minWidth: 240 }}
                         disabled={user?.has_crm_permission}
                         options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
@@ -363,38 +397,46 @@ export function LeadReportView() {
                         )}
                     />
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateLeadPdf({
-                            reportData,
-                            selected,
-                            summary: [
-                                { label: 'Total Leads', value: totalLeads },
-                                { label: 'Incoming Leads', value: incomingLeads },
-                                { label: 'Outgoing Leads', value: outgoingLeads }
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={() => setOpenExportFields(true)}
+                            disabled={reportData.length === 0}
+                            sx={{
+                                bgcolor: '#0ea5e9',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#0284c7' },
+                                height: 40,
+                                px: 3,
+                            }}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateLeadPdf({
+                                reportData,
+                                selected,
+                                summary: [
+                                    { label: 'Total Leads', value: totalLeads },
+                                    { label: 'Incoming Leads', value: incomingLeads },
+                                    { label: 'Outgoing Leads', value: outgoingLeads }
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 40,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
@@ -471,20 +513,12 @@ export function LeadReportView() {
                                                         <TableCell>{row.phone_number}</TableCell>
                                                         <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>
-                                                            <Box
-                                                                sx={{
-                                                                    px: 1,
-                                                                    py: 0.5,
-                                                                    borderRadius: 1,
-                                                                    display: 'inline-flex',
-                                                                    typography: 'caption',
-                                                                    fontWeight: 'bold',
-                                                                    bgcolor: alpha(row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800', 0.1),
-                                                                    color: row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800',
-                                                                }}
+                                                            <Label
+                                                                variant="soft"
+                                                                color={row.leads_type === 'Incoming' ? 'success' : 'warning'}
                                                             >
                                                                 {row.leads_type}
-                                                            </Box>
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell>{row.leads_from}</TableCell>
                                                         <TableCell>{row.owner_name}</TableCell>
@@ -524,14 +558,6 @@ export function LeadReportView() {
                 </Card>
             </Stack>
 
-            <LeadDetailsDialog
-                open={openView}
-                leadId={selectedLeadId}
-                onClose={() => {
-                    setOpenView(false);
-                    setSelectedLeadId(null);
-                }}
-            />
 
             <ExportFieldsDialog
                 open={openExportFields}

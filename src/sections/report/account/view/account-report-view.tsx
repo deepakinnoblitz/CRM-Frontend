@@ -340,32 +340,24 @@ export function AccountReportView() {
                         />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
-                        <Select
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">State</MenuItem>
-                            {stateOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={stateOptions}
+                            value={state === 'all' ? null : state}
+                            onChange={(e, newValue) => setState(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="State" />}
+                            disabled={country === 'all'}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={state === 'all'}>
-                        <Select
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">City</MenuItem>
-                            {cityOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={cityOptions}
+                            value={city === 'all' ? null : city}
+                            onChange={(e, newValue) => setCity(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="City" />}
+                            disabled={state === 'all'}
+                        />
                     </FormControl>
                     <Autocomplete
                         size="small"
