@@ -124,7 +124,7 @@ export function EstimationEditView() {
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
+    const [newItem, setNewItem] = useState<{ item_name: string; item_code: string; rate: number | '' }>({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
 
@@ -345,7 +345,11 @@ export function EstimationEditView() {
 
         try {
             setCreatingItem(true);
-            const createdItem = await createItem(newItem);
+            const payload = {
+                ...newItem,
+                rate: newItem.rate === '' ? 0 : Number(newItem.rate)
+            };
+            const createdItem = await createItem(payload);
 
             // Add to item options with proper field mapping
             const formattedItem = {
@@ -1379,7 +1383,10 @@ export function EstimationEditView() {
                             label="Rate"
                             type="number"
                             value={newItem.rate}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setNewItem((prev) => ({ ...prev, rate: val === '' ? '' : Number(val) }));
+                            }}
                         />
                     </Stack>
                 </DialogContent>

@@ -24,7 +24,7 @@ type Props = {
 
 export function TaxTypeFormDialog({ open, onClose, onSuccess, initialName = '' }: Props) {
     const [taxName, setTaxName] = useState(initialName);
-    const [taxPercentage, setTaxPercentage] = useState<number>(0);
+    const [taxPercentage, setTaxPercentage] = useState<number | ''>(0);
     const [taxType, setTaxType] = useState('GST'); // Default to IGST
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ export function TaxTypeFormDialog({ open, onClose, onSuccess, initialName = '' }
             setError(null);
             const data = {
                 tax_name: taxName,
-                tax_percentage: taxPercentage,
+                tax_percentage: taxPercentage === '' ? 0 : Number(taxPercentage),
                 tax_type: taxType,
             };
             const result = await createTaxType(data);
@@ -86,7 +86,10 @@ export function TaxTypeFormDialog({ open, onClose, onSuccess, initialName = '' }
                     type="number"
                     label="Tax Percentage"
                     value={taxPercentage}
-                    onChange={(e) => setTaxPercentage(Number(e.target.value))}
+                    onChange={(e) => {
+                        const val = e.target.value;
+                        setTaxPercentage(val === '' ? '' : Number(val));
+                    }}
                     margin="normal"
                     InputProps={{ inputProps: { min: 0, max: 100 } }}
                 />

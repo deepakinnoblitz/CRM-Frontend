@@ -109,7 +109,7 @@ export function PurchaseCreateView() {
     const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
+    const [newItem, setNewItem] = useState<{ item_name: string; item_code: string; rate: number | '' }>({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
 
@@ -239,7 +239,11 @@ export function PurchaseCreateView() {
 
         try {
             setCreatingItem(true);
-            const createdItem = await createItem(newItem);
+            const payload = {
+                ...newItem,
+                rate: newItem.rate === '' ? 0 : Number(newItem.rate)
+            };
+            const createdItem = await createItem(payload);
 
             const formattedItem = {
                 name: createdItem.name,
@@ -1293,7 +1297,10 @@ export function PurchaseCreateView() {
                                 label="Rate"
                                 type="number"
                                 value={newItem.rate}
-                                onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setNewItem((prev) => ({ ...prev, rate: val === '' ? '' : Number(val) }));
+                                }}
                             />
                         </Stack>
                     </DialogContent>
