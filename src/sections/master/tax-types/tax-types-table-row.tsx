@@ -7,6 +7,7 @@ import IconButton from '@mui/material/IconButton';
 
 import { TaxType } from 'src/api/masters';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -80,25 +81,12 @@ export function TaxTypesTableRow({ row, index, onEditRow, onDeleteRow }: Props) 
       </TableCell>
 
       <TableCell>
-        <Box
-          sx={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            px: 1.5,
-            py: 0.5,
-            borderRadius: 1,
-            fontSize: '12px',
-            fontWeight: 700,
-            bgcolor: (theme) =>
-              row.status === 'Active'
-                ? alpha(theme.palette.success.main, 0.08)
-                : alpha(theme.palette.error.main, 0.08),
-            color: (theme) =>
-              row.status === 'Active' ? theme.palette.success.main : theme.palette.error.main,
-          }}
+        <Label
+          variant="soft"
+          color={row.status === 'Inactive' ? 'default' : 'success'}
         >
-          {row.status}
-        </Box>
+          {row.status || 'Active'}
+        </Label>
       </TableCell>
 
       <TableCell align="right">
