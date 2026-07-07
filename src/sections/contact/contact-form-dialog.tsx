@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { MuiTelInput } from 'mui-tel-input';
 import { useState, useEffect } from 'react';
 
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props) {
+    const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
     const [saving, setSaving] = useState(false);
 
@@ -309,15 +311,19 @@ export function ContactFormDialog({ open, onClose, contactId, onSuccess }: Props
 
             if (contactId) {
                 await updateContact(contactId, contactData);
+                enqueueSnackbar('Client updated successfully', { variant: 'success' });
             } else {
                 await createContact(contactData);
+                enqueueSnackbar('Client created successfully', { variant: 'success' });
             }
 
             if (onSuccess) onSuccess();
             onClose();
         } catch (err: any) {
             console.error(err);
-            setSnackbar({ open: true, message: err.message || 'Failed to save client', severity: 'error' });
+            const fallbackMsg = contactId ? 'Failed to update client, please try again' : 'Failed to create client, please try again';
+            enqueueSnackbar(err.message || fallbackMsg, { variant: 'error' });
+            setSnackbar({ open: true, message: err.message || fallbackMsg, severity: 'error' });
         } finally {
             setSaving(false);
         }
