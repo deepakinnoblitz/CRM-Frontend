@@ -469,11 +469,10 @@ export function DealDetailsView() {
                             flexDirection: 'column',
                         }}
                     >
-                        <Scrollbar
+                        <Box
                             sx={{
                                 p: 4,
                                 flexGrow: 1,
-                                height: 1,
                             }}>
                             <Stack spacing={5}>
                                 {/* Prospect Identity */}
@@ -527,7 +526,7 @@ export function DealDetailsView() {
                                     </Typography>
                                 </Box>
                             </Stack>
-                        </Scrollbar>
+                        </Box>
                     </Box>
 
                     {/* Main Content: Tabs & Related Data */}

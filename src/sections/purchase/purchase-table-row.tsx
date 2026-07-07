@@ -42,6 +42,22 @@ type PurchaseTableRowProps = {
     index?: number;
 };
 
+const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 export function PurchaseTableRow({
     row,
     selected,
@@ -121,11 +137,11 @@ export function PurchaseTableRow({
 
             <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.bill_date)}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.paid_amount)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{renderCurrency(row.paid_amount)}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.balance_amount ?? (row.grand_total - row.paid_amount))}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{renderCurrency(row.balance_amount ?? (row.grand_total - row.paid_amount))}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

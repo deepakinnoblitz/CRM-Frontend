@@ -255,7 +255,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                         type="number"
                         value={formData.amount_to_pay}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                     />
@@ -282,7 +282,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                             }
                         }}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                         }}
                         error={!!errors.amount_collected}
                         helperText={errors.amount_collected}
@@ -295,7 +295,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                         type="number"
                         value={formData.amount_pending}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                         sx={{
