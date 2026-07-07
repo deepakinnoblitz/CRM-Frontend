@@ -1,5 +1,6 @@
 import type dayjs from 'dayjs';
 
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -40,6 +41,7 @@ import { LeadTableToolbar as CRMExpenseTrackerTableToolbar } from '../../lead/le
 // ----------------------------------------------------------------------
 
 export default function CRMExpenseTrackerView() {
+    const { enqueueSnackbar } = useSnackbar();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -115,13 +117,17 @@ export default function CRMExpenseTrackerView() {
         try {
             if (currentData) {
                 await updateCRMExpenseTracker(currentData.name, formData);
+                enqueueSnackbar('Expense Tracker entry updated successfully', { variant: 'success' });
             } else {
                 await createCRMExpenseTracker(formData);
+                enqueueSnackbar('Expense Tracker entry created successfully', { variant: 'success' });
             }
             handleCloseDialog();
             refreshData();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const action = currentData ? 'update' : 'create';
+            enqueueSnackbar(error.message || `Failed to ${action} entry, please try again`, { variant: 'error' });
         }
     };
 
@@ -130,9 +136,11 @@ export default function CRMExpenseTrackerView() {
             try {
                 await deleteCRMExpenseTracker(confirmDelete.id);
                 setConfirmDelete({ open: false, id: null });
+                enqueueSnackbar('Expense Tracker entry deleted successfully', { variant: 'success' });
                 refreshData();
-            } catch (error) {
+            } catch (error: any) {
                 console.error(error);
+                enqueueSnackbar(error.message || 'Failed to delete entry', { variant: 'error' });
             }
         }
     };

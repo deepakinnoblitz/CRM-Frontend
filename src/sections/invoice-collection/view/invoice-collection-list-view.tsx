@@ -80,6 +80,14 @@ export function InvoiceCollectionListView({ hideHeader = false }: { hideHeader?:
     const [modeOfPaymentOptions, setModeOfPaymentOptions] = useState<string[]>([]);
 
     useEffect(() => {
+        const msg = sessionStorage.getItem('invoice_collection_success_message');
+        if (msg) {
+            setSnackbar({ open: true, message: msg, severity: 'success' });
+            sessionStorage.removeItem('invoice_collection_success_message');
+        }
+    }, []);
+
+    useEffect(() => {
         // Fetch Contacts for Customer Filter
         getDoctypeList('Contacts', ['name', 'first_name', 'company_name']).then((res) => {
             const options = res.map((c: any) => ({

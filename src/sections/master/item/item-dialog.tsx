@@ -65,7 +65,7 @@ export function ItemDialog({ open, onClose, onSuccess, currentItem }: Props) {
       setLoading(true);
       setError('');
 
-      const parsedRate = Number(rate);
+      const parsedRate = rate === '' ? 0 : Number(rate);
 
       if (currentItem) {
         await updateItem(currentItem.name, {
