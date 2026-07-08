@@ -1517,6 +1517,7 @@ export function LeadView() {
                               avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                               isVerified: true,
                               country: getString(row.country) ?? '-',
+                              modified: row.modified,
                             }}
                             selected={table.selected.includes(row.name)}
                             onSelectRow={() => table.onSelectRow(row.name)}
