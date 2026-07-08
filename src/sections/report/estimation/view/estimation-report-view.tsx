@@ -645,7 +645,7 @@ function SummaryCard({ item }: { item: any }) {
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
                         {item.datatype === 'Currency'
-                            ? `₹${item.value?.toLocaleString()}`
+                            ? renderCurrency(item.value, '24px')
                             : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
