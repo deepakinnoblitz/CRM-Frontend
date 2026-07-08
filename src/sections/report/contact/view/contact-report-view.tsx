@@ -362,32 +362,24 @@ export function ContactReportView() {
                         />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
-                        <Select
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">State</MenuItem>
-                            {stateOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={stateOptions}
+                            value={state === 'all' ? null : state}
+                            onChange={(e, newValue) => setState(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="State" />}
+                            disabled={country === 'all'}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={state === 'all'}>
-                        <Select
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">City</MenuItem>
-                            {cityOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={cityOptions}
+                            value={city === 'all' ? null : city}
+                            onChange={(e, newValue) => setCity(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="City" />}
+                            disabled={state === 'all'}
+                        />
                     </FormControl>
                     <Autocomplete
                         size="small"
@@ -419,39 +411,39 @@ export function ContactReportView() {
                             />
                         )}
                     />
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateContactPdf({
-                            reportData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Contacts', value: reportData.length },
-                                { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
-                                { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={() => setOpenExportFields(true)}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateContactPdf({
+                                reportData,
+                                selected,
+                                summary: summaryData.length > 0 ? summaryData : [
+                                    { label: 'Total Contacts', value: reportData.length },
+                                    { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
+                                    { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box

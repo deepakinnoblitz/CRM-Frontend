@@ -27,6 +27,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -40,6 +42,22 @@ import { useAuth } from 'src/auth/auth-context';
 import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function PurchaseReportView() {
     const { user } = useAuth();
@@ -385,7 +403,6 @@ export function PurchaseReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Vendor</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill No</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Qty</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
@@ -394,7 +411,7 @@ export function PurchaseReportView() {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                 <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
@@ -418,12 +435,22 @@ export function PurchaseReportView() {
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
                                                         <TableCell>{row.name}</TableCell>
-                                                        <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
+                                                        <TableCell align="left" sx={{ maxWidth: 240 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.vendor_real_name || row.vendor_name || '-'}
+                                                                </Typography>
+                                                                {row.vendor_name && (
+                                                                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                        {row.vendor_name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </TableCell>
                                                         <TableCell>{row.bill_no}</TableCell>
                                                         <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>{row.quantity}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 700 }}>{renderCurrency(row.grand_total, '16px')}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
@@ -434,7 +461,7 @@ export function PurchaseReportView() {
                                             })}
                                             {reportData.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                         <Stack spacing={1} alignItems="center">
                                                             <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
@@ -533,7 +560,7 @@ function SummaryCard({ item }: { item: any }) {
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
                         {item.datatype === 'Currency' || (typeof item.value === 'number' && item.label.toLowerCase().includes('amount'))
-                            ? `₹${item.value?.toLocaleString()}`
+                            ? renderCurrency(item.value, '24px')
                             : item.value?.toLocaleString()}
                     </Typography>
                 </Box>

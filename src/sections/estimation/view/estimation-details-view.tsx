@@ -1,10 +1,10 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-    IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags,
-    IoMdWallet, IoMdPrint, IoMdSwap, IoMdTrash, IoMdCreate,
-    IoMdPerson, IoMdCalendar, IoMdCash, IoMdList, IoMdLink, IoMdDownload
+    IoMdCube, IoMdSwap, IoMdCash, IoMdList, IoMdLink,
+    IoMdPrint, IoMdTrash, IoMdWallet, IoMdCreate, IoMdPerson,
+    IoMdListBox, IoMdCalendar, IoMdDownload, IoMdArrowBack, IoMdPricetags, IoMdCalculator
 } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -48,7 +48,6 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
   return formatted;
 };
 
-import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
@@ -57,6 +56,9 @@ export function EstimationDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const backUrl = location.state?.from || '/reports/estimation';
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -147,7 +149,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => navigate('/deals?tab=estimations')} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(backUrl)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -243,7 +245,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate('/deals?tab=estimations')}
+                        onClick={() => navigate(backUrl)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -593,14 +595,14 @@ export function EstimationDetailsView() {
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="error.main">+ {renderCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" color="error.main">+{renderCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">- {renderCurrency(discountAmount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">-{renderCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">

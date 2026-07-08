@@ -16,6 +16,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -29,6 +30,7 @@ import { usePdfExport } from 'src/hooks/use-pdf-export';
 import { fCurrency } from 'src/utils/format-number';
 
 import { runReport } from 'src/api/reports';
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -38,6 +40,22 @@ import { generateInvoiceCollectionPdf } from 'src/components/export/pdf/invoice-
 import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function InvoiceCollectionReportView() {
     const { user } = useAuth();
@@ -50,10 +68,26 @@ export function InvoiceCollectionReportView() {
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
-    const [customer, setCustomer] = useState('');
-    const [invoiceNo, setInvoiceNo] = useState('');
+    const [customer, setCustomer] = useState<any>(null);
+    const [invoiceNo, setInvoiceNo] = useState<any>(null);
+    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [invoiceNoOptions, setInvoiceNoOptions] = useState<any[]>([]);
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+
+    useEffect(() => {
+        getDoctypeList('Contacts', ['name', 'first_name'])
+            .then((data) => {
+                setCustomerOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Contacts for report:', error));
+
+        getDoctypeList('Invoice', ['name'])
+            .then((data) => {
+                setInvoiceNoOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Invoices for report:', error));
+    }, []);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -94,8 +128,8 @@ export function InvoiceCollectionReportView() {
         setLoading(true);
         try {
             const filters: any = {};
-            if (customer) filters.customer = customer;
-            if (invoiceNo) filters.invoice = invoiceNo;
+            if (customer) filters.customer = customer.name;
+            if (invoiceNo) filters.invoice = invoiceNo.name;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (user?.has_crm_permission) filters.owner = user.name;
@@ -117,8 +151,8 @@ export function InvoiceCollectionReportView() {
     }, [fetchReport]);
 
     const handleReset = () => {
-        setCustomer('');
-        setInvoiceNo('');
+        setCustomer(null);
+        setInvoiceNo(null);
         setFromDate(null);
         setToDate(null);
         setSelected([]);
@@ -178,22 +212,6 @@ export function InvoiceCollectionReportView() {
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <TextField
-                        label="Customer"
-                        value={customer}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomer(e.target.value)}
-                        placeholder="Search customer..."
-                        size="small"
-                        sx={{ minWidth: 200 }}
-                    />
-                    <TextField
-                        label="Invoice No"
-                        value={invoiceNo}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNo(e.target.value)}
-                        placeholder="Search invoice..."
-                        size="small"
-                        sx={{ minWidth: 150 }}
-                    />
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
@@ -220,6 +238,75 @@ export function InvoiceCollectionReportView() {
                             }}
                         />
                     </LocalizationProvider>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        options={customerOptions}
+                        getOptionLabel={(option) => option ? `${option.first_name || ''} (${option.name || ''})` : ''}
+                        value={customer}
+                        onChange={(event, newValue) => setCustomer(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Customer"
+                                placeholder="Search Customer"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.first_name || option.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 220 }}
+                        options={invoiceNoOptions}
+                        getOptionLabel={(option) => option ? option.name || '' : ''}
+                        value={invoiceNo}
+                        onChange={(event, newValue) => setInvoiceNo(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Invoice No"
+                                placeholder="Search Invoice No"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -334,9 +421,9 @@ export function InvoiceCollectionReportView() {
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.invoice}</TableCell>
                                                         <TableCell>{row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-'}</TableCell>
                                                         <TableCell>{row.mode_of_payment || '-'}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
-                                                        <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
-                                                        <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{renderCurrency(row.amount_to_pay, '16px')}</TableCell>
+                                                        <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{renderCurrency(row.amount_collected, '16px')}</TableCell>
+                                                        <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{renderCurrency(row.amount_pending, '16px')}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton
                                                                 onClick={() => navigate(`/invoice-collections/${encodeURIComponent(row.id)}/view`, { state: { from: location.pathname } })}
@@ -441,7 +528,7 @@ function SummaryCard({ item }: { item: any }) {
                         {item.label}
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
-                        {item.datatype === 'Currency' ? fCurrency(item.value) : item.value?.toLocaleString()}
+                        {item.datatype === 'Currency' ? renderCurrency(item.value, '24px') : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
             </Stack>
