@@ -7,6 +7,8 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -91,6 +93,7 @@ export type LeadProps = {
   avatarUrl: string;
   isVerified: boolean;
   country?: string;
+  modified?: string;
 };
 
 type LeadTableRowProps = {
@@ -203,8 +206,11 @@ export function LeadTableRow({
         </Label>
       </TableCell>
 
-      <TableCell align="right">
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <TableCell align="right" sx={{ pr: 3, minWidth: 100 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12 }}>
+            {row.modified ? fTimeDist(row.modified) : '-'}
+          </Box>
           <IconButton onClick={onView} sx={{ color: 'info.main' }}>
             <Iconify icon="solar:eye-bold" />
           </IconButton>
