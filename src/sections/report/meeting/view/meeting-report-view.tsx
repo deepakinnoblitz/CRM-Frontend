@@ -77,8 +77,8 @@ export function MeetingReportView() {
 
     // Options
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
-    const [statusOptions] = useState(['Scheduled', 'Completed', 'Overdue', 'Cancelled']);
-    const [meetForOptions] = useState(['Lead', 'Contact', 'Prospect', 'Customer']);
+    const [statusOptions] = useState(['Scheduled', 'Completed']);
+    const [meetForOptions] = useState(['Lead', 'Client', 'Company', 'Other']);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -361,40 +361,40 @@ export function MeetingReportView() {
                             <MenuItem value="0">Disabled</MenuItem>
                         </Select>
                     </FormControl>
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateMeetingPdf({
-                            reportData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Meetings', value: reportData.length },
-                                { label: 'Internal Meetings', value: reportData.filter((r: any) => r.meeting_type === 'Internal').length },
-                                { label: 'External Meetings', value: reportData.filter((r: any) => r.meeting_type === 'External').length },
-                                { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={() => setOpenExportFields(true)}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateMeetingPdf({
+                                reportData,
+                                selected,
+                                summary: summaryData.length > 0 ? summaryData : [
+                                    { label: 'Total Meetings', value: reportData.length },
+                                    { label: 'Internal Meetings', value: reportData.filter((r: any) => r.meeting_type === 'Internal').length },
+                                    { label: 'External Meetings', value: reportData.filter((r: any) => r.meeting_type === 'External').length },
+                                    { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
