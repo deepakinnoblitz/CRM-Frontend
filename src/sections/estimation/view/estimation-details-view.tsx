@@ -1,6 +1,6 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
     IoMdCube, IoMdSwap, IoMdCash, IoMdList, IoMdLink,
     IoMdPrint, IoMdTrash, IoMdWallet, IoMdCreate, IoMdPerson,
@@ -56,6 +56,9 @@ export function EstimationDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const backUrl = location.state?.from || '/reports/estimation';
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -146,7 +149,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => navigate('/reports/estimation')} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(backUrl)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -242,7 +245,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate('/reports/estimation')}
+                        onClick={() => navigate(backUrl)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
