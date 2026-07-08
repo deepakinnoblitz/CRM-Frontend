@@ -16,6 +16,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -26,7 +27,10 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { runReport } from 'src/api/reports';
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -39,6 +43,22 @@ import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 export function EstimationReportView() {
     const { user } = useAuth();
     const navigate = useNavigate();
@@ -49,7 +69,10 @@ export function EstimationReportView() {
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
-    const [customerName, setCustomerName] = useState('');
+    const [client, setClient] = useState<any>(null);
+    const [account, setAccount] = useState<any>(null);
+    const [clientOptions, setClientOptions] = useState<any[]>([]);
+    const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
 
@@ -64,6 +87,20 @@ export function EstimationReportView() {
 
     // Export Fields Dialog
     const [openExportFields, setOpenExportFields] = useState(false);
+
+    useEffect(() => {
+        getDoctypeList('Contacts', ['name', 'first_name'])
+            .then((data) => {
+                setClientOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Contacts for report:', error));
+
+        getDoctypeList('Accounts', ['name', 'account_name'])
+            .then((data) => {
+                setAccountOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Accounts for report:', error));
+    }, []);
 
     const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.checked) {
@@ -121,12 +158,13 @@ export function EstimationReportView() {
 
             // Build filters for get_list
             const listFilters = [];
-            if (customerName) listFilters.push(['customer_name', 'like', `%${customerName}%`]);
+            if (client) listFilters.push(['client_name', '=', client.name]);
+            if (account) listFilters.push(['billing_name', '=', account.name]);
             if (fromDate) listFilters.push(['estimate_date', '>=', fromDate]);
             if (toDate) listFilters.push(['estimate_date', '<=', toDate]);
             if (user?.has_crm_permission) listFilters.push(['owner', '=', user.name]);
 
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'customer_name', 'estimate_date', 'total_qty', 'grand_total'];
+            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'customer_name', 'billing_name', 'estimate_date', 'total_qty', 'grand_total'];
             if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
 
             const queryParams = new URLSearchParams({
@@ -185,7 +223,8 @@ export function EstimationReportView() {
         setLoading(true);
         try {
             const filters: any = {};
-            if (customerName) filters.client_name = customerName;
+            if (client) filters.client_name = client.name;
+            if (account) filters.billing_name = account.name;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (user?.has_crm_permission) filters.owner = user.name;
@@ -201,16 +240,17 @@ export function EstimationReportView() {
         } finally {
             setLoading(false);
         }
-    }, [customerName, fromDate, toDate, user]);
+    }, [client, account, fromDate, toDate, user]);
 
     useEffect(() => {
         fetchReport();
     }, [fetchReport]);
 
     const handleReset = () => {
-        setCustomerName('');
         setFromDate(null);
         setToDate(null);
+        setClient(null);
+        setAccount(null);
     };
 
     return (
@@ -253,14 +293,6 @@ export function EstimationReportView() {
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <TextField
-                        label="Customer Name"
-                        value={customerName}
-                        onChange={(e) => setCustomerName(e.target.value)}
-                        placeholder="Search customer..."
-                        size="small"
-                        sx={{ minWidth: 200 }}
-                    />
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
@@ -287,6 +319,78 @@ export function EstimationReportView() {
                             }}
                         />
                     </LocalizationProvider>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        options={clientOptions}
+                        getOptionLabel={(option) => option ? `${option.first_name || ''} (${option.name || ''})` : ''}
+                        value={client}
+                        onChange={(event, newValue) => setClient(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Client"
+                                placeholder="Search Client"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.first_name || option.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        options={accountOptions}
+                        getOptionLabel={(option) => option ? `${option.account_name || ''} (${option.name || ''})` : ''}
+                        value={account}
+                        onChange={(event, newValue) => setAccount(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Account"
+                                placeholder="Search Account"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.account_name || option.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -357,13 +461,12 @@ export function EstimationReportView() {
                                             />
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Ref No</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Customer</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Client</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Company</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
                                         <TableCell align="center" sx={{ fontWeight: 700, color: 'text.secondary' }}>Qty</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Price</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Tax</TableCell>
-                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Subtotal</TableCell>
+                                        <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Total Tax</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
                                     </TableRow>
@@ -371,7 +474,7 @@ export function EstimationReportView() {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow>
-                                            <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
                                                 <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
@@ -397,14 +500,35 @@ export function EstimationReportView() {
                                                                 <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                             </TableCell>
                                                             <TableCell>{row.name}</TableCell>
-                                                            <TableCell>{row.customer_name}</TableCell>
+                                                            <TableCell align="left" sx={{ maxWidth: 240 }}>
+                                                                <Stack spacing={0.5}>
+                                                                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                        {row.customer_name || row.client_name || '-'}
+                                                                    </Typography>
+                                                                    {row.client_name && (
+                                                                        <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                            {row.client_name}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Stack>
+                                                            </TableCell>
+                                                            <TableCell align="left" sx={{ maxWidth: 240 }}>
+                                                                <Stack spacing={0.5}>
+                                                                    <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                        {row.company_name || row.billing_account_name || '-'}
+                                                                    </Typography>
+                                                                    {row.billing_name && (
+                                                                        <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                            {row.billing_name}
+                                                                        </Typography>
+                                                                    )}
+                                                                </Stack>
+                                                            </TableCell>
                                                             <TableCell>{row.estimate_date ? dayjs(row.estimate_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                            <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                             <TableCell align="center">{row.quantity}</TableCell>
-                                                            <TableCell align="right">₹{row.price?.toLocaleString() || 0}</TableCell>
-                                                            <TableCell align="right">₹{row.tax_amount?.toLocaleString() || 0}</TableCell>
-                                                            <TableCell align="right">₹{row.sub_total?.toLocaleString() || 0}</TableCell>
-                                                            <TableCell align="right" sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.price, '16px')}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{renderCurrency(row.tax_amount, '16px')}</TableCell>
+                                                            <TableCell align="right" sx={{ fontWeight: 700 }}>{renderCurrency(row.grand_total, '16px')}</TableCell>
                                                             <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                                 <IconButton
                                                                     onClick={() => navigate(`/estimations/${encodeURIComponent(row.name)}/view`)}
@@ -418,7 +542,7 @@ export function EstimationReportView() {
                                                 })}
                                             {reportData.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                                                    <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
                                                         <Stack spacing={1} alignItems="center">
                                                             <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>
