@@ -1,5 +1,6 @@
 import type { PurchaseCollection } from 'src/api/purchase-collection';
 
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
@@ -26,7 +27,6 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { emptyRows } from '../../invoice/utils';
 import { TableNoData } from '../../invoice/table-no-data';
 import { TableEmptyRows } from '../../invoice/table-empty-rows';
 import PurchaseCollectionTableRow from '../purchase-collection-table-row';
@@ -55,6 +55,7 @@ type Props = {
 
 export function PurchaseCollectionListView({ hideHeader }: Props) {
     const router = useRouter();
+    const location = useLocation();
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -73,6 +74,17 @@ export function PurchaseCollectionListView({ hideHeader }: Props) {
         message: '',
         severity: 'success',
     });
+
+    useEffect(() => {
+        if (location.state?.message) {
+            setSnackbar({
+                open: true,
+                message: location.state.message,
+                severity: 'success',
+            });
+            window.history.replaceState({}, document.title);
+        }
+    }, [location.state]);
 
     const [openFilters, setOpenFilters] = useState(false);
     const [filters, setFilters] = useState({
