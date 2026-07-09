@@ -349,41 +349,42 @@ export function InvoiceCollectionReportView() {
                         </Select>
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
-                            reportData: filteredData,
-                            summary: summaryData.length > 0 ? summaryData.map(s => ({
-                                label: s.label,
-                                value: s.value,
-                                isCurrency: s.datatype === 'Currency'
-                            })) : [
-                                { label: 'Total Amount to Pay', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0), isCurrency: true },
-                                { label: 'Total Collected', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0), isCurrency: true },
-                                { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0), isCurrency: true }
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
+                                reportData: filteredData,
+                                summary: summaryData.length > 0 ? summaryData.map(s => ({
+                                    label: s.label,
+                                    value: s.value,
+                                    isCurrency: s.datatype === 'Currency'
+                                })) : [
+                                    { label: 'Total Amount to Pay', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0), isCurrency: true },
+                                    { label: 'Total Collected', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0), isCurrency: true },
+                                    { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0), isCurrency: true }
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
