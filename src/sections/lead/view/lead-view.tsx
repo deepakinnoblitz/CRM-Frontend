@@ -842,37 +842,6 @@ export function LeadView() {
                 ))}
               </Stack>
 
-
-              <TextField
-                select
-                fullWidth
-                label="Leads Type"
-                value={leadsType}
-                onChange={(e) => {
-                  setLeadsType(e.target.value as any);
-                  if (e.target.value) setValidationErrors(prev => ({ ...prev, leadsType: false }));
-                }}
-                required
-                disabled={viewOnly}
-                error={!!validationErrors.leadsType}
-                helperText={validationErrors.leadsType ? 'Leads Type is required' : ''}
-                SelectProps={{
-                  MenuProps: {
-                    PaperProps: {
-                      sx: {
-                        marginTop: 0.5,
-                        boxShadow: (theme) => theme.customShadows.z20,
-                        borderRadius: 1.5,
-                      }
-                    }
-                  }
-                }}
-              >
-                <MenuItem value="Incoming">Incoming</MenuItem>
-                <MenuItem value="Outgoing">Outgoing</MenuItem>
-              </TextField>
-
-
               <Autocomplete
                 fullWidth
                 disabled={viewOnly}
