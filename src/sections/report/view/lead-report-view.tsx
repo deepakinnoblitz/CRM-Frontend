@@ -144,6 +144,20 @@ export function LeadReportView() {
                 'leads_from',
                 'status',
                 'owner_name',
+                'workflow_state',
+                'country',
+                'state',
+                'city',
+                'billing_address',
+                'remarks',
+                'sales_pipeline',
+                'lead_score',
+                'interest_level',
+                'activity_score',
+                'date_and_time',
+                'converted_account',
+                'converted_contact',
+                'converted_deal',
                 'creation',
                 'modified'
             ];
@@ -175,7 +189,16 @@ export function LeadReportView() {
                 { header: 'Leads Type', key: 'leads_type' },
                 { header: 'Leads From', key: 'leads_from' },
                 { header: 'Status', key: 'status' },
-                { header: 'Owner Name', key: 'owner_name' }
+                { header: 'Owner Name', key: 'owner_name' },
+                { header: 'Stage', key: 'workflow_state' },
+                { header: 'Country', key: 'country' },
+                { header: 'State', key: 'state' },
+                { header: 'City', key: 'city' },
+                { header: 'Billing Address', key: 'billing_address' },
+                { header: 'Remarks', key: 'remarks' },
+                { header: 'Converted Account', key: 'converted_account' },
+                { header: 'Converted Contact', key: 'converted_contact' },
+                { header: 'Converted Deal', key: 'converted_deal' }
             ];
 
             const colCount = sheet.columns.length;
@@ -202,7 +225,21 @@ export function LeadReportView() {
                     leads_type: row.leads_type || '-',
                     leads_from: row.leads_from || '-',
                     status: row.status || '-',
-                    owner_name: row.owner_name || '-'
+                    owner_name: row.owner_name || '-',
+                    workflow_state: row.workflow_state || row.status || 'New Lead',
+                    country: row.country || '-',
+                    state: row.state || '-',
+                    city: row.city || '-',
+                    billing_address: row.billing_address || '-',
+                    remarks: row.remarks || '-',
+                    sales_pipeline: row.sales_pipeline || '-',
+                    lead_score: row.lead_score !== undefined ? row.lead_score : '-',
+                    interest_level: row.interest_level || '-',
+                    activity_score: row.activity_score !== undefined ? row.activity_score : '-',
+                    date_and_time: row.date_and_time ? dayjs(row.date_and_time).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    converted_account: row.converted_account || '-',
+                    converted_contact: row.converted_contact || '-',
+                    converted_deal: row.converted_deal || '-'
                 });
 
                 // Status conditional styling
