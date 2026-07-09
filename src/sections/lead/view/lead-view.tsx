@@ -1454,10 +1454,9 @@ export function LeadView() {
                       { id: 'lead_name', label: 'Name' },
                       { id: 'company_name', label: 'Company' },
                       { id: 'phone_number', label: 'Phone' },
-                      { id: 'email', label: 'Email' },
                       { id: 'country', label: 'Country' },
                       { id: 'workflow_state', label: 'Status' },
-                      { id: 'actions', label: 'Actions', align: 'right' },
+                      { id: 'actions', label: 'Actions', align: 'right', width: 180, minWidth: 160 },
                     ]}
                   />
 

@@ -175,21 +175,19 @@ export function LeadTableRow({
             alignItems: 'center',
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 240 }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, maxWidth: 260 }}>
             {row.name}
           </Typography>
         </Box>
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 260 }}>
           {row.company}
         </Typography>
       </TableCell>
 
       <TableCell>{row.phone}</TableCell>
-
-      <TableCell>{row.email}</TableCell>
 
       <TableCell>{row.country || '-'}</TableCell>
 
@@ -206,9 +204,9 @@ export function LeadTableRow({
         </Label>
       </TableCell>
 
-      <TableCell align="right" sx={{ pr: 3, minWidth: 100 }}>
+      <TableCell align="right" sx={{ pr: 3, width: 180, minWidth: 160, whiteSpace: 'nowrap' }}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
-          <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12 }}>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, display: 'inline-block' }}>
             {row.modified ? fTimeDist(row.modified) : '-'}
           </Box>
           <IconButton onClick={onView} sx={{ color: 'info.main' }}>
