@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -345,23 +346,93 @@ export function ProspectsReportView() {
         { label: 'Closed Prospects', value: closedProspects, indicator: 'orange' },
     ];
 
-    const handleExportExcel = () => {
-        const dataToExport = selected.length > 0
-            ? filteredData.filter((row) => selected.includes(row.name))
-            : filteredData;
-        const exportRows = dataToExport.map((row, idx) => ({
-            'S.No': idx + 1,
-            'Title': row.deal_title || '-',
-            'Company Name': row.company_name || '-',
-            'Company ID': row.account || '-',
-            'Client Name': row.contact_name || '-',
-            'Client ID': row.contact || '-',
-            'Stage': row.stage || '-',
-        }));
-        const worksheet = XLSX.utils.json_to_sheet(exportRows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Prospects');
-        XLSX.writeFile(workbook, 'Prospects_Report.xlsx');
+    const handleExportExcel = async () => {
+        setLoading(true);
+        try {
+            const dataToExport = selected.length > 0
+                ? filteredData.filter((row) => selected.includes(row.name))
+                : filteredData;
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Prospects');
+
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'S.No', key: 's_no' },
+                { header: 'Title', key: 'title' },
+                { header: 'Company', key: 'company' },
+                { header: 'Company ID', key: 'company_id' },
+                { header: 'Client Name', key: 'client_name' },
+                { header: 'Client ID', key: 'client_id' },
+                { header: 'Stage', key: 'stage' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            dataToExport.forEach((row, idx) => {
+                sheet.addRow({
+                    s_no: idx + 1,
+                    title: row.deal_title || '-',
+                    company: row.company_name || '-',
+                    company_id: row.account || '-',
+                    client_name: row.contact_name || '-',
+                    client_id: row.contact || '-',
+                    stage: row.stage || '-'
+                });
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Prospects_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

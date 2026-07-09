@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -40,8 +41,6 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { generateProposalPdf } from 'src/components/export/pdf/proposal-pdf-generator';
-
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -121,8 +120,6 @@ export function ProposalReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
 
     useEffect(() => {
         getDoctypeList('Lead', ['name', 'lead_name'])
@@ -174,7 +171,7 @@ export function ProposalReportView() {
         setSelected(newSelected);
     };
 
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             const listFilters: any[] = [];
@@ -184,8 +181,17 @@ export function ProposalReportView() {
             if (fromDate) listFilters.push(['proposal_date', '>=', fromDate.format('YYYY-MM-DD')]);
             if (toDate) listFilters.push(['proposal_date', '<=', toDate.format('YYYY-MM-DD')]);
 
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'proposal_title', 'lead', 'lead_name', 'company_name', 'proposal_date', 'status', 'total_attachments'];
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+            const fieldsToFetch = [
+                'name',
+                'proposal_title',
+                'reference_no',
+                'lead',
+                'lead_name',
+                'company_name',
+                'proposal_date',
+                'status',
+                'total_attachments'
+            ];
 
             const queryParams = new URLSearchParams({
                 doctype: "Proposal",
@@ -204,24 +210,80 @@ export function ProposalReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Proposal Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Proposals");
-                XLSX.writeFile(workbook, "Proposal_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Proposal_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Proposal No', key: 'proposal_no' },
+                { header: 'Proposal Title', key: 'proposal_title' },
+                { header: 'Lead', key: 'lead' },
+                { header: 'Company Name', key: 'company_name' },
+                { header: 'Proposal Date', key: 'proposal_date' },
+                { header: 'Status', key: 'status' },
+                { header: 'Attachments', key: 'attachments' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            data.forEach((row: any) => {
+                sheet.addRow({
+                    proposal_no: row.reference_no || row.name || '-',
+                    proposal_title: row.proposal_title || '-',
+                    lead: row.lead_name || row.lead || '-',
+                    company_name: row.company_name || '-',
+                    proposal_date: row.proposal_date ? dayjs(row.proposal_date).format('YYYY-MM-DD') : '-',
+                    status: row.status || '-',
+                    attachments: row.total_attachments !== undefined ? row.total_attachments : 0
+                });
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Proposal_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -539,7 +601,7 @@ export function ProposalReportView() {
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={filteredData.length === 0}
                             sx={{
                                 bgcolor: '#0ea5e9',
@@ -785,13 +847,6 @@ export function ProposalReportView() {
                     />
                 </Card>
             </Stack>
-
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Proposal"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

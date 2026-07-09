@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -194,11 +195,92 @@ export function PurchaseCollectionReportView() {
         setPage(0);
     }, []);
 
-    const handleExport = () => {
-        const worksheet = XLSX.utils.json_to_sheet(filteredData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Purchase Collections");
-        XLSX.writeFile(workbook, "Purchase_Collection_Report.xlsx");
+    const handleExport = async () => {
+        setLoading(true);
+        try {
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Purchase Settlement Report');
+
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'ID', key: 'id' },
+                { header: 'Purchase No', key: 'purchase_no' },
+                { header: 'Date', key: 'date' },
+                { header: 'Vendor', key: 'vendor' },
+                { header: 'Mode', key: 'mode' },
+                { header: 'Amount to Pay', key: 'amount_to_pay' },
+                { header: 'Paid', key: 'paid' },
+                { header: 'Pending', key: 'pending' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            filteredData.forEach((row: any) => {
+                const vendorStr = row.vendor_name ? `${row.vendor_name} (${row.vendor || ''})` : (row.vendor || '-');
+                sheet.addRow({
+                    id: row.id || '-',
+                    purchase_no: row.purchase || '-',
+                    date: row.collection_date ? dayjs(row.collection_date).format('YYYY-MM-DD') : '-',
+                    vendor: vendorStr,
+                    mode: row.mode_of_payment || '-',
+                    amount_to_pay: row.amount_to_pay !== undefined ? row.amount_to_pay : 0,
+                    paid: row.amount_collected !== undefined ? row.amount_collected : 0,
+                    pending: row.amount_pending !== undefined ? row.amount_pending : 0
+                });
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Purchase_Settlement_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

@@ -160,9 +160,7 @@ export function AccountReportView() {
                 { header: 'Website', key: 'website' },
                 { header: 'GSTIN', key: 'gstin' },
                 { header: 'Location', key: 'location' },
-                { header: 'Owner', key: 'owner_name' },
-                { header: 'Created', key: 'creation' },
-                { header: 'Modified', key: 'modified' }
+                { header: 'Owner', key: 'owner_name' }
             ];
 
             const colCount = sheet.columns.length;
@@ -184,9 +182,7 @@ export function AccountReportView() {
                     website: row.website || '-',
                     gstin: row.gstin || '-',
                     location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
-                    owner_name: row.owner_name || '-',
-                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                    owner_name: row.owner_name || '-'
                 });
             });
 

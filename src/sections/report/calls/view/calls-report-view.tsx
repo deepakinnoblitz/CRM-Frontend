@@ -176,9 +176,7 @@ export function CallsReportView() {
                 { header: 'Account', key: 'account_name' },
                 { header: 'Status', key: 'status' },
                 { header: 'Time', key: 'time' },
-                { header: 'Owner', key: 'owner_name' },
-                { header: 'Created', key: 'creation' },
-                { header: 'Modified', key: 'modified' }
+                { header: 'Owner', key: 'owner_name' }
             ];
 
             const colCount = sheet.columns.length;
@@ -201,9 +199,7 @@ export function CallsReportView() {
                     account_name: row.account_name || '-',
                     status: row.outgoing_call_status || '-',
                     time: row.call_start_time ? dayjs(row.call_start_time).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    owner_name: row.owner_name || '-',
-                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                    owner_name: row.owner_name || '-'
                 });
             });
 

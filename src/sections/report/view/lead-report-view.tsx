@@ -175,9 +175,7 @@ export function LeadReportView() {
                 { header: 'Leads Type', key: 'leads_type' },
                 { header: 'Leads From', key: 'leads_from' },
                 { header: 'Status', key: 'status' },
-                { header: 'Owner Name', key: 'owner_name' },
-                { header: 'Created', key: 'creation' },
-                { header: 'Modified', key: 'modified' }
+                { header: 'Owner Name', key: 'owner_name' }
             ];
 
             const colCount = sheet.columns.length;
@@ -204,9 +202,7 @@ export function LeadReportView() {
                     leads_type: row.leads_type || '-',
                     leads_from: row.leads_from || '-',
                     status: row.status || '-',
-                    owner_name: row.owner_name || '-',
-                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                    owner_name: row.owner_name || '-'
                 });
 
                 // Status conditional styling

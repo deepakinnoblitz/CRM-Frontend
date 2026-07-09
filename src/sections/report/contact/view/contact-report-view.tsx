@@ -172,9 +172,7 @@ export function ContactReportView() {
                 { header: 'Phone', key: 'phone' },
                 { header: 'Location', key: 'location' },
                 { header: 'Source', key: 'source_lead' },
-                { header: 'Owner', key: 'owner_name' },
-                { header: 'Created', key: 'creation' },
-                { header: 'Modified', key: 'modified' }
+                { header: 'Owner', key: 'owner_name' }
             ];
 
             const colCount = sheet.columns.length;
@@ -197,9 +195,7 @@ export function ContactReportView() {
                     phone: row.phone || '-',
                     location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
                     source_lead: row.source_lead || '-',
-                    owner_name: row.owner_name || '-',
-                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                    owner_name: row.owner_name || '-'
                 });
             });
 

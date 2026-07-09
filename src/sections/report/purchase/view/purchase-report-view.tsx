@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -41,8 +42,6 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { generatePurchasePdf } from 'src/components/export/pdf/purchase-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
-
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -117,50 +116,87 @@ export function PurchaseReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const filters: any[] = [];
-            if (selected.length > 0) {
-                filters.push(['Purchase', 'name', 'in', selected]);
-            } else {
-                if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
-                if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
-                if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
-                if (user?.has_crm_permission) filters.push(['Purchase', 'owner', '=', user.name]);
-            }
+            const data = selected.length > 0
+                ? filteredData.filter((row: any) => selected.includes(row.name))
+                : filteredData;
 
-            const query = new URLSearchParams({
-                doctype: "Purchase",
-                fields: JSON.stringify(selectedFields),
-                filters: JSON.stringify(filters),
-                limit_page_length: "99999",
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Purchase Report');
+
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Purchase ID', key: 'purchase_id' },
+                { header: 'Vendor', key: 'vendor' },
+                { header: 'Bill No', key: 'bill_no' },
+                { header: 'Bill Date', key: 'bill_date' },
+                { header: 'Qty', key: 'qty' },
+                { header: 'Grand Total', key: 'grand_total' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            data.forEach((row: any) => {
+                const vendorStr = row.vendor_real_name ? `${row.vendor_real_name} (${row.vendor_name || ''})` : (row.vendor_name || '-');
+                sheet.addRow({
+                    purchase_id: row.name || '-',
+                    vendor: vendorStr,
+                    bill_no: row.bill_no || '-',
+                    bill_date: row.bill_date ? dayjs(row.bill_date).format('YYYY-MM-DD') : '-',
+                    qty: row.quantity !== undefined ? row.quantity : 0,
+                    grand_total: row.grand_total !== undefined ? row.grand_total : 0
+                });
             });
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
-            if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Purchases");
-                XLSX.writeFile(workbook, "Purchase_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Purchase_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Purchase_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -368,7 +404,7 @@ export function PurchaseReportView() {
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
+                        onClick={handleExport}
                         disabled={reportData.length === 0}
                         sx={{ mr: 1 }}
                     >
@@ -529,12 +565,6 @@ export function PurchaseReportView() {
             </Stack>
 
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Purchase"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

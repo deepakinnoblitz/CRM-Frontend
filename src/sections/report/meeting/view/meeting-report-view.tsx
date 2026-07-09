@@ -171,9 +171,7 @@ export function MeetingReportView() {
                 { header: 'Account', key: 'accounts_name' },
                 { header: 'Status', key: 'status' },
                 { header: 'Time & Venue', key: 'time_venue' },
-                { header: 'Owner', key: 'owner_name' },
-                { header: 'Created', key: 'creation' },
-                { header: 'Modified', key: 'modified' }
+                { header: 'Owner', key: 'owner_name' }
             ];
 
             const colCount = sheet.columns.length;
@@ -198,9 +196,7 @@ export function MeetingReportView() {
                     accounts_name: row.accounts_name || '-',
                     status: row.outgoing_call_status || '-',
                     time_venue: `${timeStr} @ ${venueStr}`,
-                    owner_name: row.owner_name || '-',
-                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                    owner_name: row.owner_name || '-'
                 });
             });
 
