@@ -1,5 +1,4 @@
-import type dayjs from 'dayjs';
-
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -66,6 +65,7 @@ export function AccountReportView() {
         }
     }, [user]);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -221,6 +221,7 @@ export function AccountReportView() {
         setCountry('all');
         setState('all');
         setCity('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -258,6 +259,22 @@ export function AccountReportView() {
             setCity('all');
         }
     }, [country, state]);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'company_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'company_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -389,6 +406,20 @@ export function AccountReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="company_date_desc">Company Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="company_date_asc">Company Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -403,7 +434,7 @@ export function AccountReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generateAccountPdf({
-                            reportData,
+                            reportData: filteredData,
                             selected,
                             summary: summaryData.length > 0 ? summaryData : [
                                 { label: 'Total Accounts', value: reportData.length },
@@ -484,7 +515,7 @@ export function AccountReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow

@@ -8,6 +8,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -16,6 +18,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
@@ -72,6 +75,7 @@ export function PurchaseReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [vendor, setVendor] = useState<any>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string }[]>([]);
@@ -216,6 +220,7 @@ export function PurchaseReportView() {
         setFromDate(null);
         setToDate(null);
         setVendor(null);
+        setSortBy('modified_desc');
     };
 
     useEffect(() => {
@@ -223,6 +228,28 @@ export function PurchaseReportView() {
             setVendorOptions(contacts);
         });
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'purchase_date_desc') {
+            return dayjs(b.bill_date).diff(dayjs(a.bill_date));
+        }
+        if (sortBy === 'purchase_date_asc') {
+            return dayjs(a.bill_date).diff(dayjs(b.bill_date));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -323,6 +350,20 @@ export function PurchaseReportView() {
                             </li>
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="purchase_date_desc">Purchase Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="purchase_date_asc">Purchase Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -337,7 +378,7 @@ export function PurchaseReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generatePurchasePdf({
-                            reportData,
+                            reportData: filteredData,
                             selected,
                             summary: summaryData.length > 0 ? summaryData : [
                                 { label: 'Total Purchase Bills', value: reportData.length },
@@ -417,7 +458,7 @@ export function PurchaseReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow

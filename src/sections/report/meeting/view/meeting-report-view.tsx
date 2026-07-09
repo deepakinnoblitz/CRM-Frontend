@@ -74,6 +74,7 @@ export function MeetingReportView() {
     }, [owner]);
 
     const [reminder, setReminder] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
@@ -219,6 +220,7 @@ export function MeetingReportView() {
         setMeetFor('all');
         setStatus('all');
         setReminder('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -227,6 +229,28 @@ export function MeetingReportView() {
     useEffect(() => {
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'meeting_date_desc') {
+            return dayjs(b.from_time).diff(dayjs(a.from_time));
+        }
+        if (sortBy === 'meeting_date_asc') {
+            return dayjs(a.from_time).diff(dayjs(b.from_time));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -361,6 +385,20 @@ export function MeetingReportView() {
                             <MenuItem value="0">Disabled</MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="meeting_date_desc">Meeting Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="meeting_date_asc">Meeting Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                         <Button
                             variant="contained"
@@ -374,7 +412,7 @@ export function MeetingReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateMeetingPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: summaryData.length > 0 ? summaryData : [
                                     { label: 'Total Meetings', value: reportData.length },
@@ -499,7 +537,7 @@ export function MeetingReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow

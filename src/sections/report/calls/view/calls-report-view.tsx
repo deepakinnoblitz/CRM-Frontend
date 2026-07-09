@@ -74,6 +74,7 @@ export function CallsReportView() {
     }, [owner]);
 
     const [reminder, setReminder] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
@@ -224,6 +225,7 @@ export function CallsReportView() {
         setCallFor('all');
         setStatus('all');
         setReminder('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -232,6 +234,28 @@ export function CallsReportView() {
     useEffect(() => {
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'call_date_desc') {
+            return dayjs(b.call_start_time).diff(dayjs(a.call_start_time));
+        }
+        if (sortBy === 'call_date_asc') {
+            return dayjs(a.call_start_time).diff(dayjs(b.call_start_time));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -366,6 +390,20 @@ export function CallsReportView() {
                             <MenuItem value="0">Disabled</MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="call_date_desc">Call Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="call_date_asc">Call Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                         <Button
                             variant="contained"
@@ -379,7 +417,7 @@ export function CallsReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateCallsPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: summaryData.length > 0 ? summaryData : [
                                     { label: 'Total Calls', value: reportData.length },
@@ -504,7 +542,7 @@ export function CallsReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow

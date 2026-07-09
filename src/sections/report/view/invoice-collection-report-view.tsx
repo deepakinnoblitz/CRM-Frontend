@@ -8,6 +8,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
@@ -16,6 +18,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
@@ -74,6 +77,7 @@ export function InvoiceCollectionReportView() {
     const [invoiceNoOptions, setInvoiceNoOptions] = useState<any[]>([]);
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name'])
@@ -156,7 +160,30 @@ export function InvoiceCollectionReportView() {
         setFromDate(null);
         setToDate(null);
         setSelected([]);
+        setSortBy('modified_desc');
     };
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'collection_date_desc') {
+            return dayjs(b.collection_date).diff(dayjs(a.collection_date));
+        }
+        if (sortBy === 'collection_date_asc') {
+            return dayjs(a.collection_date).diff(dayjs(b.collection_date));
+        }
+        return 0;
+    });
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -168,7 +195,7 @@ export function InvoiceCollectionReportView() {
     }, []);
 
     const handleExport = () => {
-        const worksheet = XLSX.utils.json_to_sheet(reportData);
+        const worksheet = XLSX.utils.json_to_sheet(filteredData);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Collections");
         XLSX.writeFile(workbook, "Invoice_Collection_Report.xlsx");
@@ -307,6 +334,20 @@ export function InvoiceCollectionReportView() {
                             </li>
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="collection_date_desc">Collection Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="collection_date_asc">Collection Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
@@ -321,7 +362,7 @@ export function InvoiceCollectionReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
-                            reportData,
+                            reportData: filteredData,
                             summary: summaryData.length > 0 ? summaryData.map(s => ({
                                 label: s.label,
                                 value: s.value,
@@ -400,7 +441,7 @@ export function InvoiceCollectionReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.id) !== -1;
                                                 return (
                                                     <TableRow 

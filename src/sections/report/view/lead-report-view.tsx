@@ -1,5 +1,4 @@
-import type dayjs from 'dayjs';
-
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -61,6 +60,7 @@ export function LeadReportView() {
     const [leadsFrom, setLeadsFrom] = useState('all');
     const [service, setService] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         if (user?.name) {
@@ -218,6 +218,7 @@ export function LeadReportView() {
         setLeadsType('all');
         setLeadsFrom('all');
         setService('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -228,6 +229,22 @@ export function LeadReportView() {
         getDoctypeList('User').then(setOwnerOptions);
         getDoctypeList('Service').then((list) => setServiceOptions(list.map((item: any) => item.name || item.label || String(item))));
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'lead_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'lead_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     const totalLeads = reportData.length;
     const incomingLeads = reportData.filter((l: any) => l.leads_type === 'Incoming').length;
@@ -396,6 +413,20 @@ export function LeadReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="lead_date_desc">Lead Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="lead_date_asc">Lead Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
                         <Button
@@ -417,7 +448,7 @@ export function LeadReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateLeadPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: [
                                     { label: 'Total Leads', value: totalLeads },
@@ -491,7 +522,7 @@ export function LeadReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow

@@ -1,5 +1,4 @@
-import type dayjs from 'dayjs';
-
+import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -60,6 +59,7 @@ export function ContactReportView() {
     const [owner, setOwner] = useState('all');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         if (user?.name) {
@@ -250,6 +250,7 @@ export function ContactReportView() {
         setCountry('all');
         setState('all');
         setCity('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -287,6 +288,22 @@ export function ContactReportView() {
             setCity('all');
         }
     }, [country, state]);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'client_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'client_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -411,6 +428,20 @@ export function ContactReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="client_date_desc">Client Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="client_date_asc">Client Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                         <Button
                             variant="contained"
@@ -424,7 +455,7 @@ export function ContactReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateContactPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: summaryData.length > 0 ? summaryData : [
                                     { label: 'Total Contacts', value: reportData.length },
@@ -502,7 +533,7 @@ export function ContactReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
