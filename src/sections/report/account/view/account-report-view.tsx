@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -39,7 +40,6 @@ import { generateAccountPdf } from 'src/components/export/pdf/account-pdf-genera
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 import { AccountDetailsDialog } from '../account-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -113,10 +113,7 @@ export function AccountReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Use IDs from selection or currently filtered report data
@@ -127,13 +124,20 @@ export function AccountReportView() {
                 return;
             }
 
-            // Simple filter for IDs
             const filters = [['name', 'in', idsToExport]];
-
-            // Ensure at least some fields are selected
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'account_name', 'phone_number', 'website', 'gstin'];
-            // Add 'name' if missing to ensure we have a primary key
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+            const fieldsToFetch = [
+                'name',
+                'account_name',
+                'phone_number',
+                'website',
+                'gstin',
+                'country',
+                'state',
+                'city',
+                'owner_name',
+                'creation',
+                'modified'
+            ];
 
             const query = new URLSearchParams({
                 doctype: "Accounts",
@@ -146,25 +150,82 @@ export function AccountReportView() {
             if (!res.ok) throw new Error("Failed to fetch data for export");
             const data = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Company Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Accounts");
-                XLSX.writeFile(workbook, "Account_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Account_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Account Name', key: 'account_name' },
+                { header: 'Phone', key: 'phone_number' },
+                { header: 'Website', key: 'website' },
+                { header: 'GSTIN', key: 'gstin' },
+                { header: 'Location', key: 'location' },
+                { header: 'Owner', key: 'owner_name' },
+                { header: 'Created', key: 'creation' },
+                { header: 'Modified', key: 'modified' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            data.forEach((row: any) => {
+                sheet.addRow({
+                    account_name: row.account_name || '-',
+                    phone_number: row.phone_number || '-',
+                    website: row.website || '-',
+                    gstin: row.gstin || '-',
+                    location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
+                    owner_name: row.owner_name || '-',
+                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                });
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Account_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -424,7 +485,7 @@ export function AccountReportView() {
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
+                        onClick={handleExport}
                         disabled={reportData.length === 0}
                         sx={{ mr: 1 }}
                     >
@@ -587,12 +648,6 @@ export function AccountReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Accounts"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

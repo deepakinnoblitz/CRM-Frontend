@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -42,7 +43,7 @@ import { generateLeadPdf } from 'src/components/export/pdf/lead-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../export-fields-dialog';
+
 
 // ----------------------------------------------------------------------
 
@@ -111,10 +112,7 @@ export function LeadReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Construct filters for get_list
@@ -134,41 +132,133 @@ export function LeadReportView() {
                 }
             }
 
+            const fieldsToFetch = [
+                'name',
+                'lead_name',
+                'company_name',
+                'gstin',
+                'phone_number',
+                'email',
+                'service',
+                'leads_type',
+                'leads_from',
+                'status',
+                'owner_name',
+                'creation',
+                'modified'
+            ];
+
             // Build query params
             const query = new URLSearchParams({
                 doctype: "Lead",
-                fields: JSON.stringify(selectedFields),
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999", // Fetch all
             });
 
             const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            const rawData = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Lead Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
-                XLSX.writeFile(workbook, "Lead_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Lead_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Lead ID', key: 'name' },
+                { header: 'Lead Name', key: 'lead_name' },
+                { header: 'Company', key: 'company_name' },
+                { header: 'GSTIN', key: 'gstin' },
+                { header: 'Phone Number', key: 'phone_number' },
+                { header: 'Email', key: 'email' },
+                { header: 'Service', key: 'service' },
+                { header: 'Leads Type', key: 'leads_type' },
+                { header: 'Leads From', key: 'leads_from' },
+                { header: 'Status', key: 'status' },
+                { header: 'Owner Name', key: 'owner_name' },
+                { header: 'Created', key: 'creation' },
+                { header: 'Modified', key: 'modified' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Same blue/teal color FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            rawData.forEach((row: any) => {
+                const excelRow = sheet.addRow({
+                    name: row.name || '-',
+                    lead_name: row.lead_name || '-',
+                    company_name: row.company_name || '-',
+                    gstin: row.gstin || '-',
+                    phone_number: row.phone_number || '-',
+                    email: row.email || '-',
+                    service: row.service || '-',
+                    leads_type: row.leads_type || '-',
+                    leads_from: row.leads_from || '-',
+                    status: row.status || '-',
+                    owner_name: row.owner_name || '-',
+                    creation: row.creation ? dayjs(row.creation).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    modified: row.modified ? dayjs(row.modified).format('YYYY-MM-DD HH:mm:ss') : '-'
+                });
+
+                // Status conditional styling
+                const statusCell = excelRow.getCell('status');
+                const statusVal = row.status || '';
+                if (statusVal === 'Converted') {
+                    statusCell.font = { color: { argb: 'FF22C55E' }, bold: true };
+                } else if (statusVal === 'Not Converted') {
+                    statusCell.font = { color: { argb: 'FFEF4444' }, bold: true };
+                } else if (statusVal === 'Open') {
+                    statusCell.font = { color: { argb: 'FFF97316' }, bold: true };
+                }
+            });
+
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Lead_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
-            // Maybe show a snackbar error?
         } finally {
             setLoading(false);
         }
@@ -432,7 +522,7 @@ export function LeadReportView() {
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                             sx={{
                                 bgcolor: '#0ea5e9',
@@ -590,12 +680,6 @@ export function LeadReportView() {
             </Stack>
 
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Lead"
-                onExport={handleExport}
-            />
         </DashboardContent >
     );
 }
