@@ -2,8 +2,8 @@ import { IoList } from "react-icons/io5";
 import { MuiTelInput } from 'mui-tel-input';
 import { IoMdCloudDownload } from "react-icons/io";
 import { TbLayoutKanbanFilled } from "react-icons/tb";
-import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -25,6 +25,7 @@ import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -160,6 +161,7 @@ export function LeadView() {
   // Alert & Dialog State
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
     open: false,
     message: '',
@@ -179,6 +181,39 @@ export function LeadView() {
     write: true,
     delete: true,
   });
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!tableContainerRef.current) return;
+    // Don't drag if clicking buttons, links or inputs
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('.MuiIconButton-root')) {
+      return;
+    }
+    isDragging.current = true;
+    startX.current = e.pageX - tableContainerRef.current.offsetLeft;
+    scrollLeft.current = tableContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !tableContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tableContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // scroll speed multiplier
+    tableContainerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
 
   const { data, total, loading, refetch } = useLeads(
     table.page,
@@ -360,15 +395,17 @@ export function LeadView() {
   const handleConfirmDelete = async () => {
     if (!deleteId) return;
     try {
+      setDeleting(true);
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
+      setOpenDelete(false);
     } catch (e: any) {
       console.error(e);
       const friendlyMsg = getFriendlyErrorMessage(e);
       setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
     } finally {
-      setOpenDelete(false);
+      setDeleting(false);
       setDeleteId(null);
     }
   };
@@ -1436,93 +1473,124 @@ export function LeadView() {
               onDelete={handleBulkDelete}
             />
 
-            <Scrollbar>
-              <TableContainer sx={{ overflow: 'unset' }}>
-                <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                  <LeadTableHead
-                    rowCount={total}
-                    numSelected={table.selected.length}
-                    onSelectAllRows={(checked) =>
-                      table.onSelectAllRows(
-                        checked,
-                        data.map((row) => row.name)
-                      )
-                    }
-                    hideCheckbox
-                    showIndex
-                    headLabel={[
-                      { id: 'lead_name', label: 'Name' },
-                      { id: 'company_name', label: 'Company' },
-                      { id: 'phone_number', label: 'Phone' },
-                      { id: 'country', label: 'Country' },
-                      { id: 'workflow_state', label: 'Status' },
-                      { id: 'actions', label: 'Actions', align: 'right', width: 180, minWidth: 160 },
-                    ]}
-                  />
+            <TableContainer 
+              ref={tableContainerRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              sx={{ 
+                overflow: 'auto',
+                cursor: 'grab',
+                userSelect: 'none',
+                '&:active': { cursor: 'grabbing' },
+                '&::-webkit-scrollbar': { width: 8, height: 8 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 1 },
+              }}
+            >
+              <Table sx={{ minWidth: 1600, borderCollapse: 'collapse' }}>
+                <LeadTableHead
+                  rowCount={total}
+                  numSelected={table.selected.length}
+                  onSelectAllRows={(checked) =>
+                    table.onSelectAllRows(
+                      checked,
+                      data.map((row) => row.name)
+                    )
+                  }
+                  hideCheckbox
+                  showIndex
+                  headLabel={[
+                    { id: 'lead_name', label: 'Name', width: 260, minWidth: 240 },
+                    { id: 'company_name', label: 'Company', width: 260, minWidth: 240 },
+                    { id: 'phone_number', label: 'Phone', width: 180, minWidth: 160 },
+                    { id: 'workflow_state', label: 'Status' },
+                    { id: 'leads_type', label: 'Leads Type', minWidth: 120 },
+                    { id: 'leads_from', label: 'Leads From', minWidth: 120 },
+                    { id: 'service', label: 'Service' },
+                    { id: 'country', label: 'Country' },
+                    {
+                      id: 'actions',
+                      label: 'Actions',
+                      align: 'right',
+                      width: 180,
+                      minWidth: 160,
+                      sx: {
+                        position: 'sticky',
+                        right: 0,
+                        backgroundColor: '#f4f6f8',
+                        boxShadow: '-4px 0px 10px -4px rgba(0,0,0,0.1)',
+                        zIndex: 1,
+                      }
+                    },
+                  ]}
+                />
 
-                  <TableBody>
-                    {loading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                          <CircularProgress sx={{ color: '#08a3cd' }} />
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      <>
-                        {data.map((row, index) => (
-                          <LeadTableRow
-                            key={row.name}
-                            index={table.page * table.rowsPerPage + index}
-                            hideCheckbox
-                            row={{
-                              id: row.name,
-                              name: getString(row.lead_name) ?? '-',
-                              phone: getString(row.phone_number) ?? '-',
-                              email: getString(row.email) ?? '-',
-                              company: getString(row.company_name) ?? '-',
-                              status: getString(row.status) ?? '-',
-                              workflow_state: getString(row.workflow_state) ?? '-',
-                              avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                              isVerified: true,
-                              country: getString(row.country) ?? '-',
-                              modified: row.modified,
-                            }}
-                            selected={table.selected.includes(row.name)}
-                            onSelectRow={() => table.onSelectRow(row.name)}
-                            onEdit={() => handleEditRow({ id: row.name })}
-                            onDelete={() => onDeleteRow(row.name)}
-                            onView={() => handleViewRow({ id: row.name })}
-                            canEdit={permissions.write}
-                            canDelete={permissions.delete}
-                          />
-                        ))}
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
+                        <CircularProgress sx={{ color: '#08a3cd' }} />
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    <>
+                      {data.map((row, index) => (
+                        <LeadTableRow
+                          key={row.name}
+                          index={table.page * table.rowsPerPage + index}
+                          hideCheckbox
+                          row={{
+                            id: row.name,
+                            name: getString(row.lead_name) ?? '-',
+                            phone: getString(row.phone_number) ?? '-',
+                            email: getString(row.email) ?? '-',
+                            company: getString(row.company_name) ?? '-',
+                            status: getString(row.status) ?? '-',
+                            workflow_state: getString(row.workflow_state) ?? '-',
+                            avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                            isVerified: true,
+                            country: getString(row.country) ?? '-',
+                            modified: row.modified,
+                            leads_type: getString(row.leads_type) ?? '-',
+                            leads_from: getString(row.leads_from) ?? '-',
+                            service: getString(row.service) ?? '-',
+                          }}
+                          selected={table.selected.includes(row.name)}
+                          onSelectRow={() => table.onSelectRow(row.name)}
+                          onEdit={() => handleEditRow({ id: row.name })}
+                          onDelete={() => onDeleteRow(row.name)}
+                          onView={() => handleViewRow({ id: row.name })}
+                          canEdit={permissions.write}
+                          canDelete={permissions.delete}
+                        />
+                      ))}
 
-                        {notFound && <TableNoData searchQuery={filterName} />}
+                      {notFound && <TableNoData searchQuery={filterName} />}
 
-                        {empty && (
-                          <TableRow>
-                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                              <EmptyContent
-                                title="No leads found"
-                                description="Start capturing leads to boost your sales."
-                                icon="solar:user-plus-bold-duotone"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        )}
+                      {empty && (
+                        <TableRow>
+                          <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                            <EmptyContent
+                              title="No leads found"
+                              description="Start capturing leads to boost your sales."
+                              icon="solar:user-plus-bold-duotone"
+                            />
+                          </TableCell>
+                        </TableRow>
+                      )}
 
-                        {!empty && !notFound && (
-                          <TableEmptyRows
-                            height={68}
-                            emptyRows={data.length < 5 ? 5 - data.length : 0}
-                          />
-                        )}
-                      </>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Scrollbar>
+                      {!empty && !notFound && (
+                        <TableEmptyRows
+                          height={68}
+                          emptyRows={data.length < 5 ? 5 - data.length : 0}
+                        />
+                      )}
+                    </>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
 
             <TablePagination
               component="div"
@@ -1568,13 +1636,19 @@ export function LeadView() {
 
       <ConfirmDialog
         open={openDelete}
-        onClose={() => setOpenDelete(false)}
+        onClose={() => !deleting && setOpenDelete(false)}
         title="Confirm Delete"
         content="Are you sure you want to delete this lead?"
         action={
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+          <LoadingButton 
+            loading={deleting} 
+            onClick={handleConfirmDelete} 
+            color="error" 
+            variant="contained" 
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
             Delete
-          </Button>
+          </LoadingButton>
         }
       />
 
