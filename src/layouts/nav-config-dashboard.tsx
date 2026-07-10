@@ -1,15 +1,15 @@
 import { CgNotes } from "react-icons/cg";
-import { TbReport  } from "react-icons/tb";
+import { TbReport } from "react-icons/tb";
 import { GoTasklist } from "react-icons/go";
 import { RxCalendar } from "react-icons/rx";
 import { PiMoneyWavy } from "react-icons/pi";
 import { BiPurchaseTag } from "react-icons/bi";
 import { IoHomeOutline } from "react-icons/io5";
 import { IoMdFolderOpen } from "react-icons/io";
-import { FaBuildingUser } from "react-icons/fa6";
 import { FiList , FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
+import { FaMeta, FaBuildingUser, FaLink } from "react-icons/fa6";
 import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
 import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
 import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
@@ -29,7 +29,14 @@ export type NavItem = {
   children?: {
     title: string;
     path: string;
+    icon?: React.ReactNode;
     info?: React.ReactNode;
+    children?: {
+      title: string;
+      path: string;
+      icon?: React.ReactNode;
+      info?: React.ReactNode;
+    }[];
   }[];
 };
 
@@ -449,6 +456,23 @@ export const crmAndSalesNavData = [
       { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
       { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
       { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
+    ],
+  },
+  {
+    title: 'Lead Integration',
+    path: '/lead-integration/meta-apps',
+    icon: <FaLink size={22} />,
+    children: [
+      { 
+        title: 'Meta Integration', 
+        path: '/lead-integration/meta-apps',
+        icon: <FaMeta size={18} />,
+        children: [
+          { title: 'Meta Apps', path: '/lead-integration/meta-apps' },
+          { title: 'Meta Pages', path: '/lead-integration/meta-pages' },
+          { title: 'Meta Forms', path: '/lead-integration/meta-forms' },
+        ]
+      }
     ],
   },
   {
