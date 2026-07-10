@@ -1,35 +1,20 @@
-import { FiList } from "react-icons/fi";
-import { FaTasks } from "react-icons/fa";
 import { CgNotes } from "react-icons/cg";
-import { TbReport } from "react-icons/tb";
-import { FiUserPlus } from "react-icons/fi";
+import { TbReport  } from "react-icons/tb";
 import { GoTasklist } from "react-icons/go";
-import { RiAppsLine } from "react-icons/ri";
 import { RxCalendar } from "react-icons/rx";
-import { FaWhatsapp } from "react-icons/fa";
-import { FaUsersCog } from "react-icons/fa";
-import { MdContacts } from "react-icons/md";
 import { PiMoneyWavy } from "react-icons/pi";
-import { FaHandshake } from "react-icons/fa";
-import { LuUsersRound } from "react-icons/lu";
 import { BiPurchaseTag } from "react-icons/bi";
-import { BsFillBellFill } from "react-icons/bs";
 import { IoHomeOutline } from "react-icons/io5";
-import { TbReportSearch } from "react-icons/tb";
 import { IoMdFolderOpen } from "react-icons/io";
-import { RiSettings3Line } from "react-icons/ri";
 import { FaBuildingUser } from "react-icons/fa6";
-import { MdSpaceDashboard } from "react-icons/md";
-import { BsCalendar4Range } from "react-icons/bs";
-import { LuCalendarCheck2 } from "react-icons/lu";
-import { TbReportAnalytics } from "react-icons/tb";
-import { LuFileSpreadsheet } from "react-icons/lu";
-import { LuUserRoundSearch } from "react-icons/lu";
+import { FiList , FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
-import { RiCalendarScheduleLine } from "react-icons/ri";
-import { MdOutlineLaptopWindows } from "react-icons/md";
-import { RiUserAddLine, RiMailSendLine } from "react-icons/ri";
+import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
+import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
+import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
+import { RiAppsLine ,  RiUserAddLine , RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
+import { LuUsersRound , LuCalendarCheck2 , LuFileSpreadsheet , LuUserRoundSearch } from "react-icons/lu";
 
 import { Iconify } from 'src/components/iconify';
 
@@ -384,7 +369,9 @@ export const crmNavData = [
       { title: 'Clients Report', path: '/reports/contact' },
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' }
+      { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Proposal Report', path: '/reports/proposal' },
+      { title: 'Prospects Report', path: '/reports/prospects' }
     ]
   },
   {
@@ -490,6 +477,8 @@ export const crmAndSalesNavData = [
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Proposal Report', path: '/reports/proposal' },
+      { title: 'Prospects Report', path: '/reports/prospects' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Purchase Report', path: '/reports/purchase' },

@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -40,7 +40,6 @@ import { generateContactPdf } from 'src/components/export/pdf/contact-pdf-genera
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 import { ContactDetailsDialog } from '../contact-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -60,6 +59,7 @@ export function ContactReportView() {
     const [owner, setOwner] = useState('all');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         if (user?.name) {
@@ -113,33 +113,32 @@ export function ContactReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Use IDs from selection or currently filtered report data
-            // Ensure valid names are collected
             const idsToExport = (selected.length > 0 ? selected : reportData.map(r => r.name)).filter(Boolean);
 
-            // If no data to export
             if (idsToExport.length === 0) {
                 setLoading(false);
                 return;
             }
 
-            // Simple filter for IDs
             const filters = [['name', 'in', idsToExport]];
-
-            // Ensure at least some fields are selected
-            // Use fields that exist in 'Contacts' custom doctype
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'first_name', 'company_name', 'email', 'phone'];
-            // Add 'name' if missing to ensure we have a primary key
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
-
-            console.log("Exporting IDs:", idsToExport);
-            console.log("Exporting Fields:", fieldsToFetch);
+            const fieldsToFetch = [
+                'name',
+                'first_name',
+                'company_name',
+                'email',
+                'phone',
+                'country',
+                'state',
+                'city',
+                'source_lead',
+                'owner_name',
+                'creation',
+                'modified'
+            ];
 
             const queryParams = new URLSearchParams({
                 doctype: "Contacts",
@@ -148,7 +147,6 @@ export function ContactReportView() {
                 limit_page_length: "99999"
             });
 
-            // Using GET to match known working patterns
             const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
                 method: 'GET',
                 credentials: "include"
@@ -163,32 +161,80 @@ export function ContactReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
-            console.log("Export Data Received:", data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Clients Report');
 
-            if (!data || data.length === 0) {
-                console.warn("Export returned no data");
-                // Fallback: If no data returned, maybe create an empty sheet with headers?
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Name', key: 'first_name' },
+                { header: 'Company', key: 'company_name' },
+                { header: 'Email', key: 'email' },
+                { header: 'Phone', key: 'phone' },
+                { header: 'Location', key: 'location' },
+                { header: 'Source', key: 'source_lead' },
+                { header: 'Owner', key: 'owner_name' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            // Populate rows
+            data.forEach((row: any) => {
+                sheet.addRow({
+                    first_name: row.first_name || '-',
+                    company_name: row.company_name || '-',
+                    email: row.email || '-',
+                    phone: row.phone || '-',
+                    location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
+                    source_lead: row.source_lead || '-',
+                    owner_name: row.owner_name || '-'
+                });
+            });
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
-                XLSX.writeFile(workbook, "Contact_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Contact_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Contact_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -250,6 +296,7 @@ export function ContactReportView() {
         setCountry('all');
         setState('all');
         setCity('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -287,6 +334,22 @@ export function ContactReportView() {
             setCity('all');
         }
     }, [country, state]);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'client_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'client_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -411,11 +474,25 @@ export function ContactReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="client_date_desc">Client Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="client_date_asc">Client Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                         >
                             Export Excel
@@ -424,7 +501,7 @@ export function ContactReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateContactPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: summaryData.length > 0 ? summaryData : [
                                     { label: 'Total Contacts', value: reportData.length },
@@ -502,7 +579,7 @@ export function ContactReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -573,12 +650,6 @@ export function ContactReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Contacts"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -41,7 +42,6 @@ import { useAuth } from 'src/auth/auth-context';
 
 import { CallsCalendar } from './calls-calendar';
 import { CallDetailsDialog } from '../call-details-dialog';
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -74,6 +74,7 @@ export function CallsReportView() {
     }, [owner]);
 
     const [reminder, setReminder] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
@@ -125,10 +126,7 @@ export function CallsReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             const idsToExport = selected.length > 0 ? selected : reportData.map(r => r.name);
@@ -139,10 +137,26 @@ export function CallsReportView() {
             }
 
             const filters: any[] = [['Calls', 'name', 'in', idsToExport]];
+            const fieldsToFetch = [
+                'name',
+                'title',
+                'call_for',
+                'lead_name',
+                'contact_name',
+                'account_name',
+                'outgoing_call_status',
+                'completed_call_status',
+                'call_start_time',
+                'call_end_time',
+                'owner_name',
+                'enable_reminder',
+                'creation',
+                'modified'
+            ];
 
             const query = new URLSearchParams({
                 doctype: "Calls",
-                fields: JSON.stringify(selectedFields),
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999",
             });
@@ -151,25 +165,80 @@ export function CallsReportView() {
             if (!res.ok) throw new Error("Failed to fetch data for export");
             const data = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Calls Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
-                XLSX.writeFile(workbook, "Calls_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Calls_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns with headers
+            sheet.columns = [
+                { header: 'Title', key: 'title' },
+                { header: 'Call For', key: 'call_for' },
+                { header: 'Lead/Contact', key: 'lead_or_contact' },
+                { header: 'Account', key: 'account_name' },
+                { header: 'Status', key: 'status' },
+                { header: 'Time', key: 'time' },
+                { header: 'Owner', key: 'owner_name' }
+            ];
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows
+            data.forEach((row: any) => {
+                sheet.addRow({
+                    title: row.title || '-',
+                    call_for: row.call_for || '-',
+                    lead_or_contact: row.lead_name || row.contact_name || '-',
+                    account_name: row.account_name || '-',
+                    status: row.outgoing_call_status || '-',
+                    time: row.call_start_time ? dayjs(row.call_start_time).format('YYYY-MM-DD HH:mm:ss') : '-',
+                    owner_name: row.owner_name || '-'
+                });
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Calls_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -224,6 +293,7 @@ export function CallsReportView() {
         setCallFor('all');
         setStatus('all');
         setReminder('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -232,6 +302,28 @@ export function CallsReportView() {
     useEffect(() => {
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'call_date_desc') {
+            return dayjs(b.call_start_time).diff(dayjs(a.call_start_time));
+        }
+        if (sortBy === 'call_date_asc') {
+            return dayjs(a.call_start_time).diff(dayjs(b.call_start_time));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -366,11 +458,25 @@ export function CallsReportView() {
                             <MenuItem value="0">Disabled</MenuItem>
                         </Select>
                     </FormControl>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="call_date_desc">Call Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="call_date_asc">Call Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                         >
                             Export Excel
@@ -379,7 +485,7 @@ export function CallsReportView() {
                             variant="contained"
                             startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                             onClick={() => handleExportPdf(() => generateCallsPdf({
-                                reportData,
+                                reportData: filteredData,
                                 selected,
                                 summary: summaryData.length > 0 ? summaryData : [
                                     { label: 'Total Calls', value: reportData.length },
@@ -504,7 +610,7 @@ export function CallsReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -584,12 +690,6 @@ export function CallsReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Calls"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

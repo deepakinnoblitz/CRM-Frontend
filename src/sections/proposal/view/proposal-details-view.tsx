@@ -1,15 +1,14 @@
-import { IoMdCreate } from "react-icons/io";
-import { useParams } from 'react-router-dom';
-import { IoMdArrowBack } from 'react-icons/io';
 import { useState, useEffect, useCallback } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { IoMdCreate , IoMdArrowBack } from "react-icons/io";
 import {
     HiOutlineUser,
-    HiOutlineCalendar,
-    HiOutlineBuildingOffice,
     HiOutlineClock,
+    HiOutlineCalendar,
     HiOutlinePaperClip,
-    HiOutlineDocumentText,
     HiOutlineCheckCircle,
+    HiOutlineDocumentText,
+    HiOutlineBuildingOffice,
 } from 'react-icons/hi2';
 
 import Box from '@mui/material/Box';
@@ -23,12 +22,10 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
-import MenuItem from '@mui/material/MenuItem';
 import Backdrop from '@mui/material/Backdrop';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
-import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -78,7 +75,11 @@ const STATUS_COLORS: Record<string, any> = {
 export function ProposalDetailsView() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+    const location = useLocation();
     const theme = useTheme();
+
+    const backUrl = location.state?.from || '/proposals';
+    const backState = location.state?.filters ? { filters: location.state.filters } : undefined;
 
     const [proposal, setProposal] = useState<any>(null);
     const [billingAccountName, setBillingAccountName] = useState<string>('');
@@ -177,7 +178,7 @@ export function ProposalDetailsView() {
                     <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800 }}>
                         Proposal Not Found
                     </Typography>
-                    <Button onClick={() => router.push('/proposals')} sx={{ mt: 3 }} variant="contained">
+                    <Button onClick={() => router.push(backUrl, backState)} sx={{ mt: 3 }} variant="contained">
                         Go back to proposals
                     </Button>
                 </Box>
@@ -198,7 +199,7 @@ export function ProposalDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/proposals')}
+                        onClick={() => router.push(backUrl, backState)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
