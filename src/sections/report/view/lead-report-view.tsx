@@ -132,35 +132,12 @@ export function LeadReportView() {
                 }
             }
 
-            const fieldsToFetch = [
-                'name',
-                'lead_name',
-                'company_name',
-                'gstin',
-                'phone_number',
-                'email',
-                'service',
-                'leads_type',
-                'leads_from',
-                'status',
-                'owner_name',
-                'workflow_state',
-                'country',
-                'state',
-                'city',
-                'billing_address',
-                'remarks',
-                'sales_pipeline',
-                'lead_score',
-                'interest_level',
-                'activity_score',
-                'date_and_time',
-                'converted_account',
-                'converted_contact',
-                'converted_deal',
-                'creation',
-                'modified'
-            ];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_lead_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Lead export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             // Build query params
             const query = new URLSearchParams({
@@ -177,29 +154,11 @@ export function LeadReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Lead Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Lead ID', key: 'name' },
-                { header: 'Lead Name', key: 'lead_name' },
-                { header: 'Company', key: 'company_name' },
-                { header: 'GSTIN', key: 'gstin' },
-                { header: 'Phone Number', key: 'phone_number' },
-                { header: 'Email', key: 'email' },
-                { header: 'Service', key: 'service' },
-                { header: 'Leads Type', key: 'leads_type' },
-                { header: 'Leads From', key: 'leads_from' },
-                { header: 'Status', key: 'status' },
-                { header: 'Owner Name', key: 'owner_name' },
-                { header: 'Stage', key: 'workflow_state' },
-                { header: 'Country', key: 'country' },
-                { header: 'State', key: 'state' },
-                { header: 'City', key: 'city' },
-                { header: 'Billing Address', key: 'billing_address' },
-                { header: 'Remarks', key: 'remarks' },
-                { header: 'Converted Account', key: 'converted_account' },
-                { header: 'Converted Contact', key: 'converted_contact' },
-                { header: 'Converted Deal', key: 'converted_deal' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -212,35 +171,19 @@ export function LeadReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             rawData.forEach((row: any) => {
-                const excelRow = sheet.addRow({
-                    name: row.name || '-',
-                    lead_name: row.lead_name || '-',
-                    company_name: row.company_name || '-',
-                    gstin: row.gstin || '-',
-                    phone_number: row.phone_number || '-',
-                    email: row.email || '-',
-                    service: row.service || '-',
-                    leads_type: row.leads_type || '-',
-                    leads_from: row.leads_from || '-',
-                    status: row.status || '-',
-                    owner_name: row.owner_name || '-',
-                    workflow_state: row.workflow_state || row.status || 'New Lead',
-                    country: row.country || '-',
-                    state: row.state || '-',
-                    city: row.city || '-',
-                    billing_address: row.billing_address || '-',
-                    remarks: row.remarks || '-',
-                    sales_pipeline: row.sales_pipeline || '-',
-                    lead_score: row.lead_score !== undefined ? row.lead_score : '-',
-                    interest_level: row.interest_level || '-',
-                    activity_score: row.activity_score !== undefined ? row.activity_score : '-',
-                    date_and_time: row.date_and_time ? dayjs(row.date_and_time).format('YYYY-MM-DD HH:mm:ss') : '-',
-                    converted_account: row.converted_account || '-',
-                    converted_contact: row.converted_contact || '-',
-                    converted_deal: row.converted_deal || '-'
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'workflow_state') {
+                        val = row.workflow_state || row.status || 'New Lead';
+                    } else if (f.fieldname === 'date_and_time' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+                    rowDataObj[f.fieldname] = val !== undefined && val !== null ? val : '-';
                 });
+                const excelRow = sheet.addRow(rowDataObj);
 
                 // Status conditional styling
                 const statusCell = excelRow.getCell('status');
