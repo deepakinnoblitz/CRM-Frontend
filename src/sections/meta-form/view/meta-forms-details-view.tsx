@@ -113,6 +113,19 @@ export function MetaFormsDetailsView() {
                             <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
                                 Form ID: {form.form_id}
                             </Typography>
+                            <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                            <Iconify
+                                icon={(form.is_active ? "eva:checkmark-circle-2-fill" : "eva:close-circle-fill") as any}
+                                sx={{ color: form.is_active ? 'success.main' : 'text.disabled' }}
+                                width={16}
+                            />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: form.is_active ? 'success.main' : 'text.disabled', fontSize: 13 }}>
+                                {form.is_active ? 'Active' : 'Inactive'}
+                            </Typography>
+                            <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary', fontSize: 13 }}>
+                                Duplicates: {form.allow_duplicates ? 'Enabled' : 'Disabled'}
+                            </Typography>
                         </Stack>
                     </Stack>
                 </Stack>
@@ -150,22 +163,9 @@ export function MetaFormsDetailsView() {
                 <Card sx={{ p: 3 }}>
                     <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                            <Iconify icon={"solar:settings-bold" as any} width={18} />
+                            <Iconify icon={"solar:settings-bold" as any} width={18} sx={{ color: '#08a3cd' }} />
                             <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
                                 Form settings
-                            </Typography>
-                        </Stack>
-                        <Stack direction="row" spacing={2}>
-                            {/* Processing active state */}
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: form.is_active ? '#22c55e' : '#9ca3af' }} />
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                    {form.is_active ? 'Active' : 'Inactive'}
-                                </Typography>
-                            </Stack>
-                            <Divider orientation="vertical" flexItem />
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.secondary' }}>
-                                Duplicates: {form.allow_duplicates ? `Limit by ${form.duplicate_limit_by || 'Email or Phone'}` : 'Disabled'}
                             </Typography>
                         </Stack>
                     </Stack>
@@ -181,7 +181,7 @@ export function MetaFormsDetailsView() {
                 {/* Tracking Details */}
                 <Card sx={{ p: 3 }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
-                        <Iconify icon={"solar:info-circle-bold" as any} width={18} />
+                        <Iconify icon={"solar:info-circle-bold" as any} width={18} sx={{ color: '#08a3cd' }} />
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
                             Campaign & Ad Info
                         </Typography>
@@ -225,9 +225,9 @@ export function MetaFormsDetailsView() {
                                     </TableRow>
                                 ) : (
                                     form.field_mappings.map((row: any, idx: number) => (
-                                        <TableRow key={idx}>
+                                        <TableRow key={idx} sx={{ '&:not(:last-child) td': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` } }}>
                                             <TableCell>
-                                                <Typography variant="subtitle2" sx={{ fontFamily: 'monospace' }}>
+                                                <Typography variant="subtitle2">
                                                     {row.meta_field}
                                                 </Typography>
                                             </TableCell>
@@ -268,7 +268,7 @@ export function MetaFormsDetailsView() {
                 {/* Metadata */}
                 <Card sx={{ p: 3 }}>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
-                        <Iconify icon={"solar:info-circle-bold" as any} width={18} />
+                        <Iconify icon={"solar:info-circle-bold" as any} width={18} sx={{ color: '#08a3cd' }} />
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
                             Record Information
                         </Typography>

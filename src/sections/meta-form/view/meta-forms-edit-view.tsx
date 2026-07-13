@@ -7,6 +7,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
@@ -22,6 +23,7 @@ import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 import { alpha, styled } from '@mui/material/styles';
+import Autocomplete from '@mui/material/Autocomplete';
 import TableContainer from '@mui/material/TableContainer';
 import FormHelperText from '@mui/material/FormHelperText';
 import Switch, { SwitchProps } from '@mui/material/Switch';
@@ -30,9 +32,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { getDoctypeList } from 'src/api/leads';
 import { fetchMetaPages } from 'src/api/meta-page';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getMetaForm, updateMetaForm } from 'src/api/meta-form';
+import { getMetaForm, updateMetaForm, getLeadFields, getMandatoryLeadFields } from 'src/api/meta-form';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -54,7 +57,17 @@ export const CustomSwitch = styled((props: SwitchProps) => (
                 opacity: 1,
                 border: 0,
             },
+            '&.Mui-disabled + .MuiSwitch-track': {
+                backgroundColor: '#08a3cd',
+                opacity: 1,
+            },
         },
+        '&.Mui-disabled': {
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                opacity: 1,
+            }
+        }
     },
     '& .MuiSwitch-thumb': {
         boxSizing: 'border-box',
@@ -119,21 +132,43 @@ export function MetaFormsEditView() {
     const [metaPages, setMetaPages] = useState<any[]>([]);
     const [loadingPages, setLoadingPages] = useState(true);
 
+    const [crmFieldOptions, setCrmFieldOptions] = useState<{ value: string; label: string }[]>([]);
+    const [loadingFields, setLoadingFields] = useState(true);
+
+    const [mandatoryFields, setMandatoryFields] = useState<{ fieldname: string; label: string }[]>([]);
+
+    const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
+
     const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ formName?: boolean; formId?: boolean; metaPage?: boolean }>({});
 
     useEffect(() => {
-        const loadPages = async () => {
+        const loadInitialData = async () => {
             try {
-                const res = await fetchMetaPages({ page: 1, page_size: 1000 });
-                setMetaPages(res.data);
+                const [pagesRes, fieldsRes, mandatoryRes, leadFromRes] = await Promise.all([
+                    fetchMetaPages({ page: 1, page_size: 1000 }),
+                    getLeadFields(),
+                    getMandatoryLeadFields(),
+                    getDoctypeList('Lead From')
+                ]);
+                setMetaPages(pagesRes.data);
+                setMandatoryFields(mandatoryRes || []);
+                setLeadsFromOptions((leadFromRes || []).map((item: any) => item.name || item.label || String(item)));
+                
+                // Map API field format to option select values
+                const mappedOptions = fieldsRes.map((f: any) => ({
+                    value: f.fieldname,
+                    label: f.label
+                }));
+                setCrmFieldOptions(mappedOptions.length ? mappedOptions : CRM_FIELD_OPTIONS);
             } catch (err) {
-                enqueueSnackbar('Failed to load Meta Pages list', { variant: 'error' });
+                enqueueSnackbar('Failed to load initial form metadata fields', { variant: 'error' });
             } finally {
                 setLoadingPages(false);
+                setLoadingFields(false);
             }
         };
-        loadPages();
+        loadInitialData();
     }, [enqueueSnackbar]);
 
     useEffect(() => {
@@ -155,12 +190,29 @@ export function MetaFormsEditView() {
                     setDuplicateLimitBy(data.duplicate_limit_by || 'Email or Phone');
                     
                     // Populate mappings child table
-                    setFieldMappings(data.field_mappings || []);
+                    if (data.field_mappings && data.field_mappings.length > 0) {
+                        setFieldMappings(data.field_mappings);
+                    } else {
+                        // Fallback auto populate required fields if empty
+                        const defaultMetaKeys: Record<string, string> = {
+                            lead_name: 'full_name',
+                            email: 'email',
+                            phone_number: 'phone_number',
+                        };
+                        const autoMappings = (mandatoryFields || []).map((field: any) => ({
+                            meta_field: defaultMetaKeys[field.fieldname] || '',
+                            crm_field: field.fieldname,
+                            required: 1,
+                            default_value: '',
+                            transform_function: field.fieldname === 'phone_number' ? 'Clean Phone' : 'None',
+                        }));
+                        setFieldMappings(autoMappings);
+                    }
                 })
                 .catch(() => enqueueSnackbar('Failed to load Meta Form data.', { variant: 'error' }))
                 .finally(() => setLoading(false));
         }
-    }, [id, enqueueSnackbar]);
+    }, [id, enqueueSnackbar, mandatoryFields]);
 
     const handleAddMappingRow = () => {
         setFieldMappings(prev => [
@@ -176,7 +228,15 @@ export function MetaFormsEditView() {
     const handleMappingChange = (index: number, key: string, value: any) => {
         setFieldMappings(prev => {
             const copy = [...prev];
-            copy[index] = { ...copy[index], [key]: value };
+            const updatedRow = { ...copy[index], [key]: value };
+            if (key === 'crm_field') {
+                if (value === 'leads_type') {
+                    updatedRow.default_value = 'Incoming';
+                } else if (value === 'leads_from') {
+                    updatedRow.default_value = '';
+                }
+            }
+            copy[index] = updatedRow;
             return copy;
         });
     };
@@ -194,7 +254,13 @@ export function MetaFormsEditView() {
         }
 
         // Validate field mapping list
-        const invalidMappings = fieldMappings.some(m => !m.meta_field.trim() || !m.crm_field);
+        const invalidMappings = fieldMappings.some(m => {
+            const isFallbackField = m.crm_field === 'leads_type' || m.crm_field === 'leads_from';
+            if (isFallbackField) {
+                return !m.crm_field;
+            }
+            return !(m.meta_field || '').trim() || !m.crm_field;
+        });
         if (invalidMappings) {
             enqueueSnackbar('Please ensure all mapping rows have a Meta Field value and CRM Field selected.', { variant: 'error' });
             return;
@@ -206,20 +272,20 @@ export function MetaFormsEditView() {
                 form_name: formName.trim(),
                 form_id: formId.trim(),
                 meta_page: metaPage,
-                campaign_id: campaignId.trim() || '',
-                campaign_name: campaignName.trim() || '',
-                ad_set_id: adSetId.trim() || '',
-                ad_set_name: adSetName.trim() || '',
-                ad_id: adId.trim() || '',
-                ad_name: adName.trim() || '',
+                campaign_id: (campaignId || '').trim(),
+                campaign_name: (campaignName || '').trim(),
+                ad_set_id: (adSetId || '').trim(),
+                ad_set_name: (adSetName || '').trim(),
+                ad_id: (adId || '').trim(),
+                ad_name: (adName || '').trim(),
                 is_active: isActive ? 1 : 0,
                 allow_duplicates: allowDuplicates ? 1 : 0,
                 duplicate_limit_by: duplicateLimitBy,
                 field_mappings: fieldMappings.map(m => ({
-                    meta_field: m.meta_field.trim(),
+                    meta_field: (m.meta_field || '').trim(),
                     crm_field: m.crm_field,
                     required: m.required ? 1 : 0,
-                    default_value: (m.default_value || '').trim() || '',
+                    default_value: (m.default_value || '').trim(),
                     transform_function: m.transform_function,
                 })),
             });
@@ -334,22 +400,25 @@ export function MetaFormsEditView() {
                         </Box>
 
                         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                            <FormControl fullWidth required error={errors.metaPage}>
-                                <InputLabel id="meta-page-label">Meta Page</InputLabel>
-                                <Select
-                                    labelId="meta-page-label"
-                                    value={metaPage}
-                                    label="Meta Page"
-                                    onChange={(e) => { setMetaPage(e.target.value); setErrors(p => ({ ...p, metaPage: false })); }}
-                                >
-                                    {metaPages.map((p) => (
-                                        <MenuItem key={p.name} value={p.name}>
-                                            {p.page_name}
-                                        </MenuItem>
-                                    ))}
-                                </Select>
-                                <FormHelperText>{errors.metaPage ? 'Meta Page is required' : ''}</FormHelperText>
-                            </FormControl>
+                            <Autocomplete
+                                fullWidth
+                                options={metaPages}
+                                getOptionLabel={(option) => option.page_name || ''}
+                                value={metaPages.find((p) => p.name === metaPage) || null}
+                                onChange={(event, newValue) => {
+                                    setMetaPage(newValue ? newValue.name : '');
+                                    setErrors((p) => ({ ...p, metaPage: false }));
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Meta Page"
+                                        required
+                                        error={errors.metaPage}
+                                        helperText={errors.metaPage ? 'Meta Page is required' : ''}
+                                    />
+                                )}
+                            />
                             <FormControl fullWidth disabled={!allowDuplicates}>
                                 <InputLabel id="dup-limit-label">Duplicate Limit By</InputLabel>
                                 <Select
@@ -410,6 +479,22 @@ export function MetaFormsEditView() {
                         </Button>
                     </Stack>
 
+                    {(() => {
+                        const mappedFields = fieldMappings.map((m) => m.crm_field);
+                        const missing = mandatoryFields.filter((f) => !mappedFields.includes(f.fieldname));
+                        if (missing.length === 0) return null;
+                        return (
+                            <Alert severity="warning" sx={{ mb: 3, borderRadius: 1 }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                    Missing Mandatory CRM Lead Fields:
+                                </Typography>
+                                <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>
+                                    Please map Facebook fields or set default values for: {missing.map((f) => f.label).join(', ')}
+                                </Typography>
+                            </Alert>
+                        );
+                    })()}
+
                     <TableContainer sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 1.5 }}>
                         <Table>
                             <TableHead sx={{ bgcolor: 'background.neutral' }}>
@@ -440,7 +525,7 @@ export function MetaFormsEditView() {
                                                     value={row.crm_field}
                                                     onChange={(e) => handleMappingChange(index, 'crm_field', e.target.value)}
                                                 >
-                                                    {CRM_FIELD_OPTIONS.map((opt) => (
+                                                    {crmFieldOptions.map((opt) => (
                                                         <MenuItem key={opt.value} value={opt.value}>
                                                             {opt.label}
                                                         </MenuItem>
@@ -451,17 +536,40 @@ export function MetaFormsEditView() {
                                         <TableCell align="center">
                                             <CustomSwitch
                                                 checked={row.required === 1}
+                                                disabled
                                                 onChange={(e) => handleMappingChange(index, 'required', e.target.checked ? 1 : 0)}
                                             />
                                         </TableCell>
-                                        <TableCell>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                placeholder="Fallback value"
-                                                value={row.default_value || ''}
-                                                onChange={(e) => handleMappingChange(index, 'default_value', e.target.value)}
-                                            />
+                                        <TableCell sx={{ minWidth: 200 }}>
+                                            {row.crm_field === 'leads_type' ? (
+                                                <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    disabled
+                                                    value="Incoming"
+                                                />
+                                            ) : row.crm_field === 'leads_from' ? (
+                                                <Autocomplete
+                                                    size="small"
+                                                    fullWidth
+                                                    options={leadsFromOptions}
+                                                    value={row.default_value || ''}
+                                                    onChange={(event, newValue) => {
+                                                        handleMappingChange(index, 'default_value', newValue || '');
+                                                    }}
+                                                    renderInput={(params) => (
+                                                        <TextField {...params} placeholder="Select Lead From" />
+                                                    )}
+                                                />
+                                            ) : (
+                                                <TextField
+                                                    size="small"
+                                                    fullWidth
+                                                    placeholder="Fallback value"
+                                                    value={row.default_value || ''}
+                                                    onChange={(e) => handleMappingChange(index, 'default_value', e.target.value)}
+                                                />
+                                            )}
                                         </TableCell>
                                         <TableCell sx={{ minWidth: 160 }}>
                                             <FormControl fullWidth size="small">

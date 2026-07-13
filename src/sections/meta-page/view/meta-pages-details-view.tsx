@@ -9,6 +9,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -156,6 +157,24 @@ export function MetaPagesDetailsView() {
                             <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
                                 {page.page_id}
                             </Typography>
+                            <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                            <Iconify
+                                icon={(page.is_active ? 'eva:checkmark-circle-2-fill' : 'eva:close-circle-fill') as any}
+                                sx={{ color: page.is_active ? 'success.main' : 'text.disabled' }}
+                                width={16}
+                            />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: page.is_active ? 'success.main' : 'text.disabled', fontSize: 13 }}>
+                                {page.is_active ? 'Active' : 'Inactive'}
+                            </Typography>
+                            <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                            <Iconify 
+                                icon={(page.webhook_enabled ? 'eva:checkmark-circle-2-fill' : 'eva:close-circle-fill') as any} 
+                                sx={{ color: page.webhook_enabled ? 'success.main' : 'text.disabled' }} 
+                                width={16}
+                            />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: page.webhook_enabled ? 'success.main' : 'text.disabled', fontSize: 13 }}>
+                                Webhook {page.webhook_enabled ? 'Enabled' : 'Disabled'}
+                            </Typography>
                         </Stack>
                     </Stack>
                 </Stack>
@@ -181,37 +200,6 @@ export function MetaPagesDetailsView() {
             </Stack>
 
             <Stack spacing={3}>
-                {/* Status Banner */}
-                <Box
-                    sx={{
-                        p: 2.5,
-                        borderRadius: 2,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        flexWrap: 'wrap',
-                        bgcolor: page.is_active
-                            ? alpha('#22c55e', 0.06)
-                            : alpha('#eab308', 0.06),
-                        border: `1px solid ${page.is_active ? alpha('#22c55e', 0.2) : alpha('#eab308', 0.2)}`,
-                    }}
-                >
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify
-                            icon={(page.is_active ? 'solar:shield-check-bold' : 'solar:settings-bold') as any}
-                            sx={{ color: page.is_active ? '#22c55e' : '#eab308' }}
-                        />
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                            {page.is_active ? 'Active' : 'Inactive'}
-                        </Typography>
-                    </Stack>
-                    <Stack direction="row" alignItems="center" spacing={1}>
-                        <Iconify icon={page.webhook_enabled ? 'solar:check-circle-bold' : 'solar:close-circle-bold'} sx={{ color: page.webhook_enabled ? 'success.main' : 'text.disabled' }} />
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: page.webhook_enabled ? 'success.main' : 'text.secondary' }}>
-                            Webhook {page.webhook_enabled ? 'Enabled' : 'Disabled'}
-                        </Typography>
-                    </Stack>
-                </Box>
 
                 {/* Credentials Card */}
                 <Card sx={{ p: 3 }}>

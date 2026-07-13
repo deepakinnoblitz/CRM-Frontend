@@ -161,3 +161,30 @@ export async function deleteMetaForm(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to delete Meta Form'));
     return true;
 }
+
+// ----------------------------------------------------------------------
+// Fetch Lead Fields
+// ----------------------------------------------------------------------
+
+export interface LeadField {
+    fieldname: string;
+    label: string;
+}
+
+export async function getLeadFields(): Promise<LeadField[]> {
+    const res = await frappeRequest('/api/method/company.company.doctype.crm_meta_form.crm_meta_form.get_lead_fields');
+    if (!res.ok) throw new Error('Failed to fetch CRM Lead fields');
+    const json = await res.json();
+    return json.message || [];
+}
+
+// ----------------------------------------------------------------------
+// Fetch Mandatory Lead Fields
+// ----------------------------------------------------------------------
+
+export async function getMandatoryLeadFields(): Promise<LeadField[]> {
+    const res = await frappeRequest('/api/method/company.company.doctype.crm_meta_form.crm_meta_form.get_mandatory_lead_fields');
+    if (!res.ok) throw new Error('Failed to fetch mandatory CRM Lead fields');
+    const json = await res.json();
+    return json.message || [];
+}
