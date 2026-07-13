@@ -209,15 +209,7 @@ export function ProposalReportView() {
             const proposalIds = data.map((row: any) => row.name);
             let files: any[] = [];
             if (proposalIds.length > 0) {
-                const fileQueryParams = new URLSearchParams({
-                    doctype: 'Proposal Attachment',
-                    fields: JSON.stringify(['name', 'file_name', 'attachment', 'parent']),
-                    filters: JSON.stringify([
-                        ['parent', 'in', proposalIds]
-                    ]),
-                    limit_page_length: '99999'
-                });
-                const fileRes = await fetch(`/api/method/frappe.client.get_list?${fileQueryParams.toString()}`, {
+                const fileRes = await fetch(`/api/method/company.company.crm_api.get_proposal_attachments?proposal_ids=${encodeURIComponent(JSON.stringify(proposalIds))}`, {
                     method: 'GET',
                     credentials: "include"
                 });
@@ -311,13 +303,15 @@ export function ProposalReportView() {
                 const propFiles = filesMap[row.name] || [];
                 const attachmentsCell = excelRow.getCell('attachments');
                 if (propFiles.length === 1) {
+                    const dlUrl = `${window.location.origin}/api/method/company.company.crm_api.download_proposal_attachment?file_id=${encodeURIComponent(propFiles[0].name)}&token=${encodeURIComponent(propFiles[0].token)}`;
+                    console.log("Single file download URL:", dlUrl);
                     attachmentsCell.value = {
                         text: propFiles[0].file_name || 'Download',
-                        hyperlink: window.location.origin + propFiles[0].attachment
+                        hyperlink: dlUrl
                     };
                     attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
                 } else if (propFiles.length > 1) {
-                    attachmentsCell.value = propFiles.map((f: any) => `${window.location.origin}${f.attachment}`).join('\n');
+                    attachmentsCell.value = propFiles.map((f: any) => `${window.location.origin}/api/method/company.company.crm_api.download_proposal_attachment?file_id=${encodeURIComponent(f.name)}&token=${encodeURIComponent(f.token)}`).join('\n');
                     attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
                     attachmentsCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
                 } else {
