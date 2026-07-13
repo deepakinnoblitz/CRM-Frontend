@@ -7,14 +7,15 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
+import { styled } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
-import Checkbox from '@mui/material/Checkbox';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 import FormHelperText from '@mui/material/FormHelperText';
+import Switch, { SwitchProps } from '@mui/material/Switch';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
@@ -23,6 +24,43 @@ import { createMetaApp } from 'src/api/meta-app';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
+
+// Custom Switch Style matching the CRM / WhatsApp style
+export const CustomSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 42,
+    height: 24,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 2,
+        transitionDuration: '300ms',
+        '&.Mui-checked': {
+            transform: 'translateX(18px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#08a3cd', // Match the #08a3cd theme color
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 19,
+        height: 19,
+        boxShadow: '0 2px 4px 0 rgb(0 35 11 / 20%)',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#E5E7EB', // Light Gray
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 500,
+        }),
+    },
+}));
 
 // ----------------------------------------------------------------------
 
@@ -134,33 +172,37 @@ export function MetaAppsCreateView() {
                     <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                         <FormControlLabel
                             control={
-                                <Checkbox
+                                <CustomSwitch
                                     checked={isDefault}
                                     onChange={(e) => setIsDefault(e.target.checked)}
-                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Is Default App</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Use as the default Meta integration</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Default App</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Use as the default Meta integration</Typography>
                                 </Stack>
                             }
+                            sx={{
+                                ml: 0.5
+                            }}
                         />
                         <FormControlLabel
                             control={
-                                <Checkbox
+                                <CustomSwitch
                                     checked={isActive}
                                     onChange={(e) => setIsActive(e.target.checked)}
-                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Is Active</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Enable this app for processing leads</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Active</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this app for processing leads</Typography>
                                 </Stack>
                             }
+                            sx={{
+                                ml: 0.5
+                            }}
                         />
                         <TextField
                             fullWidth
@@ -179,7 +221,6 @@ export function MetaAppsCreateView() {
                             onChange={(e) => { setAppId(e.target.value); if (e.target.value) setErrors(p => ({ ...p, appId: false })); }}
                             error={errors.appId}
                             helperText={errors.appId ? 'App ID is required' : 'Meta Developer App ID'}
-                            inputProps={{ style: { fontFamily: 'monospace' } }}
                         />
                     </Box>
 
@@ -213,7 +254,6 @@ export function MetaAppsCreateView() {
                             value={businessManagerId}
                             onChange={(e) => setBusinessManagerId(e.target.value)}
                             helperText="Optional: Meta Business Manager ID"
-                            inputProps={{ style: { fontFamily: 'monospace' } }}
                         />
                         <TextField
                             fullWidth
@@ -266,18 +306,20 @@ export function MetaAppsCreateView() {
 
                         <FormControlLabel
                             control={
-                                <Checkbox
+                                <CustomSwitch
                                     checked={signatureValidation}
                                     onChange={(e) => setSignatureValidation(e.target.checked)}
-                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Enable Signature Validation</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Validate webhook payload signatures</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Enable Signature Validation</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Validate webhook payload signatures</Typography>
                                 </Stack>
                             }
+                            sx={{
+                                ml: 0.5
+                            }}
                         />
                     </Box>
                 </Stack>
