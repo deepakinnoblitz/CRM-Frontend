@@ -50,8 +50,8 @@ const SORT_OPTIONS = [
 
 const TABLE_HEAD = [
     { id: 'page_name', label: 'Page Name', maxWidth: 220 },
-    { id: 'page_id', label: 'Page ID', width: 200 },
-    { id: 'meta_app', label: 'Meta App', width: 200 },
+    { id: 'page_id', label: 'Page ID', width: 220 },
+    { id: 'meta_app', label: 'Meta App', width: 240, maxWidth: 220 },
     { id: 'webhook_enabled', label: 'Webhook Enabled', width: 180, align: 'center' as const },
     { id: 'is_active', label: 'Active', width: 100, align: 'center' as const },
     { id: 'action', label: 'Actions', align: 'center' as const, width: 130 },

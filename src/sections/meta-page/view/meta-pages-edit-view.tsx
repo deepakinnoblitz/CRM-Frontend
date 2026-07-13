@@ -206,6 +206,38 @@ export function MetaPagesEditView() {
 
                 <Stack spacing={3}>
                     <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <FormControlLabel
+                            control={
+                                <CustomSwitch
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this page configuration</Typography>
+                                </Stack>
+                            }
+                            sx={{ ml: 0.5 }}
+                        />
+                        <FormControlLabel
+                            control={
+                                <CustomSwitch
+                                    checked={webhookEnabled}
+                                    onChange={(e) => setWebhookEnabled(e.target.checked)}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Webhook Enabled</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable webhooks for lead streams</Typography>
+                                </Stack>
+                            }
+                            sx={{ ml: 0.5 }}
+                        />
+                    </Box>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                         <TextField
                             fullWidth
                             label="Page Name"
@@ -275,49 +307,6 @@ export function MetaPagesEditView() {
                             onChange={(e) => setLongLivedToken(e.target.value)}
                             helperText="Leave blank to keep existing value"
                             placeholder="••••••••"
-                        />
-                    </Box>
-
-                    {/* Divider + Options */}
-                    <Divider />
-
-                    <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
-                        <Iconify icon={"solar:shield-check-bold" as any} width={16} sx={{ color: '#08a3cd' }} />
-                        <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
-                            Options
-                        </Typography>
-                    </Stack>
-
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                        <FormControlLabel
-                            control={
-                                <CustomSwitch
-                                    checked={webhookEnabled}
-                                    onChange={(e) => setWebhookEnabled(e.target.checked)}
-                                />
-                            }
-                            label={
-                                <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Webhook Enabled</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable webhooks for lead streams</Typography>
-                                </Stack>
-                            }
-                            sx={{ ml: 0.5 }}
-                        />
-                        <FormControlLabel
-                            control={
-                                <CustomSwitch
-                                    checked={isActive}
-                                    onChange={(e) => setIsActive(e.target.checked)}
-                                />
-                            }
-                            label={
-                                <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this page configuration</Typography>
-                                </Stack>
-                            }
-                            sx={{ ml: 0.5 }}
                         />
                     </Box>
                 </Stack>
