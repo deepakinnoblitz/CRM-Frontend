@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -28,24 +28,27 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';   
 import { generateLeadPdf } from 'src/components/export/pdf/lead-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { LeadDetailsDialog } from '../lead-details-dialog';
-import { ExportFieldsDialog } from '../export-fields-dialog';
+
 
 // ----------------------------------------------------------------------
 
 export function LeadReportView() {
+    const router = useRouter();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -56,7 +59,9 @@ export function LeadReportView() {
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [leadsType, setLeadsType] = useState('all');
     const [leadsFrom, setLeadsFrom] = useState('all');
+    const [service, setService] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         if (user?.name) {
@@ -66,6 +71,7 @@ export function LeadReportView() {
 
     // Options
     const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
+    const [serviceOptions, setServiceOptions] = useState<string[]>([]);
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
 
     // Pagination
@@ -73,8 +79,6 @@ export function LeadReportView() {
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
     // View Details
-    const [openView, setOpenView] = useState(false);
-    const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -108,10 +112,7 @@ export function LeadReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Construct filters for get_list
@@ -131,50 +132,144 @@ export function LeadReportView() {
                 }
             }
 
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_lead_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Lead export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            // Reorder the exported columns to start with: Lead ID (name), Name (lead_name), Company Name (company_name), Status (status)
+            const desiredOrder = ['name', 'lead_name', 'company_name', 'status'];
+            const orderedFields: { fieldname: string; label: string }[] = [];
+            desiredOrder.forEach(fieldname => {
+                const found = validFields.find(f => f.fieldname === fieldname);
+                if (found) {
+                    orderedFields.push(found);
+                }
+            });
+            validFields.forEach(f => {
+                if (!desiredOrder.includes(f.fieldname)) {
+                    orderedFields.push(f);
+                }
+            });
+
+            const fieldsToFetch = Array.from(new Set([
+                ...validFields.map(f => f.fieldname),
+                'creation',
+                'modified',
+                'workflow_state',
+                'status'
+            ]));
+
             // Build query params
             const query = new URLSearchParams({
                 doctype: "Lead",
-                fields: JSON.stringify(selectedFields),
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999", // Fetch all
             });
 
             const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            const rawData = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Lead Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
-                XLSX.writeFile(workbook, "Lead_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Lead_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns dynamically
+            sheet.columns = orderedFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Same blue/teal color FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            rawData.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                orderedFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'status') {
+                        val = row.workflow_state || row.status || 'New Lead';
+                    } else if (f.fieldname === 'workflow_state') {
+                        val = row.workflow_state || row.status || 'New Lead';
+                    } else if (f.fieldname === 'date_and_time' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                const excelRow = sheet.addRow(rowDataObj);
+
+                // Status conditional styling
+                const statusCell = excelRow.getCell('status');
+                const statusVal = row.status || '';
+                if (statusVal === 'Converted') {
+                    statusCell.font = { color: { argb: 'FF22C55E' }, bold: true };
+                } else if (statusVal === 'Not Converted') {
+                    statusCell.font = { color: { argb: 'FFEF4444' }, bold: true };
+                } else if (statusVal === 'Open') {
+                    statusCell.font = { color: { argb: 'FFF97316' }, bold: true };
+                }
+            });
+
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Lead_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
-            // Maybe show a snackbar error?
         } finally {
             setLoading(false);
         }
     };
 
     const handleViewLead = useCallback((id: string) => {
-        setSelectedLeadId(id);
-        setOpenView(true);
-    }, []);
+        router.push(`/leads/${encodeURIComponent(id)}/view`);
+    }, [router]);
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -193,6 +288,7 @@ export function LeadReportView() {
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (leadsType !== 'all') filters.leads_type = leadsType;
             if (leadsFrom !== 'all') filters.leads_from = leadsFrom;
+            if (service !== 'all') filters.service = service;
             if (owner !== 'all') filters.owner = owner;
 
             const result = await runReport('Lead', filters);
@@ -203,7 +299,7 @@ export function LeadReportView() {
         } finally {
             setLoading(false);
         }
-    }, [fromDate, toDate, leadsType, leadsFrom, owner]);
+    }, [fromDate, toDate, leadsType, leadsFrom, service, owner]);
 
     useEffect(() => {
         fetchReport();
@@ -214,6 +310,8 @@ export function LeadReportView() {
         setToDate(null);
         setLeadsType('all');
         setLeadsFrom('all');
+        setService('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -222,7 +320,24 @@ export function LeadReportView() {
     useEffect(() => {
         getDoctypeList('Lead From').then(setLeadsFromOptions);
         getDoctypeList('User').then(setOwnerOptions);
+        getDoctypeList('Service').then((list) => setServiceOptions(list.map((item: any) => item.name || item.label || String(item))));
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'lead_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'lead_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     const totalLeads = reportData.length;
     const incomingLeads = reportData.filter((l: any) => l.leads_type === 'Incoming').length;
@@ -334,6 +449,35 @@ export function LeadReportView() {
                     />
                     <Autocomplete
                         size="small"
+                        sx={{ minWidth: 200 }}
+                        options={['All Services', ...serviceOptions]}
+                        getOptionLabel={(option) => option || 'All Services'}
+                        value={service === 'all' || !service ? 'All Services' : service}
+                        onChange={(event, newValue) => {
+                            if (newValue === 'All Services' || !newValue) {
+                                setService('all');
+                            } else {
+                                setService(newValue);
+                            }
+                        }}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                placeholder="All Services"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                    />
+                    <Autocomplete
+                        size="small"
                         sx={{ minWidth: 240 }}
                         disabled={user?.has_crm_permission}
                         options={['All Owners', ...ownerOptions.filter((opt) => opt !== 'Administrator')]}
@@ -362,39 +506,61 @@ export function LeadReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="lead_date_desc">Lead Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="lead_date_asc">Lead Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateLeadPdf({
-                            reportData,
-                            selected,
-                            summary: [
-                                { label: 'Total Leads', value: totalLeads },
-                                { label: 'Incoming Leads', value: incomingLeads },
-                                { label: 'Outgoing Leads', value: outgoingLeads }
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                            sx={{
+                                bgcolor: '#0ea5e9',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#0284c7' },
+                                height: 40,
+                                px: 3,
+                            }}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateLeadPdf({
+                                reportData: filteredData,
+                                selected,
+                                summary: [
+                                    { label: 'Total Leads', value: totalLeads },
+                                    { label: 'Incoming Leads', value: incomingLeads },
+                                    { label: 'Outgoing Leads', value: outgoingLeads }
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 40,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
@@ -449,7 +615,7 @@ export function LeadReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -471,20 +637,12 @@ export function LeadReportView() {
                                                         <TableCell>{row.phone_number}</TableCell>
                                                         <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>
-                                                            <Box
-                                                                sx={{
-                                                                    px: 1,
-                                                                    py: 0.5,
-                                                                    borderRadius: 1,
-                                                                    display: 'inline-flex',
-                                                                    typography: 'caption',
-                                                                    fontWeight: 'bold',
-                                                                    bgcolor: alpha(row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800', 0.1),
-                                                                    color: row.leads_type === 'Incoming' ? '#4CAF50' : '#FF9800',
-                                                                }}
+                                                            <Label
+                                                                variant="soft"
+                                                                color={row.leads_type === 'Incoming' ? 'success' : 'warning'}
                                                             >
                                                                 {row.leads_type}
-                                                            </Box>
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell>{row.leads_from}</TableCell>
                                                         <TableCell>{row.owner_name}</TableCell>
@@ -524,21 +682,7 @@ export function LeadReportView() {
                 </Card>
             </Stack>
 
-            <LeadDetailsDialog
-                open={openView}
-                leadId={selectedLeadId}
-                onClose={() => {
-                    setOpenView(false);
-                    setSelectedLeadId(null);
-                }}
-            />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Lead"
-                onExport={handleExport}
-            />
         </DashboardContent >
     );
 }

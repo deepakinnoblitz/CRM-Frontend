@@ -167,12 +167,13 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
             onLoadingChange?.(true);
             if (currentPurchaseCollection) {
                 await updatePurchaseCollection(currentPurchaseCollection.name, submissionData);
-                setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Settlement Update success!', severity: 'success' });
+                setTimeout(() => router.push('/purchase?tab=collections', { message: 'Settlement Update success!' }), 1500);
             } else {
                 await createPurchaseCollection(submissionData);
-                setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Settlement Create success!', severity: 'success' });
+                setTimeout(() => router.push('/purchase?tab=collections', { message: 'Settlement Create success!' }), 1500);
             }
-            setTimeout(() => router.push('/purchase?tab=collections'), 1500);
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Something went wrong', severity: 'error' });
             console.error(error);

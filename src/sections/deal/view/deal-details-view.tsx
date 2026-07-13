@@ -1,9 +1,8 @@
-import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from "react-icons/io";
-import { GrDocumentTime } from "react-icons/gr";
-import { GrDocumentStore } from "react-icons/gr";
 import { useState, useEffect, useCallback } from 'react';
-import { HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineUser, HiOutlineCalendar, HiOutlineBriefcase, HiOutlineBuildingOffice, HiOutlineClock, HiOutlineDocumentCheck as HiOutlineDocCheck } from "react-icons/hi2";
+import { useParams, useLocation } from 'react-router-dom';
+import { GrDocumentTime , GrDocumentStore } from "react-icons/gr";
+import { HiOutlineUser, HiOutlineClock, HiOutlineCalendar, HiOutlineBriefcase, HiOutlineDocumentText, HiOutlineBuildingOffice, HiOutlineClipboardDocumentCheck } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -27,7 +26,6 @@ import { fetchRelatedEstimations } from 'src/api/estimation';
 import { getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { EmailAutomationDialog } from 'src/sections/lead/email-automation-dialog';
@@ -63,6 +61,9 @@ export function DealDetailsView() {
     const { id } = useParams();
     const theme = useTheme();
     const router = useRouter();
+    const location = useLocation();
+
+    const backPath = location.state?.from || '/deals';
 
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
@@ -324,7 +325,7 @@ export function DealDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals')}
+                        onClick={() => router.push(backPath)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

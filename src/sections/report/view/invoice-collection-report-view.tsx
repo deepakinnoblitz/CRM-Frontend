@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -8,6 +9,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableBody from '@mui/material/TableBody';
@@ -16,6 +19,8 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
@@ -29,6 +34,7 @@ import { usePdfExport } from 'src/hooks/use-pdf-export';
 import { fCurrency } from 'src/utils/format-number';
 
 import { runReport } from 'src/api/reports';
+import { getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -38,6 +44,22 @@ import { generateInvoiceCollectionPdf } from 'src/components/export/pdf/invoice-
 import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function InvoiceCollectionReportView() {
     const { user } = useAuth();
@@ -50,10 +72,27 @@ export function InvoiceCollectionReportView() {
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
-    const [customer, setCustomer] = useState('');
-    const [invoiceNo, setInvoiceNo] = useState('');
+    const [customer, setCustomer] = useState<any>(null);
+    const [invoiceNo, setInvoiceNo] = useState<any>(null);
+    const [customerOptions, setCustomerOptions] = useState<any[]>([]);
+    const [invoiceNoOptions, setInvoiceNoOptions] = useState<any[]>([]);
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
+
+    useEffect(() => {
+        getDoctypeList('Contacts', ['name', 'first_name'])
+            .then((data) => {
+                setCustomerOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Contacts for report:', error));
+
+        getDoctypeList('Invoice', ['name'])
+            .then((data) => {
+                setInvoiceNoOptions(data || []);
+            })
+            .catch((error) => console.error('Failed to load Invoices for report:', error));
+    }, []);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -94,8 +133,8 @@ export function InvoiceCollectionReportView() {
         setLoading(true);
         try {
             const filters: any = {};
-            if (customer) filters.customer = customer;
-            if (invoiceNo) filters.invoice = invoiceNo;
+            if (customer) filters.customer = customer.name;
+            if (invoiceNo) filters.invoice = invoiceNo.name;
             if (fromDate) filters.from_date = fromDate.format('YYYY-MM-DD');
             if (toDate) filters.to_date = toDate.format('YYYY-MM-DD');
             if (user?.has_crm_permission) filters.owner = user.name;
@@ -117,12 +156,35 @@ export function InvoiceCollectionReportView() {
     }, [fetchReport]);
 
     const handleReset = () => {
-        setCustomer('');
-        setInvoiceNo('');
+        setCustomer(null);
+        setInvoiceNo(null);
         setFromDate(null);
         setToDate(null);
         setSelected([]);
+        setSortBy('modified_desc');
     };
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'collection_date_desc') {
+            return dayjs(b.collection_date).diff(dayjs(a.collection_date));
+        }
+        if (sortBy === 'collection_date_asc') {
+            return dayjs(a.collection_date).diff(dayjs(b.collection_date));
+        }
+        return 0;
+    });
 
     const onChangePage = useCallback((event: unknown, newPage: number) => {
         setPage(newPage);
@@ -133,11 +195,105 @@ export function InvoiceCollectionReportView() {
         setPage(0);
     }, []);
 
-    const handleExport = () => {
-        const worksheet = XLSX.utils.json_to_sheet(reportData);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Invoice Collections");
-        XLSX.writeFile(workbook, "Invoice_Collection_Report.xlsx");
+    const handleExport = async () => {
+        setLoading(true);
+        try {
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_invoice_collection_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Invoice Collection export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Invoice Collection Summary');
+
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            filteredData.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'name') {
+                        val = row.id || row.name;
+                    } else if (f.fieldname === 'invoice') {
+                        val = row.invoice;
+                    } else if (f.fieldname === 'collection_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    } else if (f.fieldname === 'mode_of_payment') {
+                        val = row.mode_of_payment;
+                    } else if (f.fieldname === 'amount_to_pay') {
+                        val = row.amount_to_pay;
+                    } else if (f.fieldname === 'amount_collected') {
+                        val = row.amount_collected;
+                    } else if (f.fieldname === 'amount_pending') {
+                        val = row.amount_pending;
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Invoice_Collection_Summary_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -178,22 +334,6 @@ export function InvoiceCollectionReportView() {
                         border: (t) => `1px solid ${t.palette.divider}`,
                     }}
                 >
-                    <TextField
-                        label="Customer"
-                        value={customer}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCustomer(e.target.value)}
-                        placeholder="Search customer..."
-                        size="small"
-                        sx={{ minWidth: 200 }}
-                    />
-                    <TextField
-                        label="Invoice No"
-                        value={invoiceNo}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNo(e.target.value)}
-                        placeholder="Search invoice..."
-                        size="small"
-                        sx={{ minWidth: 150 }}
-                    />
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <DatePicker
                             label="From Date"
@@ -220,42 +360,126 @@ export function InvoiceCollectionReportView() {
                             }}
                         />
                     </LocalizationProvider>
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 250 }}
+                        options={customerOptions}
+                        getOptionLabel={(option) => option ? `${option.first_name || ''} (${option.name || ''})` : ''}
+                        value={customer}
+                        onChange={(event, newValue) => setCustomer(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Customer"
+                                placeholder="Search Customer"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.first_name || option.name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                        ID: {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
+                    <Autocomplete
+                        size="small"
+                        sx={{ minWidth: 220 }}
+                        options={invoiceNoOptions}
+                        getOptionLabel={(option) => option ? option.name || '' : ''}
+                        value={invoiceNo}
+                        onChange={(event, newValue) => setInvoiceNo(newValue)}
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Invoice No"
+                                placeholder="Search Invoice No"
+                                sx={{
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 1.5,
+                                        bgcolor: 'background.neutral',
+                                        '&:hover': {
+                                            bgcolor: 'action.hover',
+                                        },
+                                    },
+                                }}
+                            />
+                        )}
+                        renderOption={(props, option) => (
+                            <li {...props} key={option.name}>
+                                <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                        {option.name}
+                                    </Typography>
+                                </Stack>
+                            </li>
+                        )}
+                    />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="collection_date_desc">Collection Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="collection_date_asc">Collection Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
-                            reportData,
-                            summary: summaryData.length > 0 ? summaryData.map(s => ({
-                                label: s.label,
-                                value: s.value,
-                                isCurrency: s.datatype === 'Currency'
-                            })) : [
-                                { label: 'Total Amount to Pay', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0), isCurrency: true },
-                                { label: 'Total Collected', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0), isCurrency: true },
-                                { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0), isCurrency: true }
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateInvoiceCollectionPdf({
+                                reportData: filteredData,
+                                summary: summaryData.length > 0 ? summaryData.map(s => ({
+                                    label: s.label,
+                                    value: s.value,
+                                    isCurrency: s.datatype === 'Currency'
+                                })) : [
+                                    { label: 'Total Amount to Pay', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0), isCurrency: true },
+                                    { label: 'Total Collected', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0), isCurrency: true },
+                                    { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0), isCurrency: true }
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
@@ -313,7 +537,7 @@ export function InvoiceCollectionReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.id) !== -1;
                                                 return (
                                                     <TableRow 
@@ -334,9 +558,9 @@ export function InvoiceCollectionReportView() {
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.invoice}</TableCell>
                                                         <TableCell>{row.collection_date ? dayjs(row.collection_date).format('DD MMM YYYY') : '-'}</TableCell>
                                                         <TableCell>{row.mode_of_payment || '-'}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
-                                                        <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.amount_collected)}</TableCell>
-                                                        <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{fCurrency(row.amount_pending)}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{renderCurrency(row.amount_to_pay, '16px')}</TableCell>
+                                                        <TableCell sx={{ color: 'success.main', fontWeight: 600 }}>{renderCurrency(row.amount_collected, '16px')}</TableCell>
+                                                        <TableCell sx={{ color: 'error.main', fontWeight: 600 }}>{renderCurrency(row.amount_pending, '16px')}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton
                                                                 onClick={() => navigate(`/invoice-collections/${encodeURIComponent(row.id)}/view`, { state: { from: location.pathname } })}
@@ -441,7 +665,7 @@ function SummaryCard({ item }: { item: any }) {
                         {item.label}
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
-                        {item.datatype === 'Currency' ? fCurrency(item.value) : item.value?.toLocaleString()}
+                        {item.datatype === 'Currency' ? renderCurrency(item.value, '24px') : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
             </Stack>

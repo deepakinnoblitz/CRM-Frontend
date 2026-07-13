@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -9,6 +9,7 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -40,7 +41,6 @@ import { generateContactPdf } from 'src/components/export/pdf/contact-pdf-genera
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 import { ContactDetailsDialog } from '../contact-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -60,6 +60,7 @@ export function ContactReportView() {
     const [owner, setOwner] = useState('all');
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     useEffect(() => {
         if (user?.name) {
@@ -113,43 +114,25 @@ export function ContactReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Use IDs from selection or currently filtered report data
-            // Ensure valid names are collected
             const idsToExport = (selected.length > 0 ? selected : reportData.map(r => r.name)).filter(Boolean);
 
-            // If no data to export
             if (idsToExport.length === 0) {
                 setLoading(false);
                 return;
             }
 
-            // Simple filter for IDs
             const filters = [['name', 'in', idsToExport]];
 
-            // Ensure at least some fields are selected
-            // Use fields that exist in 'Contacts' custom doctype
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'first_name', 'company_name', 'email', 'phone'];
-            // Add 'name' if missing to ensure we have a primary key
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_client_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Contacts export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
 
-            console.log("Exporting IDs:", idsToExport);
-            console.log("Exporting Fields:", fieldsToFetch);
-
-            const queryParams = new URLSearchParams({
-                doctype: "Contacts",
-                fields: JSON.stringify(fieldsToFetch),
-                filters: JSON.stringify(filters),
-                limit_page_length: "99999"
-            });
-
-            // Using GET to match known working patterns
-            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+            const res = await fetch(`/api/method/company.company.crm_api.get_client_export_data?names=${encodeURIComponent(JSON.stringify(idsToExport))}`, {
                 method: 'GET',
                 credentials: "include"
             });
@@ -163,32 +146,75 @@ export function ContactReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
-            console.log("Export Data Received:", data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Clients Report');
 
-            if (!data || data.length === 0) {
-                console.warn("Export returned no data");
-                // Fallback: If no data returned, maybe create an empty sheet with headers?
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Contacts");
-                XLSX.writeFile(workbook, "Contact_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Contact_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Contact_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -250,6 +276,7 @@ export function ContactReportView() {
         setCountry('all');
         setState('all');
         setCity('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -287,6 +314,22 @@ export function ContactReportView() {
             setCity('all');
         }
     }, [country, state]);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'client_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'client_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -362,32 +405,24 @@ export function ContactReportView() {
                         />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
-                        <Select
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">State</MenuItem>
-                            {stateOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={stateOptions}
+                            value={state === 'all' ? null : state}
+                            onChange={(e, newValue) => setState(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="State" />}
+                            disabled={country === 'all'}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={state === 'all'}>
-                        <Select
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">City</MenuItem>
-                            {cityOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={cityOptions}
+                            value={city === 'all' ? null : city}
+                            onChange={(e, newValue) => setCity(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="City" />}
+                            disabled={state === 'all'}
+                        />
                     </FormControl>
                     <Autocomplete
                         size="small"
@@ -419,39 +454,53 @@ export function ContactReportView() {
                             />
                         )}
                     />
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateContactPdf({
-                            reportData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Contacts', value: reportData.length },
-                                { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
-                                { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="client_date_desc">Client Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="client_date_asc">Client Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateContactPdf({
+                                reportData: filteredData,
+                                selected,
+                                summary: summaryData.length > 0 ? summaryData : [
+                                    { label: 'Total Contacts', value: reportData.length },
+                                    { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
+                                    { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
@@ -510,7 +559,7 @@ export function ContactReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -528,7 +577,49 @@ export function ContactReportView() {
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.first_name}</TableCell>
-                                                        <TableCell>{row.company_name}</TableCell>
+                                                        <TableCell>
+                                                            {(() => {
+                                                                const names = row.company_name ? row.company_name.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                                                                if (names.length === 0) return '-';
+                                                                return (
+                                                                    <Box sx={{ maxWidth: 260 }}>
+                                                                        <Typography variant="body2" sx={{ fontWeight: 500, display: 'inline' }}>
+                                                                            {names[0]}
+                                                                        </Typography>
+                                                                        {names.length > 1 && (
+                                                                            <Tooltip title={names.slice(1).join(', ')} arrow placement="top">
+                                                                                <Box
+                                                                                    component="span"
+                                                                                    sx={{
+                                                                                        cursor: 'pointer',
+                                                                                        px: 0.8,
+                                                                                        py: 0.2,
+                                                                                        ml: 0.75,
+                                                                                        fontSize: '10px',
+                                                                                        fontWeight: 800,
+                                                                                        borderRadius: '6px',
+                                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                                        color: 'primary.main',
+                                                                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        verticalAlign: 'middle',
+                                                                                        transition: (theme) => theme.transitions.create(['background-color', 'transform', 'box-shadow']),
+                                                                                        '&:hover': {
+                                                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                                            transform: 'scale(1.08)',
+                                                                                            boxShadow: (theme) => `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                                                                        },
+                                                                                    }}
+                                                                                >
+                                                                                    +{names.length - 1}
+                                                                                </Box>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                    </Box>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
                                                         <TableCell>{row.email}</TableCell>
                                                         <TableCell>{row.phone}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -581,12 +672,6 @@ export function ContactReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Contacts"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

@@ -1,11 +1,9 @@
 import type { RouteObject } from 'react-router';
 
 import { lazy, Suspense } from 'react';
-import { varAlpha } from 'minimal-shared/utils';
 import { Outlet, Navigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
-import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { UnreadCountsProvider } from 'src/hooks/unread-counts-context';
@@ -73,6 +71,26 @@ export const WhatsAppTemplateCreatePage = lazy(() => import('src/pages/whatsapp-
 export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-templates/edit'));
 export const WhatsAppTemplateDetailsPage = lazy(() => import('src/pages/whatsapp-templates/details'));
 
+export const MetaAppsListPage = lazy(() => import('src/pages/lead-integration/meta-apps/list'));
+export const MetaAppsCreatePage = lazy(() => import('src/pages/lead-integration/meta-apps/new'));
+export const MetaAppsEditPage = lazy(() => import('src/pages/lead-integration/meta-apps/edit'));
+export const MetaAppsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-apps/details'));
+
+export const MetaPagesListPage = lazy(() => import('src/pages/lead-integration/meta-pages/list'));
+export const MetaPagesCreatePage = lazy(() => import('src/pages/lead-integration/meta-pages/new'));
+export const MetaPagesEditPage = lazy(() => import('src/pages/lead-integration/meta-pages/edit'));
+export const MetaPagesDetailsPage = lazy(() => import('src/pages/lead-integration/meta-pages/details'));
+
+export const MetaFormsListPage = lazy(() => import('src/pages/lead-integration/meta-forms/list'));
+export const MetaFormsCreatePage = lazy(() => import('src/pages/lead-integration/meta-forms/new'));
+export const MetaFormsEditPage = lazy(() => import('src/pages/lead-integration/meta-forms/edit'));
+export const MetaFormsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-forms/details'));
+
+export const MetaWebhookLogsPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/list'));
+export const MetaWebhookLogViewPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/view'));
+export const MetaQueuePage = lazy(() => import('src/pages/lead-integration/meta-queue/list'));
+export const MetaQueueViewPage = lazy(() => import('src/pages/lead-integration/meta-queue/view'));
+
 export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
 export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
 export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
@@ -115,6 +133,8 @@ export const LeaveAllocationReportPage = lazy(() => import('src/pages/reports/le
 export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
 export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
+export const ProposalReportPage = lazy(() => import('src/pages/reports/proposal'));
+export const ProspectsReportPage = lazy(() => import('src/pages/reports/prospects'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const EmployeeDetailsPage = lazy(() => import('src/pages/employee/details'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
@@ -325,6 +345,52 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
+      {
+        path: 'lead-integration',
+        children: [
+          {
+            path: 'meta-apps',
+            children: [
+              { index: true, element: <MetaAppsListPage /> },
+              { path: 'new', element: <MetaAppsCreatePage /> },
+              { path: ':id/edit', element: <MetaAppsEditPage /> },
+              { path: ':id/view', element: <MetaAppsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'meta-pages',
+            children: [
+              { index: true, element: <MetaPagesListPage /> },
+              { path: 'new', element: <MetaPagesCreatePage /> },
+              { path: ':id/edit', element: <MetaPagesEditPage /> },
+              { path: ':id/view', element: <MetaPagesDetailsPage /> },
+            ],
+          },
+          {
+            path: 'meta-forms',
+            children: [
+              { index: true, element: <MetaFormsListPage /> },
+              { path: 'new', element: <MetaFormsCreatePage /> },
+              { path: ':id/edit', element: <MetaFormsEditPage /> },
+              { path: ':id/view', element: <MetaFormsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'webhook-logs',
+            children: [
+              { index: true, element: <MetaWebhookLogsPage /> },
+              { path: ':id/view', element: <MetaWebhookLogViewPage /> },
+            ],
+          },
+          {
+            path: 'meta-queue',
+            children: [
+              { index: true, element: <MetaQueuePage /> },
+              { path: ':id/view', element: <MetaQueueViewPage /> },
+            ],
+          },
+        ],
+      },
       { path: 'blog', element: <BlogPage /> },
 
       {
@@ -443,6 +509,8 @@ export const routesSection: RouteObject[] = [
           { path: 'daily-log', element: <DailyLogReportPage /> },
           { path: 'task-manager', element: <TaskReportPage /> },
           { path: 'salary-slip', element: <SalarySlipReportPage /> },
+          { path: 'proposal', element: <ProposalReportPage /> },
+          { path: 'prospects', element: <ProspectsReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

@@ -31,6 +31,7 @@ export interface Lead {
     interest_level?: 'High' | 'Medium' | 'Low';
     phone_numbers?: LeadPhoneRow[];
     emails?: LeadEmailRow[];
+    modified?: string;
 }
 
 export async function fetchLeads(params: {
@@ -94,7 +95,8 @@ export async function fetchLeads(params: {
             "remarks",
             "interest_level",
             "owner",
-            "creation"
+            "creation",
+            "modified"
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),

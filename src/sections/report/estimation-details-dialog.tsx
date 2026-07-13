@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
@@ -93,7 +94,22 @@ export function EstimationDetailsDialog({ open, onClose, estimationId }: Props) 
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                 }}
                             >
-                                <DetailItem label="Customer" value={estimation.customer_name} icon="solar:user-bold" />
+                                <DetailItem
+                                    label="Client"
+                                    value={
+                                        <Stack spacing={0.25}>
+                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {estimation.customer_name || estimation.client_name || '-'}
+                                            </Typography>
+                                            {estimation.client_name && (
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                    {estimation.client_name}
+                                                </Typography>
+                                            )}
+                                        </Stack>
+                                    }
+                                    icon="solar:user-bold"
+                                />
                                 <DetailItem label="Ref No" value={estimation.ref_no} icon="solar:tag-bold" />
                                 <DetailItem label="Estimate Date" value={estimation.estimate_date} icon="solar:calendar-date-bold" />
                                 <DetailItem label="Billing Name" value={estimation.billing_name} icon="solar:bill-list-bold" />
@@ -190,7 +206,7 @@ function SectionHeader({ title, icon, noMargin = false }: { title: string; icon:
     );
 }
 
-function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: string | number | null; icon: string; color?: string }) {
+function DetailItem({ label, value, icon, color = 'text.primary' }: { label: string; value?: React.ReactNode; icon: string; color?: string }) {
     return (
         <Box>
             <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
@@ -198,9 +214,9 @@ function DetailItem({ label, value, icon, color = 'text.primary' }: { label: str
             </Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Iconify icon={icon as any} width={16} sx={{ color: 'text.disabled' }} />
-                <Typography variant="body2" sx={{ fontWeight: 700, color }}>
+                <Box sx={{ display: 'inline-flex', flexDirection: 'column', fontWeight: 700, color }}>
                     {value || '-'}
-                </Typography>
+                </Box>
             </Box>
         </Box>
     );

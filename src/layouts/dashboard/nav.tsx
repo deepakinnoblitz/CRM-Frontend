@@ -52,6 +52,14 @@ const isRouteActive = (itemPath: string, currentFullPath: string) => {
   return true;
 };
 
+const hasActiveChild = (item: any, currentFullPath: string): boolean => {
+  if (isRouteActive(item.path, currentFullPath)) return true;
+  if (item.children) {
+    return item.children.some((child: any) => hasActiveChild(child, currentFullPath));
+  }
+  return false;
+};
+
 export type NavContentProps = {
   data: NavItem[];
   slots?: {
@@ -177,6 +185,194 @@ export function NavContent({ data, slots, sx }: Omit<NavContentProps, 'workspace
 
 // ----------------------------------------------------------------------
 
+function NavListSubItem({ child, fullPath }: { child: any; fullPath: string }) {
+  const [open, setOpen] = useState(false);
+
+  const handleToggle = useCallback(() => {
+    setOpen((prev) => !prev);
+  }, []);
+
+  const isChildActived = hasActiveChild(child, fullPath);
+
+  if (child.children) {
+    return (
+      <ListItem disableGutters disablePadding sx={{ display: 'block' }}>
+        <ListItemButton
+          onClick={handleToggle}
+          sx={[
+            (theme) => ({
+              pl: 1.25,
+              py: 0.75,
+              borderRadius: 1,
+              typography: 'body2',
+              fontSize: '0.9375rem',
+              color: theme.vars.palette.text.secondary,
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              '&:hover': {
+                bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+                color: theme.vars.palette.text.primary,
+                transform: 'translateX(4px)',
+              },
+              ...(isChildActived && {
+                fontWeight: 'fontWeightSemiBold',
+                color: '#08a3cd',
+                bgcolor: varAlpha('8 163 205', 0.08),
+              }),
+            }),
+          ]}
+        >
+          {child.icon ? (
+            <Box component="span" sx={{ width: 20, height: 20, mr: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+              {child.icon}
+            </Box>
+          ) : (
+            <Box
+              component="span"
+              sx={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                bgcolor: 'currentColor',
+                mr: 2,
+                opacity: 0.4,
+                transition: 'all 0.2s',
+                ...(isChildActived && {
+                  opacity: 1,
+                  transform: 'scale(1.3)',
+                }),
+              }}
+            />
+          )}
+          <Box component="span" sx={{ flexGrow: 1 }}>{child.title}</Box>
+          <Iconify
+            width={16}
+            icon={open ? 'eva:arrow-ios-downward-fill' : 'eva:arrow-ios-forward-fill'}
+            sx={{ ml: 1, flexShrink: 0, transition: 'transform 0.2s' }}
+          />
+        </ListItemButton>
+
+        <Collapse in={open} timeout="auto" unmountOnExit>
+          <List disablePadding sx={{
+            pl: 3,
+            mt: 0.5,
+            gap: 0.5,
+            display: 'flex',
+            flexDirection: 'column',
+          }}>
+            {child.children.map((subChild: any) => {
+              const isSubChildActived = isRouteActive(subChild.path, fullPath);
+              return (
+                <ListItemButton
+                  key={subChild.title}
+                  component={RouterLink}
+                  href={subChild.path}
+                  sx={[
+                    (theme) => ({
+                      pl: 1.25,
+                      py: 0.6,
+                      borderRadius: 1,
+                      typography: 'body2',
+                      fontSize: '0.8875rem',
+                      color: theme.vars.palette.text.secondary,
+                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+                        color: theme.vars.palette.text.primary,
+                        transform: 'translateX(4px)',
+                      },
+                      ...(isSubChildActived && {
+                        fontWeight: 'fontWeightSemiBold',
+                        color: '#08a3cd',
+                        bgcolor: varAlpha('8 163 205', 0.08),
+                      }),
+                    }),
+                  ]}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      width: 4,
+                      height: 4,
+                      borderRadius: '50%',
+                      bgcolor: 'currentColor',
+                      mr: 2,
+                      opacity: 0.4,
+                      transition: 'all 0.2s',
+                      ...(isSubChildActived && {
+                        opacity: 1,
+                        transform: 'scale(1.3)',
+                      }),
+                    }}
+                  />
+                  {subChild.title}
+                </ListItemButton>
+              );
+            })}
+          </List>
+        </Collapse>
+      </ListItem>
+    );
+  }
+
+  return (
+    <ListItemButton
+      component={RouterLink}
+      href={child.path}
+      sx={[
+        (theme) => ({
+          pl: 1.25,
+          py: 0.75,
+          borderRadius: 1,
+          typography: 'body2',
+          fontSize: '0.8575rem',
+          color: theme.vars.palette.text.secondary,
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          '&:hover': {
+            bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+            color: theme.vars.palette.text.primary,
+            transform: 'translateX(4px)',
+          },
+          ...(isChildActived && {
+            fontWeight: 'fontWeightSemiBold',
+            color: '#08a3cd',
+            bgcolor: varAlpha('8 163 205', 0.08),
+          }),
+        }),
+      ]}
+    >
+      {child.icon ? (
+        <Box component="span" sx={{ width: 20, height: 20, mr: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'inherit' }}>
+          {child.icon}
+        </Box>
+      ) : (
+        <Box
+          component="span"
+          sx={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            bgcolor: 'currentColor',
+            mr: 2,
+            opacity: 0.4,
+            transition: 'all 0.2s',
+            ...(isChildActived && {
+              opacity: 1,
+              transform: 'scale(1.3)',
+              boxShadow: (theme) => `0 0 0 3px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.2)}`,
+            }),
+          }}
+        />
+      )}
+      {child.title}
+      {child.info && (
+        <Box component="span" sx={{ ml: 2 }}>
+          {child.info}
+        </Box>
+      )}
+    </ListItemButton>
+  );
+}
+
 function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
   const [open, setOpen] = useState(false);
 
@@ -184,8 +380,7 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
     setOpen((prev) => !prev);
   }, []);
 
-  const isActived = isRouteActive(item.path, fullPath) ||
-    (item.children && item.children.some(child => isRouteActive(child.path, fullPath)));
+  const isActived = hasActiveChild(item, fullPath);
 
   const renderContent = (
     <ListItemButton
@@ -293,63 +488,9 @@ function NavListItem({ item, fullPath }: { item: NavItem; fullPath: string }) {
               borderRadius: 1,
             }
           }}>
-            {item.children.map((child: any) => {
-              const isChildActived = isRouteActive(child.path, fullPath);
-
-              return (
-                <ListItemButton
-                  key={child.title}
-                  component={RouterLink}
-                  href={child.path}
-                  sx={[
-                    (theme) => ({
-                      pl: 1.25,
-                      py: 0.75,
-                      borderRadius: 1,
-                      typography: 'body2',
-                      fontSize: '0.875rem',
-                      color: theme.vars.palette.text.secondary,
-                      transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                      '&:hover': {
-                        bgcolor: varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
-                        color: theme.vars.palette.text.primary,
-                        transform: 'translateX(4px)',
-                      },
-                      ...(isChildActived && {
-                        fontWeight: 'fontWeightSemiBold',
-                        color: '#08a3cd',
-                        bgcolor: varAlpha('8 163 205', 0.08),
-                      }),
-                    }),
-                  ]}
-                >
-                  <Box
-                    component="span"
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      bgcolor: 'currentColor',
-                      mr: 2,
-                      opacity: 0.4,
-                      transition: 'all 0.2s',
-                      ...(isChildActived && {
-                        opacity: 1,
-                        transform: 'scale(1.3)',
-                        boxShadow: (theme) => `0 0 0 3px ${varAlpha(theme.vars.palette.primary.mainChannel, 0.2)}`,
-                      }),
-                    }}
-                  />
-                  {child.title}
-
-                  {child.info && (
-                    <Box component="span" sx={{ ml: 2 }}>
-                      {child.info}
-                    </Box>
-                  )}
-                </ListItemButton>
-              );
-            })}
+            {item.children.map((child: any) => (
+              <NavListSubItem key={child.title} child={child} fullPath={fullPath} />
+            ))}
           </List>
         </Collapse>
       )}

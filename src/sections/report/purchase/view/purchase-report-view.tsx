@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -8,6 +9,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -16,6 +19,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
@@ -27,6 +31,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -37,9 +43,23 @@ import { generatePurchasePdf } from 'src/components/export/pdf/purchase-pdf-gene
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
-
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function PurchaseReportView() {
     const { user } = useAuth();
@@ -54,6 +74,7 @@ export function PurchaseReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [vendor, setVendor] = useState<any>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string }[]>([]);
@@ -95,50 +116,98 @@ export function PurchaseReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const filters: any[] = [];
-            if (selected.length > 0) {
-                filters.push(['Purchase', 'name', 'in', selected]);
-            } else {
-                if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
-                if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
-                if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
-                if (user?.has_crm_permission) filters.push(['Purchase', 'owner', '=', user.name]);
-            }
+            const data = selected.length > 0
+                ? filteredData.filter((row: any) => selected.includes(row.name))
+                : filteredData;
 
-            const query = new URLSearchParams({
-                doctype: "Purchase",
-                fields: JSON.stringify(selectedFields),
-                filters: JSON.stringify(filters),
-                limit_page_length: "99999",
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_purchase_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Purchase export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Purchase Report');
+
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+            }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    
+                    if (f.fieldname === 'name') {
+                        val = row.name;
+                    } else if (f.fieldname === 'vendor_name') {
+                        // Keep the existing Vendor (Name + ID) formatting intact
+                        val = row.vendor_real_name ? `${row.vendor_real_name} (${row.vendor_name || ''})` : (row.vendor_name || '-');
+                    } else if (f.fieldname === 'bill_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
             });
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
-            if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Purchases");
-                XLSX.writeFile(workbook, "Purchase_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Purchase_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Purchase_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
         } catch (error) {
             console.error(error);
         } finally {
@@ -198,6 +267,7 @@ export function PurchaseReportView() {
         setFromDate(null);
         setToDate(null);
         setVendor(null);
+        setSortBy('modified_desc');
     };
 
     useEffect(() => {
@@ -205,6 +275,28 @@ export function PurchaseReportView() {
             setVendorOptions(contacts);
         });
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'purchase_date_desc') {
+            return dayjs(b.bill_date).diff(dayjs(a.bill_date));
+        }
+        if (sortBy === 'purchase_date_asc') {
+            return dayjs(a.bill_date).diff(dayjs(b.bill_date));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -305,11 +397,25 @@ export function PurchaseReportView() {
                             </li>
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="purchase_date_desc">Purchase Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="purchase_date_asc">Purchase Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
+                        onClick={handleExport}
                         disabled={reportData.length === 0}
                         sx={{ mr: 1 }}
                     >
@@ -319,7 +425,7 @@ export function PurchaseReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generatePurchasePdf({
-                            reportData,
+                            reportData: filteredData,
                             selected,
                             summary: summaryData.length > 0 ? summaryData : [
                                 { label: 'Total Purchase Bills', value: reportData.length },
@@ -385,7 +491,6 @@ export function PurchaseReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Vendor</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill No</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Qty</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
@@ -394,13 +499,13 @@ export function PurchaseReportView() {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                 <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -418,12 +523,22 @@ export function PurchaseReportView() {
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
                                                         <TableCell>{row.name}</TableCell>
-                                                        <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
+                                                        <TableCell align="left" sx={{ maxWidth: 240 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.vendor_real_name || row.vendor_name || '-'}
+                                                                </Typography>
+                                                                {row.vendor_name && (
+                                                                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                        {row.vendor_name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </TableCell>
                                                         <TableCell>{row.bill_no}</TableCell>
                                                         <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>{row.quantity}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 700 }}>{renderCurrency(row.grand_total, '16px')}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
@@ -434,7 +549,7 @@ export function PurchaseReportView() {
                                             })}
                                             {reportData.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                         <Stack spacing={1} alignItems="center">
                                                             <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
@@ -461,12 +576,6 @@ export function PurchaseReportView() {
             </Stack>
 
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Purchase"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }
@@ -533,7 +642,7 @@ function SummaryCard({ item }: { item: any }) {
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
                         {item.datatype === 'Currency' || (typeof item.value === 'number' && item.label.toLowerCase().includes('amount'))
-                            ? `₹${item.value?.toLocaleString()}`
+                            ? renderCurrency(item.value, '24px')
                             : item.value?.toLocaleString()}
                     </Typography>
                 </Box>
