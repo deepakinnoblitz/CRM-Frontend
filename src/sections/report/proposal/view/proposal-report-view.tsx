@@ -264,12 +264,32 @@ export function ProposalReportView() {
             // Populate rows dynamically
             data.forEach((row: any) => {
                 const rowDataObj: Record<string, any> = {};
+                let maxLines = 1;
                 validFields.forEach(f => {
                     let val = row[f.fieldname];
                     if (f.fieldname === 'proposal_date' && val) {
                         val = dayjs(val).format('YYYY-MM-DD');
                     } else if (f.fieldname === 'reference_no' && !val) {
                         val = row.reference_no || row.name;
+                    }
+
+                    if ((f.fieldname === 'description' || f.fieldname === 'terms_and_conditions') && val) {
+                        // Strip HTML tags and entities
+                        val = val
+                            .replace(/<[^>]*>/g, '')
+                            .replace(/&nbsp;/g, ' ')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&quot;/g, '"')
+                            .replace(/&#39;/g, "'")
+                            .trim();
+                        
+                        // Estimate number of wrapped lines for a ~50 char line width
+                        const lineCount = Math.max(1, Math.ceil(val.length / 50));
+                        if (lineCount > maxLines) {
+                            maxLines = lineCount;
+                        }
                     }
 
                     if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
@@ -280,6 +300,13 @@ export function ProposalReportView() {
                 rowDataObj['attachments'] = ''; // populated dynamically below
 
                 const excelRow = sheet.addRow(rowDataObj);
+                
+                // Adjust row height based on estimated text lines
+                if (maxLines > 1) {
+                    excelRow.height = maxLines * 15 + 10;
+                } else {
+                    excelRow.height = 20;
+                }
 
                 const propFiles = filesMap[row.name] || [];
                 const attachmentsCell = excelRow.getCell('attachments');
@@ -301,6 +328,13 @@ export function ProposalReportView() {
             // Auto-fit column widths
             sheet.columns?.forEach((column: any) => {
                 if (!column) return;
+                
+                const isLongTextCol = (column.key === 'description' || column.key === 'terms_and_conditions');
+                if (isLongTextCol) {
+                    column.width = 55;
+                    return;
+                }
+
                 let maxLen = 0;
                 if (column.eachCell) {
                     column.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -323,7 +357,19 @@ export function ProposalReportView() {
                 if (rowNumber > 1) {
                     for (let i = 1; i <= colCount; i++) {
                         const cell = row.getCell(i);
-                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        const columnKey = sheet.columns?.[i - 1]?.key;
+                        
+                        const isLongTextCol = (columnKey === 'description' || columnKey === 'terms_and_conditions');
+                        if (isLongTextCol) {
+                            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                        } else {
+                            if (columnKey === 'attachments' && cell.alignment) {
+                                // keep existing attachment alignment
+                            } else {
+                                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                            }
+                        }
+
                         if (rowNumber % 2 === 0) {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
                         }
