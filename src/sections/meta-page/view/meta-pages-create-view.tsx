@@ -177,14 +177,14 @@ export function MetaPagesCreateView() {
                         <FormControlLabel
                             control={
                                 <CustomSwitch
-                                    checked={webhookEnabled}
-                                    onChange={(e) => setWebhookEnabled(e.target.checked)}
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Webhook Enabled</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable webhooks for lead streams</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Active</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this page configuration</Typography>
                                 </Stack>
                             }
                             sx={{
@@ -194,14 +194,14 @@ export function MetaPagesCreateView() {
                         <FormControlLabel
                             control={
                                 <CustomSwitch
-                                    checked={isActive}
-                                    onChange={(e) => setIsActive(e.target.checked)}
+                                    checked={webhookEnabled}
+                                    onChange={(e) => setWebhookEnabled(e.target.checked)}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Active</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this page configuration</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Webhook Enabled</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable webhooks for lead streams</Typography>
                                 </Stack>
                             }
                             sx={{

@@ -197,13 +197,13 @@ export function MetaAppsEditView() {
                 <Stack spacing={3}>
                     <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                         <FormControlLabel
-                            control={<CustomSwitch checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />}
-                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Default App</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Use as the default Meta integration</Typography></Stack>}
+                            control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />}
+                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this app for processing leads</Typography></Stack>}
                             sx={{ ml: 0.5 }}
                         />
                         <FormControlLabel
-                            control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />}
-                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this app for processing leads</Typography></Stack>}
+                            control={<CustomSwitch checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />}
+                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Default App</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Use as the default Meta integration</Typography></Stack>}
                             sx={{ ml: 0.5 }}
                         />
                         <TextField

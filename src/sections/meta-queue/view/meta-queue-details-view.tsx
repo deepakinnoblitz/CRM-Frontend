@@ -49,6 +49,32 @@ function ErrorBlock({ value }: { value?: string }) {
             </Box>
         );
     }
+
+    // Try parsing Facebook Graph API errors from string response
+    let parsedContent = value;
+    let isFormattedJson = false;
+
+    // Check if the value contains a JSON string like: Facebook Graph API responded with status 400: {"error":...}
+    const jsonMatch = value.match(/Facebook Graph API responded with status \d+: (\{.*\})/);
+    if (jsonMatch && jsonMatch[1]) {
+        try {
+            const parsedJson = JSON.parse(jsonMatch[1]);
+            parsedContent = `Facebook Graph API Error:\n` + JSON.stringify(parsedJson, null, 2);
+            isFormattedJson = true;
+        } catch (e) {
+            // Fail silently and use original string
+        }
+    } else {
+        // Try parsing the whole value as JSON if possible
+        try {
+            const parsedJson = JSON.parse(value);
+            parsedContent = JSON.stringify(parsedJson, null, 2);
+            isFormattedJson = true;
+        } catch (e) {
+            // Keep original string
+        }
+    }
+
     return (
         <Box
             component="pre"
@@ -67,7 +93,7 @@ function ErrorBlock({ value }: { value?: string }) {
                 overflowY: 'auto',
             }}
         >
-            {value}
+            {parsedContent}
         </Box>
     );
 }
