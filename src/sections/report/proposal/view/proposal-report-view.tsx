@@ -181,17 +181,12 @@ export function ProposalReportView() {
             if (fromDate) listFilters.push(['proposal_date', '>=', fromDate.format('YYYY-MM-DD')]);
             if (toDate) listFilters.push(['proposal_date', '<=', toDate.format('YYYY-MM-DD')]);
 
-            const fieldsToFetch = [
-                'name',
-                'proposal_title',
-                'reference_no',
-                'lead',
-                'lead_name',
-                'company_name',
-                'proposal_date',
-                'status',
-                'total_attachments'
-            ];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_proposal_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Proposal export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const queryParams = new URLSearchParams({
                 doctype: "Proposal",
@@ -213,16 +208,11 @@ export function ProposalReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Proposal Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Proposal No', key: 'proposal_no' },
-                { header: 'Proposal Title', key: 'proposal_title' },
-                { header: 'Lead', key: 'lead' },
-                { header: 'Company Name', key: 'company_name' },
-                { header: 'Proposal Date', key: 'proposal_date' },
-                { header: 'Status', key: 'status' },
-                { header: 'Attachments', key: 'attachments' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -235,17 +225,23 @@ export function ProposalReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             data.forEach((row: any) => {
-                sheet.addRow({
-                    proposal_no: row.reference_no || row.name || '-',
-                    proposal_title: row.proposal_title || '-',
-                    lead: row.lead_name || row.lead || '-',
-                    company_name: row.company_name || '-',
-                    proposal_date: row.proposal_date ? dayjs(row.proposal_date).format('YYYY-MM-DD') : '-',
-                    status: row.status || '-',
-                    attachments: row.total_attachments !== undefined ? row.total_attachments : 0
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'proposal_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    } else if (f.fieldname === 'reference_no' && !val) {
+                        val = row.reference_no || row.name;
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths

@@ -9,6 +9,7 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -125,29 +126,13 @@ export function ContactReportView() {
             }
 
             const filters = [['name', 'in', idsToExport]];
-            const fieldsToFetch = [
-                'name',
-                'first_name',
-                'company_name',
-                'email',
-                'phone',
-                'country',
-                'state',
-                'city',
-                'source_lead',
-                'owner_name',
-                'creation',
-                'modified'
-            ];
 
-            const queryParams = new URLSearchParams({
-                doctype: "Contacts",
-                fields: JSON.stringify(fieldsToFetch),
-                filters: JSON.stringify(filters),
-                limit_page_length: "99999"
-            });
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_client_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Contacts export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+            const res = await fetch(`/api/method/company.company.crm_api.get_client_export_data?names=${encodeURIComponent(JSON.stringify(idsToExport))}`, {
                 method: 'GET',
                 credentials: "include"
             });
@@ -164,16 +149,11 @@ export function ContactReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Clients Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Name', key: 'first_name' },
-                { header: 'Company', key: 'company_name' },
-                { header: 'Email', key: 'email' },
-                { header: 'Phone', key: 'phone' },
-                { header: 'Location', key: 'location' },
-                { header: 'Source', key: 'source_lead' },
-                { header: 'Owner', key: 'owner_name' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -186,17 +166,17 @@ export function ContactReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             data.forEach((row: any) => {
-                sheet.addRow({
-                    first_name: row.first_name || '-',
-                    company_name: row.company_name || '-',
-                    email: row.email || '-',
-                    phone: row.phone || '-',
-                    location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
-                    source_lead: row.source_lead || '-',
-                    owner_name: row.owner_name || '-'
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths
@@ -597,7 +577,49 @@ export function ContactReportView() {
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.first_name}</TableCell>
-                                                        <TableCell>{row.company_name}</TableCell>
+                                                        <TableCell>
+                                                            {(() => {
+                                                                const names = row.company_name ? row.company_name.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+                                                                if (names.length === 0) return '-';
+                                                                return (
+                                                                    <Box sx={{ maxWidth: 260 }}>
+                                                                        <Typography variant="body2" sx={{ fontWeight: 500, display: 'inline' }}>
+                                                                            {names[0]}
+                                                                        </Typography>
+                                                                        {names.length > 1 && (
+                                                                            <Tooltip title={names.slice(1).join(', ')} arrow placement="top">
+                                                                                <Box
+                                                                                    component="span"
+                                                                                    sx={{
+                                                                                        cursor: 'pointer',
+                                                                                        px: 0.8,
+                                                                                        py: 0.2,
+                                                                                        ml: 0.75,
+                                                                                        fontSize: '10px',
+                                                                                        fontWeight: 800,
+                                                                                        borderRadius: '6px',
+                                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                                        color: 'primary.main',
+                                                                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                                                                                        display: 'inline-flex',
+                                                                                        alignItems: 'center',
+                                                                                        verticalAlign: 'middle',
+                                                                                        transition: (theme) => theme.transitions.create(['background-color', 'transform', 'box-shadow']),
+                                                                                        '&:hover': {
+                                                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                                            transform: 'scale(1.08)',
+                                                                                            boxShadow: (theme) => `0 2px 4px ${alpha(theme.palette.primary.main, 0.2)}`,
+                                                                                        },
+                                                                                    }}
+                                                                                >
+                                                                                    +{names.length - 1}
+                                                                                </Box>
+                                                                            </Tooltip>
+                                                                        )}
+                                                                    </Box>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
                                                         <TableCell>{row.email}</TableCell>
                                                         <TableCell>{row.phone}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
