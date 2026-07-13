@@ -71,6 +71,11 @@ export const WhatsAppTemplateCreatePage = lazy(() => import('src/pages/whatsapp-
 export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-templates/edit'));
 export const WhatsAppTemplateDetailsPage = lazy(() => import('src/pages/whatsapp-templates/details'));
 
+export const MetaAppsListPage = lazy(() => import('src/pages/lead-integration/meta-apps/list'));
+export const MetaAppsCreatePage = lazy(() => import('src/pages/lead-integration/meta-apps/new'));
+export const MetaAppsEditPage = lazy(() => import('src/pages/lead-integration/meta-apps/edit'));
+export const MetaAppsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-apps/details'));
+
 export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
 export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
 export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
@@ -325,6 +330,20 @@ export const routesSection: RouteObject[] = [
         ],
       },
       { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
+      {
+        path: 'lead-integration',
+        children: [
+          {
+            path: 'meta-apps',
+            children: [
+              { index: true, element: <MetaAppsListPage /> },
+              { path: 'new', element: <MetaAppsCreatePage /> },
+              { path: ':id/edit', element: <MetaAppsEditPage /> },
+              { path: ':id/view', element: <MetaAppsDetailsPage /> },
+            ],
+          },
+        ],
+      },
       { path: 'blog', element: <BlogPage /> },
 
       {
