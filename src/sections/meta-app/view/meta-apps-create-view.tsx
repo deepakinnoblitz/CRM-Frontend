@@ -168,14 +168,14 @@ export function MetaAppsCreateView() {
                         <FormControlLabel
                             control={
                                 <CustomSwitch
-                                    checked={isDefault}
-                                    onChange={(e) => setIsDefault(e.target.checked)}
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Default App</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Use as the default Meta integration</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Active</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this app for processing leads</Typography>
                                 </Stack>
                             }
                             sx={{
@@ -185,14 +185,14 @@ export function MetaAppsCreateView() {
                         <FormControlLabel
                             control={
                                 <CustomSwitch
-                                    checked={isActive}
-                                    onChange={(e) => setIsActive(e.target.checked)}
+                                    checked={isDefault}
+                                    onChange={(e) => setIsDefault(e.target.checked)}
                                 />
                             }
                             label={
                                 <Stack spacing={0.2}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Active</Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this app for processing leads</Typography>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Default App</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Use as the default Meta integration</Typography>
                                 </Stack>
                             }
                             sx={{

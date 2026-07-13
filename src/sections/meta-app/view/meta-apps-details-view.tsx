@@ -226,7 +226,7 @@ export function MetaAppsDetailsView() {
                                         navigator.clipboard.writeText(app.webhook_url || '');
                                         enqueueSnackbar('Webhook URL copied to clipboard!', { variant: 'success' });
                                     }}
-                                    sx={{ color: 'primary.main' }}
+                                    sx={{ color: '#08a3cd' }}
                                     title="Copy Webhook URL"
                                 >
                                     <Iconify icon={"solar:copy-bold" as any} width={18} />
