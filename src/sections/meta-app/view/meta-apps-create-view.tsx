@@ -1,0 +1,287 @@
+import { useState } from 'react';
+import { IoMdArrowBack } from 'react-icons/io';
+
+import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
+import Checkbox from '@mui/material/Checkbox';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
+import LoadingButton from '@mui/lab/LoadingButton';
+import FormControl from '@mui/material/FormControl';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControlLabel from '@mui/material/FormControlLabel';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { createMetaApp } from 'src/api/meta-app';
+import { DashboardContent } from 'src/layouts/dashboard';
+
+import { Iconify } from 'src/components/iconify';
+
+// ----------------------------------------------------------------------
+
+const GRAPH_API_VERSIONS = ['v23.0', 'v22.0', 'v21.0', 'v20.0'];
+const APP_STATUS_OPTIONS = ['Development', 'Production'];
+
+// ----------------------------------------------------------------------
+
+export function MetaAppsCreateView() {
+    const router = useRouter();
+    const [isSaving, setIsSaving] = useState(false);
+
+    const [appName, setAppName] = useState('');
+    const [appId, setAppId] = useState('');
+    const [appSecret, setAppSecret] = useState('');
+    const [verifyToken, setVerifyToken] = useState('');
+    const [graphApiVersion, setGraphApiVersion] = useState('v23.0');
+    const [businessManagerId, setBusinessManagerId] = useState('');
+    const [appStatus, setAppStatus] = useState('Development');
+    const [webhookSecret, setWebhookSecret] = useState('');
+    const [signatureValidation, setSignatureValidation] = useState(true);
+    const [isDefault, setIsDefault] = useState(false);
+    const [isActive, setIsActive] = useState(true);
+
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+    const [errors, setErrors] = useState<{ appName?: boolean; appId?: boolean; appSecret?: boolean; verifyToken?: boolean }>({});
+
+    const handleSave = async () => {
+        const newErrors: typeof errors = {};
+        if (!appName.trim()) newErrors.appName = true;
+        if (!appId.trim()) newErrors.appId = true;
+        if (!appSecret.trim()) newErrors.appSecret = true;
+        if (!verifyToken.trim()) newErrors.verifyToken = true;
+        setErrors(newErrors);
+        if (Object.keys(newErrors).length > 0) return;
+
+        setIsSaving(true);
+        try {
+            await createMetaApp({
+                app_name: appName.trim(),
+                app_id: appId.trim(),
+                app_secret: appSecret.trim(),
+                verify_token: verifyToken.trim(),
+                graph_api_version: graphApiVersion,
+                business_manager_id: businessManagerId.trim() || undefined,
+                app_status: appStatus,
+                webhook_secret: webhookSecret.trim() || undefined,
+                signature_validation: signatureValidation ? 1 : 0,
+                is_default: isDefault ? 1 : 0,
+                is_active: isActive ? 1 : 0,
+            });
+            sessionStorage.setItem('meta_app_success_message', 'Meta App created successfully.');
+            router.push('/lead-integration/meta-apps');
+        } catch (error: any) {
+            setSnackbar({ open: true, severity: 'error', message: error.message || 'Failed to create Meta App.' });
+            setIsSaving(false);
+        }
+    };
+
+    return (
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+            {/* Header */}
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+                <Stack spacing={0.5}>
+                    <Typography variant="h4" sx={{ fontWeight: 800 }}>
+                        Create New Meta App
+                    </Typography>
+                </Stack>
+                <Stack direction="row" spacing={2}>
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => router.back()}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
+                    >
+                        Go Back
+                    </Button>
+                    <LoadingButton
+                        variant="contained"
+                        onClick={handleSave}
+                        loading={isSaving}
+                        sx={{ borderRadius: 1.5, bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        Save Meta App
+                    </LoadingButton>
+                </Stack>
+            </Stack>
+
+            {snackbar.open && (
+                <Box sx={{ mb: 3, p: 2, borderRadius: 1.5, bgcolor: snackbar.severity === 'error' ? 'error.lighter' : 'success.lighter', color: snackbar.severity === 'error' ? 'error.dark' : 'success.dark', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Iconify icon={snackbar.severity === 'error' ? 'solar:danger-bold' : 'solar:check-circle-bold'} />
+                    <Typography variant="body2">{snackbar.message}</Typography>
+                    <Box sx={{ flexGrow: 1 }} />
+                    <Button size="small" onClick={() => setSnackbar(p => ({ ...p, open: false }))} sx={{ minWidth: 0, color: 'inherit' }}>✕</Button>
+                </Box>
+            )}
+
+            <Card sx={{ p: 3 }}>
+                {/* Section: Credentials */}
+                <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
+                    <Iconify icon={"logos:meta-icon" as any} width={18} />
+                    <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
+                        Meta Developer App Credentials
+                    </Typography>
+                </Stack>
+
+                <Stack spacing={3}>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={isDefault}
+                                    onChange={(e) => setIsDefault(e.target.checked)}
+                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Is Default App</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Use as the default Meta integration</Typography>
+                                </Stack>
+                            }
+                        />
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
+                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Is Active</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Enable this app for processing leads</Typography>
+                                </Stack>
+                            }
+                        />
+                        <TextField
+                            fullWidth
+                            label="App Name"
+                            required
+                            value={appName}
+                            onChange={(e) => { setAppName(e.target.value); if (e.target.value) setErrors(p => ({ ...p, appName: false })); }}
+                            error={errors.appName}
+                            helperText={errors.appName ? 'App Name is required' : 'A unique name to identify this app'}
+                        />
+                        <TextField
+                            fullWidth
+                            label="App ID"
+                            required
+                            value={appId}
+                            onChange={(e) => { setAppId(e.target.value); if (e.target.value) setErrors(p => ({ ...p, appId: false })); }}
+                            error={errors.appId}
+                            helperText={errors.appId ? 'App ID is required' : 'Meta Developer App ID'}
+                            inputProps={{ style: { fontFamily: 'monospace' } }}
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <TextField
+                            fullWidth
+                            label="App Secret"
+                            required
+                            type="password"
+                            value={appSecret}
+                            onChange={(e) => { setAppSecret(e.target.value); if (e.target.value) setErrors(p => ({ ...p, appSecret: false })); }}
+                            error={errors.appSecret}
+                            helperText={errors.appSecret ? 'App Secret is required' : 'Keep this confidential'}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Verify Token"
+                            required
+                            type="password"
+                            value={verifyToken}
+                            onChange={(e) => { setVerifyToken(e.target.value); if (e.target.value) setErrors(p => ({ ...p, verifyToken: false })); }}
+                            error={errors.verifyToken}
+                            helperText={errors.verifyToken ? 'Verify Token is required' : 'Token for webhook verification'}
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <TextField
+                            fullWidth
+                            label="Business Manager ID"
+                            value={businessManagerId}
+                            onChange={(e) => setBusinessManagerId(e.target.value)}
+                            helperText="Optional: Meta Business Manager ID"
+                            inputProps={{ style: { fontFamily: 'monospace' } }}
+                        />
+                        <TextField
+                            fullWidth
+                            label="Webhook Secret"
+                            type="password"
+                            value={webhookSecret}
+                            onChange={(e) => setWebhookSecret(e.target.value)}
+                            helperText="Used for HMAC-SHA256 hash validation"
+                        />
+                    </Box>
+
+                    {/* Divider + Configuration */}
+                    <Divider />
+
+                    <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
+                        <Iconify icon={"solar:settings-bold" as any} width={18} sx={{ color: '#08a3cd' }} />
+                        <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
+                            Configuration
+                        </Typography>
+                    </Stack>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <FormControl fullWidth>
+                            <InputLabel>Graph API Version</InputLabel>
+                            <Select
+                                value={graphApiVersion}
+                                onChange={(e) => setGraphApiVersion(e.target.value)}
+                                label="Graph API Version"
+                            >
+                                {GRAPH_API_VERSIONS.map((v) => (
+                                    <MenuItem key={v} value={v}>{v}</MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Meta Graph API version to use</FormHelperText>
+                        </FormControl>
+
+                        <FormControl fullWidth>
+                            <InputLabel>App Status</InputLabel>
+                            <Select
+                                value={appStatus}
+                                onChange={(e) => setAppStatus(e.target.value)}
+                                label="App Status"
+                            >
+                                {APP_STATUS_OPTIONS.map((s) => (
+                                    <MenuItem key={s} value={s}>{s}</MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Set app environment mode</FormHelperText>
+                        </FormControl>
+
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={signatureValidation}
+                                    onChange={(e) => setSignatureValidation(e.target.checked)}
+                                    sx={{ '&.Mui-checked': { color: '#08a3cd' } }}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600 }}>Enable Signature Validation</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>Validate webhook payload signatures</Typography>
+                                </Stack>
+                            }
+                        />
+                    </Box>
+                </Stack>
+            </Card>
+        </DashboardContent>
+    );
+}
