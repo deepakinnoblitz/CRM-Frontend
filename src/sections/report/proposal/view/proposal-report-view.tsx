@@ -205,14 +205,50 @@ export function ProposalReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
+            // Fetch attachments for these proposals
+            const proposalIds = data.map((row: any) => row.name);
+            let files: any[] = [];
+            if (proposalIds.length > 0) {
+                const fileQueryParams = new URLSearchParams({
+                    doctype: 'Proposal Attachment',
+                    fields: JSON.stringify(['name', 'file_name', 'attachment', 'parent']),
+                    filters: JSON.stringify([
+                        ['parent', 'in', proposalIds]
+                    ]),
+                    limit_page_length: '99999'
+                });
+                const fileRes = await fetch(`/api/method/frappe.client.get_list?${fileQueryParams.toString()}`, {
+                    method: 'GET',
+                    credentials: "include"
+                });
+                if (fileRes.ok) {
+                    const fileJson = await fileRes.json();
+                    files = fileJson.message || [];
+                    console.log("Raw attachment fetch response:", files);
+                } else {
+                    console.error("Failed to fetch Proposal Attachment response:", fileRes.statusText);
+                }
+            }
+
+            const filesMap: Record<string, any[]> = {};
+            files.forEach((f: any) => {
+                if (!filesMap[f.parent]) {
+                    filesMap[f.parent] = [];
+                }
+                filesMap[f.parent].push(f);
+            });
+
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Proposal Report');
 
-            // Define sheet columns dynamically
-            sheet.columns = validFields.map(f => ({
-                header: f.label,
-                key: f.fieldname
-            }));
+            // Define sheet columns dynamically with Attachments re-added explicitly
+            sheet.columns = [
+                ...validFields.map(f => ({
+                    header: f.label,
+                    key: f.fieldname
+                })),
+                { header: 'Attachments', key: 'attachments' }
+            ];
 
             const colCount = sheet.columns.length;
 
@@ -241,7 +277,25 @@ export function ProposalReportView() {
                     }
                     rowDataObj[f.fieldname] = val;
                 });
-                sheet.addRow(rowDataObj);
+                rowDataObj['attachments'] = ''; // populated dynamically below
+
+                const excelRow = sheet.addRow(rowDataObj);
+
+                const propFiles = filesMap[row.name] || [];
+                const attachmentsCell = excelRow.getCell('attachments');
+                if (propFiles.length === 1) {
+                    attachmentsCell.value = {
+                        text: propFiles[0].file_name || 'Download',
+                        hyperlink: window.location.origin + propFiles[0].attachment
+                    };
+                    attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+                } else if (propFiles.length > 1) {
+                    attachmentsCell.value = propFiles.map((f: any) => `${window.location.origin}${f.attachment}`).join('\n');
+                    attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
+                    attachmentsCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                } else {
+                    attachmentsCell.value = '—';
+                }
             });
 
             // Auto-fit column widths
@@ -250,7 +304,12 @@ export function ProposalReportView() {
                 let maxLen = 0;
                 if (column.eachCell) {
                     column.eachCell({ includeEmpty: true }, (cell: any) => {
-                        const value = cell.value ? String(cell.value) : '';
+                        let value = '';
+                        if (cell.value && typeof cell.value === 'object' && cell.value.text) {
+                            value = String(cell.value.text);
+                        } else if (cell.value) {
+                            value = String(cell.value);
+                        }
                         if (value.length > maxLen) {
                             maxLen = value.length;
                         }
