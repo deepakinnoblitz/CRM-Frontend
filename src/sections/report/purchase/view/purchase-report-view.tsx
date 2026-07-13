@@ -123,18 +123,19 @@ export function PurchaseReportView() {
                 ? filteredData.filter((row: any) => selected.includes(row.name))
                 : filteredData;
 
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_purchase_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Purchase export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Purchase Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Purchase ID', key: 'purchase_id' },
-                { header: 'Vendor', key: 'vendor' },
-                { header: 'Bill No', key: 'bill_no' },
-                { header: 'Bill Date', key: 'bill_date' },
-                { header: 'Qty', key: 'qty' },
-                { header: 'Grand Total', key: 'grand_total' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -147,17 +148,27 @@ export function PurchaseReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             data.forEach((row: any) => {
-                const vendorStr = row.vendor_real_name ? `${row.vendor_real_name} (${row.vendor_name || ''})` : (row.vendor_name || '-');
-                sheet.addRow({
-                    purchase_id: row.name || '-',
-                    vendor: vendorStr,
-                    bill_no: row.bill_no || '-',
-                    bill_date: row.bill_date ? dayjs(row.bill_date).format('YYYY-MM-DD') : '-',
-                    qty: row.quantity !== undefined ? row.quantity : 0,
-                    grand_total: row.grand_total !== undefined ? row.grand_total : 0
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    
+                    if (f.fieldname === 'name') {
+                        val = row.name;
+                    } else if (f.fieldname === 'vendor_name') {
+                        // Keep the existing Vendor (Name + ID) formatting intact
+                        val = row.vendor_real_name ? `${row.vendor_real_name} (${row.vendor_name || ''})` : (row.vendor_name || '-');
+                    } else if (f.fieldname === 'bill_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths

@@ -137,7 +137,28 @@ export function LeadReportView() {
             if (!fieldsRes.ok) throw new Error("Failed to fetch Lead export fields metadata");
             const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
 
-            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
+            // Reorder the exported columns to start with: Lead ID (name), Name (lead_name), Company Name (company_name), Status (status)
+            const desiredOrder = ['name', 'lead_name', 'company_name', 'status'];
+            const orderedFields: { fieldname: string; label: string }[] = [];
+            desiredOrder.forEach(fieldname => {
+                const found = validFields.find(f => f.fieldname === fieldname);
+                if (found) {
+                    orderedFields.push(found);
+                }
+            });
+            validFields.forEach(f => {
+                if (!desiredOrder.includes(f.fieldname)) {
+                    orderedFields.push(f);
+                }
+            });
+
+            const fieldsToFetch = Array.from(new Set([
+                ...validFields.map(f => f.fieldname),
+                'creation',
+                'modified',
+                'workflow_state',
+                'status'
+            ]));
 
             // Build query params
             const query = new URLSearchParams({
@@ -155,7 +176,7 @@ export function LeadReportView() {
             const sheet = workbook.addWorksheet('Lead Report');
 
             // Define sheet columns dynamically
-            sheet.columns = validFields.map(f => ({
+            sheet.columns = orderedFields.map(f => ({
                 header: f.label,
                 key: f.fieldname
             }));
@@ -174,14 +195,20 @@ export function LeadReportView() {
             // Populate rows dynamically
             rawData.forEach((row: any) => {
                 const rowDataObj: Record<string, any> = {};
-                validFields.forEach(f => {
+                orderedFields.forEach(f => {
                     let val = row[f.fieldname];
-                    if (f.fieldname === 'workflow_state') {
+                    if (f.fieldname === 'status') {
+                        val = row.workflow_state || row.status || 'New Lead';
+                    } else if (f.fieldname === 'workflow_state') {
                         val = row.workflow_state || row.status || 'New Lead';
                     } else if (f.fieldname === 'date_and_time' && val) {
                         val = dayjs(val).format('YYYY-MM-DD HH:mm:ss');
                     }
-                    rowDataObj[f.fieldname] = val !== undefined && val !== null ? val : '-';
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
                 const excelRow = sheet.addRow(rowDataObj);
 

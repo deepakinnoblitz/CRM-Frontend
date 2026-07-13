@@ -132,22 +132,12 @@ export function MeetingReportView() {
             }
 
             const filters: any[] = [['Meeting', 'name', 'in', idsToExport]];
-            const fieldsToFetch = [
-                'name',
-                'title',
-                'meet_for',
-                'lead_name',
-                'contact_name',
-                'accounts_name',
-                'meeting_venue',
-                'location',
-                'outgoing_call_status',
-                'from',
-                'to',
-                'owner_name',
-                'creation',
-                'modified'
-            ];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_meeting_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Meeting export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const query = new URLSearchParams({
                 doctype: "Meeting",
@@ -163,16 +153,11 @@ export function MeetingReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Meeting Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Title', key: 'title' },
-                { header: 'Meet For', key: 'meet_for' },
-                { header: 'Lead/Contact', key: 'lead_or_contact' },
-                { header: 'Account', key: 'accounts_name' },
-                { header: 'Status', key: 'status' },
-                { header: 'Time & Venue', key: 'time_venue' },
-                { header: 'Owner', key: 'owner_name' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -185,19 +170,21 @@ export function MeetingReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             data.forEach((row: any) => {
-                const timeStr = row.from ? dayjs(row.from).format('DD MMM YYYY HH:mm') : '-';
-                const venueStr = row.meeting_venue || row.location || '-';
-                sheet.addRow({
-                    title: row.title || '-',
-                    meet_for: row.meet_for || '-',
-                    lead_or_contact: row.lead_name || row.contact_name || '-',
-                    accounts_name: row.accounts_name || '-',
-                    status: row.outgoing_call_status || '-',
-                    time_venue: `${timeStr} @ ${venueStr}`,
-                    owner_name: row.owner_name || '-'
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if ((f.fieldname === 'from' || f.fieldname === 'to') && val) {
+                        val = dayjs(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths

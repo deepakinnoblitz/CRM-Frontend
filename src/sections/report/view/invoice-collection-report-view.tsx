@@ -198,19 +198,19 @@ export function InvoiceCollectionReportView() {
     const handleExport = async () => {
         setLoading(true);
         try {
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_invoice_collection_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Invoice Collection export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Invoice Collection Summary');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'ID', key: 'id' },
-                { header: 'Invoice No', key: 'invoice_no' },
-                { header: 'Date', key: 'date' },
-                { header: 'Mode', key: 'mode' },
-                { header: 'Amount to Pay', key: 'amount_to_pay' },
-                { header: 'Amount', key: 'amount' },
-                { header: 'Pending', key: 'pending' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -223,17 +223,33 @@ export function InvoiceCollectionReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             filteredData.forEach((row: any) => {
-                sheet.addRow({
-                    id: row.id || '-',
-                    invoice_no: row.invoice || '-',
-                    date: row.collection_date ? dayjs(row.collection_date).format('YYYY-MM-DD') : '-',
-                    mode: row.mode_of_payment || '-',
-                    amount_to_pay: row.amount_to_pay !== undefined ? row.amount_to_pay : 0,
-                    amount: row.amount_collected !== undefined ? row.amount_collected : 0,
-                    pending: row.amount_pending !== undefined ? row.amount_pending : 0
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'name') {
+                        val = row.id || row.name;
+                    } else if (f.fieldname === 'invoice') {
+                        val = row.invoice;
+                    } else if (f.fieldname === 'collection_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    } else if (f.fieldname === 'mode_of_payment') {
+                        val = row.mode_of_payment;
+                    } else if (f.fieldname === 'amount_to_pay') {
+                        val = row.amount_to_pay;
+                    } else if (f.fieldname === 'amount_collected') {
+                        val = row.amount_collected;
+                    } else if (f.fieldname === 'amount_pending') {
+                        val = row.amount_pending;
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths

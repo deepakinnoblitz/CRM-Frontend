@@ -125,19 +125,12 @@ export function AccountReportView() {
             }
 
             const filters = [['name', 'in', idsToExport]];
-            const fieldsToFetch = [
-                'name',
-                'account_name',
-                'phone_number',
-                'website',
-                'gstin',
-                'country',
-                'state',
-                'city',
-                'owner_name',
-                'creation',
-                'modified'
-            ];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_company_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Company export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const query = new URLSearchParams({
                 doctype: "Accounts",
@@ -153,15 +146,11 @@ export function AccountReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Company Report');
 
-            // Define sheet columns with headers
-            sheet.columns = [
-                { header: 'Account Name', key: 'account_name' },
-                { header: 'Phone', key: 'phone_number' },
-                { header: 'Website', key: 'website' },
-                { header: 'GSTIN', key: 'gstin' },
-                { header: 'Location', key: 'location' },
-                { header: 'Owner', key: 'owner_name' }
-            ];
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
 
             const colCount = sheet.columns.length;
 
@@ -174,16 +163,17 @@ export function AccountReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
+            // Populate rows dynamically
             data.forEach((row: any) => {
-                sheet.addRow({
-                    account_name: row.account_name || '-',
-                    phone_number: row.phone_number || '-',
-                    website: row.website || '-',
-                    gstin: row.gstin || '-',
-                    location: [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
-                    owner_name: row.owner_name || '-'
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths

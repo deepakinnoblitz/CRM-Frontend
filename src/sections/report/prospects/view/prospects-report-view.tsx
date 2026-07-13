@@ -353,18 +353,21 @@ export function ProspectsReportView() {
                 ? filteredData.filter((row) => selected.includes(row.name))
                 : filteredData;
 
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_prospect_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Prospects export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Prospects');
 
-            // Define sheet columns with headers
+            // Define sheet columns dynamically
             sheet.columns = [
                 { header: 'S.No', key: 's_no' },
-                { header: 'Title', key: 'title' },
-                { header: 'Company', key: 'company' },
-                { header: 'Company ID', key: 'company_id' },
-                { header: 'Client Name', key: 'client_name' },
-                { header: 'Client ID', key: 'client_id' },
-                { header: 'Stage', key: 'stage' }
+                ...validFields.map(f => ({
+                    header: f.label,
+                    key: f.fieldname
+                }))
             ];
 
             const colCount = sheet.columns.length;
@@ -378,17 +381,33 @@ export function ProspectsReportView() {
             }
             sheet.getRow(1).height = 25;
 
-            // Populate rows
-            dataToExport.forEach((row, idx) => {
-                sheet.addRow({
-                    s_no: idx + 1,
-                    title: row.deal_title || '-',
-                    company: row.company_name || '-',
-                    company_id: row.account || '-',
-                    client_name: row.contact_name || '-',
-                    client_id: row.contact || '-',
-                    stage: row.stage || '-'
+            // Populate rows dynamically
+            dataToExport.forEach((row: any, idx) => {
+                const rowDataObj: Record<string, any> = {
+                    s_no: idx + 1
+                };
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    
+                    // Keep the existing Company/Client (Name + ID) formatting and Stage label formatting intact
+                    if (f.fieldname === 'deal_title') {
+                        val = row.deal_title;
+                    } else if (f.fieldname === 'account') {
+                        val = row.account;
+                    } else if (f.fieldname === 'company_name') {
+                        val = row.company_name;
+                    } else if (f.fieldname === 'contact') {
+                        val = row.contact;
+                    } else if (f.fieldname === 'contact_name') {
+                        val = row.contact_name;
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
                 });
+                sheet.addRow(rowDataObj);
             });
 
             // Auto-fit column widths
