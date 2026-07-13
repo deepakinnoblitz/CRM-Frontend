@@ -76,6 +76,11 @@ export const MetaAppsCreatePage = lazy(() => import('src/pages/lead-integration/
 export const MetaAppsEditPage = lazy(() => import('src/pages/lead-integration/meta-apps/edit'));
 export const MetaAppsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-apps/details'));
 
+export const MetaPagesListPage = lazy(() => import('src/pages/lead-integration/meta-pages/list'));
+export const MetaPagesCreatePage = lazy(() => import('src/pages/lead-integration/meta-pages/new'));
+export const MetaPagesEditPage = lazy(() => import('src/pages/lead-integration/meta-pages/edit'));
+export const MetaPagesDetailsPage = lazy(() => import('src/pages/lead-integration/meta-pages/details'));
+
 export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
 export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
 export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
@@ -340,6 +345,15 @@ export const routesSection: RouteObject[] = [
               { path: 'new', element: <MetaAppsCreatePage /> },
               { path: ':id/edit', element: <MetaAppsEditPage /> },
               { path: ':id/view', element: <MetaAppsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'meta-pages',
+            children: [
+              { index: true, element: <MetaPagesListPage /> },
+              { path: 'new', element: <MetaPagesCreatePage /> },
+              { path: ':id/edit', element: <MetaPagesEditPage /> },
+              { path: ':id/view', element: <MetaPagesDetailsPage /> },
             ],
           },
         ],
