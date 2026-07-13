@@ -1,7 +1,7 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -12,8 +12,8 @@ import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { getMetaWebhookLog } from 'src/api/meta-webhook-log';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getMetaWebhookLog } from 'src/api/meta-webhook-log';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -163,7 +163,7 @@ export function MetaWebhookLogDetailsView() {
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>Summary</Typography>
                     </Stack>
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' } }}>
-                        <DetailRow label="Log ID" value={log.name} mono />
+                        <DetailRow label="Log ID" value={log.name} />
                         <DetailRow label="HTTP Status" value={log.http_status} />
                         <DetailRow label="Execution Time" value={log.execution_time != null ? `${log.execution_time}s` : undefined} />
                         <DetailRow label="Retry Count" value={log.retry_count ?? 0} />

@@ -1,7 +1,7 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useParams, useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -163,9 +163,9 @@ export function MetaQueueDetailsView() {
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>Job Summary</Typography>
                     </Stack>
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' } }}>
-                        <DetailRow label="Queue ID" value={item.name} mono />
+                        <DetailRow label="Queue ID" value={item.name} />
                         <DetailRow label="Meta Lead" value={item.meta_lead} />
-                        <DetailRow label="Job ID" value={item.job_id} mono />
+                        <DetailRow label="Job ID" value={item.job_id} />
                         <DetailRow label="Attempts" value={item.attempts ?? 0} />
                         <DetailRow label="Started" value={formatDatetime(item.started)} />
                         <DetailRow label="Completed" value={formatDatetime(item.completed)} />

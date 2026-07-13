@@ -14,6 +14,7 @@ import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -47,6 +48,7 @@ const TABLE_HEAD = [
     { id: 'started', label: 'Started', width: 180 },
     { id: 'completed', label: 'Completed', width: 180 },
     { id: 'status', label: 'Status', width: 130, align: 'center' as const },
+    { id: 'actions', label: 'Actions', width: 80, align: 'center' as const },
 ];
 
 // ----------------------------------------------------------------------
@@ -167,8 +169,7 @@ export function MetaQueueListView() {
                                             const sc = STATUS_COLORS[row.status] || STATUS_COLORS.Queued;
                                             return (
                                                 <TableRow key={row.name} hover tabIndex={-1}
-                                                    onClick={() => navigate(`/lead-integration/meta-queue/${encodeURIComponent(row.name)}/view`)}
-                                                    sx={{ cursor: 'pointer', '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` }, '&:last-child td, &:last-child th': { borderBottom: 0 } }}
+                                                    sx={{ '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` }, '&:last-child td, &:last-child th': { borderBottom: 0 } }}
                                                 >
                                                     {/* Index */}
                                                     <TableCell align="center">
@@ -216,13 +217,26 @@ export function MetaQueueListView() {
                                                             {row.status}
                                                         </Box>
                                                     </TableCell>
+
+                                                    {/* Actions */}
+                                                    <TableCell align="center">
+                                                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                            <IconButton
+                                                                onClick={() => navigate(`/lead-integration/meta-queue/${encodeURIComponent(row.name)}/view`)}
+                                                                sx={{ color: 'info.main' }}
+                                                                title="View"
+                                                            >
+                                                                <Iconify icon="solar:eye-bold" />
+                                                            </IconButton>
+                                                        </Box>
+                                                    </TableCell>
                                                 </TableRow>
                                             );
                                         })}
-                                        {notFound && <TableNoData colSpan={7} searchQuery={filterName} />}
+                                        {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={7} sx={{ p: 0, py: 5 }}>
+                                                <TableCell colSpan={8} sx={{ p: 0, py: 5 }}>
                                                     <EmptyContent icon={"logos:meta-icon" as any} title="No Queue Jobs found" description="Background lead processing jobs will appear here." />
                                                 </TableCell>
                                             </TableRow>
@@ -230,7 +244,7 @@ export function MetaQueueListView() {
                                         {!empty && !notFound && data.length < 5 && (
                                             Array.from({ length: 5 - data.length }).map((_, i) => (
                                                 <TableRow key={`empty-${i}`} sx={{ height: 68, '& td': { borderBottom: 'none' } }}>
-                                                    <TableCell colSpan={7} />
+                                                    <TableCell colSpan={8} />
                                                 </TableRow>
                                             ))
                                         )}
