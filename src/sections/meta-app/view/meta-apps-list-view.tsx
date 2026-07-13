@@ -50,7 +50,7 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-    { id: 'app_name', label: 'App Name', minWidth: 220 },
+    { id: 'app_name', label: 'App Name', maxWidth: 220 },
     { id: 'app_id', label: 'App ID', width: 200 },
     { id: 'graph_api_version', label: 'API Version', width: 140, align: 'center' as const },
     { id: 'app_status', label: 'App Status', width: 140, align: 'center' as const },
@@ -221,7 +221,7 @@ export function MetaAppsListView() {
                             <ProposalTableHead
                                 rowCount={total}
                                 numSelected={0}
-                                onSelectAllRows={() => {}}
+                                onSelectAllRows={() => { }}
                                 hideCheckbox
                                 showIndex
                                 headLabel={TABLE_HEAD}
@@ -278,12 +278,11 @@ export function MetaAppsListView() {
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                bgcolor: alpha('#1877F2', 0.12),
                                                                 color: '#1877F2',
                                                                 flexShrink: 0,
                                                             }}
                                                         >
-                                                            <Iconify icon={"logos:meta-icon" as any} width={20} />
+                                                            <Iconify icon={"logos:meta-icon" as any} width={22} />
                                                         </Box>
                                                         <Stack spacing={0.2}>
                                                             <Typography variant="subtitle2" sx={{ fontWeight: 700, lineHeight: 1.3 }}>
@@ -300,7 +299,7 @@ export function MetaAppsListView() {
 
                                                 {/* App ID */}
                                                 <TableCell>
-                                                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 14,  }}>
+                                                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: 14, }}>
                                                         {row.app_id || '—'}
                                                     </Typography>
                                                 </TableCell>
@@ -379,22 +378,32 @@ export function MetaAppsListView() {
 
                                                 {/* Is Default */}
                                                 <TableCell align="center">
-                                                    {row.is_default ? (
-                                                        <Chip
-                                                            label="Default"
-                                                            size="small"
-                                                            sx={{
-                                                                bgcolor: alpha('#08a3cd', 0.12),
-                                                                color: '#08a3cd',
-                                                                border: `1px solid ${alpha('#08a3cd', 0.3)}`,
-                                                                fontWeight: 700,
-                                                                fontSize: 11,
-                                                                borderRadius: '6px',
-                                                            }}
-                                                        />
-                                                    ) : (
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>—</Typography>
-                                                    )}
+                                                    <Box
+                                                        sx={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            px: 1.5,
+                                                            py: 0.5,
+                                                            borderRadius: 1,
+                                                            fontSize: 12,
+                                                            fontWeight: 700,
+                                                            textTransform: 'uppercase',
+                                                            ...(row.is_default
+                                                                ? {
+                                                                    bgcolor: alpha('#08a3cd', 0.12),
+                                                                    border: `1px solid ${alpha('#08a3cd', 0.35)}`,
+                                                                    color: '#08a3cd',
+                                                                }
+                                                                : {
+                                                                    bgcolor: 'rgba(156, 163, 175, 0.15)',
+                                                                    border: '1px solid rgba(156, 163, 175, 0.35)',
+                                                                    color: '#374151',
+                                                                }),
+                                                        }}
+                                                    >
+                                                        {row.is_default ? 'Yes' : 'No'}
+                                                    </Box>
                                                 </TableCell>
 
                                                 {/* Actions */}

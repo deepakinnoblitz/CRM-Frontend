@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -85,7 +86,7 @@ export function MetaAppsCreateView() {
     const [isDefault, setIsDefault] = useState(false);
     const [isActive, setIsActive] = useState(true);
 
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+    const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ appName?: boolean; appId?: boolean; appSecret?: boolean; verifyToken?: boolean }>({});
 
     const handleSave = async () => {
@@ -95,7 +96,10 @@ export function MetaAppsCreateView() {
         if (!appSecret.trim()) newErrors.appSecret = true;
         if (!verifyToken.trim()) newErrors.verifyToken = true;
         setErrors(newErrors);
-        if (Object.keys(newErrors).length > 0) return;
+        if (Object.keys(newErrors).length > 0) {
+            enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
+            return;
+        }
 
         setIsSaving(true);
         try {
@@ -115,7 +119,7 @@ export function MetaAppsCreateView() {
             sessionStorage.setItem('meta_app_success_message', 'Meta App created successfully.');
             router.push('/lead-integration/meta-apps');
         } catch (error: any) {
-            setSnackbar({ open: true, severity: 'error', message: error.message || 'Failed to create Meta App.' });
+            enqueueSnackbar(error.message || 'Failed to create Meta App.', { variant: 'error' });
             setIsSaving(false);
         }
     };
@@ -149,15 +153,6 @@ export function MetaAppsCreateView() {
                     </LoadingButton>
                 </Stack>
             </Stack>
-
-            {snackbar.open && (
-                <Box sx={{ mb: 3, p: 2, borderRadius: 1.5, bgcolor: snackbar.severity === 'error' ? 'error.lighter' : 'success.lighter', color: snackbar.severity === 'error' ? 'error.dark' : 'success.dark', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Iconify icon={snackbar.severity === 'error' ? 'solar:danger-bold' : 'solar:check-circle-bold'} />
-                    <Typography variant="body2">{snackbar.message}</Typography>
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button size="small" onClick={() => setSnackbar(p => ({ ...p, open: false }))} sx={{ minWidth: 0, color: 'inherit' }}>✕</Button>
-                </Box>
-            )}
 
             <Card sx={{ p: 3 }}>
                 {/* Section: Credentials */}

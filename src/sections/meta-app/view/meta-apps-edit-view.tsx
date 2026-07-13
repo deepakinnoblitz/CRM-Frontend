@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
@@ -81,7 +82,6 @@ export function MetaAppsEditView() {
     const [appId, setAppId] = useState('');
     const [appSecret, setAppSecret] = useState('');
     const [verifyToken, setVerifyToken] = useState('');
-    const [webhookUrl, setWebhookUrl] = useState('');
     const [graphApiVersion, setGraphApiVersion] = useState('v23.0');
     const [businessManagerId, setBusinessManagerId] = useState('');
     const [appStatus, setAppStatus] = useState('Development');
@@ -90,7 +90,7 @@ export function MetaAppsEditView() {
     const [isDefault, setIsDefault] = useState(false);
     const [isActive, setIsActive] = useState(true);
 
-    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({ open: false, message: '', severity: 'success' });
+    const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ appName?: boolean; appId?: boolean }>({});
 
     useEffect(() => {
@@ -100,7 +100,6 @@ export function MetaAppsEditView() {
                 .then((data) => {
                     setAppName(data.app_name || '');
                     setAppId(data.app_id || '');
-                    setWebhookUrl(data.webhook_url || '');
                     setGraphApiVersion(data.graph_api_version || 'v23.0');
                     setBusinessManagerId(data.business_manager_id || '');
                     setAppStatus(data.app_status || 'Development');
@@ -108,7 +107,7 @@ export function MetaAppsEditView() {
                     setIsDefault(!!data.is_default);
                     setIsActive(data.is_active !== 0);
                 })
-                .catch(() => setSnackbar({ open: true, severity: 'error', message: 'Failed to load Meta App data.' }))
+                .catch(() => enqueueSnackbar('Failed to load Meta App data.', { variant: 'error' }))
                 .finally(() => setLoading(false));
         }
     }, [id]);
@@ -118,7 +117,10 @@ export function MetaAppsEditView() {
         if (!appName.trim()) newErrors.appName = true;
         if (!appId.trim()) newErrors.appId = true;
         setErrors(newErrors);
-        if (Object.keys(newErrors).length > 0) return;
+        if (Object.keys(newErrors).length > 0) {
+            enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
+            return;
+        }
 
         setIsSaving(true);
         try {
@@ -140,7 +142,7 @@ export function MetaAppsEditView() {
             sessionStorage.setItem('meta_app_success_message', 'Meta App updated successfully.');
             router.push('/lead-integration/meta-apps');
         } catch (error: any) {
-            setSnackbar({ open: true, severity: 'error', message: error.message || 'Failed to update Meta App.' });
+            enqueueSnackbar(error.message || 'Failed to update Meta App.', { variant: 'error' });
             setIsSaving(false);
         }
     };
@@ -160,9 +162,6 @@ export function MetaAppsEditView() {
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
                         Edit Meta App
-                    </Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {appName || id}
                     </Typography>
                 </Stack>
                 <Stack direction="row" spacing={2}>
@@ -186,15 +185,6 @@ export function MetaAppsEditView() {
                 </Stack>
             </Stack>
 
-            {snackbar.open && (
-                <Box sx={{ mb: 3, p: 2, borderRadius: 1.5, bgcolor: snackbar.severity === 'error' ? 'error.lighter' : 'success.lighter', color: snackbar.severity === 'error' ? 'error.dark' : 'success.dark', display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Iconify icon={snackbar.severity === 'error' ? 'solar:danger-bold' : 'solar:check-circle-bold'} />
-                    <Typography variant="body2">{snackbar.message}</Typography>
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button size="small" onClick={() => setSnackbar(p => ({ ...p, open: false }))} sx={{ minWidth: 0, color: 'inherit' }}>✕</Button>
-                </Box>
-            )}
-
             <Card sx={{ p: 3 }}>
                 {/* Section: Credentials */}
                 <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
@@ -209,10 +199,12 @@ export function MetaAppsEditView() {
                         <FormControlLabel
                             control={<CustomSwitch checked={isDefault} onChange={(e) => setIsDefault(e.target.checked)} />}
                             label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Default App</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Use as the default Meta integration</Typography></Stack>}
+                            sx={{ ml: 0.5 }}
                         />
                         <FormControlLabel
                             control={<CustomSwitch checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />}
                             label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this app for processing leads</Typography></Stack>}
+                            sx={{ ml: 0.5 }}
                         />
                         <TextField
                             fullWidth
@@ -273,17 +265,6 @@ export function MetaAppsEditView() {
                         />
                     </Box>
 
-                    {webhookUrl && (
-                        <TextField
-                            fullWidth
-                            label="Webhook URL"
-                            value={webhookUrl}
-                            InputProps={{ readOnly: true }}
-                            helperText="Auto-generated webhook URL (read-only)"
-                            sx={{ '& .MuiInputBase-input': { fontSize: 13, color: 'text.secondary' } }}
-                        />
-                    )}
-
                     {/* Divider + Configuration */}
                     <Divider />
 
@@ -324,7 +305,8 @@ export function MetaAppsEditView() {
                         </FormControl>
                         <FormControlLabel
                             control={<CustomSwitch checked={signatureValidation} onChange={(e) => setSignatureValidation(e.target.checked)} />}
-                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600 }}>Enable Signature Validation</Typography><Typography variant="caption" sx={{ color: 'text.secondary' }}>Validate webhook payload signatures</Typography></Stack>}
+                            label={<Stack spacing={0.2}><Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Enable Signature Validation</Typography><Typography variant="caption" sx={{ color: 'text.secondary', pl: 2  }}>Validate webhook payload signatures</Typography></Stack>}
+                            sx={{ ml: 0.5 }}
                         />
                     </Box>
                 </Stack>

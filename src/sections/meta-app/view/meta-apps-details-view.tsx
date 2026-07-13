@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { IoMdArrowBack, IoMdCreate } from 'react-icons/io';
@@ -10,6 +11,7 @@ import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { getMetaApp } from 'src/api/meta-app';
@@ -29,7 +31,6 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
                 variant="body2"
                 sx={{
                     fontWeight: 600,
-                    fontFamily: mono ? 'monospace' : 'inherit',
                     fontSize: mono ? 13 : 'inherit',
                     color: value ? 'text.primary' : 'text.disabled',
                     fontStyle: !value ? 'italic' : 'normal',
@@ -46,6 +47,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
 export function MetaAppsDetailsView() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const { enqueueSnackbar } = useSnackbar();
 
     const [app, setApp] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -90,7 +92,6 @@ export function MetaAppsDetailsView() {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            bgcolor: alpha('#1877F2', 0.12),
                             color: '#1877F2',
                         }}
                     >
@@ -101,7 +102,7 @@ export function MetaAppsDetailsView() {
                             {app.app_name}
                         </Typography>
                         <Stack direction="row" spacing={1} alignItems="center">
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontFamily: 'monospace', fontSize: 13 }}>
+                            <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: 14 }}>
                                 {app.app_id}
                             </Typography>
                             {app.is_default ? (
@@ -148,7 +149,10 @@ export function MetaAppsDetailsView() {
                     }}
                 >
                     <Stack direction="row" alignItems="center" spacing={1}>
-                        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: app.app_status === 'Production' ? '#22c55e' : '#eab308' }} />
+                        <Iconify
+                            icon={(app.app_status === 'Production' ? 'solar:shield-check-bold' : 'solar:settings-bold') as any}
+                            sx={{ color: app.app_status === 'Production' ? '#22c55e' : '#eab308' }}
+                        />
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>
                             {app.app_status || 'Development'} Mode
                         </Typography>
@@ -209,12 +213,25 @@ export function MetaAppsDetailsView() {
                             <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
                                 Webhook URL
                             </Typography>
-                            <Typography
-                                variant="body2"
-                                sx={{ fontFamily: 'monospace', fontSize: 13, wordBreak: 'break-all' }}
-                            >
-                                {app.webhook_url}
-                            </Typography>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 14, wordBreak: 'break-all' }}
+                                >
+                                    {app.webhook_url}
+                                </Typography>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(app.webhook_url || '');
+                                        enqueueSnackbar('Webhook URL copied to clipboard!', { variant: 'success' });
+                                    }}
+                                    sx={{ color: 'primary.main' }}
+                                    title="Copy Webhook URL"
+                                >
+                                    <Iconify icon={"solar:copy-bold" as any} width={18} />
+                                </IconButton>
+                            </Stack>
                         </Box>
                     </Card>
                 )}
@@ -231,7 +248,6 @@ export function MetaAppsDetailsView() {
                         <DetailRow label="Created By" value={app.owner} />
                         <DetailRow label="Created On" value={app.creation ? new Date(app.creation).toLocaleDateString() : undefined} />
                         <DetailRow label="Last Modified" value={app.modified ? new Date(app.modified).toLocaleDateString() : undefined} />
-                        <DetailRow label="Document ID" value={app.name} mono />
                     </Box>
                 </Card>
             </Stack>
