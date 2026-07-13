@@ -86,6 +86,11 @@ export const MetaFormsCreatePage = lazy(() => import('src/pages/lead-integration
 export const MetaFormsEditPage = lazy(() => import('src/pages/lead-integration/meta-forms/edit'));
 export const MetaFormsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-forms/details'));
 
+export const MetaWebhookLogsPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/list'));
+export const MetaWebhookLogViewPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/view'));
+export const MetaQueuePage = lazy(() => import('src/pages/lead-integration/meta-queue/list'));
+export const MetaQueueViewPage = lazy(() => import('src/pages/lead-integration/meta-queue/view'));
+
 export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
 export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
 export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
@@ -368,6 +373,20 @@ export const routesSection: RouteObject[] = [
               { path: 'new', element: <MetaFormsCreatePage /> },
               { path: ':id/edit', element: <MetaFormsEditPage /> },
               { path: ':id/view', element: <MetaFormsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'webhook-logs',
+            children: [
+              { index: true, element: <MetaWebhookLogsPage /> },
+              { path: ':id/view', element: <MetaWebhookLogViewPage /> },
+            ],
+          },
+          {
+            path: 'meta-queue',
+            children: [
+              { index: true, element: <MetaQueuePage /> },
+              { path: ':id/view', element: <MetaQueueViewPage /> },
             ],
           },
         ],
