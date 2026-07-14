@@ -22,6 +22,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { fetchMetaLeads } from 'src/api/meta-lead';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -109,7 +111,7 @@ export function MetaLeadListView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">CRM Meta Leads</Typography>
+                <Typography variant="h4">Meta Leads</Typography>
             </Stack>
 
             <Card>
@@ -210,6 +212,9 @@ export function MetaLeadListView() {
                                                     {/* Actions */}
                                                     <TableCell align="center">
                                                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                            <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, whiteSpace: 'nowrap', pt: 1 }}>
+                                                                {fTimeDist(row.modified)}
+                                                            </Box>
                                                             <IconButton onClick={() => navigate(`/lead-integration/meta-leads/${encodeURIComponent(row.name)}/view`)} sx={{ color: 'info.main' }} title="View">
                                                                 <Iconify icon="solar:eye-bold" />
                                                             </IconButton>

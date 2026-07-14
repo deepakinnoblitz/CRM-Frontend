@@ -22,6 +22,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { fetchMetaQueue } from 'src/api/meta-queue';
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -221,6 +223,9 @@ export function MetaQueueListView() {
                                                     {/* Actions */}
                                                     <TableCell align="center">
                                                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                            <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, whiteSpace: 'nowrap', pt: 1 }}>
+                                                                {fTimeDist(row.modified)}
+                                                            </Box>
                                                             <IconButton
                                                                 onClick={() => navigate(`/lead-integration/meta-queue/${encodeURIComponent(row.name)}/view`)}
                                                                 sx={{ color: 'info.main' }}
