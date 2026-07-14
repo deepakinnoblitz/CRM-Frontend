@@ -143,29 +143,15 @@ export function InvoiceReportView() {
                 return;
             }
 
-            // Fetch valid fields from backend API
-            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_invoice_export_fields', { credentials: "include" });
-            if (!fieldsRes.ok) throw new Error("Failed to fetch Invoice export fields metadata");
-            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+            // Build filters
+            const listFilters: Record<string, any> = {};
+            if (client) listFilters.client_name = client.name;
+            if (account) listFilters.billing_name = account.name;
+            if (fromDate) listFilters.from_date = fromDate.format('YYYY-MM-DD');
+            if (toDate) listFilters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) listFilters.owner = user.name;
 
-            // Build filters for get_list
-            const listFilters = [];
-            if (client) listFilters.push(['client_name', '=', client.name]);
-            if (account) listFilters.push(['billing_name', '=', account.name]);
-            if (fromDate) listFilters.push(['invoice_date', '>=', fromDate.format('YYYY-MM-DD')]);
-            if (toDate) listFilters.push(['invoice_date', '<=', toDate.format('YYYY-MM-DD')]);
-            if (user?.has_crm_permission) listFilters.push(['owner', '=', user.name]);
-
-            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
-
-            const queryParams = new URLSearchParams({
-                doctype: "Invoice",
-                fields: JSON.stringify(fieldsToFetch),
-                filters: JSON.stringify(listFilters),
-                limit_page_length: "99999"
-            });
-
-            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+            const res = await fetch(`/api/method/company.company.crm_api.get_invoice_export_data?filters=${encodeURIComponent(JSON.stringify(listFilters))}`, {
                 method: 'GET',
                 credentials: "include"
             });
@@ -178,13 +164,33 @@ export function InvoiceReportView() {
             const workbook = new ExcelJS.Workbook();
             const sheet = workbook.addWorksheet('Invoice Report');
 
-            // Define sheet columns dynamically
-            sheet.columns = validFields.map(f => ({
-                header: f.label,
-                key: f.fieldname
-            }));
+            // Define sheet columns in the exact order requested
+            const columns = [
+                { header: 'Invoice ID', key: 'invoice_id' },
+                { header: 'Deal', key: 'deal' },
+                { header: 'Customer ID', key: 'customer_id' },
+                { header: 'Invoice Date', key: 'invoice_date' },
+                { header: 'Company', key: 'company_name' },
+                { header: 'Service', key: 'service' },
+                { header: 'HSN', key: 'hsn_code' },
+                { header: 'Description', key: 'description' },
+                { header: 'Qty', key: 'qty' },
+                { header: 'Price', key: 'price' },
+                { header: 'Discount', key: 'discount' },
+                { header: 'Tax Type', key: 'tax_type' },
+                { header: 'Tax Amount', key: 'tax_amount' },
+                { header: 'Total', key: 'total' },
+                { header: 'Grand Total', key: 'grand_total' },
+                { header: 'Total Tax', key: 'total_tax' },
+                { header: 'Overall Discount', key: 'overall_discount' },
+                { header: 'Overall Discount Type', key: 'overall_discount_type' },
+                { header: 'Bank Account', key: 'bank_account' },
+                { header: 'Owner', key: 'owner' },
+                { header: 'Attachments', key: 'attachments' },
+            ];
 
-            const colCount = sheet.columns.length;
+            sheet.columns = columns;
+            const colCount = columns.length;
 
             // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
             for (let i = 1; i <= colCount; i++) {
@@ -195,22 +201,158 @@ export function InvoiceReportView() {
             }
             sheet.getRow(1).height = 25;
 
+            // Group items by invoice ID
+            const groups: Record<string, any[]> = {};
+            const invoiceIdsOrdered: string[] = [];
+
+            data.forEach((item: any) => {
+                const invId = item.invoice_id;
+                if (!groups[invId]) {
+                    groups[invId] = [];
+                    invoiceIdsOrdered.push(invId);
+                }
+                groups[invId].push(item);
+            });
+
+            let currentRow = 2; // header is row 1
+            const groupEndRows: number[] = [];
+
             // Populate rows dynamically
-            data.forEach((row: any) => {
-                const rowDataObj: Record<string, any> = {};
-                validFields.forEach(f => {
-                    let val = row[f.fieldname];
-                    if ((f.fieldname === 'invoice_date' || f.fieldname === 'due_date' || f.fieldname === 'po_date') && val) {
-                        val = dayjs(val).format('YYYY-MM-DD');
+            invoiceIdsOrdered.forEach((invId, groupIdx) => {
+                const items = groups[invId];
+                const totalTax = items.reduce((sum, it) => sum + (Number(it.tax_amount) || 0), 0);
+                const startRow = currentRow;
+                const endRow = startRow + items.length - 1;
+                groupEndRows.push(endRow);
+
+                items.forEach((item, itemIdx) => {
+                    const rowDataObj: Record<string, any> = {};
+
+                    // Invoice-level fields (merged columns) are populated on the first row only of the group
+                    if (itemIdx === 0) {
+                        rowDataObj.invoice_id = item.invoice_id || '-';
+                        rowDataObj.deal = item.deal || '-';
+                        rowDataObj.customer_id = item.customer_id || '-';
+                        rowDataObj.invoice_date = item.invoice_date ? dayjs(item.invoice_date).format('YYYY-MM-DD') : '-';
+                        rowDataObj.owner = item.owner || '-';
+                        rowDataObj.company_name = item.company_name || '-';
+
+                        rowDataObj.grand_total = item.grand_total !== undefined && item.grand_total !== null && !isNaN(Number(item.grand_total)) ? Number(item.grand_total) : '-';
+                        rowDataObj.total_tax = !isNaN(Number(totalTax)) ? Number(totalTax) : totalTax;
+                        rowDataObj.overall_discount = item.overall_discount !== undefined && item.overall_discount !== null && !isNaN(Number(item.overall_discount)) ? Number(item.overall_discount) : '-';
+                        rowDataObj.overall_discount_type = item.overall_discount_type || '-';
+                        rowDataObj.bank_account = item.bank_account || '-';
+                        rowDataObj.attachments = ''; // Will be set as link object below
+                    } else {
+                        rowDataObj.invoice_id = '';
+                        rowDataObj.deal = '';
+                        rowDataObj.customer_id = '';
+                        rowDataObj.invoice_date = '';
+                        rowDataObj.owner = '';
+                        rowDataObj.company_name = '';
+
+                        rowDataObj.grand_total = '';
+                        rowDataObj.total_tax = '';
+                        rowDataObj.overall_discount = '';
+                        rowDataObj.overall_discount_type = '';
+                        rowDataObj.bank_account = '';
+                        rowDataObj.attachments = '';
                     }
 
-                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
-                        val = '-';
-                    }
-                    rowDataObj[f.fieldname] = val;
+                    // Item-level fields (unmerged columns) populated on every row as numbers if numeric
+                    rowDataObj.service = item.service || '-';
+                    rowDataObj.hsn_code = item.hsn_code !== undefined && item.hsn_code !== null && !isNaN(Number(item.hsn_code)) ? Number(item.hsn_code) : (item.hsn_code || '-');
+                    rowDataObj.description = item.description || '-';
+                    rowDataObj.qty = item.qty !== undefined && item.qty !== null && !isNaN(Number(item.qty)) ? Number(item.qty) : '-';
+                    rowDataObj.price = item.price !== undefined && item.price !== null && !isNaN(Number(item.price)) ? Number(item.price) : '-';
+                    rowDataObj.discount = item.discount !== undefined && item.discount !== null && !isNaN(Number(item.discount)) ? Number(item.discount) : '-';
+                    rowDataObj.tax_type = item.tax_type || '-';
+                    rowDataObj.tax_amount = item.tax_amount !== undefined && item.tax_amount !== null && !isNaN(Number(item.tax_amount)) ? Number(item.tax_amount) : '-';
+                    rowDataObj.total = item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) ? Number(item.total) : '-';
+
+                    const newRow = sheet.addRow(rowDataObj);
+                    (newRow as any).isDataRow = true;
+                    currentRow++;
                 });
-                sheet.addRow(rowDataObj);
+
+                // Apply merging for invoice-level columns:
+                if (items.length > 1) {
+                    const columnsToMerge = [
+                        1,  // invoice_id
+                        2,  // deal
+                        3,  // customer_id
+                        4,  // invoice_date
+                        5,  // company_name
+                        15, // grand_total
+                        16, // total_tax
+                        17, // overall_discount
+                        18, // overall_discount_type
+                        19, // bank_account
+                        20, // owner
+                        21, // attachments
+                    ];
+
+                    columnsToMerge.forEach(colIndex => {
+                        sheet.mergeCells(startRow, colIndex, endRow, colIndex);
+                    });
+                }
+
+                // Add Hyperlink with actual filename to Attachments cell on the first row of the group
+                const attachCell = sheet.getCell(startRow, 21);
+                if (items[0].attachments && items[0].attachments !== '-') {
+                    const attachmentUrl = items[0].attachments;
+                    const parts = attachmentUrl.split('/');
+                    const filename = parts[parts.length - 1] || 'Download';
+                    const token = items[0].attachment_token;
+                    const dlUrl = `${window.location.origin}/api/method/company.company.crm_api.download_invoice_attachment?file_path=${encodeURIComponent(attachmentUrl)}&token=${encodeURIComponent(token)}`;
+
+                    attachCell.value = {
+                        text: filename,
+                        hyperlink: dlUrl
+                    };
+                    attachCell.font = {
+                        color: { argb: 'FF0000FF' },
+                        underline: true
+                    };
+                } else {
+                    attachCell.value = '-';
+                }
             });
+
+            // Row styling (thin black border, white background, alignments)
+            const totalRows = sheet.rowCount;
+            for (let r = 1; r <= totalRows; r++) {
+                const row = sheet.getRow(r);
+                const isHeader = r === 1;
+                for (let c = 1; c <= colCount; c++) {
+                    const cell = row.getCell(c);
+                    
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    
+                    const isGroupEnd = groupEndRows.includes(r);
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: isGroupEnd ? 'medium' : 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+
+                    if (isHeader) {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                    } else {
+                        // Use a clean, uniform white background for all rows
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+                        
+                        // Retain the download style font if it was set on first-row attachments cell
+                        const isAttachmentHyperlink = (c === 21 && cell.value && typeof cell.value === 'object' && (cell.value as any).hyperlink);
+                        if (!isAttachmentHyperlink) {
+                            // Default font styling
+                            cell.font = { name: 'Arial', size: 10 };
+                        }
+                    }
+                }
+            }
 
             // Auto-fit column widths
             sheet.columns?.forEach((column: any) => {
@@ -218,32 +360,25 @@ export function InvoiceReportView() {
                 let maxLen = 0;
                 if (column.eachCell) {
                     column.eachCell({ includeEmpty: true }, (cell: any) => {
-                        const value = cell.value ? String(cell.value) : '';
+                        let value = '';
+                        if (cell.value) {
+                            if (typeof cell.value === 'object') {
+                                value = cell.value.text ? String(cell.value.text) : '';
+                            } else {
+                                value = String(cell.value);
+                            }
+                        }
                         if (value.length > maxLen) {
                             maxLen = value.length;
                         }
                     });
                 }
-                column.width = Math.max(maxLen + 4, 12);
-            });
-
-            // Row styling (alternating row background, alignment and borders)
-            sheet.eachRow((row: any, rowNumber: number) => {
-                if (rowNumber > 1) {
-                    for (let i = 1; i <= colCount; i++) {
-                        const cell = row.getCell(i);
-                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
-                        if (rowNumber % 2 === 0) {
-                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
-                        }
-                        cell.border = {
-                            top: { style: 'thin', color: { argb: 'FF000000' } },
-                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
-                            left: { style: 'thin', color: { argb: 'FF000000' } },
-                            right: { style: 'thin', color: { argb: 'FF000000' } }
-                        };
-                    }
-                }
+                
+                let minWidth = 12;
+                if (column.key === 'description') minWidth = 25;
+                if (column.key === 'attachments') minWidth = 15;
+                if (column.key === 'owner') minWidth = 20;
+                column.width = Math.max(maxLen + 4, minWidth);
             });
 
             const buffer = await workbook.xlsx.writeBuffer();
