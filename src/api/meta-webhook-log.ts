@@ -14,6 +14,7 @@ export interface MetaWebhookLog {
     retry_count?: number;
     status: string;
     creation: string;
+    modified: string;
 }
 
 export interface FetchWebhookLogsParams {
@@ -48,7 +49,7 @@ export async function fetchMetaWebhookLogs(params: FetchWebhookLogsParams) {
     const query = new URLSearchParams({
         doctype: 'CRM Meta Webhook Log',
         fields: JSON.stringify([
-            'name', 'response', 'http_status', 'execution_time', 'retry_count', 'status', 'creation',
+            'name', 'response', 'http_status', 'execution_time', 'retry_count', 'status', 'creation', 'modified',
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),

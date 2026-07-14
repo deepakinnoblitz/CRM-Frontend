@@ -14,6 +14,7 @@ export interface MetaQueue {
     completed?: string;
     last_error?: string;
     creation: string;
+    modified: string;
 }
 
 export interface FetchQueueParams {
@@ -50,7 +51,7 @@ export async function fetchMetaQueue(params: FetchQueueParams) {
         doctype: 'CRM Meta Queue',
         fields: JSON.stringify([
             'name', 'meta_lead', 'job_id', 'status',
-            'attempts', 'started', 'completed', 'last_error', 'creation',
+            'attempts', 'started', 'completed', 'last_error', 'creation', 'modified',
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),

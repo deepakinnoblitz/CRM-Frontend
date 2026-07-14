@@ -22,6 +22,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchMetaWebhookLogs } from 'src/api/meta-webhook-log';
 
@@ -58,6 +60,11 @@ const STATUS_COLORS: Record<string, { bg: string; border: string; color: string 
     Failed:   { bg: 'rgba(239,68,68,0.15)',  border: 'rgba(239,68,68,0.35)',  color: '#b91c1c' },
     Unverified: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
 };
+
+function formatDatetime(val?: string) {
+    if (!val) return '—';
+    return new Date(val).toLocaleString();
+}
 
 // ----------------------------------------------------------------------
 
@@ -212,6 +219,9 @@ export function MetaWebhookLogListView() {
                                                     {/* Actions */}
                                                     <TableCell align="center">
                                                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                            <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, whiteSpace: 'nowrap', pt: 1 }}>
+                                                                {fTimeDist(row.modified)}
+                                                            </Box>
                                                             <IconButton
                                                                 onClick={() => navigate(`/lead-integration/webhook-logs/${encodeURIComponent(row.name)}/view`)}
                                                                 sx={{ color: 'info.main' }}
