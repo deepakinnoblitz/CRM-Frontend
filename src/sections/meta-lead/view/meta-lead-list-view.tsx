@@ -22,8 +22,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { fetchMetaLeads } from 'src/api/meta-lead';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchMetaWebhookLogs } from 'src/api/meta-webhook-log';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -37,31 +37,39 @@ import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 const SORT_OPTIONS = [
     { value: 'creation_desc', label: 'Newest First' },
     { value: 'creation_asc', label: 'Oldest First' },
-    { value: 'status_asc', label: 'Status: A to Z' },
-    { value: 'status_desc', label: 'Status: Z to A' },
+    { value: 'processing_status_asc', label: 'Status: A to Z' },
+    { value: 'processing_status_desc', label: 'Status: Z to A' },
 ];
 
 const TABLE_HEAD = [
-    { id: 'name', label: 'Log ID' },
-    { id: 'http_status', label: 'HTTP Status', width: 130 },
-    { id: 'execution_time', label: 'Exec Time (s)', width: 150 },
-    { id: 'retry_count', label: 'Retries', width: 100, align: 'center' as const },
-    { id: 'response', label: 'Response' },
-    { id: 'status', label: 'Status', width: 130, align: 'center' as const },
+    { id: 'meta_lead_id', label: 'Meta Lead ID' },
+    { id: 'meta_app', label: 'Meta App', width: 180 },
+    { id: 'meta_page', label: 'Meta Page', width: 180 },
+    { id: 'meta_form', label: 'Meta Form', width: 180 },
+    { id: 'received_time', label: 'Received Time', width: 180 },
+    { id: 'processing_status', label: 'Status', width: 130, align: 'center' as const },
     { id: 'actions', label: 'Actions', width: 80, align: 'center' as const },
 ];
 
 // ----------------------------------------------------------------------
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; color: string }> = {
-    Verified: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
-    Failed:   { bg: 'rgba(239,68,68,0.15)',  border: 'rgba(239,68,68,0.35)',  color: '#b91c1c' },
-    Unverified: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
+    Completed: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
+    Failed: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#b91c1c' },
+    Processing: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
+    Pending: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
 };
 
 // ----------------------------------------------------------------------
 
-export function MetaWebhookLogListView() {
+function formatDatetime(val?: string) {
+    if (!val) return '—';
+    return new Date(val).toLocaleString();
+}
+
+// ----------------------------------------------------------------------
+
+export function MetaLeadListView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -78,7 +86,7 @@ export function MetaWebhookLogListView() {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const res = await fetchMetaWebhookLogs({
+            const res = await fetchMetaLeads({
                 page: page + 1,
                 page_size: rowsPerPage,
                 search: filterName,
@@ -87,7 +95,7 @@ export function MetaWebhookLogListView() {
             setData(res.data);
             setTotal(res.total);
         } catch {
-            enqueueSnackbar('Failed to fetch Webhook Logs', { variant: 'error' });
+            enqueueSnackbar('Failed to fetch CRM Meta Leads', { variant: 'error' });
         } finally {
             setLoading(false);
         }
@@ -96,12 +104,12 @@ export function MetaWebhookLogListView() {
     useEffect(() => { fetchData(); }, [fetchData]);
 
     const notFound = !loading && data.length === 0 && !!filterName;
-    const empty    = !loading && data.length === 0 && !filterName;
+    const empty = !loading && data.length === 0 && !filterName;
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">Meta Webhook Logs</Typography>
+                <Typography variant="h4">CRM Meta Leads</Typography>
             </Stack>
 
             <Card>
@@ -109,7 +117,7 @@ export function MetaWebhookLogListView() {
                     <OutlinedInput
                         value={filterName}
                         onChange={(e) => { setFilterName(e.target.value); setPage(0); }}
-                        placeholder="Search logs..."
+                        placeholder="Search leads..."
                         startAdornment={
                             <InputAdornment position="start">
                                 <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
@@ -144,21 +152,28 @@ export function MetaWebhookLogListView() {
                     </Box>
                 </Toolbar>
 
-                <Scrollbar>
-                    <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 960 }}>
-                            <ProposalTableHead rowCount={total} numSelected={0} onSelectAllRows={() => {}} hideCheckbox showIndex headLabel={TABLE_HEAD} />
+                <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                    <Scrollbar>
+                        <Table sx={{ minWidth: 800 }}>
+                            <ProposalTableHead
+                                rowCount={total}
+                                numSelected={0}
+                                onSelectAllRows={() => {}}
+                                hideCheckbox
+                                showIndex
+                                headLabel={TABLE_HEAD}
+                            />
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                                        <TableCell colSpan={TABLE_HEAD.length} align="center" sx={{ py: 10 }}>
                                             <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     <>
                                         {data.map((row, index) => {
-                                            const sc = STATUS_COLORS[row.status] || STATUS_COLORS.Unverified;
+                                            const sc = STATUS_COLORS[row.processing_status] || STATUS_COLORS.Pending;
                                             return (
                                                 <TableRow key={row.name} hover tabIndex={-1}
                                                     sx={{ '& td, & th': { borderBottom: (t) => `1px solid ${t.palette.divider}` }, '&:last-child td, &:last-child th': { borderBottom: 0 } }}
@@ -170,53 +185,32 @@ export function MetaWebhookLogListView() {
                                                         </Box>
                                                     </TableCell>
 
-                                                    {/* Log ID */}
+                                                    {/* Meta Lead ID */}
                                                     <TableCell component="th" scope="row">
                                                         <Stack direction="row" alignItems="center" spacing={1.5}>
                                                             <Box sx={{ width: 36, height: 36, borderRadius: 1.5, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1877F2', flexShrink: 0 }}>
                                                                 <Iconify icon={"logos:meta-icon" as any} width={22} />
                                                             </Box>
-                                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.name}</Typography>
+                                                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{row.meta_lead_id}</Typography>
                                                         </Stack>
                                                     </TableCell>
 
-                                                    {/* HTTP Status */}
-                                                    <TableCell>
-                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.http_status ?? '—'}</Typography>
-                                                    </TableCell>
-
-                                                    {/* Execution Time */}
-                                                    <TableCell>
-                                                        <Typography variant="body2">{row.execution_time != null ? `${row.execution_time}s` : '—'}</Typography>
-                                                    </TableCell>
-
-                                                    {/* Retry Count */}
-                                                    <TableCell align="center">
-                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>{row.retry_count ?? 0}</Typography>
-                                                    </TableCell>
-
-                                                    {/* Response */}
-                                                    <TableCell>
-                                                        <Typography variant="body2" sx={{ fontSize: 13, color: row.status === 'Failed' ? 'error.main' : 'text.secondary', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={row.response || ''}>
-                                                            {row.response || '—'}
-                                                        </Typography>
-                                                    </TableCell>
-
-                                                    {/* Status badge */}
+                                                    <TableCell>{row.meta_app || '—'}</TableCell>
+                                                    <TableCell>{row.meta_page || '—'}</TableCell>
+                                                    <TableCell>{row.meta_form || '—'}</TableCell>
+                                                    <TableCell>{formatDatetime(row.received_time)}</TableCell>
+                                                    
+                                                    {/* Status Badge */}
                                                     <TableCell align="center">
                                                         <Box sx={{ display: 'inline-flex', alignItems: 'center', fontWeight: 700, fontSize: 11, textTransform: 'uppercase', borderRadius: '6px', padding: '4px 10px', bgcolor: sc.bg, border: `1px solid ${sc.border}`, color: sc.color }}>
-                                                            {row.status}
+                                                            {row.processing_status}
                                                         </Box>
                                                     </TableCell>
-
+                                                    
                                                     {/* Actions */}
                                                     <TableCell align="center">
                                                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                                            <IconButton
-                                                                onClick={() => navigate(`/lead-integration/webhook-logs/${encodeURIComponent(row.name)}/view`)}
-                                                                sx={{ color: 'info.main' }}
-                                                                title="View"
-                                                            >
+                                                            <IconButton onClick={() => navigate(`/lead-integration/meta-leads/${encodeURIComponent(row.name)}/view`)} sx={{ color: 'info.main' }} title="View">
                                                                 <Iconify icon="solar:eye-bold" />
                                                             </IconButton>
                                                         </Box>
@@ -228,7 +222,7 @@ export function MetaWebhookLogListView() {
                                         {empty && (
                                             <TableRow>
                                                 <TableCell colSpan={8} sx={{ p: 0, py: 5 }}>
-                                                    <EmptyContent icon={"logos:meta-icon" as any} title="No Webhook Logs found" description="Incoming Meta lead ad webhook payloads will appear here." />
+                                                    <EmptyContent icon={"logos:meta-icon" as any} title="No Meta Leads logged yet" description="Incoming Facebook leads will appear here." />
                                                 </TableCell>
                                             </TableRow>
                                         )}
@@ -243,11 +237,14 @@ export function MetaWebhookLogListView() {
                                 )}
                             </TableBody>
                         </Table>
-                    </TableContainer>
-                </Scrollbar>
+                    </Scrollbar>
+                </TableContainer>
 
                 <TablePagination
-                    page={page} component="div" count={total} rowsPerPage={rowsPerPage}
+                    page={page}
+                    component="div"
+                    count={total}
+                    rowsPerPage={rowsPerPage}
                     onPageChange={(_, newPage) => setPage(newPage)}
                     rowsPerPageOptions={[10, 25, 50]}
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}

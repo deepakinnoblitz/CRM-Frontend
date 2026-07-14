@@ -109,7 +109,7 @@ export function MetaQueueListView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">CRM Meta Queue</Typography>
+                <Typography variant="h4">Meta Queue</Typography>
             </Stack>
 
             <Card>
