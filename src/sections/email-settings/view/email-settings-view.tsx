@@ -112,7 +112,7 @@ export function EmailSettingsView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">CRM Email Settings</Typography>
+                <Typography variant="h4">Email Settings</Typography>
                 <Stack direction="row" spacing={2}>
                     <Button 
                         variant="contained" 

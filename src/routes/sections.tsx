@@ -90,6 +90,8 @@ export const MetaWebhookLogsPage = lazy(() => import('src/pages/lead-integration
 export const MetaWebhookLogViewPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/view'));
 export const MetaQueuePage = lazy(() => import('src/pages/lead-integration/meta-queue/list'));
 export const MetaQueueViewPage = lazy(() => import('src/pages/lead-integration/meta-queue/view'));
+export const MetaLeadsPage = lazy(() => import('src/pages/lead-integration/meta-lead/list'));
+export const MetaLeadsViewPage = lazy(() => import('src/pages/lead-integration/meta-lead/view'));
 
 export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
 export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
@@ -387,6 +389,13 @@ export const routesSection: RouteObject[] = [
             children: [
               { index: true, element: <MetaQueuePage /> },
               { path: ':id/view', element: <MetaQueueViewPage /> },
+            ],
+          },
+          {
+            path: 'meta-leads',
+            children: [
+              { index: true, element: <MetaLeadsPage /> },
+              { path: ':id/view', element: <MetaLeadsViewPage /> },
             ],
           },
         ],

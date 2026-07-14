@@ -471,6 +471,7 @@ export const crmAndSalesNavData = [
           { title: 'Meta Apps', path: '/lead-integration/meta-apps' },
           { title: 'Meta Pages', path: '/lead-integration/meta-pages' },
           { title: 'Meta Forms', path: '/lead-integration/meta-forms' },
+          { title: 'Meta Leads', path: '/lead-integration/meta-leads' },
           { title: 'Webhook Logs', path: '/lead-integration/webhook-logs' },
           { title: 'Meta Queue', path: '/lead-integration/meta-queue' },
         ]
