@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -89,9 +91,6 @@ export function EstimationReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name'])
             .then((data) => {
@@ -134,51 +133,23 @@ export function EstimationReportView() {
         setSelected(newSelected);
     };
 
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const dataToExport = reportData;
-
-            if (dataToExport.length === 0) {
+            if (reportData.length === 0) {
                 setLoading(false);
                 return;
             }
 
-            // Client-side export based on current reportData
-            // If explicit server-side export is needed, we'd replicate the expense report logic
-            // providing filtered list. For simplicity and consistency with simple reports, 
-            // exporting the current view or fetching all with current filters is acceptable.
-            // Following Expense Report Pattern: query list with filters.
+            // Build filters
+            const listFilters: Record<string, any> = {};
+            if (client) listFilters.client_name = client.name;
+            if (account) listFilters.billing_name = account.name;
+            if (fromDate) listFilters.from_date = fromDate.format('YYYY-MM-DD');
+            if (toDate) listFilters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) listFilters.owner = user.name;
 
-            // Replicating Expense Report export logic (fetch by ID list or just fetch all with params)
-            // Expense report filters by `expense_no` IN [list] if selected, OR uses IDs from current data.
-            // Here we didn't implement selection, so we export based on filters.
-            // BUT, the Expense report export tool fetches "Expenses" DocType.
-            // We need to fetch "Estimation" DocType.
-
-            // Since we implemented 'Expense Report' style, let's just dump the current reportData if selection is not critical,
-            // OR fetch properly from 'Estimation' doctype.
-            // Let's implement robust export fetching from 'Estimation'.
-
-            // Build filters for get_list
-            const listFilters = [];
-            if (client) listFilters.push(['client_name', '=', client.name]);
-            if (account) listFilters.push(['billing_name', '=', account.name]);
-            if (fromDate) listFilters.push(['estimate_date', '>=', fromDate]);
-            if (toDate) listFilters.push(['estimate_date', '<=', toDate]);
-            if (user?.has_crm_permission) listFilters.push(['owner', '=', user.name]);
-
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'customer_name', 'billing_name', 'estimate_date', 'total_qty', 'grand_total'];
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
-
-            const queryParams = new URLSearchParams({
-                doctype: "Estimation",
-                fields: JSON.stringify(fieldsToFetch),
-                filters: JSON.stringify(listFilters),
-                limit_page_length: "99999"
-            });
-
-            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+            const res = await fetch(`/api/method/company.company.crm_api.get_estimation_export_data?filters=${encodeURIComponent(JSON.stringify(listFilters))}`, {
                 method: 'GET',
                 credentials: "include"
             });
@@ -188,24 +159,229 @@ export function EstimationReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Estimation Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Estimations");
-                XLSX.writeFile(workbook, "Estimation_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Estimation_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns in the exact order requested
+            const columns = [
+                { header: 'Estimation ID', key: 'estimation_id' },
+                { header: 'Deal', key: 'deal' },
+                { header: 'Customer ID', key: 'customer_id' },
+                { header: 'Estimate Date', key: 'estimate_date' },
+                { header: 'Company', key: 'company_name' },
+                { header: 'Service', key: 'service' },
+                { header: 'HSN', key: 'hsn_code' },
+                { header: 'Description', key: 'description' },
+                { header: 'Qty', key: 'qty' },
+                { header: 'Price', key: 'price' },
+                { header: 'Discount', key: 'discount' },
+                { header: 'Tax Type', key: 'tax_type' },
+                { header: 'Tax Amount', key: 'tax_amount' },
+                { header: 'Total', key: 'total' },
+                { header: 'Grand Total', key: 'grand_total' },
+                { header: 'Total Tax', key: 'total_tax' },
+                { header: 'Overall Discount', key: 'overall_discount' },
+                { header: 'Overall Discount Type', key: 'overall_discount_type' },
+                { header: 'Bank Account', key: 'bank_account' },
+                { header: 'Owner', key: 'owner' },
+                { header: 'Attachments', key: 'attachments' },
+            ];
+
+            sheet.columns = columns;
+            const colCount = columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Group items by estimation ID
+            const groups: Record<string, any[]> = {};
+            const estimationIdsOrdered: string[] = [];
+
+            data.forEach((item: any) => {
+                const estId = item.estimation_id;
+                if (!groups[estId]) {
+                    groups[estId] = [];
+                    estimationIdsOrdered.push(estId);
+                }
+                groups[estId].push(item);
+            });
+
+            let currentRow = 2; // header is row 1
+            const groupEndRows: number[] = [];
+
+            // Populate rows dynamically
+            estimationIdsOrdered.forEach((estId, groupIdx) => {
+                const items = groups[estId];
+                const totalTax = items.reduce((sum, it) => sum + (Number(it.tax_amount) || 0), 0);
+                const startRow = currentRow;
+                const endRow = startRow + items.length - 1;
+                groupEndRows.push(endRow);
+
+                items.forEach((item, itemIdx) => {
+                    const rowDataObj: Record<string, any> = {};
+
+                    // Estimation-level fields (merged columns) are populated on the first row only of the group
+                    if (itemIdx === 0) {
+                        rowDataObj.estimation_id = item.estimation_id || '-';
+                        rowDataObj.deal = item.deal || '-';
+                        rowDataObj.customer_id = item.customer_id || '-';
+                        rowDataObj.estimate_date = item.estimate_date ? dayjs(item.estimate_date).format('YYYY-MM-DD') : '-';
+                        rowDataObj.owner = item.owner || '-';
+                        rowDataObj.company_name = item.company_name || '-';
+
+                        rowDataObj.grand_total = item.grand_total !== undefined && item.grand_total !== null && !isNaN(Number(item.grand_total)) ? Number(item.grand_total) : '-';
+                        rowDataObj.total_tax = !isNaN(Number(totalTax)) ? Number(totalTax) : totalTax;
+                        rowDataObj.overall_discount = item.overall_discount !== undefined && item.overall_discount !== null && !isNaN(Number(item.overall_discount)) ? Number(item.overall_discount) : '-';
+                        rowDataObj.overall_discount_type = item.overall_discount_type || '-';
+                        rowDataObj.bank_account = item.bank_account || '-';
+                        rowDataObj.attachments = ''; // Will be set as link object below
+                    } else {
+                        rowDataObj.estimation_id = '';
+                        rowDataObj.deal = '';
+                        rowDataObj.customer_id = '';
+                        rowDataObj.estimate_date = '';
+                        rowDataObj.owner = '';
+                        rowDataObj.company_name = '';
+
+                        rowDataObj.grand_total = '';
+                        rowDataObj.total_tax = '';
+                        rowDataObj.overall_discount = '';
+                        rowDataObj.overall_discount_type = '';
+                        rowDataObj.bank_account = '';
+                        rowDataObj.attachments = '';
+                    }
+
+                    // Item-level fields (unmerged columns) populated on every row as numbers if numeric
+                    rowDataObj.service = item.service || '-';
+                    rowDataObj.hsn_code = item.hsn_code !== undefined && item.hsn_code !== null && !isNaN(Number(item.hsn_code)) ? Number(item.hsn_code) : (item.hsn_code || '-');
+                    rowDataObj.description = item.description || '-';
+                    rowDataObj.qty = item.qty !== undefined && item.qty !== null && !isNaN(Number(item.qty)) ? Number(item.qty) : '-';
+                    rowDataObj.price = item.price !== undefined && item.price !== null && !isNaN(Number(item.price)) ? Number(item.price) : '-';
+                    rowDataObj.discount = item.discount !== undefined && item.discount !== null && !isNaN(Number(item.discount)) ? Number(item.discount) : '-';
+                    rowDataObj.tax_type = item.tax_type || '-';
+                    rowDataObj.tax_amount = item.tax_amount !== undefined && item.tax_amount !== null && !isNaN(Number(item.tax_amount)) ? Number(item.tax_amount) : '-';
+                    rowDataObj.total = item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) ? Number(item.total) : '-';
+
+                    const newRow = sheet.addRow(rowDataObj);
+                    (newRow as any).isDataRow = true;
+                    currentRow++;
+                });
+
+                // Apply merging for estimation-level columns:
+                if (items.length > 1) {
+                    const columnsToMerge = [
+                        1,  // estimation_id
+                        2,  // deal
+                        3,  // customer_id
+                        4,  // estimate_date
+                        5,  // company_name
+                        15, // grand_total
+                        16, // total_tax
+                        17, // overall_discount
+                        18, // overall_discount_type
+                        19, // bank_account
+                        20, // owner
+                        21, // attachments
+                    ];
+
+                    columnsToMerge.forEach(colIndex => {
+                        sheet.mergeCells(startRow, colIndex, endRow, colIndex);
+                    });
+                }
+
+                // Add Hyperlink with actual filename to Attachments cell on the first row of the group
+                const attachCell = sheet.getCell(startRow, 21);
+                if (items[0].attachments && items[0].attachments !== '-') {
+                    const attachmentUrl = items[0].attachments;
+                    const parts = attachmentUrl.split('/');
+                    const filename = parts[parts.length - 1] || 'Download';
+                    const token = items[0].attachment_token;
+                    const dlUrl = `${window.location.origin}/api/method/company.company.crm_api.download_estimation_attachment?file_path=${encodeURIComponent(attachmentUrl)}&token=${encodeURIComponent(token)}`;
+
+                    attachCell.value = {
+                        text: filename,
+                        hyperlink: dlUrl
+                    };
+                    attachCell.font = {
+                        color: { argb: 'FF0000FF' },
+                        underline: true
+                    };
+                } else {
+                    attachCell.value = '-';
+                }
+            });
+
+            // Row styling (thin black border, white background, alignments)
+            const totalRows = sheet.rowCount;
+            for (let r = 1; r <= totalRows; r++) {
+                const row = sheet.getRow(r);
+                const isHeader = r === 1;
+                for (let c = 1; c <= colCount; c++) {
+                    const cell = row.getCell(c);
+                    
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    
+                    const isGroupEnd = groupEndRows.includes(r);
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: isGroupEnd ? 'medium' : 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+
+                    if (isHeader) {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                    } else {
+                        // Use a clean, uniform white background for all rows
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+                        
+                        // Retain the download style font if it was set on first-row attachments cell
+                        const isAttachmentHyperlink = (c === 21 && cell.value && typeof cell.value === 'object' && (cell.value as any).hyperlink);
+                        if (!isAttachmentHyperlink) {
+                            // Default font styling
+                            cell.font = { name: 'Arial', size: 10 };
+                        }
+                    }
+                }
+            }
+
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        let value = '';
+                        if (cell.value) {
+                            if (typeof cell.value === 'object') {
+                                value = cell.value.text ? String(cell.value.text) : '';
+                            } else {
+                                value = String(cell.value);
+                            }
+                        }
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                
+                let minWidth = 12;
+                if (column.key === 'description') minWidth = 25;
+                if (column.key === 'attachments') minWidth = 15;
+                if (column.key === 'owner') minWidth = 20;
+                column.width = Math.max(maxLen + 4, minWidth);
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Estimation_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -437,7 +613,7 @@ export function EstimationReportView() {
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                         >
                             Export Excel
@@ -611,14 +787,6 @@ export function EstimationReportView() {
                     />
                 </Card>
             </Stack>
-
-
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Estimation"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

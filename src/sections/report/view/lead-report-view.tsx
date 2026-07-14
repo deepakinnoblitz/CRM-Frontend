@@ -413,7 +413,7 @@ export function LeadReportView() {
                             onChange={(e) => setLeadsType(e.target.value)}
                             displayEmpty
                         >
-                            <MenuItem value="all">Leads Type</MenuItem>
+                            <MenuItem value="all">All Leads Type</MenuItem>
                             <MenuItem value="Incoming">Incoming</MenuItem>
                             <MenuItem value="Outgoing">Outgoing</MenuItem>
                         </Select>
@@ -632,20 +632,20 @@ export function LeadReportView() {
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{row.lead_name}</TableCell>
-                                                        <TableCell>{row.company_name}</TableCell>
-                                                        <TableCell>{row.phone_number}</TableCell>
-                                                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.lead_name || '-'}</TableCell>
+                                                        <TableCell>{row.company_name || '-'}</TableCell>
+                                                        <TableCell>{row.phone_number || '-'}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 150, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service || '-'}</TableCell>
                                                         <TableCell>
                                                             <Label
                                                                 variant="soft"
                                                                 color={row.leads_type === 'Incoming' ? 'success' : 'warning'}
                                                             >
-                                                                {row.leads_type}
+                                                                {row.leads_type || '-'}
                                                             </Label>
                                                         </TableCell>
-                                                        <TableCell>{row.leads_from}</TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell>{row.leads_from || '-'}</TableCell>
+                                                        <TableCell>{row.owner_name || '-'}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewLead(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
