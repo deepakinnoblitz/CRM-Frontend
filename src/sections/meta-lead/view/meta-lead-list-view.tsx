@@ -56,7 +56,7 @@ const TABLE_HEAD = [
 // ----------------------------------------------------------------------
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; color: string }> = {
-    Completed: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
+    Success: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
     Failed: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#b91c1c' },
     Processing: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
     Pending: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
