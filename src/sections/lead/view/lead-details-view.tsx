@@ -23,24 +23,38 @@ import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
+import Grid from '@mui/material/Grid';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+import { getToDo } from 'src/api/todo';
+import { getCall } from 'src/api/calls';
+import { CONFIG } from 'src/config-global';
+import { getMeeting } from 'src/api/meetings';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import TodoDialog from 'src/sections/todo/todo-dialog';
+import CallDialog from 'src/sections/calls/call-dialog';
+import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
 import { LeadConvertDialog } from '../lead-convert-dialog';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
@@ -51,6 +65,7 @@ import { EmailAutomationDialog } from '../email-automation-dialog';
 import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
+
 
 // ----------------------------------------------------------------------
 
@@ -109,6 +124,51 @@ export function LeadDetailsView() {
     const [followupLoading, setFollowupLoading] = useState(false);
 
     const [proposalHistory, setProposalHistory] = useState([]);
+
+    // Follow-up creation states
+    const theme = useTheme();
+    const [openTypeDialog, setOpenTypeDialog] = useState(false);
+    const [openCallDialog, setOpenCallDialog] = useState(false);
+    const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
+    const [openTodoDialog, setOpenTodoDialog] = useState(false);
+
+    const [selectedCallDoc, setSelectedCallDoc] = useState<any>(null);
+    const [selectedMeetingDoc, setSelectedMeetingDoc] = useState<any>(null);
+    const [selectedTodoDoc, setSelectedTodoDoc] = useState<any>(null);
+
+    const handleViewFollowup = useCallback(async (name: string, type: string) => {
+        try {
+            if (type === 'Call') {
+                const call = await getCall(name);
+                setSelectedCallDoc(call);
+                setOpenCallDialog(true);
+            } else if (type === 'Meeting') {
+                const meeting = await getMeeting(name);
+                setSelectedMeetingDoc(meeting);
+                setOpenMeetingDialog(true);
+            } else if (type === 'ToDo' || type === 'To-do') {
+                const todo = await getToDo(name);
+                setSelectedTodoDoc(todo);
+                setOpenTodoDialog(true);
+            }
+        } catch (error) {
+            console.error('Failed to fetch event details:', error);
+            setSnackbar({ open: true, message: 'Failed to fetch event details', severity: 'error' });
+        }
+    }, []);
+
+    const refreshFollowupHistory = useCallback(async () => {
+        if (!lead?.name) return;
+        try {
+            setFollowupLoading(true);
+            const history = await getFollowupHistory("Lead", lead.name);
+            setFollowupHistory(history || []);
+        } catch (error) {
+            console.error("Failed to load followup history", error);
+        } finally {
+            setFollowupLoading(false);
+        }
+    }, [lead?.name]);
 
     useEffect(() => {
         const loadFollowups = async () => {
@@ -503,12 +563,21 @@ export function LeadDetailsView() {
                             textTransform: 'none',
                             px: 2.5,
                             '&:hover': {
-                                bgcolor: (theme) => alpha(theme.palette.text.primary, 0.04),
+                                bgcolor: alpha(theme.palette.text.primary, 0.04),
                                 borderColor: 'text.primary',
                             },
                         }}
                     >
                         Go Back
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="solar:calendar-add-bold" />}
+                        onClick={() => setOpenTypeDialog(true)}
+                        sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: '#0e9f6e' }}
+                    >
+                        Create Follow-up
                     </Button>
 
                     <Button
@@ -658,11 +727,11 @@ export function LeadDetailsView() {
                     py: 3.5,
                     borderRadius: 2.5,
                     mb: 3,
-                    background: (theme) =>
+                    background:
                         theme.palette.mode === 'light'
                             ? `linear-gradient(135deg, #F6FAFE 0%, #EDF4FB 100%)`
                             : alpha(theme.palette.primary.main, 0.08),
-                    border: (theme) =>
+                    border: 
                         `1px solid ${theme.palette.mode === 'light' ? '#E2EAF5' : alpha(theme.palette.primary.main, 0.16)}`,
                 }}
             >
@@ -840,7 +909,7 @@ export function LeadDetailsView() {
                     bgcolor: 'background.paper',
                     borderRadius: '0 0 12px 12px',
                     p: 4,
-                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                    border:  `1px solid ${theme.palette.divider}`,
                     borderTop: 0,
                 }}
             >
@@ -918,10 +987,10 @@ export function LeadDetailsView() {
                             <Box
                                 sx={{
                                     p: 3,
-                                    bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
+                                    bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
                                     borderRadius: 2.5,
                                     margin: 2,
-                                    border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
+                                    border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
                                 }}
                             >
                                 <SectionHeader title="Additional Information" icon={<FaFileLines size={18} />} noMargin />
@@ -934,7 +1003,7 @@ export function LeadDetailsView() {
                                             {lead.billing_address || 'No address provided'}
                                         </Typography>
                                     </Box>
-                                    <Divider sx={{ borderStyle: 'solid', borderColor: (theme) => theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
+                                    <Divider sx={{ borderStyle: 'solid', borderColor:  theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
                                     <Box>
                                         <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
                                             Remarks / Notes
@@ -961,6 +1030,7 @@ export function LeadDetailsView() {
                         <LeadFollowupDetails
                             title="Followup History"
                             list={followupHistory}
+                            onView={handleViewFollowup}
                         />
                     )}
 
@@ -975,7 +1045,7 @@ export function LeadDetailsView() {
                         <Box sx={{ py: 3 }}>
                             {lead.converted_account || lead.converted_contact ? (
                                 <Box>
-                                    <Box sx={{ padding: 5, bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border: (theme) => `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`, }}>
+                                    <Box sx={{ padding: 5, bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`, }}>
                                         <Stack spacing={2.5}>
                                             <Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1179,6 +1249,167 @@ export function LeadDetailsView() {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            {/* Event Type Selection Dialog */}
+            <Dialog open={openTypeDialog} onClose={() => setOpenTypeDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (t: any) => t.customShadows.z24, } }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Choose Event Type
+                    <IconButton onClick={() => setOpenTypeDialog(false)} sx={{ color: 'text.secondary' }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ py: 2 }}>
+                        {[
+                            {
+                                label: 'Calls',
+                                icon: `${CONFIG.assetsDir}/images/calls-3d-white.png`,
+                                color: 'primary',
+                                sub: 'Schedule a call',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenCallDialog(true);
+                                },
+                            },
+                            {
+                                label: 'Meeting',
+                                icon: `${CONFIG.assetsDir}/images/meeting-3d-white.png`,
+                                color: 'success',
+                                sub: 'Schedule a meeting',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenMeetingDialog(true);
+                                },
+                            },
+                            {
+                                label: 'To-do',
+                                icon: `${CONFIG.assetsDir}/images/todo-3d-white.png`,
+                                color: 'warning',
+                                sub: 'Create a task',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenTodoDialog(true);
+                                },
+                            },
+                        ].map((item) => (
+                            <Grid key={item.label} size={{ xs: 12, md: 4 }}>
+                                <Box
+                                    onClick={item.handler}
+                                    sx={{
+                                        p: 3,
+                                        borderRadius: 2.5,
+                                        cursor: 'pointer',
+                                        transition: theme.transitions.create(['all'], {
+                                            duration: theme.transitions.duration.shorter,
+                                        }),
+                                        textAlign: 'center',
+                                        bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.04),
+                                        border: `1px solid ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.1)}`,
+                                        backdropFilter: 'blur(12px) saturate(160%)',
+                                        '&:hover': {
+                                            bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.08),
+                                            borderColor: theme.palette[item.color as 'primary' | 'success' | 'warning'].main,
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: `0 12px 24px -4px ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.16)}`,
+                                            '& img': {
+                                                transform: 'scale(1.1) rotate(5deg)',
+                                            }
+                                        },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            mb: 1,
+                                            display: 'inline-flex',
+                                            transition: theme.transitions.create(['transform']),
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={item.icon}
+                                            sx={{
+                                                width: 80,
+                                                height: 80,
+                                                objectFit: 'contain',
+                                                mixBlendMode: 'multiply',
+                                                filter: 'contrast(1.2) brightness(1.1)',
+                                                transition: theme.transitions.create(['transform']),
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>{item.label}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.813rem' }}>
+                                        {item.sub}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </DialogContent>
+            </Dialog>
+
+            {/* Event Form Dialogs prefilled with lead details */}
+            {openCallDialog && lead && (
+                <CallDialog
+                    open={openCallDialog}
+                    onClose={() => {
+                        setOpenCallDialog(false);
+                        setSelectedCallDoc(null);
+                    }}
+                    selectedCall={selectedCallDoc}
+                    initialData={{
+                        lead_name: lead.name,
+                        title: `Follow up call with ${lead.lead_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenCallDialog(false);
+                        setSelectedCallDoc(null);
+                        refreshFollowupHistory();
+                        setSnackbar({ open: true, message: 'Call saved successfully', severity: 'success' });
+                    }}
+                />
+            )}
+
+            {openMeetingDialog && lead && (
+                <MeetingDialog
+                    open={openMeetingDialog}
+                    onClose={() => {
+                        setOpenMeetingDialog(false);
+                        setSelectedMeetingDoc(null);
+                    }}
+                    selectedMeeting={selectedMeetingDoc}
+                    initialData={{
+                        lead_name: lead.name,
+                        title: `Follow up meeting with ${lead.lead_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenMeetingDialog(false);
+                        setSelectedMeetingDoc(null);
+                        refreshFollowupHistory();
+                        setSnackbar({ open: true, message: 'Meeting saved successfully', severity: 'success' });
+                    }}
+                />
+            )}
+
+            {openTodoDialog && lead && (
+                <TodoDialog
+                    open={openTodoDialog}
+                    onClose={() => {
+                        setOpenTodoDialog(false);
+                        setSelectedTodoDoc(null);
+                    }}
+                    selectedTodo={selectedTodoDoc}
+                    initialData={{
+                        description: `Follow up task for lead: ${lead.lead_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenTodoDialog(false);
+                        setSelectedTodoDoc(null);
+                        refreshFollowupHistory();
+                        setSnackbar({ open: true, message: 'To-do task saved successfully', severity: 'success' });
+                    }}
+                />
+            )}
         </DashboardContent>
     );
 }
