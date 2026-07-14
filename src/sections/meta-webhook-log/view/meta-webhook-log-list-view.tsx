@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -33,6 +34,8 @@ import { EmptyContent } from 'src/components/empty-content';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
+
+import { MetaWebhookLogFiltersDrawer, MetaWebhookLogFilters } from '../meta-webhook-log-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -80,6 +83,24 @@ export function MetaWebhookLogListView() {
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
 
+    const [filters, setFilters] = useState<MetaWebhookLogFilters>({
+        http_status: 'all',
+        status: 'all',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const handleFilters = useCallback((update: Partial<MetaWebhookLogFilters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({ http_status: 'all', status: 'all' });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.http_status !== 'all' || filters.status !== 'all';
+
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
     const fetchData = useCallback(async () => {
@@ -90,6 +111,8 @@ export function MetaWebhookLogListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: sortBy,
+                http_status: filters.http_status,
+                status: filters.status,
             });
             setData(res.data);
             setTotal(res.total);
@@ -98,7 +121,7 @@ export function MetaWebhookLogListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy, enqueueSnackbar]);
+    }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -125,6 +148,28 @@ export function MetaWebhookLogListView() {
                         sx={{ maxWidth: 480, width: 1 }}
                     />
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                            disableRipple
+                            color="inherit"
+                            onClick={() => setOpenFilters(true)}
+                            startIcon={
+                                <Badge color="error" variant="dot" invisible={!canReset}>
+                                    <Iconify icon="ic:round-filter-list" />
+                                </Badge>
+                            }
+                            sx={{
+                                height: 40,
+                                px: 2,
+                                bgcolor: 'background.neutral',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                fontWeight: 500,
+                            }}
+                        >
+                            Filters
+                        </Button>
+
                         <Button
                             variant="text" color="inherit"
                             startIcon={<Iconify icon={"solar:sort-bold" as any} />}
@@ -263,6 +308,16 @@ export function MetaWebhookLogListView() {
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>
+
+            <MetaWebhookLogFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
         </DashboardContent>
     );
 }

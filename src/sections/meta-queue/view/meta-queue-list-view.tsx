@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -34,6 +35,7 @@ import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { MetaQueueFiltersDrawer, MetaQueueFilters } from '../meta-queue-filters-drawer';    
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -83,6 +85,25 @@ export function MetaQueueListView() {
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
 
+    const [filters, setFilters] = useState<MetaQueueFilters>({
+        status: 'all',
+        from_date: '',
+        to_date: '',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const handleFilters = useCallback((update: Partial<MetaQueueFilters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({ status: 'all', from_date: '', to_date: '' });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.status !== 'all' || !!filters.from_date || !!filters.to_date;
+
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
     const fetchData = useCallback(async () => {
@@ -93,6 +114,9 @@ export function MetaQueueListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: sortBy,
+                status: filters.status,
+                from_date: filters.from_date || undefined,
+                to_date: filters.to_date || undefined,
             });
             setData(res.data);
             setTotal(res.total);
@@ -101,7 +125,7 @@ export function MetaQueueListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy, enqueueSnackbar]);
+    }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -128,6 +152,28 @@ export function MetaQueueListView() {
                         sx={{ maxWidth: 480, width: 1 }}
                     />
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                            disableRipple
+                            color="inherit"
+                            onClick={() => setOpenFilters(true)}
+                            startIcon={
+                                <Badge color="error" variant="dot" invisible={!canReset}>
+                                    <Iconify icon="ic:round-filter-list" />
+                                </Badge>
+                            }
+                            sx={{
+                                height: 40,
+                                px: 2,
+                                bgcolor: 'background.neutral',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                fontWeight: 500,
+                            }}
+                        >
+                            Filters
+                        </Button>
+
                         <Button
                             variant="text" color="inherit"
                             startIcon={<Iconify icon={"solar:sort-bold" as any} />}
@@ -267,6 +313,16 @@ export function MetaQueueListView() {
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>
+
+            <MetaQueueFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
         </DashboardContent>
     );
 }

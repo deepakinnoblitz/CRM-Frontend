@@ -39,6 +39,9 @@ export interface FetchMetaFormsParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    meta_page?: string;
+    allow_duplicates?: string;
+    is_active?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -48,6 +51,16 @@ export interface FetchMetaFormsParams {
 export async function fetchMetaForms(params: FetchMetaFormsParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.meta_page && params.meta_page !== 'all') {
+        filters.push(['CRM Meta Form', 'meta_page', '=', params.meta_page]);
+    }
+    if (params.allow_duplicates && params.allow_duplicates !== 'all') {
+        filters.push(['CRM Meta Form', 'allow_duplicates', '=', params.allow_duplicates === 'yes' ? 1 : 0]);
+    }
+    if (params.is_active && params.is_active !== 'all') {
+        filters.push(['CRM Meta Form', 'is_active', '=', params.is_active === 'yes' ? 1 : 0]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta Form', 'form_name', 'like', `%${params.search}%`]);
