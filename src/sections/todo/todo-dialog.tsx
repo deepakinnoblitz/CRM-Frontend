@@ -242,11 +242,18 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                 autoHideDuration={6000}
                 onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                style={{ zIndex: 99999 }}
+                sx={{ zIndex: 99999 }}
+                slotProps={{
+                    root: {
+                        style: { zIndex: 99999 }
+                    }
+                }}
             >
                 <Alert
                     onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                     severity={snackbar.severity}
-                    sx={{ width: '100%' }}
+                    sx={{ width: '100%', zIndex: 99999 }}
                 >
                     {snackbar.message}
                 </Alert>

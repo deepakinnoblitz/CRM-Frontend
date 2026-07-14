@@ -9,6 +9,7 @@ import TableCell from "@mui/material/TableCell";
 import TableHead from "@mui/material/TableHead";
 import CardHeader from "@mui/material/CardHeader";
 import Typography from "@mui/material/Typography";
+import IconButton from "@mui/material/IconButton";
 import TableContainer from "@mui/material/TableContainer";
 import TablePagination from "@mui/material/TablePagination";
 
@@ -34,9 +35,10 @@ type Props = {
     start_time?: string;
     end_time?: string;
   }[];
+  onView?: (name: string, type: string) => void;
 };
 
-export function LeadFollowupDetails({ title, subheader, list }: Props) {
+export function LeadFollowupDetails({ title, subheader, list, onView }: Props) {
   const [page, setPage] = useState(0);
 
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -89,13 +91,15 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                 <TableCell>Owner</TableCell>
 
                 <TableCell>Notes</TableCell>
+
+                <TableCell align="center">Actions</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
               {paginatedList.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Box
                       sx={{
                         py: 8,
@@ -172,6 +176,16 @@ export function LeadFollowupDetails({ title, subheader, list }: Props) {
                       }}
                     >
                       {row.notes || "-"}
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <IconButton
+                        onClick={() => onView?.(row.name, row.type)}
+                        sx={{ color: "info.main" }}
+                        title="View"
+                      >
+                        <Iconify icon="solar:eye-bold" />
+                      </IconButton>
                     </TableCell>
                   </TableRow>
                 ))
