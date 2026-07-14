@@ -389,21 +389,6 @@ export function MetaFormsEditView() {
                                 }
                                 sx={{ ml: 0.5 }}
                             />
-                            <FormControlLabel
-                                control={
-                                    <CustomSwitch
-                                        checked={allowDuplicates}
-                                        onChange={(e) => setAllowDuplicates(e.target.checked)}
-                                    />
-                                }
-                                label={
-                                    <Stack spacing={0.2}>
-                                        <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Allow Duplicates</Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Process duplicate leads matching limits</Typography>
-                                    </Stack>
-                                }
-                                sx={{ ml: 0.5 }}
-                            />
                         </Box>
 
                         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
@@ -447,6 +432,24 @@ export function MetaFormsEditView() {
                                     />
                                 )}
                             />
+                        </Box>
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <FormControlLabel
+                                control={
+                                    <CustomSwitch
+                                        checked={allowDuplicates}
+                                        onChange={(e) => setAllowDuplicates(e.target.checked)}
+                                    />
+                                }
+                                label={
+                                    <Stack spacing={0.2}>
+                                        <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Allow Duplicates</Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Process duplicate leads matching limits</Typography>
+                                    </Stack>
+                                }
+                                sx={{ ml: 0.5 }}
+                            />
+                            {allowDuplicates && (
                             <FormControl fullWidth disabled={!allowDuplicates}>
                                 <InputLabel id="dup-limit-label">Duplicate Limit By</InputLabel>
                                 <Select
@@ -460,6 +463,7 @@ export function MetaFormsEditView() {
                                     <MenuItem value="Phone Only">Phone Only</MenuItem>
                                 </Select>
                             </FormControl>
+                            )}
                         </Box>
                     </Stack>
                 </Card>
