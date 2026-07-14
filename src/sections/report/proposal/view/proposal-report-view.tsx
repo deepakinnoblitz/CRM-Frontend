@@ -209,15 +209,7 @@ export function ProposalReportView() {
             const proposalIds = data.map((row: any) => row.name);
             let files: any[] = [];
             if (proposalIds.length > 0) {
-                const fileQueryParams = new URLSearchParams({
-                    doctype: 'Proposal Attachment',
-                    fields: JSON.stringify(['name', 'file_name', 'attachment', 'parent']),
-                    filters: JSON.stringify([
-                        ['parent', 'in', proposalIds]
-                    ]),
-                    limit_page_length: '99999'
-                });
-                const fileRes = await fetch(`/api/method/frappe.client.get_list?${fileQueryParams.toString()}`, {
+                const fileRes = await fetch(`/api/method/company.company.crm_api.get_proposal_attachments?proposal_ids=${encodeURIComponent(JSON.stringify(proposalIds))}`, {
                     method: 'GET',
                     credentials: "include"
                 });
@@ -264,12 +256,32 @@ export function ProposalReportView() {
             // Populate rows dynamically
             data.forEach((row: any) => {
                 const rowDataObj: Record<string, any> = {};
+                let maxLines = 1;
                 validFields.forEach(f => {
                     let val = row[f.fieldname];
                     if (f.fieldname === 'proposal_date' && val) {
                         val = dayjs(val).format('YYYY-MM-DD');
                     } else if (f.fieldname === 'reference_no' && !val) {
                         val = row.reference_no || row.name;
+                    }
+
+                    if ((f.fieldname === 'description' || f.fieldname === 'terms_and_conditions') && val) {
+                        // Strip HTML tags and entities
+                        val = val
+                            .replace(/<[^>]*>/g, '')
+                            .replace(/&nbsp;/g, ' ')
+                            .replace(/&amp;/g, '&')
+                            .replace(/&lt;/g, '<')
+                            .replace(/&gt;/g, '>')
+                            .replace(/&quot;/g, '"')
+                            .replace(/&#39;/g, "'")
+                            .trim();
+                        
+                        // Estimate number of wrapped lines for a ~50 char line width
+                        const lineCount = Math.max(1, Math.ceil(val.length / 50));
+                        if (lineCount > maxLines) {
+                            maxLines = lineCount;
+                        }
                     }
 
                     if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
@@ -280,17 +292,26 @@ export function ProposalReportView() {
                 rowDataObj['attachments'] = ''; // populated dynamically below
 
                 const excelRow = sheet.addRow(rowDataObj);
+                
+                // Adjust row height based on estimated text lines
+                if (maxLines > 1) {
+                    excelRow.height = maxLines * 15 + 10;
+                } else {
+                    excelRow.height = 20;
+                }
 
                 const propFiles = filesMap[row.name] || [];
                 const attachmentsCell = excelRow.getCell('attachments');
                 if (propFiles.length === 1) {
+                    const dlUrl = `${window.location.origin}/api/method/company.company.crm_api.download_proposal_attachment?file_id=${encodeURIComponent(propFiles[0].name)}&token=${encodeURIComponent(propFiles[0].token)}`;
+                    console.log("Single file download URL:", dlUrl);
                     attachmentsCell.value = {
                         text: propFiles[0].file_name || 'Download',
-                        hyperlink: window.location.origin + propFiles[0].attachment
+                        hyperlink: dlUrl
                     };
                     attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
                 } else if (propFiles.length > 1) {
-                    attachmentsCell.value = propFiles.map((f: any) => `${window.location.origin}${f.attachment}`).join('\n');
+                    attachmentsCell.value = propFiles.map((f: any) => `${window.location.origin}/api/method/company.company.crm_api.download_proposal_attachment?file_id=${encodeURIComponent(f.name)}&token=${encodeURIComponent(f.token)}`).join('\n');
                     attachmentsCell.font = { color: { argb: 'FF0000FF' }, underline: true };
                     attachmentsCell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
                 } else {
@@ -301,6 +322,13 @@ export function ProposalReportView() {
             // Auto-fit column widths
             sheet.columns?.forEach((column: any) => {
                 if (!column) return;
+                
+                const isLongTextCol = (column.key === 'description' || column.key === 'terms_and_conditions');
+                if (isLongTextCol) {
+                    column.width = 55;
+                    return;
+                }
+
                 let maxLen = 0;
                 if (column.eachCell) {
                     column.eachCell({ includeEmpty: true }, (cell: any) => {
@@ -323,7 +351,19 @@ export function ProposalReportView() {
                 if (rowNumber > 1) {
                     for (let i = 1; i <= colCount; i++) {
                         const cell = row.getCell(i);
-                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        const columnKey = sheet.columns?.[i - 1]?.key;
+                        
+                        const isLongTextCol = (columnKey === 'description' || columnKey === 'terms_and_conditions');
+                        if (isLongTextCol) {
+                            cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+                        } else {
+                            if (columnKey === 'attachments' && cell.alignment) {
+                                // keep existing attachment alignment
+                            } else {
+                                cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                            }
+                        }
+
                         if (rowNumber % 2 === 0) {
                             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
                         }

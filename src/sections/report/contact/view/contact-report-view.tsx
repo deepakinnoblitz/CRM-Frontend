@@ -576,7 +576,7 @@ export function ContactReportView() {
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{row.first_name}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.first_name || '-'}</TableCell>
                                                         <TableCell>
                                                             {(() => {
                                                                 const names = row.company_name ? row.company_name.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
@@ -620,13 +620,13 @@ export function ContactReportView() {
                                                                 );
                                                             })()}
                                                         </TableCell>
-                                                        <TableCell>{row.email}</TableCell>
-                                                        <TableCell>{row.phone}</TableCell>
+                                                        <TableCell>{row.email || '-'}</TableCell>
+                                                        <TableCell>{row.phone || '-'}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ')}
+                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ') || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.source_lead}</TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell>{row.source_lead || '-'}</TableCell>
+                                                        <TableCell>{row.owner_name || '-'}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewContact(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />

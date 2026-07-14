@@ -579,16 +579,16 @@ export function AccountReportView() {
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{row.account_name}</TableCell>
-                                                        <TableCell>{row.phone_number}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.account_name || '-'}</TableCell>
+                                                        <TableCell>{row.phone_number || '-'}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {row.website}
+                                                            {row.website || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.gstin}</TableCell>
+                                                        <TableCell>{row.gstin || '-'}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ')}
+                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ') || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell>{row.owner_name || '-'}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewAccount(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />

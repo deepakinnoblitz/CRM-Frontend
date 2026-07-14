@@ -22,6 +22,7 @@ export interface MetaLead {
     error_message?: string;
     created_lead?: string;
     creation: string;
+    modified: string;
 }
 
 export interface FetchLeadParams {
@@ -60,7 +61,7 @@ export async function fetchMetaLeads(params: FetchLeadParams) {
         fields: JSON.stringify([
             'name', 'meta_lead_id', 'meta_app', 'meta_page', 'meta_form',
             'campaign_name', 'ad_set_name', 'ad_name', 'received_time',
-            'processed_time', 'processing_status', 'retry_count', 'creation'
+            'processed_time', 'processing_status', 'retry_count', 'creation', 'modified'
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
