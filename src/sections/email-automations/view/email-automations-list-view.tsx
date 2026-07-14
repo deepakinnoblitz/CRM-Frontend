@@ -149,7 +149,7 @@ export function EmailAutomationsListView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">CRM Email Automations</Typography>
+                <Typography variant="h4">Email Automations</Typography>
                 <Button
                     variant="contained"
                     startIcon={<Iconify icon="mingcute:add-line" />}

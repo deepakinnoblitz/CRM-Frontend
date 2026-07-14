@@ -153,7 +153,7 @@ export function EmailTemplateListView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                <Typography variant="h4">CRM Email Templates</Typography>
+                <Typography variant="h4">Email Templates</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
                     <Button
                         variant="contained"
