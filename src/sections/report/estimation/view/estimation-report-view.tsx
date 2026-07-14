@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -89,9 +91,6 @@ export function EstimationReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name'])
             .then((data) => {
@@ -134,42 +133,28 @@ export function EstimationReportView() {
         setSelected(newSelected);
     };
 
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const dataToExport = reportData;
-
-            if (dataToExport.length === 0) {
+            if (reportData.length === 0) {
                 setLoading(false);
                 return;
             }
 
-            // Client-side export based on current reportData
-            // If explicit server-side export is needed, we'd replicate the expense report logic
-            // providing filtered list. For simplicity and consistency with simple reports, 
-            // exporting the current view or fetching all with current filters is acceptable.
-            // Following Expense Report Pattern: query list with filters.
-
-            // Replicating Expense Report export logic (fetch by ID list or just fetch all with params)
-            // Expense report filters by `expense_no` IN [list] if selected, OR uses IDs from current data.
-            // Here we didn't implement selection, so we export based on filters.
-            // BUT, the Expense report export tool fetches "Expenses" DocType.
-            // We need to fetch "Estimation" DocType.
-
-            // Since we implemented 'Expense Report' style, let's just dump the current reportData if selection is not critical,
-            // OR fetch properly from 'Estimation' doctype.
-            // Let's implement robust export fetching from 'Estimation'.
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_estimation_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Estimation export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
 
             // Build filters for get_list
             const listFilters = [];
             if (client) listFilters.push(['client_name', '=', client.name]);
             if (account) listFilters.push(['billing_name', '=', account.name]);
-            if (fromDate) listFilters.push(['estimate_date', '>=', fromDate]);
-            if (toDate) listFilters.push(['estimate_date', '<=', toDate]);
+            if (fromDate) listFilters.push(['estimate_date', '>=', fromDate.format('YYYY-MM-DD')]);
+            if (toDate) listFilters.push(['estimate_date', '<=', toDate.format('YYYY-MM-DD')]);
             if (user?.has_crm_permission) listFilters.push(['owner', '=', user.name]);
 
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'customer_name', 'billing_name', 'estimate_date', 'total_qty', 'grand_total'];
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const queryParams = new URLSearchParams({
                 doctype: "Estimation",
@@ -188,24 +173,79 @@ export function EstimationReportView() {
             const jsonResponse = await res.json();
             const data = jsonResponse.message || [];
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Estimation Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Estimations");
-                XLSX.writeFile(workbook, "Estimation_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Estimation_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (f.fieldname === 'estimate_date' && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Estimation_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -437,7 +477,7 @@ export function EstimationReportView() {
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                         >
                             Export Excel
@@ -611,14 +651,6 @@ export function EstimationReportView() {
                     />
                 </Card>
             </Stack>
-
-
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Estimation"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

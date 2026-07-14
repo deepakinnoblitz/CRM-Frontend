@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -91,9 +93,6 @@ export function InvoiceReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
     useEffect(() => {
         getDoctypeList('Contacts', ['name', 'first_name'])
             .then((data) => {
@@ -136,26 +135,120 @@ export function InvoiceReportView() {
         setSelected(newSelected);
     };
 
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const dataToExport = reportData.map((row) => {
-                const filteredRow: any = {};
-                selectedFields.forEach((field) => {
-                    filteredRow[field] = row[field];
-                });
-                return filteredRow;
+            if (reportData.length === 0) {
+                setLoading(false);
+                return;
+            }
+
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_invoice_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Invoice export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            // Build filters for get_list
+            const listFilters = [];
+            if (client) listFilters.push(['client_name', '=', client.name]);
+            if (account) listFilters.push(['billing_name', '=', account.name]);
+            if (fromDate) listFilters.push(['invoice_date', '>=', fromDate.format('YYYY-MM-DD')]);
+            if (toDate) listFilters.push(['invoice_date', '<=', toDate.format('YYYY-MM-DD')]);
+            if (user?.has_crm_permission) listFilters.push(['owner', '=', user.name]);
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
+
+            const queryParams = new URLSearchParams({
+                doctype: "Invoice",
+                fields: JSON.stringify(fieldsToFetch),
+                filters: JSON.stringify(listFilters),
+                limit_page_length: "99999"
             });
 
-            const ws = XLSX.utils.json_to_sheet(dataToExport);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'Invoices');
+            const res = await fetch(`/api/method/frappe.client.get_list?${queryParams.toString()}`, {
+                method: 'GET',
+                credentials: "include"
+            });
 
-            if (format === 'excel') {
-                XLSX.writeFile(wb, `Invoice_Report_${dayjs().format('YYYYMMDD')}.xlsx`);
-            } else {
-                XLSX.writeFile(wb, `Invoice_Report_${dayjs().format('YYYYMMDD')}.csv`, { bookType: 'csv' });
+            if (!res.ok) throw new Error("Failed to fetch data for export");
+
+            const jsonResponse = await res.json();
+            const data = jsonResponse.message || [];
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Invoice Report');
+
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if ((f.fieldname === 'invoice_date' || f.fieldname === 'due_date' || f.fieldname === 'po_date') && val) {
+                        val = dayjs(val).format('YYYY-MM-DD');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row: any, rowNumber: number) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Invoice_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
         } catch (error) {
             console.error('Export failed:', error);
         } finally {
@@ -369,7 +462,7 @@ export function InvoiceReportView() {
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={() => setOpenExportFields(true)}
+                            onClick={handleExport}
                             disabled={reportData.length === 0}
                         >
                             Export Excel
@@ -543,13 +636,6 @@ export function InvoiceReportView() {
                     />
                 </Card>
             </Stack>
-
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Invoice"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }
