@@ -8,6 +8,7 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
@@ -21,18 +22,22 @@ import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
+import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, styled } from '@mui/material/styles';
 import Autocomplete from '@mui/material/Autocomplete';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import FormHelperText from '@mui/material/FormHelperText';
 import Switch, { SwitchProps } from '@mui/material/Switch';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { getDoctypeList } from 'src/api/leads';
 import { fetchMetaPages } from 'src/api/meta-page';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getDoctypeList, createLeadFrom } from 'src/api/leads';
 import { createMetaForm, getLeadFields, getMandatoryLeadFields } from 'src/api/meta-form';
 
 import { Iconify } from 'src/components/iconify';
@@ -108,7 +113,7 @@ export function MetaFormsCreateView() {
     const [formName, setFormName] = useState('');
     const [formId, setFormId] = useState('');
     const [metaPage, setMetaPage] = useState('');
-    
+
     // Tracking detail fields
     const [campaignId, setCampaignId] = useState('');
     const [campaignName, setCampaignName] = useState('');
@@ -135,8 +140,32 @@ export function MetaFormsCreateView() {
 
     const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
 
+    const [createLeadFromOpen, setCreateLeadFromOpen] = useState(false);
+    const [creatingLeadFrom, setCreatingLeadFrom] = useState(false);
+    const [newLeadFromName, setNewLeadFromName] = useState('');
+    const [newLeadFromIndex, setNewLeadFromIndex] = useState<number | null>(null);
+
     const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ formName?: boolean; formId?: boolean; metaPage?: boolean }>({});
+
+    const handleCreateLeadFromSubmit = async () => {
+        if (!newLeadFromName.trim()) return;
+        setCreatingLeadFrom(true);
+        try {
+            await createLeadFrom(newLeadFromName.trim());
+            setLeadsFromOptions((prev) => [...prev, newLeadFromName.trim()]);
+            if (newLeadFromIndex !== null) {
+                handleMappingChange(newLeadFromIndex, 'default_value', newLeadFromName.trim());
+            }
+            setCreateLeadFromOpen(false);
+            setNewLeadFromName('');
+            enqueueSnackbar('Lead From created successfully', { variant: 'success' });
+        } catch (error: any) {
+            enqueueSnackbar(error?.message || 'Failed to create Lead From', { variant: 'error' });
+        } finally {
+            setCreatingLeadFrom(false);
+        }
+    };
 
     useEffect(() => {
         const loadInitialData = async () => {
@@ -165,7 +194,7 @@ export function MetaFormsCreateView() {
                     transform_function: field.fieldname === 'phone_number' ? 'Clean Phone' : 'None',
                 }));
                 setFieldMappings(autoMappings);
-                
+
                 // Map API field format to option select values
                 const mappedOptions = fieldsRes.map((f: any) => ({
                     value: f.fieldname,
@@ -214,7 +243,7 @@ export function MetaFormsCreateView() {
         if (!formName.trim()) newErrors.formName = true;
         if (!formId.trim()) newErrors.formId = true;
         if (!metaPage) newErrors.metaPage = true;
-        
+
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
             enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
@@ -222,15 +251,23 @@ export function MetaFormsCreateView() {
         }
 
         // Validate field mapping list
-        const invalidMappings = fieldMappings.some(m => {
+        const processedMappings = fieldMappings.map(m => {
+            const copy = { ...m };
+            if (copy.crm_field === 'leads_type' && !copy.default_value) {
+                copy.default_value = 'Incoming';
+            }
+            return copy;
+        });
+
+        const invalidMappings = processedMappings.some(m => {
             const isFallbackField = m.crm_field === 'leads_type' || m.crm_field === 'leads_from';
             if (isFallbackField) {
-                return !m.crm_field;
+                return !m.crm_field || !(m.default_value || '').trim();
             }
             return !(m.meta_field || '').trim() || !m.crm_field;
         });
         if (invalidMappings) {
-            enqueueSnackbar('Please ensure all mapping rows have a Meta Field value and CRM Field selected.', { variant: 'error' });
+            enqueueSnackbar('Please ensure all mapping rows have a Meta Field value (or Default Value for system fields) and CRM Field selected.', { variant: 'error' });
             return;
         }
 
@@ -249,7 +286,7 @@ export function MetaFormsCreateView() {
                 is_active: isActive ? 1 : 0,
                 allow_duplicates: allowDuplicates ? 1 : 0,
                 duplicate_limit_by: duplicateLimitBy,
-                field_mappings: fieldMappings.map(m => ({
+                field_mappings: processedMappings.map(m => ({
                     meta_field: (m.meta_field || '').trim(),
                     crm_field: m.crm_field,
                     required: m.required ? 1 : 0,
@@ -519,8 +556,72 @@ export function MetaFormsCreateView() {
                                                     fullWidth
                                                     options={leadsFromOptions}
                                                     value={row.default_value || ''}
-                                                    onChange={(event, newValue) => {
-                                                        handleMappingChange(index, 'default_value', newValue || '');
+                                                    onChange={async (event, newValue: any) => {
+                                                        if (typeof newValue === 'string') {
+                                                            handleMappingChange(index, 'default_value', newValue);
+                                                        } else if (newValue && newValue.isNew) {
+                                                            setNewLeadFromIndex(index);
+                                                            setNewLeadFromName(newValue.inputValue);
+                                                            setCreateLeadFromOpen(true);
+                                                        } else {
+                                                            handleMappingChange(index, 'default_value', newValue || '');
+                                                        }
+                                                    }}
+                                                    filterOptions={(options, params) => {
+                                                        const filtered = options.filter(option =>
+                                                            option.toLowerCase().includes(params.inputValue.toLowerCase())
+                                                        );
+                                                        const { inputValue } = params;
+                                                        const isExisting = options.some((option) => inputValue.toLowerCase() === option.toLowerCase());
+
+                                                        if (inputValue !== '' && !isExisting) {
+                                                            filtered.push({
+                                                                inputValue,
+                                                                label: `+ Create "${inputValue}"`,
+                                                                isNew: true,
+                                                            } as any);
+                                                        } else if (inputValue === '') {
+                                                            filtered.push({
+                                                                inputValue: '',
+                                                                label: '+ Create Lead From',
+                                                                isNew: true,
+                                                            } as any);
+                                                        }
+                                                        return filtered;
+                                                    }}
+                                                    getOptionLabel={(option: any) => {
+                                                        if (typeof option === 'string') return option;
+                                                        if (option.inputValue) return option.inputValue;
+                                                        return option.label || '';
+                                                    }}
+                                                    renderOption={(props, option: any) => {
+                                                        const { key, ...optionProps } = props as any;
+                                                        return (
+                                                            <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                                                                        <Iconify icon="solar:add-circle-bold" width={24} />
+                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Lead From'}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.label || option
+                                                                )}
+                                                            </Box>
+                                                        );
                                                     }}
                                                     renderInput={(params) => (
                                                         <TextField {...params} placeholder="Select Lead From" />
@@ -566,6 +667,47 @@ export function MetaFormsCreateView() {
                     </TableContainer>
                 </Card>
             </Stack>
+
+            <Dialog
+                open={createLeadFromOpen}
+                onClose={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Lead From</Typography>
+                    <IconButton
+                        onClick={() => !creatingLeadFrom && setCreateLeadFromOpen(false)}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+                    <TextField
+                        fullWidth
+                        label="Lead From"
+                        value={newLeadFromName}
+                        onChange={(e) => setNewLeadFromName(e.target.value)}
+                        required
+                        autoFocus
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateLeadFromSubmit}
+                        disabled={creatingLeadFrom || !newLeadFromName.trim()}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1 }}
+                    >
+                        {creatingLeadFrom ? <CircularProgress size={24} color="inherit" /> : 'Create'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }
