@@ -81,6 +81,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    borderBottom: '1px solid', borderColor: 'divider'
                 }}
             >
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>
