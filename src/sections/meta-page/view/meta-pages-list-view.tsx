@@ -6,6 +6,7 @@ import Card from '@mui/material/Card';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -24,6 +25,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fetchMetaApps } from 'src/api/meta-app';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchMetaPages, deleteMetaPage } from 'src/api/meta-page';
 
@@ -35,6 +37,7 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { MetaPagesFiltersDrawer, MetaPagesFilters } from '../meta-pages-filters-drawer';
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -72,6 +75,30 @@ export function MetaPagesListView() {
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
 
+    const [filters, setFilters] = useState<MetaPagesFilters>({
+        meta_app: 'all',
+        webhook_enabled: 'all',
+        is_active: 'all',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+    const [apps, setApps] = useState<any[]>([]);
+
+    const handleFilters = useCallback((update: Partial<MetaPagesFilters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            meta_app: 'all',
+            webhook_enabled: 'all',
+            is_active: 'all',
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.meta_app !== 'all' || filters.webhook_enabled !== 'all' || filters.is_active !== 'all';
+
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
     useEffect(() => {
@@ -82,6 +109,12 @@ export function MetaPagesListView() {
         }
     }, [enqueueSnackbar]);
 
+    useEffect(() => {
+        fetchMetaApps({ page: 1, page_size: 1000 })
+            .then((res) => setApps(res.data))
+            .catch((err) => console.error('Failed to fetch Meta Apps', err));
+    }, []);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -90,6 +123,9 @@ export function MetaPagesListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: sortBy,
+                meta_app: filters.meta_app,
+                webhook_enabled: filters.webhook_enabled,
+                is_active: filters.is_active,
             });
             setData(res.data);
             setTotal(res.total);
@@ -98,7 +134,7 @@ export function MetaPagesListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy, enqueueSnackbar]);
+    }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => {
         fetchData();
@@ -164,6 +200,28 @@ export function MetaPagesListView() {
                     />
 
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                            disableRipple
+                            color="inherit"
+                            onClick={() => setOpenFilters(true)}
+                            startIcon={
+                                <Badge color="error" variant="dot" invisible={!canReset}>
+                                    <Iconify icon="ic:round-filter-list" />
+                                </Badge>
+                            }
+                            sx={{
+                                height: 40,
+                                px: 2,
+                                bgcolor: 'background.neutral',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                fontWeight: 500,
+                            }}
+                        >
+                            Filters
+                        </Button>
+
                         {/* Sort dropdown */}
                         <Button
                             variant="text"
@@ -305,7 +363,7 @@ export function MetaPagesListView() {
                                                 {/* Meta App Link */}
                                                 <TableCell>
                                                     <Typography variant="body2" sx={{ fontWeight: 500, fontSize: 14, }}>
-                                                        {row.meta_app || '—'}
+                                                        {apps.find((a) => a.name === row.meta_app)?.app_name || row.meta_app || '—'}
                                                     </Typography>
                                                 </TableCell>
 
@@ -436,6 +494,17 @@ export function MetaPagesListView() {
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>
+
+            <MetaPagesFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                apps={apps}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}

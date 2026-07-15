@@ -22,6 +22,8 @@ export interface FetchWebhookLogsParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    http_status?: string;
+    status?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -31,6 +33,13 @@ export interface FetchWebhookLogsParams {
 export async function fetchMetaWebhookLogs(params: FetchWebhookLogsParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.http_status && params.http_status !== 'all') {
+        filters.push(['CRM Meta Webhook Log', 'http_status', '=', params.http_status]);
+    }
+    if (params.status && params.status !== 'all') {
+        filters.push(['CRM Meta Webhook Log', 'status', '=', params.status]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta Webhook Log', 'name', 'like', `%${params.search}%`]);
