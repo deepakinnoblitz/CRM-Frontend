@@ -29,6 +29,9 @@ export interface FetchMetaAppsParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    app_status?: string;
+    is_active?: string;
+    is_default?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -38,6 +41,16 @@ export interface FetchMetaAppsParams {
 export async function fetchMetaApps(params: FetchMetaAppsParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.app_status && params.app_status !== 'all') {
+        filters.push(['CRM Meta App', 'app_status', '=', params.app_status]);
+    }
+    if (params.is_active && params.is_active !== 'all') {
+        filters.push(['CRM Meta App', 'is_active', '=', params.is_active === 'yes' ? 1 : 0]);
+    }
+    if (params.is_default && params.is_default !== 'all') {
+        filters.push(['CRM Meta App', 'is_default', '=', params.is_default === 'yes' ? 1 : 0]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta App', 'app_name', 'like', `%${params.search}%`]);

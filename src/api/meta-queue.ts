@@ -22,6 +22,9 @@ export interface FetchQueueParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    status?: string;
+    from_date?: string;
+    to_date?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -31,6 +34,16 @@ export interface FetchQueueParams {
 export async function fetchMetaQueue(params: FetchQueueParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.status && params.status !== 'all') {
+        filters.push(['CRM Meta Queue', 'status', '=', params.status]);
+    }
+    if (params.from_date) {
+        filters.push(['CRM Meta Queue', 'started', '>=', params.from_date]);
+    }
+    if (params.to_date) {
+        filters.push(['CRM Meta Queue', 'started', '<=', params.to_date]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta Queue', 'name', 'like', `%${params.search}%`]);

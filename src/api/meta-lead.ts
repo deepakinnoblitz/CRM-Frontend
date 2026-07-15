@@ -30,6 +30,10 @@ export interface FetchLeadParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    meta_app?: string;
+    meta_page?: string;
+    meta_form?: string;
+    processing_status?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -39,6 +43,19 @@ export interface FetchLeadParams {
 export async function fetchMetaLeads(params: FetchLeadParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.meta_app && params.meta_app !== 'all') {
+        filters.push(['CRM Meta Lead', 'meta_app', '=', params.meta_app]);
+    }
+    if (params.meta_page && params.meta_page !== 'all') {
+        filters.push(['CRM Meta Lead', 'meta_page', '=', params.meta_page]);
+    }
+    if (params.meta_form && params.meta_form !== 'all') {
+        filters.push(['CRM Meta Lead', 'meta_form', '=', params.meta_form]);
+    }
+    if (params.processing_status && params.processing_status !== 'all') {
+        filters.push(['CRM Meta Lead', 'processing_status', '=', params.processing_status]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta Lead', 'meta_lead_id', 'like', `%${params.search}%`]);

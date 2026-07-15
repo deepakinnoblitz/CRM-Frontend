@@ -6,6 +6,7 @@ import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
+import Badge from '@mui/material/Badge';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
@@ -35,6 +36,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
+
+import { MetaAppsFiltersDrawer, MetaAppsFilters } from '../meta-apps-filters-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -74,6 +77,29 @@ export function MetaAppsListView() {
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
 
+    const [filters, setFilters] = useState<MetaAppsFilters>({
+        app_status: 'all',
+        is_active: 'all',
+        is_default: 'all',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+
+    const handleFilters = useCallback((update: Partial<MetaAppsFilters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            app_status: 'all',
+            is_active: 'all',
+            is_default: 'all',
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.app_status !== 'all' || filters.is_active !== 'all' || filters.is_default !== 'all';
+
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
     useEffect(() => {
@@ -92,6 +118,9 @@ export function MetaAppsListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: sortBy,
+                app_status: filters.app_status,
+                is_active: filters.is_active,
+                is_default: filters.is_default,
             });
             setData(res.data);
             setTotal(res.total);
@@ -100,7 +129,7 @@ export function MetaAppsListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy, enqueueSnackbar]);
+    }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => {
         fetchData();
@@ -166,6 +195,28 @@ export function MetaAppsListView() {
                     />
 
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                            disableRipple
+                            color="inherit"
+                            onClick={() => setOpenFilters(true)}
+                            startIcon={
+                                <Badge color="error" variant="dot" invisible={!canReset}>
+                                    <Iconify icon="ic:round-filter-list" />
+                                </Badge>
+                            }
+                            sx={{
+                                height: 40,
+                                px: 2,
+                                bgcolor: 'background.neutral',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                fontWeight: 500,
+                            }}
+                        >
+                            Filters
+                        </Button>
+
                         {/* Sort dropdown */}
                         <Button
                             variant="text"
@@ -475,6 +526,16 @@ export function MetaAppsListView() {
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>
+
+            <MetaAppsFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+            />
 
             <ConfirmDialog
                 open={confirmDelete.open}

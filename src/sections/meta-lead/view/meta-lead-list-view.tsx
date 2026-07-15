@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import { alpha } from '@mui/material/styles';
@@ -24,7 +25,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { fTimeDist } from 'src/utils/format-time';
 
+import { fetchMetaApps } from 'src/api/meta-app';
 import { fetchMetaLeads } from 'src/api/meta-lead';
+import { fetchMetaPages } from 'src/api/meta-page';
+import { fetchMetaForms } from 'src/api/meta-form';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
@@ -34,6 +38,7 @@ import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { MetaLeadsFiltersDrawer, MetaLeadsFilters } from '../meta-leads-filters-drawer';
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -56,7 +61,7 @@ const TABLE_HEAD = [
 // ----------------------------------------------------------------------
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; color: string }> = {
-    Completed: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
+    Success: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
     Failed: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#b91c1c' },
     Processing: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
     Pending: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
@@ -83,7 +88,49 @@ export function MetaLeadListView() {
     const { enqueueSnackbar } = useSnackbar();
     const navigate = useNavigate();
 
+    const [filters, setFilters] = useState<MetaLeadsFilters>({
+        meta_app: 'all',
+        meta_page: 'all',
+        meta_form: 'all',
+        processing_status: 'all',
+    });
+    const [openFilters, setOpenFilters] = useState(false);
+    const [apps, setApps] = useState<any[]>([]);
+    const [pages, setPages] = useState<any[]>([]);
+    const [forms, setForms] = useState<any[]>([]);
+
+    const handleFilters = useCallback((update: Partial<MetaLeadsFilters>) => {
+        setFilters((prev) => ({ ...prev, ...update }));
+        setPage(0);
+    }, []);
+
+    const handleResetFilters = useCallback(() => {
+        setFilters({
+            meta_app: 'all',
+            meta_page: 'all',
+            meta_form: 'all',
+            processing_status: 'all',
+        });
+        setPage(0);
+    }, []);
+
+    const canReset = filters.meta_app !== 'all' || filters.meta_page !== 'all' || filters.meta_form !== 'all' || filters.processing_status !== 'all';
+
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
+
+    useEffect(() => {
+        Promise.all([
+            fetchMetaApps({ page: 1, page_size: 1000 }),
+            fetchMetaPages({ page: 1, page_size: 1000 }),
+            fetchMetaForms({ page: 1, page_size: 1000 }),
+        ]).then(([appsRes, pagesRes, formsRes]) => {
+            setApps(appsRes.data);
+            setPages(pagesRes.data);
+            setForms(formsRes.data);
+        }).catch((err) => {
+            console.error('Failed to fetch dropdown options', err);
+        });
+    }, []);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -93,6 +140,10 @@ export function MetaLeadListView() {
                 page_size: rowsPerPage,
                 search: filterName,
                 sort_by: sortBy,
+                meta_app: filters.meta_app,
+                meta_page: filters.meta_page,
+                meta_form: filters.meta_form,
+                processing_status: filters.processing_status,
             });
             setData(res.data);
             setTotal(res.total);
@@ -101,7 +152,7 @@ export function MetaLeadListView() {
         } finally {
             setLoading(false);
         }
-    }, [page, rowsPerPage, filterName, sortBy, enqueueSnackbar]);
+    }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -128,6 +179,28 @@ export function MetaLeadListView() {
                         sx={{ maxWidth: 480, width: 1 }}
                     />
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        <Button
+                            disableRipple
+                            color="inherit"
+                            onClick={() => setOpenFilters(true)}
+                            startIcon={
+                                <Badge color="error" variant="dot" invisible={!canReset}>
+                                    <Iconify icon="ic:round-filter-list" />
+                                </Badge>
+                            }
+                            sx={{
+                                height: 40,
+                                px: 2,
+                                bgcolor: 'background.neutral',
+                                border: '1px solid',
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                fontWeight: 500,
+                            }}
+                        >
+                            Filters
+                        </Button>
+
                         <Button
                             variant="text" color="inherit"
                             startIcon={<Iconify icon={"solar:sort-bold" as any} />}
@@ -197,9 +270,9 @@ export function MetaLeadListView() {
                                                         </Stack>
                                                     </TableCell>
 
-                                                    <TableCell>{row.meta_app || '—'}</TableCell>
-                                                    <TableCell>{row.meta_page || '—'}</TableCell>
-                                                    <TableCell>{row.meta_form || '—'}</TableCell>
+                                                    <TableCell>{apps.find((a) => a.name === row.meta_app)?.app_name || row.meta_app || '—'}</TableCell>
+                                                    <TableCell>{pages.find((p) => p.name === row.meta_page)?.page_name || row.meta_page || '—'}</TableCell>
+                                                    <TableCell>{forms.find((f) => f.name === row.meta_form)?.form_name || row.meta_form || '—'}</TableCell>
                                                     <TableCell>{formatDatetime(row.received_time)}</TableCell>
                                                     
                                                     {/* Status Badge */}
@@ -255,6 +328,19 @@ export function MetaLeadListView() {
                     onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
                 />
             </Card>
+
+            <MetaLeadsFiltersDrawer
+                open={openFilters}
+                onOpen={() => setOpenFilters(true)}
+                onClose={() => setOpenFilters(false)}
+                filters={filters}
+                onFilters={handleFilters}
+                canReset={canReset}
+                onResetFilters={handleResetFilters}
+                apps={apps}
+                pages={pages}
+                forms={forms}
+            />
         </DashboardContent>
     );
 }

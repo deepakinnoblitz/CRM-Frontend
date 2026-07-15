@@ -25,6 +25,9 @@ export interface FetchMetaPagesParams {
     page_size: number;
     search?: string;
     sort_by?: string;
+    meta_app?: string;
+    webhook_enabled?: string;
+    is_active?: string;
 }
 
 // ----------------------------------------------------------------------
@@ -34,6 +37,16 @@ export interface FetchMetaPagesParams {
 export async function fetchMetaPages(params: FetchMetaPagesParams) {
     const filters: any[] = [];
     const or_filters: any[] = [];
+
+    if (params.meta_app && params.meta_app !== 'all') {
+        filters.push(['CRM Meta Page', 'meta_app', '=', params.meta_app]);
+    }
+    if (params.webhook_enabled && params.webhook_enabled !== 'all') {
+        filters.push(['CRM Meta Page', 'webhook_enabled', '=', params.webhook_enabled === 'yes' ? 1 : 0]);
+    }
+    if (params.is_active && params.is_active !== 'all') {
+        filters.push(['CRM Meta Page', 'is_active', '=', params.is_active === 'yes' ? 1 : 0]);
+    }
 
     if (params.search) {
         or_filters.push(['CRM Meta Page', 'page_name', 'like', `%${params.search}%`]);
