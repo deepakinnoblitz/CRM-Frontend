@@ -98,7 +98,7 @@ export function MetaAppsListView() {
         setPage(0);
     }, []);
 
-    const canReset = filters.app_status !== 'all' || filters.is_active !== 'all' || filters.is_default !== 'all';
+    const canReset = filters.app_status !== 'all' || filters.is_active !== 'all' || filters.is_default !== 'all' || !!filterName;
 
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 

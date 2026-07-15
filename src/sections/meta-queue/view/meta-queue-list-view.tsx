@@ -102,7 +102,7 @@ export function MetaQueueListView() {
         setPage(0);
     }, []);
 
-    const canReset = filters.status !== 'all' || !!filters.from_date || !!filters.to_date;
+    const canReset = filters.status !== 'all' || !!filters.from_date || !!filters.to_date || !!filterName;
 
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
