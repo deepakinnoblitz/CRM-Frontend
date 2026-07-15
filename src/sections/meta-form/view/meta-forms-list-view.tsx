@@ -97,7 +97,8 @@ export function MetaFormsListView() {
         setPage(0);
     }, []);
 
-    const canReset = filters.meta_page !== 'all' || filters.allow_duplicates !== 'all' || filters.is_active !== 'all';
+    const canReset = filters.meta_page !== 'all' || filters.allow_duplicates !== 'all' || filters.is_active !== 'all' || !!filterName;
+
 
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 

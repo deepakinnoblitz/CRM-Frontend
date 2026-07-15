@@ -38,8 +38,6 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                     console.error(err);
                     setLoading(false);
                 });
-        } else {
-            setMeeting(null);
         }
     }, [open, meetingId]);
 
@@ -54,8 +52,8 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
     };
 
     return (
-        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: 'background.neutral' }}>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2 } }}>
+            <DialogTitle sx={{ m: 0, p: 2.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Typography variant="h6" sx={{ fontWeight: 800 }}>Meeting Details</Typography>
                 <IconButton onClick={onClose} sx={{ color: (theme) => theme.palette.grey[500], bgcolor: 'background.paper', boxShadow: (theme) => theme.customShadows?.z1 }}>
                     <Iconify icon="mingcute:close-line" />
