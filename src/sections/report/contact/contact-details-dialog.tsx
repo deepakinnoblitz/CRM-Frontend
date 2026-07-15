@@ -235,6 +235,14 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                                     }}
                                                 />
                                             )}
+                                            {contact.customer_type && (
+                                                <DetailItem
+                                                    label="Client Type"
+                                                    value={contact.customer_type}
+                                                    icon={<HiOutlineUser size={18} />}
+                                                    color="text-primary"
+                                                />
+                                            )}
                                         </Stack>
 
                                         <SectionHeader title="Contact Details" />
