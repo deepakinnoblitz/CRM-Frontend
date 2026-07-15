@@ -6,10 +6,14 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Switch from '@mui/material/Switch';
+import Select from '@mui/material/Select';
 import Snackbar from '@mui/material/Snackbar';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import InputLabel from '@mui/material/InputLabel';
 import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -25,6 +29,8 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
+
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -35,7 +41,7 @@ type Props = {
 };
 
 const STATUS_OPTIONS = ['Active', 'Inactive'];
-const RESET_FREQUENCY_OPTIONS = ['', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly'];
+const RESET_FREQUENCY_OPTIONS = ['', 'Every 3 months', 'Every 4 months', 'Every 6 months', 'Whole year'];
 
 export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
     const [leaveTypeName, setLeaveTypeName] = useState('');
@@ -44,6 +50,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
     const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
     const [carryForward, setCarryForward] = useState(false);
     const [resetFrequency, setResetFrequency] = useState('');
+    const [restrictDuringProbation, setRestrictDuringProbation] = useState(false);
+    const [probationPeriodMonths, setProbationPeriodMonths] = useState<number | ''>(3);
+    const [probationError, setProbationError] = useState(false);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -66,6 +75,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                         setStatus(data.status || 'Active');
                         setCarryForward(!!data.carry_forward);
                         setResetFrequency(data.reset_frequency || '');
+                        setRestrictDuringProbation(!!data.restrict_during_probation);
+                        setProbationPeriodMonths(data.probation_period_months || 3);
+                        setProbationError(false);
                     } catch (err) {
                         console.error('Failed to fetch leave type:', err);
                         setSnackbar({ open: true, message: 'Failed to fetch details', severity: 'error' });
@@ -79,6 +91,9 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                     setStatus('Active');
                     setCarryForward(false);
                     setResetFrequency('');
+                    setRestrictDuringProbation(false);
+                    setProbationPeriodMonths(3);
+                    setProbationError(false);
                 }
                 setError('');
             }
@@ -94,6 +109,23 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
             return;
         }
 
+        if (
+            restrictDuringProbation &&
+            (!probationPeriodMonths || Number(probationPeriodMonths) <= 0)
+        ) {
+            setProbationError(true);
+
+            setSnackbar({
+                open: true,
+                message: "Probation Period cannot be 0.",
+                severity: "error",
+            });
+
+            return;
+        }
+
+        setProbationError(false);
+
         try {
             setLoading(true);
             setError('');
@@ -101,10 +133,18 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
             const data: Partial<LeaveType> = {
                 leave_type_name: leaveTypeName,
                 is_paid: isPaid ? 1 : 0,
-                max_leaves: typeof maxLeaves === 'number' ? maxLeaves : (maxLeaves ? Number(maxLeaves) : 0),
+                max_leaves:
+                    typeof maxLeaves === "number"
+                        ? maxLeaves
+                        : (maxLeaves ? Number(maxLeaves) : 0),
                 status,
                 carry_forward: carryForward ? 1 : 0,
                 reset_frequency: resetFrequency as any,
+
+                restrict_during_probation: restrictDuringProbation ? 1 : 0,
+                probation_period_months: restrictDuringProbation
+                    ? Number(probationPeriodMonths)
+                    : 0,
             };
 
             if (id) {
@@ -151,6 +191,7 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                                  if (error === 'name') setError('');
                             }}
                             error={error === 'name'}
+                            helperText={error === 'name' ? 'Leave Type Name is required' : ''}
                             disabled={loading}
                             autoFocus
                             InputLabelProps={{ shrink: true }}
@@ -165,58 +206,113 @@ export function LeaveTypeDialog({ open, onClose, onSuccess, id }: Props) {
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                         />
-                        <TextField
-                            select
-                            fullWidth
-                            label="Reset Frequency"
-                            value={resetFrequency}
-                            onChange={(e) => setResetFrequency(e.target.value)}
-                            SelectProps={{ native: true }}
-                            disabled={loading}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            {RESET_FREQUENCY_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt || 'None'}</option>
-                            ))}
-                        </TextField>
-                        <TextField
-                            select
-                            fullWidth
-                            label="Status"
-                            value={status}
-                            onChange={(e) => setStatus(e.target.value as any)}
-                            SelectProps={{ native: true }}
-                            disabled={loading}
-                            InputLabelProps={{ shrink: true }}
-                        >
-                            {STATUS_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>{opt}</option>
-                            ))}
-                        </TextField>
+                        <FormControl fullWidth disabled={loading}>
+                            <InputLabel id="reset-frequency-label" shrink>Reset Frequency</InputLabel>
+                            <Select
+                                labelId="reset-frequency-label"
+                                value={resetFrequency}
+                                onChange={(e) => setResetFrequency(e.target.value as string)}
+                                label="Reset Frequency"
+                                displayEmpty
+                            >
+                                {RESET_FREQUENCY_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt} value={opt}>{opt || 'None'}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl fullWidth disabled={loading}>
+                            <InputLabel id="status-label" shrink>Status</InputLabel>
+                            <Select
+                                labelId="status-label"
+                                value={status}
+                                onChange={(e) => setStatus(e.target.value as any)}
+                                label="Status"
+                            >
+                                {STATUS_OPTIONS.map((opt) => (
+                                    <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
                     </Box>
 
                     <Stack direction="row" spacing={3}>
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={isPaid}
                                     onChange={(e) => setIsPaid(e.target.checked)}
                                     disabled={loading}
                                 />
                             }
                             label="Is Paid"
+                            sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
                         />
+
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={carryForward}
                                     onChange={(e) => setCarryForward(e.target.checked)}
                                     disabled={loading}
                                 />
                             }
                             label="Carry Forward"
+                            sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
                         />
                     </Stack>
+                    
+                    <FormControlLabel
+                        control={
+                            <CustomSwitch
+                                checked={restrictDuringProbation}
+                                onChange={(e) =>
+                                    setRestrictDuringProbation(e.target.checked)
+                                }
+                            />
+                        }
+                        label="Restrict During Probation"
+                        sx={{
+                            m: 0,
+                            '& .MuiFormControlLabel-label': {
+                                ml: 1,
+                            },
+                        }}
+                    />
+
+                    {restrictDuringProbation && (
+                    <TextField
+                        fullWidth
+                        type="number"
+                        label="Probation Period (Months)"
+                        value={probationPeriodMonths}
+                        onChange={(e) => {
+                            const value = e.target.value;
+
+                            setProbationPeriodMonths(value === "" ? "" : Number(value));
+
+                            if (value === "" || Number(value) > 0) {
+                                setProbationError(false);
+                            }
+                        }}
+                        error={probationError}
+                        helperText={
+                            probationError
+                                ? "Probation Period cannot be 0."
+                                : ""
+                        }
+                        inputProps={{ min: 1 }}
+                    />
+                    )}
                 </Box>
             </DialogContent>
 

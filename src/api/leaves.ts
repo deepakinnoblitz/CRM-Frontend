@@ -37,25 +37,48 @@ export interface WorkflowAction {
 
 // Leave Application APIs
 export const fetchLeaveApplications = (params: any) => {
+    const { search, ...restParams } = params;
+    const cleanSearch = search?.trim();
+
     const filters: any[] = [];
-    if (params.filters) {
-        Object.entries(params.filters).forEach(([key, value]) => {
+    if (restParams.filters) {
+        Object.entries(restParams.filters).forEach(([key, value]) => {
             if (value && value !== 'all') {
-                if (key === 'start_date' || key === 'end_date') {
-                    // Handled below for range
+                if (key === 'start_date' || key === 'end_date' || key === 'unread_messages') {
+                    // Handled below for range and extra flags
                 } else {
                     filters.push(["Leave Application", key, "=", value]);
                 }
             }
         });
 
-        if (params.filters.start_date || params.filters.end_date) {
-            const start = params.filters.start_date || '1970-01-01';
-            const end = params.filters.end_date || '2099-12-31';
+        if (restParams.filters.start_date || restParams.filters.end_date) {
+            const start = restParams.filters.start_date || '1970-01-01';
+            const end = restParams.filters.end_date || '2099-12-31';
             filters.push(["Leave Application", "from_date", "between", [start, end]]);
         }
     }
-    return fetchFrappeList("Leave Application", { ...params, filters, searchField: "employee_name" });
+
+    const or_filters = restParams.or_filters || [];
+    
+    if (cleanSearch) {
+        or_filters.push(
+            ["Leave Application", "employee_name", "like", `%${cleanSearch}%`],
+            ["Leave Application", "employee", "like", `%${cleanSearch}%`]
+        );
+    }
+
+    const unread_messages = restParams.filters?.unread_messages;
+    // NOTE: unread_messages filtering is handled by the backend permission query condition
+    // (get_leave_application_permission_query_conditions in api.py) via the unread_messages URL param.
+    // Do NOT add a fake filter field here — unread_only is not a real Leave Application field.
+    
+    return fetchFrappeList("Leave Application", { 
+        ...restParams, 
+        filters, 
+        or_filters,
+        ...(unread_messages ? { unread_messages: true } : {})
+    });
 };
 
 export async function createLeaveApplication(data: Partial<LeaveApplication>) {
@@ -123,16 +146,35 @@ export async function checkLeaveBalance(params: {
     return (await res.json()).message;
 }
 
-export async function getEmployeeProbationInfo(employee: string, date?: string) {
-    const query = new URLSearchParams({ employee });
-    if (date) query.append("date", date);
+export interface EmployeeProbationInfo {
+    is_probation: boolean;
+    restricted_types: string[];
+    probation_end_date: string | null;
+}
 
-    const res = await frappeRequest(`/api/method/company.company.api.get_employee_probation_info?${query.toString()}`);
+export async function getEmployeeProbationInfo(
+    employee: string,
+    date?: string
+): Promise<EmployeeProbationInfo> {
+    const query = new URLSearchParams({ employee });
+
+    if (date) {
+        query.append("date", date);
+    }
+
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_employee_probation_info?${query.toString()}`
+    );
+
     if (!res.ok) {
         const error = await res.json();
-        throw new Error(handleFrappeError(error, "Failed to probation info"));
+        throw new Error(
+            handleFrappeError(error, "Failed to fetch probation info")
+        );
     }
-    return (await res.json()).message;
+
+    const data = await res.json();
+    return data.message;
 }
 
 export async function getLeaveWorkflowActions(currentState: string): Promise<WorkflowAction[]> {

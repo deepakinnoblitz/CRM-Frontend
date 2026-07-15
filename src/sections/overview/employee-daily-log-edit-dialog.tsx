@@ -20,6 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 
+import { frappeRequest } from 'src/utils/csrf';
 import { fDate, fTime, fDateTime, fDecimalHours } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
@@ -340,7 +341,9 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
     const fetchSession = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`/api/method/company.company.presence_api.get_session_detail?name=${session.name}`);
+            const response = await fetch(`/api/method/company.company.presence_api.get_session_detail?name=${session.name}`, {
+                credentials: 'include',
+            });
             const result = await response.json();
             if (result.message) {
                 const s = result.message;
@@ -380,7 +383,7 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
     const handleSave = async () => {
         try {
             setLoading(true);
-            const response = await fetch('/api/method/company.company.presence_api.update_detailed_session', {
+            const response = await frappeRequest('/api/method/company.company.presence_api.update_detailed_session', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

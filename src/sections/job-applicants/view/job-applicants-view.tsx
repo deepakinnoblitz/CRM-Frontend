@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -25,6 +26,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useJobApplicants } from 'src/hooks/useJobApplicants';
 
 import { getDoctypeList } from 'src/api/leads';
+import { uploadFile } from 'src/api/data-import';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   getJobApplicant,
@@ -38,6 +40,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+import { AttachmentsUpload } from 'src/components/attachments-upload';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -85,6 +88,10 @@ export function JobApplicantsView() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+
+  // Attachment state
+  const [resumeAttachments, setResumeAttachments] = useState<any[]>([]);
+  const [uploading, setUploading] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState<any>({
@@ -140,6 +147,7 @@ export function JobApplicantsView() {
 
   const handleOpenCreate = () => {
     setEditApplicant(null);
+    setResumeAttachments([]);
     setFormData({
       applicant_name: '',
       email_id: '',
@@ -160,6 +168,7 @@ export function JobApplicantsView() {
   const handleCloseCreate = () => {
     setOpenCreate(false);
     setEditApplicant(null);
+    setResumeAttachments([]);
   };
 
   const handleEditRow = useCallback(async (row: any) => {
@@ -180,6 +189,12 @@ export function JobApplicantsView() {
         upper_range: fullData.upper_range,
         currency: fullData.currency || 'INR',
       });
+      // Pre-populate attachment preview if one exists
+      if (fullData.resume_attachment) {
+        setResumeAttachments([{ name: fullData.resume_attachment.split('/').pop() || 'Attachment', url: fullData.resume_attachment }]);
+      } else {
+        setResumeAttachments([]);
+      }
       setOpenCreate(true);
     } catch (error: any) {
       setSnackbar({
@@ -244,13 +259,49 @@ export function JobApplicantsView() {
     }
   };
 
+  const handleResumeFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setResumeAttachments([file]);
+    if (errors.resume_attachment) {
+      setErrors({ ...errors, resume_attachment: '' });
+    }
+  };
+
+  const handleRemoveResumeAttachment = (index: number) => {
+    setResumeAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async () => {
+
+    if (!validateForm()) {
+        return;
+    }
+
     try {
+      // Upload file if a new local File was selected
+      let attachmentUrl = formData.resume_attachment || '';
+      if (resumeAttachments.length > 0 && resumeAttachments[0] instanceof File) {
+        setUploading(true);
+        try {
+          const uploaded = await uploadFile(resumeAttachments[0]);
+          attachmentUrl = uploaded.file_url;
+        } catch (uploadError: any) {
+          throw new Error(`File upload failed: ${uploadError.message}`);
+        } finally {
+          setUploading(false);
+        }
+      } else if (resumeAttachments.length > 0 && resumeAttachments[0].url) {
+        attachmentUrl = resumeAttachments[0].url;
+      }
+
+      const payload = { ...formData, resume_attachment: attachmentUrl };
+
       if (editApplicant) {
-        await updateJobApplicant(editApplicant.name, formData);
+        await updateJobApplicant(editApplicant.name, payload);
         setSnackbar({ open: true, message: 'Updated successfully', severity: 'success' });
       } else {
-        await createJobApplicant(formData);
+        await createJobApplicant(payload);
         setSnackbar({ open: true, message: 'Created successfully', severity: 'success' });
       }
       handleCloseCreate();
@@ -326,6 +377,41 @@ export function JobApplicantsView() {
   const notFound = !loading && !data.length && !!filterName;
   const empty = !loading && !data.length && !filterName;
 
+  const [errors, setErrors] = useState({
+    applicant_name: '',
+    email_id: '',
+    resume_attachment: '',
+  });
+
+  const validateForm = () => {
+    const newErrors = {
+      applicant_name: '',
+      email_id: '',
+      resume_attachment: '',
+    };
+
+    let valid = true;
+
+    if (!formData.applicant_name?.trim()) {
+      newErrors.applicant_name = 'Applicant Name is required';
+      valid = false;
+    }
+
+    if (!formData.email_id?.trim()) {
+      newErrors.email_id = 'Email ID is required';
+      valid = false;
+    }
+
+    if (resumeAttachments.length === 0) {
+      newErrors.resume_attachment = 'Resume Attachment is required';
+      valid = false;
+    }
+
+    setErrors(newErrors);
+
+    return valid;
+  };
+
   return (
     <DashboardContent maxWidth={false}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5, mt: 3 }}>
@@ -400,6 +486,7 @@ export function JobApplicantsView() {
                           phone_number: row.phone_number,
                           job_title: row.job_title,
                           status: row.status,
+                          modified: row.modified
                         }}
                         selected={selected.includes(row.name)}
                         onSelectRow={() => handleSelectRow(row.name)}
@@ -493,14 +580,42 @@ export function JobApplicantsView() {
                 fullWidth
                 label="Applicant Name"
                 value={formData.applicant_name}
-                onChange={(e) => setFormData({ ...formData, applicant_name: e.target.value })}
+                onChange={(e) => {
+                    setFormData({
+                        ...formData,
+                        applicant_name: e.target.value,
+                    });
+
+                    if (errors.applicant_name) {
+                        setErrors({
+                            ...errors,
+                            applicant_name: '',
+                        });
+                    }
+                }}
+                error={!!errors.applicant_name}
+                helperText={errors.applicant_name}
                 required
               />
               <TextField
                 fullWidth
                 label="Email ID"
                 value={formData.email_id}
-                onChange={(e) => setFormData({ ...formData, email_id: e.target.value })}
+                onChange={(e) => {
+                    setFormData({
+                        ...formData,
+                        email_id: e.target.value,
+                    });
+
+                    if (errors.email_id) {
+                        setErrors({
+                            ...errors,
+                            email_id: '',
+                        });
+                    }
+                }}
+                error={!!errors.email_id}
+                helperText={errors.email_id}
                 required
               />
               <TextField
@@ -554,14 +669,16 @@ export function JobApplicantsView() {
                 placeholder="Google Drive, Dropbox, etc."
               />
 
-              <TextField
-                fullWidth
-                label="Resume Attachment"
-                value={formData.resume_attachment}
-                onChange={(e) => setFormData({ ...formData, resume_attachment: e.target.value })}
-                placeholder="File URL"
-                helperText="For now, please provide the URL of the uploaded resume."
-              />
+              <Box sx={{ gridColumn: 'span 2' }}>
+                <AttachmentsUpload
+                  attachments={resumeAttachments}
+                  uploading={uploading}
+                  onFileChange={handleResumeFileUpload}
+                  onRemove={handleRemoveResumeAttachment}
+                  error={!!errors.resume_attachment}
+                  helperText={errors.resume_attachment}
+                />
+              </Box>
 
               <TextField
                 fullWidth

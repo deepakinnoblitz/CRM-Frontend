@@ -1,3 +1,5 @@
+import type { SwitchProps } from '@mui/material/Switch';
+
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
@@ -5,7 +7,9 @@ import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
+import { styled } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -18,6 +22,72 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+// Custom pill-style toggle matching Reminder settings
+const UnreadSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 46,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '250ms',
+        transition: theme.transitions.create(['transform'], { easing: 'ease', duration: 250 }),
+        '&.Mui-checked': {
+            transform: 'translateX(20px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#00b4d8',
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 20,
+        height: 20,
+        boxShadow: 'none',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#d1d5db',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], { duration: 250 }),
+    },
+}));
+
+function ToggleRow({
+    label,
+    description,
+    value,
+    onChange,
+}: {
+    label: string;
+    description?: string;
+    value: boolean;
+    onChange: () => void;
+}) {
+    return (
+        <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                        {label}
+                    </Typography>
+                    {description && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {description}
+                        </Typography>
+                    )}
+                </Box>
+                <UnreadSwitch checked={value} onChange={onChange} />
+            </Box>
+        </Stack>
+    );
+}
+
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
@@ -26,13 +96,14 @@ type FiltersProps = {
     claim_type: string;
     startDate: string | null;
     endDate: string | null;
+    unreadOnly: boolean;
 };
 
 type Props = {
     open: boolean;
     onClose: () => void;
     filters: FiltersProps;
-    onFilters: (newFilters: Partial<FiltersProps>) => void;
+    onFilters: (update: any, value?: any) => void;
     canReset: boolean;
     onResetFilters: () => void;
     claimTypes: any[];
@@ -304,6 +375,13 @@ export function ReimbursementClaimsTableFiltersDrawer({
                     {renderStatus}
                     {renderType}
                     {renderDateRange}
+                    {isHR && (
+                        <ToggleRow
+                            label="Unread Messages"
+                            value={filters.unreadOnly}
+                            onChange={() => onFilters("unreadOnly", !filters.unreadOnly)}
+                        />
+                    )}
                 </Stack>
             </Scrollbar>
 

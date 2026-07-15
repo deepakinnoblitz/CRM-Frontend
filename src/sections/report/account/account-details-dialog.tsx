@@ -3,24 +3,33 @@ import { HiOutlineUsers, HiOutlineDocumentText, HiOutlineClipboardDocumentCheck,
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
+import Grid from '@mui/material/Grid';
 import Tabs from '@mui/material/Tabs';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
+import Snackbar from '@mui/material/Snackbar';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useTheme, alpha } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
+import { CONFIG } from 'src/config-global';
 import { getAccount } from 'src/api/accounts';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import TodoDialog from 'src/sections/todo/todo-dialog';
+import CallDialog from 'src/sections/calls/call-dialog';
+import MeetingDialog from 'src/sections/meetings/meeting-dialog';
+
 import { AccountRelatedList } from './account-related-list';
+import { WhatsappChatDialog } from '../../lead/view/whatsapp_chat_dialog';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +47,22 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
 
     const [account, setAccount] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [openWhatsapp, setOpenWhatsapp] = useState(false);
+
+    // Event scheduling states
+    const [openTypeDialog, setOpenTypeDialog] = useState(false);
+    const [openCallDialog, setOpenCallDialog] = useState(false);
+    const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
+    const [openTodoDialog, setOpenTodoDialog] = useState(false);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success',
+    });
+
+    const handleCloseSnackbar = () => {
+        setSnackbar((prev) => ({ ...prev, open: false }));
+    };
 
     useEffect(() => {
         if (open && accountId) {
@@ -168,7 +193,7 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
 
                         {/* Main Content: Tabs & Related Data */}
                         <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                            <Box sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between', pr: 3 }}>
                                 <Tabs
                                     value={currentTab}
                                     onChange={(e: any, newValue: any) => setCurrentTab(newValue)}
@@ -196,6 +221,51 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                                         />
                                     ))}
                                 </Tabs>
+
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                    <Button
+                                        variant="contained"
+                                        color="primary"
+                                        startIcon={<Iconify icon="solar:calendar-add-bold" />}
+                                        onClick={() => setOpenTypeDialog(true)}
+                                        sx={{
+                                            borderRadius: 1.5,
+                                            fontWeight: 700,
+                                            textTransform: 'none',
+                                            px: 2.5,
+                                            height: 36,
+                                            bgcolor: '#0e9f6e',
+                                            '&:hover': {
+                                                bgcolor: '#0c875d',
+                                            },
+                                        }}
+                                    >
+                                        Create Interaction
+                                    </Button>
+
+                                    {account?.phone_number && (
+                                        <Button
+                                            variant="contained"
+                                            color="success"
+                                            onClick={() => setOpenWhatsapp(true)}
+                                            startIcon={<Iconify icon={"ic:baseline-whatsapp" as any} />}
+                                            sx={{
+                                                bgcolor: '#25D366',
+                                                color: '#fff',
+                                                borderRadius: 2.5,
+                                                fontWeight: 700,
+                                                textTransform: 'none',
+                                                px: 2.5,
+                                                height: 36,
+                                                '&:hover': {
+                                                    bgcolor: '#22c55e',
+                                                },
+                                            }}
+                                        >
+                                            WhatsApp
+                                        </Button>
+                                    )}
+                                </Stack>
                             </Box>
 
                             <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
@@ -210,6 +280,178 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
                     </Box>
                 )}
             </DialogContent>
+            {account?.phone_number && (
+                <WhatsappChatDialog
+                    open={openWhatsapp}
+                    onClose={() => setOpenWhatsapp(false)}
+                    lead={{
+                        lead_name: account.account_name,
+                        phone_number: account.phone_number
+                    }}
+                />
+            )}
+
+            {/* Event Type Selection Dialog */}
+            <Dialog open={openTypeDialog} onClose={() => setOpenTypeDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (t: any) => t.customShadows.z24, } }}>
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    Choose Event Type
+                    <IconButton onClick={() => setOpenTypeDialog(false)} sx={{ color: 'text.secondary' }}>
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent>
+                    <Grid container spacing={2} sx={{ py: 2 }}>
+                        {[
+                            {
+                                label: 'Calls',
+                                icon: `${CONFIG.assetsDir}/images/calls-3d-white.png`,
+                                color: 'primary',
+                                sub: 'Schedule a call',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenCallDialog(true);
+                                },
+                            },
+                            {
+                                label: 'Meeting',
+                                icon: `${CONFIG.assetsDir}/images/meeting-3d-white.png`,
+                                color: 'success',
+                                sub: 'Schedule a meeting',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenMeetingDialog(true);
+                                },
+                            },
+                            {
+                                label: 'To-do',
+                                icon: `${CONFIG.assetsDir}/images/todo-3d-white.png`,
+                                color: 'warning',
+                                sub: 'Create a task',
+                                handler: () => {
+                                    setOpenTypeDialog(false);
+                                    setOpenTodoDialog(true);
+                                },
+                            },
+                        ].map((item) => (
+                            <Grid key={item.label} size={{ xs: 12, md: 4 }}>
+                                <Box
+                                    onClick={item.handler}
+                                    sx={{
+                                        p: 3,
+                                        borderRadius: 2.5,
+                                        cursor: 'pointer',
+                                        transition: theme.transitions.create(['all'], {
+                                            duration: theme.transitions.duration.shorter,
+                                        }),
+                                        textAlign: 'center',
+                                        bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.04),
+                                        border: `1px solid ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.1)}`,
+                                        backdropFilter: 'blur(12px) saturate(160%)',
+                                        '&:hover': {
+                                            bgcolor: alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.08),
+                                            borderColor: theme.palette[item.color as 'primary' | 'success' | 'warning'].main,
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: `0 12px 24px -4px ${alpha(theme.palette[item.color as 'primary' | 'success' | 'warning'].main, 0.16)}`,
+                                            '& img': {
+                                                transform: 'scale(1.1) rotate(5deg)',
+                                            }
+                                        },
+                                    }}
+                                >
+                                    <Box
+                                        sx={{
+                                            mb: 1,
+                                            display: 'inline-flex',
+                                            transition: theme.transitions.create(['transform']),
+                                        }}
+                                    >
+                                        <Box
+                                            component="img"
+                                            src={item.icon}
+                                            sx={{
+                                                width: 80,
+                                                height: 80,
+                                                objectFit: 'contain',
+                                                mixBlendMode: 'multiply',
+                                                filter: 'contrast(1.2) brightness(1.1)',
+                                                transition: theme.transitions.create(['transform']),
+                                            }}
+                                        />
+                                    </Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 0.5 }}>{item.label}</Typography>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.813rem' }}>
+                                        {item.sub}
+                                    </Typography>
+                                </Box>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </DialogContent>
+            </Dialog>
+
+            {/* Event Form Dialogs prefilled with company details */}
+            {openCallDialog && account && (
+                <CallDialog
+                    open={openCallDialog}
+                    onClose={() => setOpenCallDialog(false)}
+                    initialData={{
+                        call_for: 'Accounts',
+                        account_name: account.name,
+                        title: `Follow up call with ${account.account_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenCallDialog(false);
+                        setSnackbar({ open: true, message: 'Call scheduled successfully', severity: 'success' });
+                    }}
+                />
+            )}
+
+            {openMeetingDialog && account && (
+                <MeetingDialog
+                    open={openMeetingDialog}
+                    onClose={() => setOpenMeetingDialog(false)}
+                    initialData={{
+                        meet_for: 'Accounts',
+                        accounts_name: account.name,
+                        title: `Follow up meeting with ${account.account_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenMeetingDialog(false);
+                        setSnackbar({ open: true, message: 'Meeting scheduled successfully', severity: 'success' });
+                    }}
+                />
+            )}
+
+            {openTodoDialog && account && (
+                <TodoDialog
+                    open={openTodoDialog}
+                    onClose={() => setOpenTodoDialog(false)}
+                    initialData={{
+                        description: `Follow up task for company: ${account.account_name}`
+                    }}
+                    onSuccess={() => {
+                        setOpenTodoDialog(false);
+                        setSnackbar({ open: true, message: 'To-do task created successfully', severity: 'success' });
+                    }}
+                />
+            )}
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={handleCloseSnackbar}
+                anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                style={{ zIndex: 99999 }}
+                slotProps={{
+                    root: {
+                        style: { zIndex: 99999 }
+                    }
+                }}
+            >
+                <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Dialog>
     );
 }

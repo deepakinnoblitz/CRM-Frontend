@@ -109,7 +109,7 @@ export function PurchaseCreateView() {
     const [errors, setErrors] = useState<{ vendor?: boolean; billNo?: boolean; items?: boolean; paymentType?: boolean; paymentTerms?: boolean }>({});
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
+    const [newItem, setNewItem] = useState<{ item_name: string; item_code: string; rate: number | '' }>({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
 
@@ -239,7 +239,11 @@ export function PurchaseCreateView() {
 
         try {
             setCreatingItem(true);
-            const createdItem = await createItem(newItem);
+            const payload = {
+                ...newItem,
+                rate: newItem.rate === '' ? 0 : Number(newItem.rate)
+            };
+            const createdItem = await createItem(payload);
 
             const formattedItem = {
                 name: createdItem.name,
@@ -404,6 +408,22 @@ export function PurchaseCreateView() {
 
     const handleCancel = () => {
         router.push('/purchase');
+    };
+
+    const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+        const formatted = fCurrency(amount);
+        if (!formatted) return '—';
+        const index = formatted.indexOf('₹');
+        if (index !== -1) {
+            return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+            );
+        }
+        return formatted;
     };
 
     return (
@@ -919,7 +939,7 @@ export function PurchaseCreateView() {
                                                                 }
                                                             }}
                                                         >
-                                                            <ToggleButton value="Flat">₹</ToggleButton>
+                                                            <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                                             <ToggleButton value="Percentage">%</ToggleButton>
                                                         </ToggleButtonGroup>
                                                         <TextField
@@ -1030,10 +1050,10 @@ export function PurchaseCreateView() {
                                             </TableCell>
                                         ))}
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{renderCurrency(row.tax_amount)}</Typography>
                                         </TableCell>
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
+                                            <Typography variant="subtitle2" color="primary.main">{renderCurrency(row.sub_total)}</Typography>
                                         </TableCell>
                                         <TableCell sx={{ px: 1, py: 1 }}>
                                             <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
@@ -1071,7 +1091,7 @@ export function PurchaseCreateView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(itemsTotalTaxable)}</Typography>
                             </Stack>
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -1079,7 +1099,7 @@ export function PurchaseCreateView() {
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(totalTax)}</Typography>
                             </Stack>
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
@@ -1113,7 +1133,7 @@ export function PurchaseCreateView() {
                                         }
                                     }}
                                 >
-                                    <ToggleButton value="Flat">₹</ToggleButton>
+                                    <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                     <ToggleButton value="Percentage">%</ToggleButton>
                                 </ToggleButtonGroup>
                                 <TextField
@@ -1148,7 +1168,7 @@ export function PurchaseCreateView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(grandTotal, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>
@@ -1277,7 +1297,10 @@ export function PurchaseCreateView() {
                                 label="Rate"
                                 type="number"
                                 value={newItem.rate}
-                                onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setNewItem((prev) => ({ ...prev, rate: val === '' ? '' : Number(val) }));
+                                }}
                             />
                         </Stack>
                     </DialogContent>

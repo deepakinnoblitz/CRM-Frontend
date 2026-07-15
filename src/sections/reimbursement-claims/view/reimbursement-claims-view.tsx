@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -8,22 +8,17 @@ import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
-import { styled } from '@mui/material/styles';
 import Snackbar from '@mui/material/Snackbar';
-import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
-import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
+import { alpha, styled } from '@mui/material/styles';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -38,17 +33,19 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useSocket } from 'src/hooks/use-socket';
 import { useReimbursementClaims } from 'src/hooks/useReimbursementClaims';
 
+import { frappeRequest } from 'src/utils/csrf';
+
 import { fetchEmployees } from 'src/api/employees';
 import { markAsRead } from 'src/api/unread-counts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
-    applyReimbursementClaimWorkflowAction,
+    getClaimTypes,
     getReimbursementClaim,
     createReimbursementClaim,
     updateReimbursementClaim,
     deleteReimbursementClaim,
     getReimbursementClaimPermissions,
-    getClaimTypes
+    applyReimbursementClaimWorkflowAction
 } from 'src/api/reimbursement-claims';
 
 import { Iconify } from 'src/components/iconify';
@@ -97,6 +94,11 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 
 export function ReimbursementClaimsView() {
     const { user } = useAuth();
+    const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager', 'hr user', 'accounts manager'].includes(r.toLowerCase()))
+        ? 'hr'
+        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+    const isHR = userRole === "hr" || userRole === "admin";
+
     const { socket, subscribeToRoom } = useSocket(user?.email);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -114,19 +116,22 @@ export function ReimbursementClaimsView() {
         paid: 'all',
         claim_type: 'all',
         startDate: null as string | null,
-        endDate: null as string | null
+        endDate: null as string | null,
+        unreadOnly: false
     });
-
-    const isHR = user?.roles.some((role: string) =>
-        ['HR Manager', 'HR User', 'HR', 'System Manager', 'Administrator', 'Accounts Manager'].includes(role)
-    );
 
     const effectiveEmployee = isHR ? (filters.employee || 'all') : (user?.employee || 'all');
 
-    const claimsFilters = useMemo(() => ({
-        ...filters,
-        employee: effectiveEmployee,
-    }), [filters, isHR, effectiveEmployee]);
+    const claimsFilters = useMemo(() => {
+        const eff: any = {
+            ...filters,
+            employee: effectiveEmployee,
+        };
+        if (isHR && filters.unreadOnly) {
+            eff.unread_only = true;
+        }
+        return eff;
+    }, [filters, isHR, effectiveEmployee]);
 
     const { data, total, loading, refetch } = useReimbursementClaims(
         page + 1,
@@ -152,6 +157,9 @@ export function ReimbursementClaimsView() {
     const [dateOfExpense, setDateOfExpense] = useState('');
     const [amount, setAmount] = useState('');
     const [claimDetails, setClaimDetails] = useState('');
+    const [receipt, setReceipt] = useState('');
+    const [receiptFile, setReceiptFile] = useState<File | null>(null);
+    const [receiptFileError, setReceiptFileError] = useState('');
 
     // Payment Details (for Edit)
     const [paymentReference, setPaymentReference] = useState('');
@@ -235,7 +243,9 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
-        setClaimDetails('');
+        setReceipt('');
+        setReceiptFile(null);
+        setReceiptFileError('');
         setPaymentReference('');
         setPaidDate(null);
         setPaid(false);
@@ -255,6 +265,9 @@ export function ReimbursementClaimsView() {
         setDateOfExpense('');
         setAmount('');
         setClaimDetails('');
+        setReceipt('');
+        setReceiptFile(null);
+        setReceiptFileError('');
         setFormErrors({});
     };
 
@@ -267,6 +280,9 @@ export function ReimbursementClaimsView() {
             setDateOfExpense(fullData.date_of_expense || '');
             setAmount(fullData.amount?.toString() || '');
             setClaimDetails(fullData.claim_details || '');
+            setReceipt(fullData.receipt || '');
+            setReceiptFile(null);
+            setReceiptFileError('');
             setPaymentReference(fullData.payment_reference || '');
             setPaidDate(fullData.paid_date || null);
             setPaid(fullData.paid === 1);
@@ -351,6 +367,9 @@ export function ReimbursementClaimsView() {
         if (!claimType) errors.claimType = 'Claim Type is required';
         if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense is required';
         if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount is required';
+        if (!isApprovedOrPaid && !receipt && !receiptFile) {
+            errors.receipt = 'Receipt is required';
+        }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -363,6 +382,9 @@ export function ReimbursementClaimsView() {
             if (!claimType) errors.claimType = 'Claim Type';
             if (!dateOfExpense) errors.dateOfExpense = 'Date of Expense';
             if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount';
+            if (!isApprovedOrPaid && !receipt && !receiptFile) {
+                errors.receipt = 'Receipt';
+            }
 
             const missingFields = Object.values(errors).join(', ');
             setSnackbar({
@@ -414,24 +436,39 @@ export function ReimbursementClaimsView() {
             return;
         }
 
-        const claimData = {
-            employee: employee.trim(),
-            claim_type: claimType.trim(),
-            date_of_expense: dateOfExpense,
-            amount: parseFloat(amount) || 0,
-            claim_details: claimDetails.trim(),
-            ...(isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) ? {
-                payment_reference: paymentReference,
-                paid_date: paidDate || undefined,
-                paid: paid ? 1 : 0,
-                approved_by: approvedBy,
-                paid_by: paidBy,
-                approver_comments: approverComments
-            } : {})
-        };
-
         try {
             setSubmitting(true);
+            let finalReceiptUrl = receipt;
+
+            if (receiptFile) {
+                const formDataUpload = new FormData();
+                formDataUpload.append('file', receiptFile, receiptFile.name);
+                formDataUpload.append('is_private', '0');
+                const uploadRes = await frappeRequest('/api/method/upload_file', { method: 'POST', body: formDataUpload });
+                if (!uploadRes.ok) {
+                    throw new Error('Failed to upload receipt file');
+                }
+                const uploadData = await uploadRes.json();
+                finalReceiptUrl = uploadData.message?.file_url || uploadData.file_url || '';
+            }
+
+            const claimData = {
+                employee: employee.trim(),
+                claim_type: claimType.trim(),
+                date_of_expense: dateOfExpense,
+                amount: parseFloat(amount) || 0,
+                claim_details: claimDetails.trim(),
+                receipt: finalReceiptUrl || '',
+                ...(isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) ? {
+                    payment_reference: paymentReference,
+                    paid_date: paidDate || undefined,
+                    paid: paid ? 1 : 0,
+                    approved_by: approvedBy,
+                    paid_by: paidBy,
+                    approver_comments: approverComments
+                } : {})
+            };
+
             if (isEdit && currentClaim) {
                 await updateReimbursementClaim(currentClaim.name, claimData);
 
@@ -517,8 +554,12 @@ export function ReimbursementClaimsView() {
         }
     };
 
-    const handleFilters = (newFilters: Partial<typeof filters>) => {
-        setFilters((prev) => ({ ...prev, ...newFilters }));
+    const handleFilters = (newFilters: any, value?: any) => {
+        if (typeof newFilters === 'string') {
+            setFilters((prev) => ({ ...prev, [newFilters]: value }));
+        } else {
+            setFilters((prev) => ({ ...prev, ...newFilters }));
+        }
         setPage(0);
     };
 
@@ -528,12 +569,13 @@ export function ReimbursementClaimsView() {
             paid: 'all',
             claim_type: 'all',
             startDate: null,
-            endDate: null
+            endDate: null,
+            unreadOnly: false
         });
         setPage(0);
     };
 
-    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.employee !== null || filters.paid !== 'all' || filters.claim_type !== 'all' || filters.startDate !== null || filters.endDate !== null || filters.unreadOnly || !!filterName;
 
     const handleSortChange = (value: string) => {
         if (value === 'newest') { setOrderBy('modified'); setOrder('desc'); }
@@ -721,7 +763,7 @@ export function ReimbursementClaimsView() {
                     numSelected={selected.length}
                     filterName={filterName}
                     onFilterName={handleFilterByName}
-                    searchPlaceholder="Search claims..."
+                    searchPlaceholder="Search employee name or ID..."
                     onDelete={selected.length > 0 ? handleBulkDelete : undefined}
                     onOpenFilter={() => setOpenFilters(true)}
                     canReset={canReset}
@@ -877,7 +919,7 @@ export function ReimbursementClaimsView() {
                         <Autocomplete
                             fullWidth
                             options={employees}
-                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            getOptionLabel={(option) => option.employee_name || option.name || option.employee_id || ''}
                             value={employees.find((emp) => emp.name === employee) || null}
                             disabled={isEdit || !isHR}
                             onChange={(event, newValue) => {
@@ -885,6 +927,21 @@ export function ReimbursementClaimsView() {
                                 if (formErrors.employee) {
                                     setFormErrors((prev) => ({ ...prev, employee: '' }));
                                 }
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Stack spacing={0.5}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                ID: {option.name || option.employee_id}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                );
                             }}
                             renderInput={(params) => (
                                 <TextField
@@ -914,10 +971,179 @@ export function ReimbursementClaimsView() {
                                 />
                             )}
                         />
-                        {renderField('claim_type', 'Claim Type', 'select', claimTypes.map(type => ({ value: type.name, label: type.name })), { disabled: isApprovedOrPaid }, true)}
+                        <Autocomplete
+                            fullWidth
+                            options={claimTypes}
+                            getOptionLabel={(option) => option.name || ''}
+                            value={claimTypes.find((item) => item.name === claimType) || null}
+                            disabled={isApprovedOrPaid}
+                            onChange={(event, newValue) => {
+                                setClaimType(newValue?.name || '');
+
+                                if (formErrors.claim_type) {
+                                    setFormErrors((prev) => ({
+                                        ...prev,
+                                        claim_type: '',
+                                    }));
+                                }
+                            }}
+                            renderOption={(props, option) => {
+                                const { key, ...optionProps } = props as any;
+
+                                return (
+                                    <li key={key} {...optionProps}>
+                                        <Typography variant="body2">
+                                            {option.name}
+                                        </Typography>
+                                    </li>
+                                );
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Claim Type"
+                                    required
+                                    error={!!formErrors.claim_type}
+                                    helperText={formErrors.claim_type}
+                                    InputLabelProps={{ shrink: true }}
+                                    sx={{
+                                        '& .MuiFormLabel-asterisk': {
+                                            color: 'red',
+                                        },
+                                        '& .MuiInputBase-input.Mui-disabled': {
+                                            WebkitTextFillColor: 'unset',
+                                            color: 'text.primary',
+                                            opacity: 1,
+                                            pointerEvents: 'none',
+                                        },
+                                        '& .MuiInputLabel-root.Mui-disabled': {
+                                            color: 'text.secondary',
+                                        },
+                                        '& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: 'rgba(0,0,0,0.23)',
+                                        },
+                                    }}
+                                />
+                            )}
+                        />
                         {renderField('date_of_expense', 'Date of Expense', 'date', [], { inputProps: { readOnly: isApprovedOrPaid }, disabled: isApprovedOrPaid }, true)}
                         {renderField('amount', 'Amount', 'number', [], { placeholder: 'Enter amount', inputProps: { step: '0.01', min: '0' }, disabled: isApprovedOrPaid }, true)}
                         {renderField('claim_details', 'Claim Details', 'textarea', [], { placeholder: 'Enter claim details', disabled: isApprovedOrPaid })}
+
+                        <Box
+                            sx={{
+                                p: 3,
+                                borderRadius: 2,
+                                bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04),
+                                border: (theme) => `1px dashed ${formErrors.receipt ? theme.palette.error.main : alpha(theme.palette.grey[500], 0.2)}`,
+                            }}
+                        >
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                justifyContent="space-between"
+                                spacing={2}
+                                sx={{ mb: 2.5 }}
+                            >
+                                <Typography variant="h6">
+                                    Receipt{' '}
+                                    <Box component="span" sx={{ color: 'red' }}>
+                                        *
+                                    </Box>
+                                </Typography>
+
+                                <Button
+                                    variant="contained"
+                                    component="label"
+                                    color="primary"
+                                    size="small"
+                                    startIcon={<Iconify icon="solar:upload-bold" />}
+                                    disabled={isApprovedOrPaid}
+                                    sx={{ minWidth: { xs: 1, sm: 'auto' } }}
+                                >
+                                    Upload File
+                                    <input
+                                        type="file"
+                                        hidden
+                                        disabled={isApprovedOrPaid}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (!file) return;
+                                            setReceiptFileError('');
+                                            if (file.size > 10 * 1024 * 1024) {
+                                                setReceiptFileError('File size exceeds 10MB limit.');
+                                                return;
+                                            }
+                                            setReceiptFile(file);
+                                            setReceipt('');
+                                            if (formErrors.receipt) {
+                                                setFormErrors(prev => ({ ...prev, receipt: '' }));
+                                            }
+                                        }}
+                                    />
+                                </Button>
+                            </Stack>
+
+                            <Stack spacing={1}>
+                                {!receipt && !receiptFile ? (
+                                    <Stack alignItems="center" justifyContent="center" sx={{ py: 3, color: 'text.disabled' }}>
+                                        <Iconify icon="solar:file-bold" width={40} height={40} sx={{ mb: 1, opacity: 0.48 }} />
+                                        <Typography variant="body2">No file attached</Typography>
+                                    </Stack>
+                                ) : (
+                                    <Stack
+                                        direction="row"
+                                        alignItems="center"
+                                        sx={{
+                                            px: 1.5,
+                                            py: 0.75,
+                                            borderRadius: 1.5,
+                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                        }}
+                                    >
+                                        <Iconify icon="solar:link-bold" width={20} sx={{ mr: 1, color: 'text.secondary', flexShrink: 0 }} />
+                                        <Typography variant="body2" noWrap sx={{ flexGrow: 1, fontWeight: 'fontWeightMedium' }}>
+                                            {receiptFile ? receiptFile.name : (receipt.split('/').pop() || receipt)}
+                                        </Typography>
+                                        {!isApprovedOrPaid && (
+                                            <Button
+                                                size="small"
+                                                color="inherit"
+                                                onClick={() => {
+                                                    setReceipt('');
+                                                    setReceiptFile(null);
+                                                }}
+                                                sx={{
+                                                    px: 1.5,
+                                                    py: 0,
+                                                    height: 26,
+                                                    borderRadius: 1.5,
+                                                    minWidth: 'auto',
+                                                    typography: 'caption',
+                                                    bgcolor: 'background.paper',
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.24)}`,
+                                                    '&:hover': {
+                                                        bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                                    },
+                                                }}
+                                            >
+                                                Remove
+                                            </Button>
+                                        )}
+                                    </Stack>
+                                )}
+                            </Stack>
+                            {formErrors.receipt && (
+                                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                    {formErrors.receipt}
+                                </Typography>
+                            )}
+                            {receiptFileError && (
+                                <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+                                    {receiptFileError}
+                                </Typography>
+                            )}
+                        </Box>
 
                         {isEdit && user?.roles.some(r => ['System Manager', 'HR', 'HR User', 'HR Manager', 'Accounts Manager'].includes(r)) &&
                             (currentClaim?.workflow_state === 'Approved' || currentClaim?.workflow_state === 'Paid') && (

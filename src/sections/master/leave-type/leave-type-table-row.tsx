@@ -1,5 +1,6 @@
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
@@ -8,6 +9,8 @@ import IconButton from '@mui/material/IconButton';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { LeaveTypeDetailsDialog } from './leave-type-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -29,9 +32,11 @@ export function LeaveTypeTableRow({
   index,
 }: Props) {
   const { leave_type_name, is_paid, max_leaves, status, carry_forward, reset_frequency } = row;
+  const [openView, setOpenView] = useState(false);
 
   return (
-    <TableRow
+    <>
+      <TableRow
       hover
       selected={selected}
       sx={{
@@ -113,6 +118,10 @@ export function LeaveTypeTableRow({
 
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
+          <IconButton size="small" onClick={() => setOpenView(true)} sx={{ color: '#08a3cd' }}>
+            <Iconify icon="solar:eye-bold" />
+          </IconButton>
+
           <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
             <Iconify icon="solar:pen-bold" />
           </IconButton>
@@ -123,6 +132,12 @@ export function LeaveTypeTableRow({
         </Box>
       </TableCell>
     </TableRow>
+
+      <LeaveTypeDetailsDialog
+        open={openView}
+        onClose={() => setOpenView(false)}
+        row={row}
+      />
+    </>
   );
 }
-// forced update for TS server

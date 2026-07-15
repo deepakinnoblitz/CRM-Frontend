@@ -32,9 +32,10 @@ type Props = {
     placeholder?: string;
     error?: boolean;
     helperText?: string;
+    minHeight?: number;
 };
 
-export function RichTextEditor({ value, onChange, placeholder = 'Enter details...', error, helperText }: Props) {
+export function RichTextEditor({ value, onChange, placeholder = 'Enter details...', error, helperText, minHeight = 200 }: Props) {
     const theme = useTheme();
     const editorRef = useRef<HTMLDivElement>(null);
     const [format, setFormat] = useState('p');
@@ -333,7 +334,7 @@ export function RichTextEditor({ value, onChange, placeholder = 'Enter details..
                 onInput={handleInput}
                 data-placeholder={placeholder}
                 sx={{
-                    minHeight: 200,
+                    minHeight,
                     p: 2,
                     outline: 'none',
                     bgcolor: '#F8FAFC',

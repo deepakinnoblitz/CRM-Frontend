@@ -1,7 +1,9 @@
+import { IoList } from "react-icons/io5";
 import { MuiTelInput } from 'mui-tel-input';
-import { useSearchParams } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
-import { useState, useEffect, useCallback } from 'react';
+import { TbLayoutKanbanFilled } from "react-icons/tb";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -23,6 +25,7 @@ import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
@@ -54,6 +57,7 @@ import { LeadTableHead } from '../lead-table-head';
 import { TableEmptyRows } from '../table-empty-rows';
 import { LeadTableToolbar } from '../lead-table-toolbar';
 import { LeadImportDialog } from '../lead-import-dialog';
+import LeadKanbanBoard from '../kanban/lead-kanban-board';
 import { LeadFollowupDetails } from '../lead-followup-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { LeadDetailsDialog } from '../../report/lead-details-dialog';
@@ -66,9 +70,8 @@ import { ContactDetailsDialog } from '../../report/contact/contact-details-dialo
 const filter = createFilterOptions<any>();
 
 export function LeadView() {
+  const navigate = useNavigate();
   const table = useTable();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const viewLeadId = searchParams.get('view');
   const [filterName, setFilterName] = useState('');
   const [filters, setFilters] = useState({
     status: 'all',
@@ -107,8 +110,8 @@ export function LeadView() {
   const [leadName, setLeadName] = useState('');
   const [companyName, setCompanyName] = useState('');
   const [gstin, setGstin] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [email, setEmail] = useState('');
+  const [phoneNumbers, setPhoneNumbers] = useState<{ phone: string }[]>([{ phone: '' }]);
+  const [emails, setEmails] = useState<{ email: string }[]>([{ email: '' }]);
   const [leadsType, setLeadsType] = useState('Incoming');
   const [leadsFrom, setLeadsFrom] = useState('');
   const [service, setService] = useState('');
@@ -116,7 +119,7 @@ export function LeadView() {
   const [state, setState] = useState('');
   const [city, setCity] = useState('');
   const [workflowState, setWorkflowState] = useState('');
-  const [status, setStatus] = useState('New Lead');
+  const [status, setStatus] = useState('Not Converted');
   const [billingAddress, setBillingAddress] = useState('');
   const [remarks, setRemarks] = useState('');
   const [convertedAccount, setConvertedAccount] = useState('');
@@ -126,6 +129,7 @@ export function LeadView() {
 
   // Tab State
   const [currentTab, setCurrentTab] = useState('general');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   // Dropdown Options
   const [leadsFromOptions, setLeadsFromOptions] = useState<string[]>([]);
@@ -157,6 +161,7 @@ export function LeadView() {
   // Alert & Dialog State
   const [openDelete, setOpenDelete] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
     open: false,
     message: '',
@@ -177,6 +182,39 @@ export function LeadView() {
     delete: true,
   });
 
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const scrollLeft = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!tableContainerRef.current) return;
+    // Don't drag if clicking buttons, links or inputs
+    const target = e.target as HTMLElement;
+    if (target.closest('button') || target.closest('a') || target.closest('input') || target.closest('.MuiIconButton-root')) {
+      return;
+    }
+    isDragging.current = true;
+    startX.current = e.pageX - tableContainerRef.current.offsetLeft;
+    scrollLeft.current = tableContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current || !tableContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - tableContainerRef.current.offsetLeft;
+    const walk = (x - startX.current) * 1.5; // scroll speed multiplier
+    tableContainerRef.current.scrollLeft = scrollLeft.current - walk;
+  };
+
   const { data, total, loading, refetch } = useLeads(
     table.page,
     table.rowsPerPage,
@@ -184,17 +222,6 @@ export function LeadView() {
     filters,
     sortBy
   );
-
-  useEffect(() => {
-    if (viewLeadId && !openView) {
-      setCurrentLeadId(viewLeadId);
-      setOpenView(true);
-      // Remove 'view' from search params to avoid re-opening on refresh
-      const params = new URLSearchParams(searchParams);
-      params.delete('view');
-      setSearchParams(params, { replace: true });
-    }
-  }, [viewLeadId, openView, setSearchParams, searchParams]);
 
   const handleFilters = (update: any) => {
     setFilters((prev) => ({ ...prev, ...update }));
@@ -321,9 +348,12 @@ export function LeadView() {
 
   // Form state
 
-  const handleOpenCreate = () => {
+  const handleOpenCreate = (initialWorkflowState?: any) => {
     setViewOnly(false);
     setOpenCreate(true);
+    if (initialWorkflowState && typeof initialWorkflowState === 'string') {
+      setWorkflowState(initialWorkflowState);
+    }
   };
 
   const handleCloseCreate = () => {
@@ -335,8 +365,8 @@ export function LeadView() {
     setLeadName('');
     setCompanyName('');
     setGstin('');
-    setPhoneNumber('');
-    setEmail('');
+    setPhoneNumbers([{ phone: '' }]);
+    setEmails([{ email: '' }]);
     setLeadsType('Incoming');
     setLeadsFrom('');
     setService('');
@@ -344,7 +374,7 @@ export function LeadView() {
     setState('');
     setCity('');
     setWorkflowState('');
-    setStatus('New Lead');
+    setStatus('Not Converted');
     setBillingAddress('');
     setRemarks('');
     setConvertedAccount('');
@@ -365,15 +395,17 @@ export function LeadView() {
   const handleConfirmDelete = async () => {
     if (!deleteId) return;
     try {
+      setDeleting(true);
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
+      setOpenDelete(false);
     } catch (e: any) {
       console.error(e);
       const friendlyMsg = getFriendlyErrorMessage(e);
       setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
     } finally {
-      setOpenDelete(false);
+      setDeleting(false);
       setDeleteId(null);
     }
   };
@@ -451,7 +483,8 @@ export function LeadView() {
       newErrors.leadsFrom = true;
       missingFields.push('Leads From');
     }
-    if (!phoneNumber) {
+    const primaryPhone = phoneNumbers[0]?.phone;
+    if (!primaryPhone || !primaryPhone.trim()) {
       newErrors.phoneNumber = true;
       missingFields.push('Phone Number');
     }
@@ -472,19 +505,31 @@ export function LeadView() {
     try {
       setCreating(true);
 
-      // Format phone number: remove spaces and add hyphen after dial code (e.g., +91-9876543210)
-      let formattedPhone = phoneNumber.replace(/\s/g, '');
-      const parts = phoneNumber.trim().split(/\s+/);
-      if (parts.length > 1 && parts[0].startsWith('+')) {
-        formattedPhone = `${parts[0]}-${parts.slice(1).join('')}`;
-      }
+      // Format phone numbers
+      const formattedPhoneNumbers = phoneNumbers
+        .filter((item) => item.phone.trim() !== '')
+        .map((item) => {
+          let phone = item.phone.replace(/\s/g, '');
+          const parts = item.phone.trim().split(/\s+/);
+          if (parts.length > 1 && parts[0].startsWith('+')) {
+            phone = `${parts[0]}-${parts.slice(1).join('')}`;
+          }
+          return { phone };
+        });
+
+      // Format emails
+      const formattedEmails = emails
+        .filter((item) => item.email.trim() !== '')
+        .map((item) => ({ email: item.email.trim() }));
 
       const leadData = {
         lead_name: leadName,
         company_name: companyName,
         gstin,
-        phone_number: formattedPhone,
-        email,
+        phone_number: formattedPhoneNumbers.length > 0 ? formattedPhoneNumbers[0].phone : '',
+        phone_numbers: formattedPhoneNumbers,
+        email: formattedEmails.length > 0 ? formattedEmails[0].email : '',
+        emails: formattedEmails,
         leads_type: leadsType as any,
         leads_from: leadsFrom,
         service,
@@ -538,8 +583,17 @@ export function LeadView() {
       setLeadName(getString(fullLead.lead_name) || '');
       setCompanyName(getString(fullLead.company_name) || '');
       setGstin(getString(fullLead.gstin) || '');
-      setPhoneNumber(cleanPhoneNumber(getString(fullLead.phone_number) || ''));
-      setEmail(getString(fullLead.email) || '');
+      if (fullLead.phone_numbers && fullLead.phone_numbers.length > 0) {
+        setPhoneNumbers(fullLead.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+      } else {
+        setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fullLead.phone_number) || '') }]);
+      }
+
+      if (fullLead.emails && fullLead.emails.length > 0) {
+        setEmails(fullLead.emails.map((e: any) => ({ email: e.email || '' })));
+      } else {
+        setEmails([{ email: getString(fullLead.email) || '' }]);
+      }
       setLeadsType(getString(fullLead.leads_type) || 'Incoming');
       setLeadsFrom(getString(fullLead.leads_from) || '');
       setService(getString(fullLead.service) || '');
@@ -547,7 +601,7 @@ export function LeadView() {
       setState(getString(fullLead.state) || '');
       setCity(getString(fullLead.city) || '');
       setWorkflowState(getString(fullLead.workflow_state) || '');
-      setStatus(getString(fullLead.status) || 'New Lead');
+      setStatus(getString(fullLead.status) || 'Not Converted');
       setBillingAddress(getString(fullLead.billing_address) || '');
       setRemarks(getString(fullLead.remarks) || '');
       setConvertedAccount(getString(fullLead.converted_account) || '');
@@ -569,8 +623,17 @@ export function LeadView() {
         setLeadName(getString(fallbackRow.lead_name) || '');
         setCompanyName(getString(fallbackRow.company_name) || '');
         setGstin(getString(fallbackRow.gstin) || '');
-        setPhoneNumber(cleanPhoneNumber(getString(fallbackRow.phone_number) || ''));
-        setEmail(getString(fallbackRow.email) || '');
+        if (fallbackRow.phone_numbers && fallbackRow.phone_numbers.length > 0) {
+          setPhoneNumbers(fallbackRow.phone_numbers.map((p: any) => ({ phone: cleanPhoneNumber(p.phone || '') })));
+        } else {
+          setPhoneNumbers([{ phone: cleanPhoneNumber(getString(fallbackRow.phone_number) || '') }]);
+        }
+
+        if (fallbackRow.emails && fallbackRow.emails.length > 0) {
+          setEmails(fallbackRow.emails.map((e: any) => ({ email: e.email || '' })));
+        } else {
+          setEmails([{ email: getString(fallbackRow.email) || '' }]);
+        }
         setLeadsType(getString(fallbackRow.leads_type) || 'Incoming');
         setLeadsFrom(getString(fallbackRow.leads_from) || '');
         setService(getString(fallbackRow.service) || '');
@@ -578,7 +641,7 @@ export function LeadView() {
         setState(getString(fallbackRow.state) || '');
         setCity(getString(fallbackRow.city) || '');
         setWorkflowState(getString(fallbackRow.workflow_state) || '');
-        setStatus(getString(fallbackRow.status) || 'New Lead');
+        setStatus(getString(fallbackRow.status) || 'Not Converted');
         setBillingAddress(getString(fallbackRow.billing_address) || '');
         setRemarks(getString(fallbackRow.remarks) || '');
       }
@@ -586,10 +649,8 @@ export function LeadView() {
     setOpenCreate(true);
   };
 
-  const handleViewRow = async (row: any) => {
-    const leadId = row.id;
-    setCurrentLeadId(leadId);
-    setOpenView(true);
+  const handleViewRow = (row: any) => {
+    navigate(`/leads/${row.id}/view`);
   };
 
   const onDeleteRow = (id: string) => {
@@ -625,7 +686,7 @@ export function LeadView() {
           </IconButton>
         </DialogTitle>
 
-        {currentLeadId && (
+        {/* {currentLeadId && (
           <Box sx={{ px: 2, borderBottom: 1, borderColor: 'divider' }}>
             <Tabs
               value={currentTab}
@@ -637,7 +698,7 @@ export function LeadView() {
               {currentLeadId && <Tab label="Convert Lead" value="convert" disabled={viewOnly} />}
             </Tabs>
           </Box>
-        )}
+        )} */}
 
         <DialogContent dividers>
           {currentTab === 'general' && (
@@ -686,40 +747,6 @@ export function LeadView() {
                 slotProps={{ input: { readOnly: viewOnly } }}
               />
 
-              <MuiTelInput
-                fullWidth
-                defaultCountry="IN"
-                label="Phone Number"
-                name="phone_number"
-                value={phoneNumber}
-                onChange={(newValue: string) => {
-                  setPhoneNumber(newValue);
-                  if (newValue) setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
-                }}
-                required
-                disabled={viewOnly}
-                error={!!validationErrors.phoneNumber}
-                helperText={validationErrors.phoneNumber ? 'Phone Number is required' : ''}
-                sx={{
-                  "& .MuiInputBase-input.Mui-disabled": {
-                    WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
-                  },
-                  "& .MuiInputLabel-root.Mui-disabled": {
-                    color: "rgba(0, 0, 0, 0.6)",
-                  },
-                }}
-              />
-
-              <TextField
-                fullWidth
-                label="Email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                slotProps={{ input: { readOnly: viewOnly } }}
-              />
-
-
               <TextField
                 select
                 fullWidth
@@ -749,6 +776,108 @@ export function LeadView() {
                 <MenuItem value="Outgoing">Outgoing</MenuItem>
               </TextField>
 
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {phoneNumbers.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <MuiTelInput
+                      fullWidth
+                      defaultCountry="IN"
+                      label={index === 0 ? "Phone Number" : `Phone Number ${index + 1}`}
+                      name={`phone_number_${index}`}
+                      value={item.phone}
+                      onChange={(newValue: string) => {
+                        const newPhones = [...phoneNumbers];
+                        newPhones[index] = { ...newPhones[index], phone: newValue };
+                        setPhoneNumbers(newPhones);
+                        if (index === 0 && newValue) {
+                          setValidationErrors(prev => ({ ...prev, phoneNumber: false }));
+                        }
+                      }}
+                      required={index === 0}
+                      disabled={viewOnly}
+                      error={index === 0 && !!validationErrors.phoneNumber}
+                      helperText={index === 0 && validationErrors.phoneNumber ? 'Phone Number is required' : ''}
+                      sx={{
+                        "& .MuiInputBase-input.Mui-disabled": {
+                          WebkitTextFillColor: "rgba(0, 0, 0, 0.87)",
+                        },
+                        "& .MuiInputLabel-root.Mui-disabled": {
+                          color: "rgba(0, 0, 0, 0.6)",
+                        },
+                      }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setPhoneNumbers([...phoneNumbers, { phone: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setPhoneNumbers(phoneNumbers.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
+
+              <Stack spacing={3} sx={{ gridColumn: { xs: 'span 1', sm: 'span 1' } }}>
+                {emails.map((item, index) => (
+                  <Stack key={index} direction="row" alignItems="center" spacing={1}>
+                    <TextField
+                      fullWidth
+                      label={index === 0 ? "Email" : `Email ${index + 1}`}
+                      type="email"
+                      value={item.email}
+                      onChange={(e) => {
+                        const newEmails = [...emails];
+                        newEmails[index] = { ...newEmails[index], email: e.target.value };
+                        setEmails(newEmails);
+                      }}
+                      slotProps={{ input: { readOnly: viewOnly } }}
+                    />
+                    {!viewOnly && (
+                      index === 0 ? (
+                        <IconButton
+                          color="primary"
+                          onClick={() => setEmails([...emails, { email: '' }])}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:add-circle-bold" width={24} />
+                        </IconButton>
+                      ) : (
+                        <IconButton
+                          color="error"
+                          onClick={() => setEmails(emails.filter((_, i) => i !== index))}
+                          sx={{
+                            transition: 'transform 0.2s',
+                            '&:hover': { transform: 'scale(1.1)' }
+                          }}
+                        >
+                          <Iconify icon="solar:trash-bin-trash-bold" width={24} />
+                        </IconButton>
+                      )
+                    )}
+                  </Stack>
+                ))}
+              </Stack>
 
               <Autocomplete
                 fullWidth
@@ -988,7 +1117,23 @@ export function LeadView() {
 
           {currentTab === 'pipeline' && (
             <>
-              {workflowState !== 'Closed' && (
+              <Alert
+                severity="info"
+                icon={<Iconify icon="solar:info-circle-bold" />}
+                sx={{
+                  mb: 2,
+                  borderRadius: 2,
+                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                  color: 'info.dark',
+                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.16)}`,
+                  '& .MuiAlert-icon': {
+                    color: 'info.main',
+                  },
+                }}
+              >
+                Click on a stage card to update the current stage.
+              </Alert>
+              {/* {workflowState !== 'Closed' && (
                 <Stack direction="row" justifyContent="flex-end" alignItems="center" spacing={2} sx={{ mb: 2 }}>
                   <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
                     Change Workflow
@@ -1023,7 +1168,7 @@ export function LeadView() {
                     </Select>
                   </FormControl>
                 </Stack>
-              )}
+              )} */}
               <SalesPipeline
                 currentStage={workflowState || status}
                 stages={allWorkflowStates}
@@ -1035,7 +1180,7 @@ export function LeadView() {
                 }}
               />
               <LeadPipelineTimeline
-                title="State History"
+                title="Stage History"
                 list={pipelineTimeline}
               />
             </>
@@ -1188,16 +1333,16 @@ export function LeadView() {
                     <TextField
                       fullWidth
                       label="Email"
-                      value={email}
+                      value={emails[0]?.email || ''}
                       InputProps={{ readOnly: true }}
                     />
                     <TextField
                       fullWidth
                       label="Phone Number"
-                      value={phoneNumber}
+                      value={phoneNumbers[0]?.phone || ''}
                       InputProps={{ readOnly: true }}
                     />
-                    {!email && !phoneNumber && (
+                    {!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim() && (
                       <Alert severity="warning">
                         Email or Phone Number is required to create a Client
                       </Alert>
@@ -1207,7 +1352,7 @@ export function LeadView() {
                   <Button
                     variant="contained"
                     onClick={() => setOpenConvertConfirm(true)}
-                    disabled={converting || !companyName || (!email && !phoneNumber)}
+                    disabled={converting || !companyName || (!(emails[0]?.email || '').trim() && !(phoneNumbers[0]?.phone || '').trim())}
                     fullWidth
                   >
                     {converting ? 'Converting...' : 'Convert Lead'}
@@ -1234,46 +1379,116 @@ export function LeadView() {
             Leads
           </Typography>
 
-          {permissions.write && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            {/* View Switcher */}
+            <Box sx={{
+              display: 'flex',
+              p: 0.5,
+              bgcolor: '#F4F6F8',
+              borderRadius: '999px',
+              border: (theme) => `1px solid ${theme.palette.divider}`,
+            }}>
               <Button
-                variant="contained"
-                startIcon={<IoMdCloudDownload size={20} />}
-                onClick={() => setOpenImport(true)}
-                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                disableRipple
+                onClick={() => setViewMode('list')}
+                startIcon={<IoList size={18} />}
+                sx={{
+                  borderRadius: '999px',
+                  px: 2.5,
+                  py: 0.6,
+                  typography: 'subtitle2',
+                  fontWeight: 700,
+                  color: viewMode === 'list' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'list' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'list' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'list' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'list' ? 'common.white' : 'text.primary',
+                  }
+                }}
               >
-                Import
+                List View
               </Button>
               <Button
-                variant="contained"
-                startIcon={<Iconify icon="mingcute:add-line" />}
-                onClick={handleOpenCreate}
-                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                disableRipple
+                onClick={() => setViewMode('kanban')}
+                startIcon={<TbLayoutKanbanFilled size={18} />}
+                sx={{
+                  borderRadius: '999px',
+                  px: 2.5,
+                  py: 0.6,
+                  typography: 'subtitle2',
+                  fontWeight: 700,
+                  color: viewMode === 'kanban' ? 'common.white' : 'text.secondary',
+                  bgcolor: viewMode === 'kanban' ? '#08a3cd' : 'transparent',
+                  boxShadow: viewMode === 'kanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    bgcolor: viewMode === 'kanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                    color: viewMode === 'kanban' ? 'common.white' : 'text.primary',
+                  }
+                }}
               >
-                New Lead
+                Kanban View
               </Button>
             </Box>
-          )}
+
+            {permissions.write && (
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<IoMdCloudDownload size={20} />}
+                  onClick={() => setOpenImport(true)}
+                  sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                >
+                  Import
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Iconify icon="mingcute:add-line" />}
+                  onClick={handleOpenCreate}
+                  sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                >
+                  New Lead
+                </Button>
+              </>
+            )}
+          </Box>
         </Box>
 
-        <Card>
-          <LeadTableToolbar
-            numSelected={table.selected.length}
-            filterName={filterName}
-            onFilterName={(e) => {
-              setFilterName(e.target.value);
-              table.onResetPage();
-            }}
-            onOpenFilter={() => setOpenFilters(true)}
-            canReset={canReset}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            onDelete={handleBulkDelete}
-          />
+        {viewMode === 'list' ? (
+          <Card>
+            <LeadTableToolbar
+              numSelected={table.selected.length}
+              filterName={filterName}
+              onFilterName={(e) => {
+                setFilterName(e.target.value);
+                table.onResetPage();
+              }}
+              onOpenFilter={() => setOpenFilters(true)}
+              canReset={canReset}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              onDelete={handleBulkDelete}
+            />
 
-          <Scrollbar>
-            <TableContainer sx={{ overflow: 'unset' }}>
-              <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+            <TableContainer 
+              ref={tableContainerRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              sx={{ 
+                overflow: 'auto',
+                cursor: 'grab',
+                userSelect: 'none',
+                '&:active': { cursor: 'grabbing' },
+                '&::-webkit-scrollbar': { width: 8, height: 8 },
+                '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 1 },
+              }}
+            >
+              <Table sx={{ minWidth: 1600, borderCollapse: 'collapse' }}>
                 <LeadTableHead
                   rowCount={total}
                   numSelected={table.selected.length}
@@ -1286,20 +1501,35 @@ export function LeadView() {
                   hideCheckbox
                   showIndex
                   headLabel={[
-                    { id: 'lead_name', label: 'Name' },
-                    { id: 'company_name', label: 'Company' },
-                    { id: 'phone_number', label: 'Phone' },
-                    { id: 'email', label: 'Email' },
-                    { id: 'country', label: 'Country' },
+                    { id: 'lead_name', label: 'Name', width: 260, minWidth: 240 },
+                    { id: 'service', label: 'Service', minWidth: 180 },
+                    { id: 'phone_number', label: 'Phone', width: 180, minWidth: 160 },
                     { id: 'workflow_state', label: 'Status' },
-                    { id: 'actions', label: 'Actions', align: 'right' },
+                    { id: 'company_name', label: 'Company', width: 260, minWidth: 240 },
+                    { id: 'leads_type', label: 'Leads Type', minWidth: 120 },
+                    { id: 'leads_from', label: 'Leads From', minWidth: 120 },
+                    { id: 'country', label: 'Country' },
+                    {
+                      id: 'actions',
+                      label: 'Actions',
+                      align: 'right',
+                      width: 180,
+                      minWidth: 160,
+                      sx: {
+                        position: 'sticky',
+                        right: 0,
+                        backgroundColor: '#f4f6f8',
+                        boxShadow: '-4px 0px 10px -4px rgba(0,0,0,0.1)',
+                        zIndex: 1,
+                      }
+                    },
                   ]}
                 />
 
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
+                      <TableCell colSpan={11} align="center" sx={{ py: 10 }}>
                         <CircularProgress sx={{ color: '#08a3cd' }} />
                       </TableCell>
                     </TableRow>
@@ -1321,6 +1551,10 @@ export function LeadView() {
                             avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
                             isVerified: true,
                             country: getString(row.country) ?? '-',
+                            modified: row.modified,
+                            leads_type: getString(row.leads_type) ?? '-',
+                            leads_from: getString(row.leads_from) ?? '-',
+                            service: getString(row.service) ?? '-',
                           }}
                           selected={table.selected.includes(row.name)}
                           onSelectRow={() => table.onSelectRow(row.name)}
@@ -1357,18 +1591,28 @@ export function LeadView() {
                 </TableBody>
               </Table>
             </TableContainer>
-          </Scrollbar>
 
-          <TablePagination
-            component="div"
-            page={table.page}
-            count={total}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            rowsPerPageOptions={[10, 25, 50]}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
+            <TablePagination
+              component="div"
+              page={table.page}
+              count={total}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              rowsPerPageOptions={[10, 25, 50]}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+            />
+          </Card>
+        ) : (
+          <LeadKanbanBoard
+            leads={data}
+            workflowStates={allWorkflowStates}
+            onOpenLead={(id) => handleViewRow({ id })}
+            onEditLead={(id) => handleEditRow({ id })}
+            onDeleteLead={(id) => handleDeleteClick(id)}
+            onAddLead={(selectedState) => handleOpenCreate(selectedState)}
+            permissions={permissions}
           />
-        </Card>
+        )}
       </DashboardContent>
 
       <LeadTableFiltersDrawer
@@ -1392,13 +1636,19 @@ export function LeadView() {
 
       <ConfirmDialog
         open={openDelete}
-        onClose={() => setOpenDelete(false)}
+        onClose={() => !deleting && setOpenDelete(false)}
         title="Confirm Delete"
         content="Are you sure you want to delete this lead?"
         action={
-          <Button onClick={handleConfirmDelete} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+          <LoadingButton 
+            loading={deleting} 
+            onClick={handleConfirmDelete} 
+            color="error" 
+            variant="contained" 
+            sx={{ borderRadius: 1.5, minWidth: 100 }}
+          >
             Delete
-          </Button>
+          </LoadingButton>
         }
       />
 
@@ -1472,10 +1722,12 @@ export function LeadView() {
         onClose={() => setOpenConvertConfirm(false)}
         title="Convert Lead"
         content="Are you sure you want to convert this lead? This will create a permanent Company and Client record."
+        icon="solar:round-transfer-horizontal-bold"
+        iconColor="success.main"
         action={
           <Button
             variant="contained"
-            color="primary"
+            color="success"
             onClick={async () => {
               setOpenConvertConfirm(false);
               if (!companyName) {
@@ -1487,7 +1739,9 @@ export function LeadView() {
                 return;
               }
 
-              if (!email && !phoneNumber) {
+              const primaryEmail = emails[0]?.email || '';
+              const primaryPhone = phoneNumbers[0]?.phone || '';
+              if (!primaryEmail.trim() && !primaryPhone.trim()) {
                 setSnackbar({
                   open: true,
                   message: 'Email or Phone Number is required to convert lead',

@@ -5,9 +5,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -34,6 +37,7 @@ type Props = {
     onFilterEndDate: (value: string) => void;
     canReset: boolean;
     onResetFilters: () => void;
+    isHR?: boolean;
     options: {
         status: { value: string; label: string }[];
         employees: { value: string; label: string }[];
@@ -57,6 +61,7 @@ export function EmployeeDailyLogTableFiltersDrawer({
     onFilterEndDate,
     canReset,
     onResetFilters,
+    isHR = true,
     options,
 }: Props) {
 
@@ -111,30 +116,27 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Status
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filterStatus}
-                onChange={(e) => onFilterStatus(e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filterStatus}
+                    onChange={(e) => onFilterStatus(e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Status</option>
-                {options.status.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Status</MenuItem>
+                    {options.status.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 
@@ -146,9 +148,14 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Autocomplete
                 fullWidth
                 size="small"
+                disabled={!isHR}
                 options={[{ value: 'all', label: 'All Employees' }, ...options.employees]}
                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
-                value={options.employees.find((emp) => emp.value === filterEmployee) || { value: 'all', label: 'All Employees' }}
+                value={
+                    isHR
+                        ? (options.employees.find((emp) => emp.value === filterEmployee) || { value: 'all', label: 'All Employees' })
+                        : (options.employees.find((emp) => emp.value === filterEmployee) || { value: filterEmployee, label: filterEmployee })
+                }
                 onChange={(event, newValue) => {
                     onFilterEmployee(newValue ? (typeof newValue === 'string' ? newValue : newValue.value) : 'all');
                 }}
@@ -156,13 +163,13 @@ export function EmployeeDailyLogTableFiltersDrawer({
                     <TextField
                         {...params}
                         size="small"
-                        placeholder="Search Employee..."
+                        placeholder={isHR ? 'Search Employee...' : ''}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
                                 bgcolor: 'background.neutral',
                                 '&:hover': {
-                                    bgcolor: 'action.hover',
+                                    bgcolor: isHR ? 'action.hover' : 'background.neutral',
                                 },
                             },
                         }}
@@ -202,30 +209,27 @@ export function EmployeeDailyLogTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Day
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filterDay}
-                onChange={(e) => onFilterDay(e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filterDay}
+                    onChange={(e) => onFilterDay(e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Days</option>
-                {options.days.map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Days</MenuItem>
+                    {options.days.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 
@@ -302,7 +306,7 @@ export function EmployeeDailyLogTableFiltersDrawer({
 
             <Scrollbar>
                 <Stack spacing={3} sx={{ p: 3 }}>
-                    {options.employees.length > 0 && renderEmployee}
+                    {renderEmployee}
                     {renderDate}
                     {renderDay}
                     {renderStatus}

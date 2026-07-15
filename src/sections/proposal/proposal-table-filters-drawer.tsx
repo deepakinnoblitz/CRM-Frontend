@@ -23,7 +23,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 const STATUS_OPTIONS = ['all', 'Draft', 'Sent', 'Approved', 'Rejected', 'Expired'];
 
 type FiltersProps = {
-    client_name: string;
+    lead: string;
     status: string;
     proposal_date: string;
 };
@@ -37,7 +37,7 @@ type Props = {
     canReset: boolean;
     onResetFilters: () => void;
     options: {
-        customers: { name: string; customer_name: string }[];
+        leads: { name: string; lead_name: string }[];
     };
 };
 
@@ -104,25 +104,25 @@ export function ProposalTableFiltersDrawer({
     const renderCustomer = (
         <Stack spacing={1.5}>
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                Client
+                Lead
             </Typography>
             <Autocomplete
                 fullWidth
                 size="small"
                 value={
-                    filters.client_name === 'all'
+                    filters.lead === 'all'
                         ? null
-                        : options.customers.find((c) => c.name === filters.client_name) || null
+                        : options.leads.find((c) => c.name === filters.lead) || null
                 }
                 onChange={(event, newValue) => {
-                    handleFilterChange('client_name', newValue ? newValue.name : 'all');
+                    handleFilterChange('lead', newValue ? newValue.name : 'all');
                 }}
-                options={options.customers}
-                getOptionLabel={(option) => `${option.customer_name} (${option.name})`}
+                options={options.leads}
+                getOptionLabel={(option) => `${option.lead_name} (${option.name})`}
                 renderInput={(params) => (
                     <TextField
                         {...params}
-                        placeholder="Select Client..."
+                        placeholder="Select Lead..."
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 1.5,
@@ -138,7 +138,7 @@ export function ProposalTableFiltersDrawer({
                     <li {...props} key={option.name}>
                         <Stack spacing={0.5} sx={{ py: 0.5 }}>
                             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
-                                {option.customer_name}
+                                {option.lead_name}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                 ID: {option.name}

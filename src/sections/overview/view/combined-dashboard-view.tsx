@@ -1,6 +1,6 @@
 import dayjs, { Dayjs } from 'dayjs';
-import { ImFilter } from "react-icons/im";
-import { useState, useEffect } from 'react';
+import { IoFilter } from "react-icons/io5";
+import React, { useState, useEffect } from 'react';
 import { IoMdArrowDropdown } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -18,8 +18,9 @@ import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import { useTheme, alpha } from '@mui/material/styles';
-import TableContainer from '@mui/material/TableContainer';
 import InputAdornment from '@mui/material/InputAdornment';
+import TableContainer from '@mui/material/TableContainer';
+import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -32,8 +33,6 @@ import {
     type DashboardStats,
     fetchTodayActivities,
     type TodayActivities,
-    fetchFinancialTotals,
-    type FinancialTotals,
     fetchSalesDashboardData,
     type SalesDashboardData
 } from 'src/api/dashboard';
@@ -48,6 +47,22 @@ import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 import { AnalyticsCurrentVisits } from '../analytics-current-visits';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function CombinedDashboardView() {
     const theme = useTheme();
@@ -74,35 +89,57 @@ export function CombinedDashboardView() {
     const [crmStats, setCrmStats] = useState<DashboardStats>({
         leads: 0,
         contacts: 0,
-        deals: 0,
         accounts: 0,
-        recent_leads: 0,
-        total_deal_value: 0,
+        deals: 0,
+        proposals: 0,
+        estimations: 0,
+        invoices: 0,
         leads_by_status: [],
         deals_by_stage: [],
         charts: {
             categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
             leads: [0, 0, 0, 0, 0, 0, 0],
             contacts: [0, 0, 0, 0, 0, 0, 0],
-            deals: [0, 0, 0, 0, 0, 0, 0],
             accounts: [0, 0, 0, 0, 0, 0, 0],
+            deals: [0, 0, 0, 0, 0, 0, 0],
+            proposals: [0, 0, 0, 0, 0, 0, 0],
+            estimations: [0, 0, 0, 0, 0, 0, 0],
+            invoices: [0, 0, 0, 0, 0, 0, 0],
         },
     });
     const [activities, setActivities] = useState<TodayActivities>({
         calls: [],
         meetings: [],
     });
-    const [financialTotals, setFinancialTotals] = useState<FinancialTotals>({
-        invoices: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        estimations: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        purchases: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        expenses: { total: 0, count: 0, chart: [0, 0, 0, 0, 0, 0, 0] },
-        categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-    });
 
-    const [dateFilter, setDateFilter] = useState<string>('Last 7 Days');
+    const [dateFilter, setDateFilter] = useState<string>('Filter');
     const [customStartDate, setCustomStartDate] = useState<Dayjs | null>(dayjs().subtract(7, 'day'));
     const [customEndDate, setCustomEndDate] = useState<Dayjs | null>(dayjs());
+
+    // Pagination state for tables
+    const [topClientsPage, setTopClientsPage] = useState(0);
+    const [topClientsRowsPerPage, setTopClientsRowsPerPage] = useState(5);
+
+    const [overduePage, setOverduePage] = useState(0);
+    const [overdueRowsPerPage, setOverdueRowsPerPage] = useState(5);
+
+    const handleTopClientsChangePage = (event: unknown, newPage: number) => {
+        setTopClientsPage(newPage);
+    };
+
+    const handleTopClientsChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTopClientsRowsPerPage(parseInt(event.target.value, 10));
+        setTopClientsPage(0);
+    };
+
+    const handleOverdueChangePage = (event: unknown, newPage: number) => {
+        setOverduePage(newPage);
+    };
+
+    const handleOverdueChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setOverdueRowsPerPage(parseInt(event.target.value, 10));
+        setOverduePage(0);
+    };
 
     useEffect(() => {
         const loadData = async () => {
@@ -123,16 +160,14 @@ export function CombinedDashboardView() {
             }
             // If 'All Time', we leave start_date and end_date as undefined
 
-            const [sales, stats, acts, financial] = await Promise.all([
+            const [sales, stats, acts] = await Promise.all([
                 fetchSalesDashboardData(start_date, end_date),
                 fetchDashboardStats(start_date, end_date),
                 fetchTodayActivities(),
-                fetchFinancialTotals(start_date, end_date)
             ]);
             setSalesData(sales);
             setCrmStats(stats);
             setActivities(acts);
-            setFinancialTotals(financial);
         };
 
         loadData();
@@ -146,6 +181,13 @@ export function CombinedDashboardView() {
         if (yesterday === 0) return today > 0 ? 100 : 0;
         return Math.round(((today - yesterday) / yesterday) * 100);
     };
+
+    // Prepare paginated data for tables
+    const topClients = salesData.top_customers_by_revenue || [];
+    const topClientsDisplayed = topClients.slice(topClientsPage * topClientsRowsPerPage, topClientsPage * topClientsRowsPerPage + topClientsRowsPerPage);
+
+    const overdue = salesData.overdue_orders || [];
+    const overdueDisplayed = overdue.slice(overduePage * overdueRowsPerPage, overduePage * overdueRowsPerPage + overdueRowsPerPage);
 
     return (
         <DashboardContent maxWidth="xl">
@@ -178,49 +220,62 @@ export function CombinedDashboardView() {
                         <Select
                             value={dateFilter}
                             onChange={(e) => setDateFilter(e.target.value)}
-                            IconComponent={IoMdArrowDropdown}
+                            IconComponent={() => null} // Hide default dropdown arrow to match the mockup
                             renderValue={(selected) => (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 0.5 }}>
-                                    <ImFilter size={14} style={{ color: theme.palette.mode === 'dark' ? '#111111' : '#111111' }} />
-                                    <Typography variant="subtitle2" sx={{ color: theme.palette.mode === 'dark' ? 'common.white' : 'grey.900', fontWeight: 600, mt: 0.2, ml: 0.5 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: 1 }}>
+                                    <Box sx={{ position: 'relative', display: 'flex' }}>
+                                        <IoFilter size={20} color="#7C4DFF" />
+                                        {selected !== 'Filter' && (
+                                            <Box sx={{
+                                                position: 'absolute',
+                                                top: -2,
+                                                right: -2,
+                                                width: 8,
+                                                height: 8,
+                                                borderRadius: '50%',
+                                                bgcolor: 'error.main',
+                                                border: '1.5px solid white'
+                                            }} />
+                                        )}
+                                    </Box>
+                                    <Typography sx={{ color: '#2A2A35', fontWeight: 600, fontSize: 15, letterSpacing: '-0.2px', ml: 0.5 }}>
                                         {selected}
                                     </Typography>
                                 </Box>
                             )}
                             sx={{
-                                minWidth: 160,
+                                minWidth: 110,
                                 height: 40,
                                 borderRadius: '20px',
-                                bgcolor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[800], 0.8) : alpha(themeVar.palette.grey[500], 0.08),
-                                boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 4px 12px rgba(0,0,0,0.2)' : '0 4px 12px rgba(145, 158, 171, 0.12)',
+                                bgcolor: 'common.white',
+                                boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.04), inset 0px 2px 4px rgba(255, 255, 255, 0.8)',
                                 transition: 'all 0.2s ease-in-out',
                                 '& .MuiSelect-select': {
                                     display: 'flex',
                                     alignItems: 'center',
+                                    justifyContent: 'center',
                                     py: 1,
-                                },
-                                '& .MuiSelect-icon': {
-                                    color: (themeVar) => themeVar.palette.mode === 'dark' ? 'grey.400' : 'grey.700',
-                                    right: 15,
+                                    px: 2, // override default select right padding since we removed the arrow
                                 },
                                 '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.primary.light, 0.35) : alpha(themeVar.palette.primary.main, 0.35),
-                                    borderWidth: '0.5px',
+                                    borderColor: '#F1F3F5',
+                                    borderWidth: '2px',
                                 },
                                 '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderColor: '#E9ECEF',
                                     borderWidth: '2px',
                                 },
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: (themeVar) => themeVar.palette.mode === 'dark' ? themeVar.palette.primary.light : themeVar.palette.primary.main,
+                                    borderColor: '#E9ECEF',
                                     borderWidth: '2px',
                                 },
                                 '&:hover': {
                                     transform: 'translateY(-1px)',
-                                    boxShadow: (themeVar) => themeVar.palette.mode === 'dark' ? '0 6px 16px rgba(0,0,0,0.4)' : '0 6px 16px rgba(145, 158, 171, 0.2)',
+                                    boxShadow: '0px 10px 28px rgba(0, 0, 0, 0.06), inset 0px 2px 4px rgba(255, 255, 255, 0.9)',
                                 }
                             }}
                         >
+                            <MenuItem value="Filter">Filter</MenuItem>
                             <MenuItem value="All Time">All Time</MenuItem>
                             <MenuItem value="Last 7 Days">Last 7 Days</MenuItem>
                             <MenuItem value="Last Month">Last Month</MenuItem>
@@ -237,7 +292,7 @@ export function CombinedDashboardView() {
                         title="Total Leads"
                         percent={getPercentChange(crmStats.charts?.leads)}
                         total={crmStats.leads || 0}
-                        icon={<img alt="Leads" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+                        icon={<img alt="Leads" src={`${import.meta.env.BASE_URL}assets/icons/glass/leads.png`} height={45} width={50} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.leads || [0, 0, 0, 0, 0, 0, 0],
@@ -251,7 +306,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.contacts)}
                         total={crmStats.contacts || 0}
                         color="secondary"
-                        icon={<img alt="Contacts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+                        icon={<img alt="Contacts" src={`${import.meta.env.BASE_URL}assets/icons/glass/clients.png`} height={45} width={70} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.contacts || [0, 0, 0, 0, 0, 0, 0],
@@ -265,7 +320,7 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.accounts)}
                         total={crmStats.accounts || 0}
                         color="info"
-                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-users.svg`} />}
+                        icon={<img alt="Accounts" src={`${import.meta.env.BASE_URL}assets/icons/glass/company.png`} height={45} width={50} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.accounts || [0, 0, 0, 0, 0, 0, 0],
@@ -280,24 +335,24 @@ export function CombinedDashboardView() {
                         percent={getPercentChange(crmStats.charts?.deals)}
                         total={crmStats.deals || 0}
                         color="warning"
-                        icon={<img alt="Deals" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        icon={<img alt="Deals" src={`${import.meta.env.BASE_URL}assets/icons/glass/deals.png`} height={45} width={70} />}
                         chart={{
                             categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
                             series: crmStats.charts?.deals || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
-                
+
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
-                        title="Total Proposal"
-                        percent={getPercentChange(financialTotals.purchases.chart)}
-                        total={financialTotals.purchases.count}
+                        title="Total Proposals"
+                        percent={getPercentChange(crmStats.charts?.proposals)}
+                        total={crmStats.proposals || 0}
                         color="warning"
-                        icon={<img alt="Purchases" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-message.svg`} />}
+                        icon={<img alt="Proposals" src={`${import.meta.env.BASE_URL}assets/icons/glass/proposals.png`} height={45} width={70} />}
                         chart={{
-                            categories: financialTotals.categories,
-                            series: financialTotals.purchases.chart,
+                            categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            series: crmStats.charts?.proposals || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
@@ -306,13 +361,13 @@ export function CombinedDashboardView() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
                         title="Total Estimations"
-                        percent={getPercentChange(financialTotals.estimations.chart)}
-                        total={financialTotals.estimations.count}
+                        percent={getPercentChange(crmStats.charts?.estimations)}
+                        total={crmStats.estimations || 0}
                         color="secondary"
-                        icon={<img alt="Estimations" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-bag.svg`} />}
+                        icon={<img alt="Estimations" src={`${import.meta.env.BASE_URL}assets/icons/glass/estimations.png`} height={45} width={70}/>}
                         chart={{
-                            categories: financialTotals.categories,
-                            series: financialTotals.estimations.chart,
+                            categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            series: crmStats.charts?.estimations || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
@@ -320,12 +375,12 @@ export function CombinedDashboardView() {
                 <Grid size={{ xs: 12, sm: 6, md: 3 }}>
                     <AnalyticsWidgetSummary
                         title="Total Invoices"
-                        percent={getPercentChange(financialTotals.invoices.chart)}
-                        total={financialTotals.invoices.count}
-                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/ic-glass-buy.svg`} />}
+                        percent={getPercentChange(crmStats.charts?.invoices)}
+                        total={crmStats.invoices || 0}
+                        icon={<img alt="Invoices" src={`${import.meta.env.BASE_URL}assets/icons/glass/invoices.png`} height={45} width={70}/>}
                         chart={{
-                            categories: financialTotals.categories,
-                            series: financialTotals.invoices.chart,
+                            categories: crmStats.charts?.categories || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                            series: crmStats.charts?.invoices || [0, 0, 0, 0, 0, 0, 0],
                         }}
                     />
                 </Grid>
@@ -353,11 +408,14 @@ export function CombinedDashboardView() {
                 </Grid>
 
                 {/* Total Revenue Chart */}
-                <Grid size={{ xs: 12, md: 8 }}>
+                <Grid size={{ xs: 12, md: 12 }}>
                     <AnalyticsWebsiteVisits
                         title="Total Revenue"
                         subheader="Revenue over last 12 months"
                         chartType="line"
+                        emptyTitle="No revenue recorded"
+                        emptyDescription="There are no invoices or billing records for this period."
+                        emptyIcon="solar:bill-list-bold-duotone"
                         chart={{
                             colors: [theme.palette.warning.main],
                             categories: salesData.sales_trend.categories,
@@ -380,9 +438,12 @@ export function CombinedDashboardView() {
                 </Grid>
 
                 {/* Leads by Status */}
-                <Grid size={{ xs: 12, md: 4 }}>
+                <Grid size={{ xs: 12, md: 6 }}>
                     <AnalyticsCurrentVisits
                         title="Leads by Status"
+                        emptyTitle="No leads found"
+                        emptyDescription="Get started by creating a new lead or importing contacts."
+                        emptyIcon="solar:users-group-rounded-bold-duotone"
                         chart={{
                             series: (crmStats.leads_by_status || []).map((item) => ({
                                 label: item.status,
@@ -393,10 +454,27 @@ export function CombinedDashboardView() {
                     />
                 </Grid>
 
+                {/* Deals by Status */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                    <AnalyticsCurrentVisits
+                        title="Deals by Status"
+                        emptyTitle="No deals found"
+                        emptyDescription="Track your sales pipeline by adding your first deal."
+                        emptyIcon="solar:case-bold-duotone"
+                        chart={{
+                            series: (crmStats.deals_by_stage || []).map((item) => ({
+                                label: item.stage,
+                                value: item.count,
+                            })),
+                        }}
+                        sx={{ height: 1 }}
+                    />
+                </Grid>
+
                 {/* Top Clients */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Card>
-                        <CardHeader title="Top Clients by Revenue" sx={{pb:2}} />
+                        <CardHeader title="Top Clients by Revenue" sx={{ pb: 2 }} />
                         <Scrollbar>
                             <TableContainer sx={{ minWidth: 400 }}>
                                 <Table>
@@ -408,19 +486,19 @@ export function CombinedDashboardView() {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {salesData.top_customers_by_revenue.length > 0 ? (
-                                            salesData.top_customers_by_revenue.map((row) => (
+                                        {topClients.length > 0 ? (
+                                            topClientsDisplayed.map((row) => (
                                                 <TableRow key={row.client_name}>
                                                     <TableCell sx={{ maxWidth: 200 }}>
                                                         <Typography variant="subtitle2" noWrap sx={{ color: 'text.primary', fontWeight: 800 }}>
-                                                            {row.billing_name}
+                                                            {row.account_name || row.billing_name}
                                                         </Typography>
                                                         <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                            {row.client_name}
+                                                            {row.contact_name || row.client_name}
                                                         </Typography>
                                                     </TableCell>
-                                                    <TableCell>{fCurrency(row.revenue)}</TableCell>
-                                                    <TableCell align="center">{row.order_count}</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800, fontSize: 15 }}>{renderCurrency(row.revenue)}</TableCell>
+                                                    <TableCell align="center" sx={{ fontWeight: 800 }}>{row.order_count}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
@@ -451,13 +529,23 @@ export function CombinedDashboardView() {
                                 </Table>
                             </TableContainer>
                         </Scrollbar>
+                        <TablePagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            component="div"
+                            count={topClients.length}
+                            rowsPerPage={topClientsRowsPerPage}
+                            page={topClientsPage}
+                            onPageChange={handleTopClientsChangePage}
+                            onRowsPerPageChange={handleTopClientsChangeRowsPerPage}
+                            sx={{ borderTop: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}
+                        />
                     </Card>
                 </Grid>
 
                 {/* Overdue Orders */}
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Card>
-                        <CardHeader title="Overdue Orders" sx={{pb:2}}/>
+                        <CardHeader title="Overdue Orders" sx={{ pb: 2 }} />
                         <Scrollbar>
                             <TableContainer sx={{ minWidth: 400 }}>
                                 <Table>
@@ -470,17 +558,22 @@ export function CombinedDashboardView() {
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
-                                        {salesData.overdue_orders.length > 0 ? (
-                                            salesData.overdue_orders.map((row) => (
+                                        {overdue.length > 0 ? (
+                                            overdueDisplayed.map((row) => (
                                                 <TableRow key={row.name}>
                                                     <TableCell sx={{ color: 'text.primary', fontWeight: 800 }}>{row.name}</TableCell>
                                                     <TableCell sx={{ maxWidth: 200 }}>
                                                         <Typography variant="body2" noWrap sx={{ color: 'text.primary', fontWeight: 700 }}>
-                                                            {row.billing_name}
+                                                            {row.account_name || row.billing_name}
                                                         </Typography>
+                                                        {row.account_name && row.account_name !== row.billing_name && (
+                                                            <Typography variant="caption" noWrap sx={{ color: 'text.secondary', display: 'block' }}>
+                                                                {row.billing_name}
+                                                            </Typography>
+                                                        )}
                                                     </TableCell>
-                                                    <TableCell>{row.due_date || '-'}</TableCell>
-                                                    <TableCell align="right">{fCurrency(row.balance_amount)}</TableCell>
+                                                    <TableCell sx={{ fontWeight: 800 }}>{row.due_date || '-'}</TableCell>
+                                                    <TableCell align="right" sx={{ fontWeight: 800 }}>{renderCurrency(row.balance_amount)}</TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
@@ -511,6 +604,16 @@ export function CombinedDashboardView() {
                                 </Table>
                             </TableContainer>
                         </Scrollbar>
+                        <TablePagination
+                            rowsPerPageOptions={[5, 10, 25]}
+                            component="div"
+                            count={overdue.length}
+                            rowsPerPage={overdueRowsPerPage}
+                            page={overduePage}
+                            onPageChange={handleOverdueChangePage}
+                            onRowsPerPageChange={handleOverdueChangeRowsPerPage}
+                            sx={{ borderTop: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}
+                        />
                     </Card>
                 </Grid>
             </Grid>

@@ -24,9 +24,9 @@ import TableContainer from '@mui/material/TableContainer';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import TablePagination from '@mui/material/TablePagination';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
-import { IconButton, CircularProgress } from '@mui/material';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { IconButton, CircularProgress, MenuItem } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useAttendance } from 'src/hooks/useAttendance';
@@ -72,6 +72,7 @@ export function AttendanceView() {
         status: 'Present',
         attendance_date: dayjs().format('YYYY-MM-DD'),
     });
+    const [touched, setTouched] = useState(false);
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
 
@@ -136,12 +137,14 @@ export function AttendanceView() {
             status: 'Present',
             attendance_date: dayjs().format('YYYY-MM-DD'),
         });
+        setTouched(false);
         setOpenCreate(true);
     };
 
     const handleCloseCreate = () => {
         setOpenCreate(false);
         setCurrentAttendanceId(null);
+        setTouched(false);
     };
 
     const handleOpenImport = () => {
@@ -246,6 +249,7 @@ export function AttendanceView() {
     };
 
     const handleCreate = async () => {
+        setTouched(true);
         const error = validateForm();
         if (error) {
             setSnackbar({ open: true, message: error, severity: 'error' });
@@ -296,6 +300,7 @@ export function AttendanceView() {
         if (fullRow) {
             setFormData({ ...fullRow });
         }
+        setTouched(false);
         setOpenCreate(true);
     };
 
@@ -387,6 +392,16 @@ export function AttendanceView() {
                 />
             );
         }
+
+        let errorMsg = '';
+        if (touched) {
+            if (required && !formData[fieldname]) {
+                errorMsg = `${label} is required`;
+            } else if ((fieldname === 'in_time' || fieldname === 'out_time') && (formData.status === 'Present' || formData.status === 'Half Day') && !formData[fieldname]) {
+                errorMsg = `${label} is required for ${formData.status}`;
+            }
+        }
+
         const commonProps = {
             fullWidth: true,
             label,
@@ -394,6 +409,8 @@ export function AttendanceView() {
             onChange: (e: any) => handleInputChange(fieldname, e.target.value),
             InputLabelProps: { shrink: true },
             required,
+            error: !!errorMsg,
+            helperText: errorMsg,
             ...extraProps,
             sx: {
                 '& .MuiFormLabel-asterisk': {
@@ -405,12 +422,12 @@ export function AttendanceView() {
 
         if (type === 'select' || type === 'link') {
             return (
-                <TextField {...commonProps} select SelectProps={{ native: true }}>
-                    <option value="">Select {label}</option>
+                <TextField {...commonProps} select>
+                    <MenuItem value="" disabled>Select {label}</MenuItem>
                     {options.map((opt: any) => (
-                        <option key={opt.name || opt} value={opt.name || opt}>
+                        <MenuItem key={opt.name || opt} value={opt.name || opt}>
                             {opt.employee_name ? `${opt.employee_name} (${opt.name})` : (opt.name || opt)}
-                        </option>
+                        </MenuItem>
                     ))}
                 </TextField>
             );
@@ -428,6 +445,8 @@ export function AttendanceView() {
                             fullWidth: true,
                             required,
                             InputLabelProps: { shrink: true },
+                            error: !!errorMsg,
+                            helperText: errorMsg,
                             sx: commonProps.sx
                         }
                     }}
@@ -446,6 +465,8 @@ export function AttendanceView() {
                             fullWidth: true,
                             required,
                             InputLabelProps: { shrink: true },
+                            error: !!errorMsg,
+                            helperText: errorMsg,
                             sx: commonProps.sx
                         }
                     }}
@@ -688,7 +709,7 @@ export function AttendanceView() {
                             <Autocomplete
                                 fullWidth
                                 options={employeeOptions}
-                                getOptionLabel={(option) => option.employee_name ? `${option.employee_name} (${option.name})` : (option.name || '')}
+                                getOptionLabel={(option) => option.employee_name || option.name || ''}
                                 value={employeeOptions.find((opt) => opt.name === formData.employee) || null}
                                 onChange={(event, newValue) => {
                                     handleInputChange('employee', newValue?.name || '');
@@ -699,12 +720,28 @@ export function AttendanceView() {
                                         label="Employee"
                                         required
                                         InputLabelProps={{ shrink: true }}
+                                        error={touched && !formData.employee}
+                                        helperText={touched && !formData.employee ? 'Employee is required' : ''}
                                         sx={{
                                             '& .MuiFormLabel-asterisk': {
                                                 color: 'red',
                                             },
                                         }}
                                     />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props}>
+                                        <Box>
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {option.employee_name || option.name}
+                                            </Typography>
+                                            {option.employee_name && (
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                    ID: {option.name}
+                                                </Typography>
+                                            )}
+                                        </Box>
+                                    </li>
                                 )}
                             />
                             {renderField('attendance_date', 'Attendance Date', 'date', [], {}, true)}

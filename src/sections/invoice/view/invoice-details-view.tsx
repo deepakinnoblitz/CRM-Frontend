@@ -1,5 +1,5 @@
 import { useSnackbar } from 'notistack';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, 
@@ -32,6 +32,23 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
+import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoice, deleteInvoice, getInvoicePrintUrl } from 'src/api/invoice';
 
@@ -46,6 +63,9 @@ export function InvoiceDetailsView() {
     const navigate = useNavigate();
 
     const [invoice, setInvoice] = useState<any>(null);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
+    const [accountName, setAccountName] = useState<string>('');
+    const [bankAccountDetails, setBankAccountDetails] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
@@ -62,7 +82,66 @@ export function InvoiceDetailsView() {
     }, [id]);
 
     useEffect(() => {
-        if (location.state?.converted) {
+        if (invoice?.bank_account) {
+            getDoctypeList('Company Bank Account', ['name', 'bank_name', 'account_holder_name', 'account_no', 'ifsc_code'], { name: invoice.bank_account })
+                .then((accounts: any[]) => {
+                    if (accounts && accounts.length > 0) {
+                        setBankAccountDetails(accounts[0]);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Bank Account details:', err);
+                    setBankAccountDetails(null);
+                });
+        }
+    }, [invoice?.bank_account]);
+
+    useEffect(() => {
+        if (invoice?.billing_name) {
+            getDoctypeList('Accounts', ['name', 'account_name'])
+                .then((accounts: any[]) => {
+                    const account = accounts.find((acc: any) => acc.name === invoice.billing_name);
+                    if (account?.account_name) {
+                        setAccountName(account.account_name);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Account details:', err);
+                    setAccountName('');
+                });
+        }
+    }, [invoice?.billing_name]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((invoice?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [invoice?.table_qecz]);
+
+    const convertedShown = useRef(false);
+
+    useEffect(() => {
+        if (location.state?.converted && !convertedShown.current) {
+            convertedShown.current = true;
             enqueueSnackbar('Converted from estimation successfully!', { variant: 'success' });
             // Clear navigation state to prevent re-showing on refresh
             navigate(location.pathname, { replace: true, state: {} });
@@ -104,6 +183,9 @@ export function InvoiceDetailsView() {
         received_amount,
         balance_amount,
         table_qecz = [],
+        bank_account,
+        converted_from_estimation,
+        converted_estimation_id,
     } = invoice;
 
     let parsedAttachments: { name: string; url: string }[] = [];
@@ -253,9 +335,12 @@ export function InvoiceDetailsView() {
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700 }}>
-                                    {billing_name || 'No Company Name'}
+                                    {accountName || billing_name || 'No Company Name'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {billing_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.primary" sx={{ mt: 1, fontWeight: 600, fontSize: '15px' }}>
                                     {customer_name || 'No Contact Name'}
                                 </Typography>
                                 <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
@@ -273,13 +358,19 @@ export function InvoiceDetailsView() {
                             </Stack>
                             <Stack spacing={2} sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Invoice Date</Typography>
+                                    <Typography variant="caption" color="text.secondary">Invoice Date</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{invoice_date}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.disabled">Reference</Typography>
+                                    <Typography variant="caption" color="text.secondary">Reference</Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>#{id}</Typography>
                                 </Stack>
+                                {converted_estimation_id && (
+                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                        <Typography variant="caption" color="text.secondary">Converted Estimation ID</Typography>
+                                        <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>{converted_estimation_id}</Typography>
+                                    </Stack>
+                                )}
                             </Stack>
                         </Stack>
 
@@ -295,14 +386,14 @@ export function InvoiceDetailsView() {
                                         <IoMdWallet size={18} style={{ color: '#7e7e7e' }} />
                                         <Typography variant="caption" color="text.secondary">Grand Total</Typography>
                                     </Stack>
-                                    <Typography variant="subtitle1" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                    <Typography variant="subtitle1" color="primary.main">{renderCurrency(grand_total, '18px')}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Stack direction="row" alignItems="center" spacing={1}>
                                         {(balance_amount || 0) > 0 ? <IoMdAlert size={18} style={{ color: '#FF5630' }} /> : <IoMdCheckmarkCircle size={18} style={{ color: '#02c281' }} />}
                                         <Typography variant="caption" color="text.secondary">Balance Due</Typography>
                                     </Stack>
-                                    <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                                    <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{renderCurrency(balance_amount, '18px')}</Typography>
                                 </Stack>
                             </Stack>
                         </Stack>
@@ -326,7 +417,7 @@ export function InvoiceDetailsView() {
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>HSN</TableCell>
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Description</TableCell>
                                         <TableCell width={60} align="center" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Qty</TableCell>
-                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
+                                        <TableCell width={120} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Discount</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Type</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Amt</TableCell>
@@ -337,7 +428,7 @@ export function InvoiceDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>
@@ -346,20 +437,20 @@ export function InvoiceDetailsView() {
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', maxWidth: 200 }}>{row.description}</Typography>
                                             </TableCell>
                                             <TableCell align="center" sx={{ py: 2 }}>{row.quantity}</TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.price)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.price)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 {row.discount > 0 ? (
                                                     <Typography variant="caption" color="success.main">
-                                                        -{row.discount_type === 'Flat' ? fCurrency(row.discount) : `${row.discount}%`}
+                                                        -{row.discount_type === 'Flat' ? renderCurrency(row.discount) : `${row.discount}%`}
                                                     </Typography>
                                                 ) : '-'}
                                             </TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 <Typography variant="caption" color="text.secondary">{row.tax_type || '-'}</Typography>
                                             </TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.tax_amount)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.tax_amount)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2" color="primary">{fCurrency(row.sub_total)}</Typography>
+                                                <Typography variant="subtitle2" color="primary">{renderCurrency(row.sub_total)}</Typography>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -411,6 +502,46 @@ export function InvoiceDetailsView() {
                                 </Typography>
                             </Stack>
 
+                            <Stack spacing={1}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Company Bank Account</Typography>
+                                {bank_account ? (
+                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                        <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px'}}>
+                                            {bankAccountDetails?.bank_name || 'Loading...'}
+                                        </Typography>
+                                        <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                            ID: {bank_account}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap'  }}>
+                                            Account Holder:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary', mb: 20 }}>
+                                                {bankAccountDetails?.account_holder_name || '-'}
+                                            </Box>
+                                              <Box sx={{ mb: 0.5 }} />
+                                             Account No:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.account_no || '-'}
+                                            </Box>
+                                           <Box sx={{ mb: 0.5 }} />
+                                            IFSC:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.ifsc_code || '-'}
+                                            </Box>
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="body2" sx={{
+                                        p: 2,
+                                        borderRadius: 1.5,
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                        color: 'text.secondary'
+                                    }}>
+                                        No bank account selected.
+                                    </Typography>
+                                )}
+                            </Stack>
+
                             {parsedAttachments.length > 0 && (
                                 <Stack spacing={1}>
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Attachments</Typography>
@@ -455,21 +586,21 @@ export function InvoiceDetailsView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
+                                <Typography variant="subtitle2">{renderCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" color="error.main">+{renderCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">-{renderCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -477,14 +608,14 @@ export function InvoiceDetailsView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: '#08a3cd' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h5" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                <Typography variant="h5" color="primary.main">{renderCurrency(grand_total, '20px')}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" spacing={1} alignItems="center">
                                     <IoMdCheckmarkCircle size={18} style={{ color: '#02c281' }} />
                                     <Typography variant="body2" color="text.secondary">Received Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">{fCurrency(received_amount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">{renderCurrency(received_amount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -492,7 +623,7 @@ export function InvoiceDetailsView() {
                                     {(balance_amount || 0) > 0 ? <IoMdAlert size={24} style={{ color: '#FF5630' }} /> : <IoMdCheckmarkCircle size={24} style={{ color: '#02c281' }} />}
                                     <Typography variant="subtitle1" sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }}>Balance Due</Typography>
                                 </Stack>
-                                <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                                <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{renderCurrency(balance_amount, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>

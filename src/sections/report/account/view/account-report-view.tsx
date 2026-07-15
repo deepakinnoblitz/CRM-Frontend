@@ -1,6 +1,6 @@
-import type dayjs from 'dayjs';
-
-import * as XLSX from 'xlsx';
+import dayjs from 'dayjs';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -40,7 +40,6 @@ import { generateAccountPdf } from 'src/components/export/pdf/account-pdf-genera
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 import { AccountDetailsDialog } from '../account-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -66,6 +65,7 @@ export function AccountReportView() {
         }
     }, [user]);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
@@ -113,10 +113,7 @@ export function AccountReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             // Use IDs from selection or currently filtered report data
@@ -127,13 +124,13 @@ export function AccountReportView() {
                 return;
             }
 
-            // Simple filter for IDs
             const filters = [['name', 'in', idsToExport]];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_company_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Company export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
 
-            // Ensure at least some fields are selected
-            const fieldsToFetch = selectedFields.length > 0 ? selectedFields : ['name', 'account_name', 'phone_number', 'website', 'gstin'];
-            // Add 'name' if missing to ensure we have a primary key
-            if (!fieldsToFetch.includes('name')) fieldsToFetch.push('name');
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const query = new URLSearchParams({
                 doctype: "Accounts",
@@ -146,25 +143,75 @@ export function AccountReportView() {
             if (!res.ok) throw new Error("Failed to fetch data for export");
             const data = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Company Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Accounts");
-                XLSX.writeFile(workbook, "Account_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Account_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Account_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -221,6 +268,7 @@ export function AccountReportView() {
         setCountry('all');
         setState('all');
         setCity('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -258,6 +306,22 @@ export function AccountReportView() {
             setCity('all');
         }
     }, [country, state]);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc' || sortBy === 'company_date_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc' || sortBy === 'company_date_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -340,32 +404,24 @@ export function AccountReportView() {
                         />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={country === 'all'}>
-                        <Select
-                            value={state}
-                            onChange={(e) => setState(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">State</MenuItem>
-                            {stateOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={stateOptions}
+                            value={state === 'all' ? null : state}
+                            onChange={(e, newValue) => setState(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="State" />}
+                            disabled={country === 'all'}
+                        />
                     </FormControl>
                     <FormControl size="small" sx={{ minWidth: 160 }} disabled={state === 'all'}>
-                        <Select
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                            displayEmpty
-                        >
-                            <MenuItem value="all">City</MenuItem>
-                            {cityOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
-                                </MenuItem>
-                            ))}
-                        </Select>
+                        <Autocomplete
+                            size="small"
+                            options={cityOptions}
+                            value={city === 'all' ? null : city}
+                            onChange={(e, newValue) => setCity(newValue || 'all')}
+                            renderInput={(params) => <TextField {...params} placeholder="City" />}
+                            disabled={state === 'all'}
+                        />
                     </FormControl>
                     <Autocomplete
                         size="small"
@@ -397,11 +453,25 @@ export function AccountReportView() {
                             />
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="company_date_desc">Company Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="company_date_asc">Company Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
+                        onClick={handleExport}
                         disabled={reportData.length === 0}
                         sx={{ mr: 1 }}
                     >
@@ -411,7 +481,7 @@ export function AccountReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generateAccountPdf({
-                            reportData,
+                            reportData: filteredData,
                             selected,
                             summary: summaryData.length > 0 ? summaryData : [
                                 { label: 'Total Accounts', value: reportData.length },
@@ -492,7 +562,7 @@ export function AccountReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -509,16 +579,16 @@ export function AccountReportView() {
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
-                                                        <TableCell sx={{ fontWeight: 600 }}>{row.account_name}</TableCell>
-                                                        <TableCell>{row.phone_number}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 600 }}>{row.account_name || '-'}</TableCell>
+                                                        <TableCell>{row.phone_number || '-'}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {row.website}
+                                                            {row.website || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.gstin}</TableCell>
+                                                        <TableCell>{row.gstin || '-'}</TableCell>
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ')}
+                                                            {[row.city, row.state, row.country].filter(Boolean).join(', ') || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell>{row.owner_name || '-'}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewAccount(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
@@ -564,12 +634,6 @@ export function AccountReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Accounts"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

@@ -124,6 +124,9 @@ export function SalesDashboardView() {
                     <AnalyticsWebsiteVisits
                         title="Sales Trend"
                         subheader="Total Revenue over last 12 months"
+                        emptyTitle="No sales recorded"
+                        emptyDescription="There are no sales transactions for the selected range."
+                        emptyIcon="solar:bill-list-bold-duotone"
                         chart={{
                             categories: data.sales_trend.categories,
                             series: [

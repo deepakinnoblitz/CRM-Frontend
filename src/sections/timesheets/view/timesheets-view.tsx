@@ -830,11 +830,7 @@ export function TimesheetsView() {
                             <Autocomplete
                                 fullWidth
                                 options={employees}
-                                getOptionLabel={(option) =>
-                                    option.employee_name
-                                        ? `${option.employee_name} (${option.name || option.employee_id})`
-                                        : option.employee_id || ''
-                                }
+                                getOptionLabel={(option) => option.employee_name || option.name || option.employee_id || ''}
                                 isOptionEqualToValue={(option, value) => option.name === (value?.name || value)}
                                 value={employees.find((emp) => emp.name === employee) || (employee && user?.employee === employee ? { name: user.employee, employee_name: user.employee_name } : null)}
                                 readOnly={isEdit}
@@ -843,6 +839,21 @@ export function TimesheetsView() {
                                     if (formErrors.employee) {
                                         setFormErrors((prev) => ({ ...prev, employee: '' }));
                                     }
+                                }}
+                                renderOption={(props, option) => {
+                                    const { key, ...optionProps } = props as any;
+                                    return (
+                                        <li key={key} {...optionProps}>
+                                            <Stack spacing={0.5}>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                                    {option.employee_name || option.name}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                                    ID: {option.name || option.employee_id}
+                                                </Typography>
+                                            </Stack>
+                                        </li>
+                                    );
                                 }}
                                 renderInput={(params) => (
                                     <TextField

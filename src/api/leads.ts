@@ -1,6 +1,16 @@
 import { frappeRequest, getAuthHeaders } from 'src/utils/csrf';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
+export interface LeadPhoneRow {
+    name?: string;
+    phone: string;
+}
+
+export interface LeadEmailRow {
+    name?: string;
+    email: string;
+}
+
 export interface Lead {
     name: string;
     lead_name: string;
@@ -19,6 +29,9 @@ export interface Lead {
     workflow_state?: string;
     billing_address?: string;
     interest_level?: 'High' | 'Medium' | 'Low';
+    phone_numbers?: LeadPhoneRow[];
+    emails?: LeadEmailRow[];
+    modified?: string;
 }
 
 export async function fetchLeads(params: {
@@ -82,7 +95,8 @@ export async function fetchLeads(params: {
             "remarks",
             "interest_level",
             "owner",
-            "creation"
+            "creation",
+            "modified"
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
@@ -281,6 +295,34 @@ export async function getLeadPermissions() {
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
 
+export async function getFollowupHistory(
+    reference_type: string,
+    reference_name: string
+) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_followup_history?reference_type=${encodeURIComponent(reference_type)}&reference_name=${encodeURIComponent(reference_name)}`
+    );
+
+    if (!res.ok) {
+        throw new Error(
+            `Failed to fetch follow-up history`
+        );
+    }
+
+    return (await res.json()).message || [];
+}
+
+export async function getProposalByLeadId(leadId: string) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_proposal_by_lead_id?lead_id=${encodeURIComponent(leadId)}`
+    );
+
+    if (!res.ok) {
+        throw new Error('Failed to fetch proposals');
+    }
+
+    return (await res.json()).message;
+}
 
 export interface WorkflowTransition {
     state: string;
@@ -374,5 +416,133 @@ export async function applyWorkflowAction(doctype: string, name: string, action:
 
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to apply workflow action"));
+    return json.message;
+}
+
+export async function getAutomationPreview(
+    doctype: string,
+    docname: string,
+    previousState: string
+): Promise<{
+    show_confirmation: boolean;
+    title?: string;
+    message?: string;
+    preview: string;
+    automation_name: string;
+}> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_whatsapp_automation.crm_whatsapp_automation.get_automation_preview?doctype=${encodeURIComponent(doctype)}&docname=${encodeURIComponent(docname)}&previous_state=${encodeURIComponent(previousState)}`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch WhatsApp automation preview");
+    }
+    const data = await res.json();
+    return data.message;
+}
+
+export async function sendAutomationMessage(
+    automationName: string,
+    doctype: string,
+    docname: string,
+    proposalName: string | null,
+    attachments?: { file_url: string }[] | null
+): Promise<any> {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(
+        "/api/method/company.company.doctype.crm_whatsapp_automation.crm_whatsapp_automation.send_automation_message",
+        {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                automation_name: automationName,
+                doctype,
+                docname,
+                proposal_name: proposalName,
+                attachments: attachments || null,
+            }),
+        }
+    );
+    const json = await res.json();
+    if (!res.ok || json.exc) {
+        throw new Error(handleFrappeError(json, "Unable to send WhatsApp message."));
+    }
+    return json.message;
+}
+
+export async function getLatestWhatsAppMessage(
+    docname: string,
+    isDeal: boolean
+): Promise<{ status: string; raw_payload?: string } | null> {
+    const filters = isDeal ? { prospect: docname } : { lead: docname };
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?doctype=CRM WhatsApp Message&filters=${encodeURIComponent(JSON.stringify(filters))}&fields=${encodeURIComponent(JSON.stringify(["status", "raw_payload"]))}&order_by=creation desc&limit=1`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch WhatsApp message status");
+    }
+    const data = await res.json();
+    return data.message && data.message.length > 0 ? data.message[0] : null;
+}
+
+export async function getEmailAutomationPreview(
+    doctype: string,
+    docname: string,
+    previousState: string
+): Promise<{
+    show_confirmation: boolean;
+    title?: string;
+    message?: string;
+    preview: string;
+    automation_name: string;
+}> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_email_automation.crm_email_automation.get_automation_preview?doctype=${encodeURIComponent(doctype)}&docname=${encodeURIComponent(docname)}&previous_state=${encodeURIComponent(previousState)}`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch email automation preview");
+    }
+    const data = await res.json();
+    return data.message;
+}
+
+export async function getProposalAttachments(
+    proposalName: string
+): Promise<{ name: string; file_name: string; file_url: string; file_size?: number }[]> {
+    const res = await frappeRequest(
+        `/api/method/company.company.doctype.crm_email_automation.crm_email_automation.get_proposal_attachments?proposal_name=${encodeURIComponent(proposalName)}`
+    );
+    if (!res.ok) {
+        throw new Error("Failed to fetch proposal attachments");
+    }
+    const data = await res.json();
+    return data.message || [];
+}
+
+export async function sendEmailAutomationMessage(
+    automationName: string,
+    doctype: string,
+    docname: string,
+    proposalName: string | null,
+    attachments?: { file_url: string }[] | null
+): Promise<any> {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(
+        "/api/method/company.company.doctype.crm_email_automation.crm_email_automation.send_automation_message",
+        {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                automation_name: automationName,
+                doctype,
+                docname,
+                proposal_name: proposalName,
+                attachments: attachments || null,
+            }),
+        }
+    );
+    const json = await res.json();
+    if (!res.ok || json.exc) {
+        throw new Error(handleFrappeError(json, "Unable to send WhatsApp message."));
+    }
     return json.message;
 }

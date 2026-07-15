@@ -415,7 +415,17 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                   </Avatar>
                   <Box sx={{ flexGrow: 1 }}>
                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
-                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{employee.designation} at {employee.department}</Typography>
+                    {(() => {
+                        const des = (employee.designation || '').trim();
+                        const dep = (employee.department || '').trim();
+                        const validDes = des && des !== '-';
+                        const validDep = dep && dep !== '-';
+                        
+                        if (!validDes && !validDep) return null;
+                        
+                        const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
+                        return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
+                    })()}
                     <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                       <Label variant="soft" color={employee.status === 'Active' ? 'success' : 'error'}>{employee.status}</Label>
                       <Typography variant="caption" sx={{ alignSelf: 'center', color: 'text.disabled', fontWeight: 700 }}>

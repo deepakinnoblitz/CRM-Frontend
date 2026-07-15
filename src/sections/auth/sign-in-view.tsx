@@ -89,10 +89,6 @@ export function SignInView() {
         slotProps={{ inputLabel: { shrink: true } }}
       />
 
-      <Link variant="body2" color="inherit" sx={{ mb: 1.5 }}>
-        Forgot password?
-      </Link>
-
       <TextField
         fullWidth
         name="password"
@@ -183,7 +179,7 @@ export function SignInView() {
 
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Don’t have an account?
-          <Link variant="subtitle2" sx={{ ml: 0.5 }}>
+          <Link variant="subtitle2" sx={{ ml: 0.5, textDecoration: 'none', '&:hover': { textDecoration: 'none'}, }}>
             Contact admin
           </Link>
         </Typography>

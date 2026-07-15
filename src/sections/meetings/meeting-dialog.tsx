@@ -523,40 +523,8 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                 </Grid>
                             </Box>
 
-                            {/* Stakeholders Section */}
-                           {/*</Box><Box>
-                           {/*</Box>    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
-                           {/*</Box>        Stakeholders
-                           {/*</Box>    </Typography>
-                           {/*</Box>    <Grid container spacing={2}>
-                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
-                           {/*</Box>            <Autocomplete
-                           {/*</Box>                fullWidth
-                           {/*</Box>                options={userOptions}
-                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                           {/*</Box>                value={userOptions.find(opt => opt.name === meetingData.host) || null}
-                           {/*</Box>                onChange={(_, newValue) => setMeetingData({ ...meetingData, host: newValue?.name || '' })}
-                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Host" />}
-                           {/*</Box>            />
-                           {/*</Box>        </Grid>
-                           {/*</Box>        <Grid size={{ xs: 12, md: 6 }}>
-                           {/*</Box>            <Autocomplete
-                           {/*</Box>                multiple
-                           {/*</Box>                fullWidth
-                           {/*</Box>                options={userOptions}
-                           {/*</Box>                getOptionLabel={(option) => typeof option === 'string' ? option : option.full_name || option.name}
-                           {/*</Box>                value={userOptions.filter(opt => meetingData.participants?.some(p => p.user === opt.name))}
-                           {/*</Box>                onChange={(_, newValue) => setMeetingData({
-                           {/*</Box>                    ...meetingData,
-                           {/*</Box>                    participants: newValue.map(v => ({ user: v.name }))
-                           {/*</Box>                })}
-                           {/*</Box>                renderInput={(params) => <TextField {...params} label="Participants" />}
-                           {/*</Box>            />
-                           {/*</Box>        </Grid>
-                           {/*</Box>    </Grid>
-                           {/*</Box></Box>
-
                             {/* Reminder Section */}
+                            {!selectedMeeting && (
                             <Box>
                                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
                                     Reminder Settings
@@ -598,6 +566,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                     )}
                                 </Stack>
                             </Box>
+                            )}
 
                             {/* Notes Section */}
                             <Box>
@@ -661,11 +630,18 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                 autoHideDuration={6000}
                 onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                 anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                style={{ zIndex: 99999 }}
+                sx={{ zIndex: 99999 }}
+                slotProps={{
+                    root: {
+                        style: { zIndex: 99999 }
+                    }
+                }}
             >
                 <Alert
                     onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                     severity={snackbar.severity}
-                    sx={{ width: '100%' }}
+                    sx={{ width: '100%', zIndex: 99999 }}
                 >
                     {snackbar.message}
                 </Alert>

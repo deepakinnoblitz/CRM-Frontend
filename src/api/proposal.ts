@@ -19,9 +19,9 @@ export interface Proposal {
     name: string;
     proposal_title: string;
     reference_no?: string;
-    client_name: string;
-    customer_name?: string;
-    billing_name?: string;
+    lead: string;
+    lead_name?: string;
+    company_name?: string;
     billing_account_name?: string;
     proposal_date: string;
     valid_until?: string;
@@ -32,6 +32,7 @@ export interface Proposal {
     total_attachments?: number;
     attachments_table?: ProposalAttachmentItem[];
     created_by?: string;
+    owner_name: string;
     prospect?: string;
     creation?: string;
     modified?: string;
@@ -43,7 +44,7 @@ export interface FetchProposalsParams {
     search?: string;
     sort_by?: string;
     filters?: {
-        client_name?: string;
+        lead?: string;
         status?: string;
         proposal_date?: string;
         prospect?: string;
@@ -61,13 +62,13 @@ export async function fetchProposals(params: FetchProposalsParams) {
     if (params.search) {
         or_filters.push(['Proposal', 'proposal_title', 'like', `%${params.search}%`]);
         or_filters.push(['Proposal', 'reference_no', 'like', `%${params.search}%`]);
-        or_filters.push(['Proposal', 'customer_name', 'like', `%${params.search}%`]);
-        or_filters.push(['Proposal', 'client_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Proposal', 'lead_name', 'like', `%${params.search}%`]);
+        or_filters.push(['Proposal', 'lead', 'like', `%${params.search}%`]);
     }
 
     if (params.filters) {
-        if (params.filters.client_name && params.filters.client_name !== 'all') {
-            filters.push(['Proposal', 'client_name', '=', params.filters.client_name]);
+        if (params.filters.lead && params.filters.lead !== 'all') {
+            filters.push(['Proposal', 'lead', '=', params.filters.lead]);
         }
         if (params.filters.status && params.filters.status !== 'all') {
             filters.push(['Proposal', 'status', '=', params.filters.status]);
@@ -109,15 +110,14 @@ export async function fetchProposals(params: FetchProposalsParams) {
             'name',
             'proposal_title',
             'reference_no',
-            'client_name',
-            'customer_name',
-            'billing_name',
-            'billing_name.account_name as billing_account_name',
+            'lead',
+            'lead_name',
+            'company_name',
             'proposal_date',
             'valid_until',
             'status',
             'total_attachments',
-            'prospect',
+            'owner_name',
             'created_by',
             'creation',
             'modified',
@@ -159,8 +159,8 @@ export async function fetchRelatedProposals(prospectId: string) {
             'name',
             'proposal_title',
             'reference_no',
-            'client_name',
-            'customer_name',
+            'lead',
+            'lead_name',
             'proposal_date',
             'status',
             'total_attachments',

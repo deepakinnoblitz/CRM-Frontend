@@ -28,7 +28,7 @@ export function useSocket(userEmail?: string) {
             // ──────────────────────────────────────────────────────────────────
             const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
             const socketHost = isLocalDev
-                ? `http://localhost:9011/${siteName}`
+                ? `http://localhost:9000/${siteName}`
                 : `${window.location.protocol}//${window.location.hostname}/${siteName}`;
 
             const socket = io(socketHost, {

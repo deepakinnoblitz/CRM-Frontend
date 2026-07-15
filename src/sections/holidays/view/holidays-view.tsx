@@ -548,6 +548,8 @@ export function HolidaysView() {
                                 <DatePicker
                                     label="Year"
                                     views={['year']}
+                                    openTo="year"
+                                    format="YYYY"
                                     value={year ? dayjs(`${year}-01-01`) : null}
                                     onChange={(newValue) => {
                                         setYear(newValue ? newValue.format('YYYY') : '');

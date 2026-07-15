@@ -30,6 +30,22 @@ import { LeadTableHead as DataTableHead } from '../../lead/lead-table-head';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 type Props = {
     accountId: string;
     type: 'invoices' | 'purchases' | 'deals' | 'estimations' | 'contacts';
@@ -237,9 +253,9 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                     <TableCell>{row.invoice_date ? fDate(row.invoice_date) : '-'}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{renderCurrency(row.received_amount)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{renderCurrency(row.balance_amount)}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
@@ -258,9 +274,9 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.bill_no}</TableCell>
                     <TableCell>{row.bill_date ? fDate(row.bill_date) : '-'}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.paid_amount)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{renderCurrency(row.paid_amount)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{renderCurrency(row.balance_amount)}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
@@ -297,7 +313,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
                 {renderSNoCell()}
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                 <TableCell>{row.estimate_date ? fDate(row.estimate_date) : '-'}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
                 <TableCell align="right">
                     <IconButton
                         color="primary"
@@ -330,7 +346,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     {type !== 'deals' && (
                         <SummaryCard
                             title="Total Volume"
-                            value={fCurrency(summary.total)}
+                            value={renderCurrency(summary.total, '20px')}
                             icon="solar:wad-of-money-bold"
                             color={theme.palette.primary.main}
                         />
@@ -347,14 +363,14 @@ export function AccountRelatedList({ accountId, type }: Props) {
                         <>
                             <SummaryCard
                                 title={type === 'purchases' ? "Total Paid" : "Total Received"}
-                                value={fCurrency(summary.paid)}
+                                value={renderCurrency(summary.paid, '20px')}
                                 icon="solar:check-circle-bold"
                                 color={theme.palette.success.main}
                             />
 
                             <SummaryCard
                                 title="Outstanding"
-                                value={fCurrency(summary.balance)}
+                                value={renderCurrency(summary.balance, '20px')}
                                 icon="solar:info-circle-bold"
                                 color={theme.palette.error.main}
                             />
@@ -424,7 +440,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
     );
 }
 
-function SummaryCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
+function SummaryCard({ title, value, icon, color }: { title: string; value: React.ReactNode; icon: string; color: string }) {
     return (
         <Stack
             direction="row"

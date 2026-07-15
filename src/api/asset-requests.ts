@@ -63,7 +63,7 @@ export async function fetchPendingAssetRequests(
     requestType: string = 'all',
     status: string = 'all',
     sortBy: string = 'modified desc',
-    filters?: { category?: string; asset?: string; priority?: string; startDate?: string; endDate?: string }
+    filters?: { category?: string; asset?: string; priority?: string; startDate?: string; endDate?: string; unreadOnly?: boolean }
 ) {
     const params = new URLSearchParams({
         page: page.toString(),
@@ -76,6 +76,7 @@ export async function fetchPendingAssetRequests(
         priority: filters?.priority || '',
         start_date: filters?.startDate || '',
         end_date: filters?.endDate || '',
+        unread_only: filters?.unreadOnly ? 'true' : '',
     });
 
     const response = await frappeRequest(

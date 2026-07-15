@@ -17,6 +17,9 @@ import { Chart, useChart, ChartLegends } from 'src/components/chart';
 type Props = CardProps & {
   title?: string;
   subheader?: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
+  emptyIcon?: string;
   chart: {
     colors?: string[];
     series: {
@@ -27,7 +30,7 @@ type Props = CardProps & {
   };
 };
 
-export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }: Props) {
+export function AnalyticsCurrentVisits({ title, subheader, emptyTitle, emptyDescription, emptyIcon, chart, sx, ...other }: Props) {
   const theme = useTheme();
 
   const chartSeries = chart.series.map((item) => item.value);
@@ -82,7 +85,9 @@ export function AnalyticsCurrentVisits({ title, subheader, chart, sx, ...other }
       ) : (
         <Box sx={{ height: 320, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <EmptyContent
-            title="No data"
+            title={emptyTitle || "No data"}
+            description={emptyDescription}
+            icon={emptyIcon}
             sx={{ py: 5 }}
           />
         </Box>

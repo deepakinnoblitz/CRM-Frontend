@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -39,12 +40,13 @@ import { generateCallsPdf } from 'src/components/export/pdf/calls-pdf-generator'
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { CallsCalendar } from './calls-calendar';
 import { CallDetailsDialog } from '../call-details-dialog';
-import { ExportFieldsDialog } from '../../export-fields-dialog';
 
 // ----------------------------------------------------------------------
 
 export function CallsReportView() {
+    const theme = useTheme();
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -57,18 +59,32 @@ export function CallsReportView() {
     const [callFor, setCallFor] = useState('all');
     const [status, setStatus] = useState('all');
     const [owner, setOwner] = useState('all');
+    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
 
     useEffect(() => {
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
     }, [user]);
+
+    useEffect(() => {
+        if (owner === 'all') {
+            setCurrentView('list');
+        }
+    }, [owner]);
+
     const [reminder, setReminder] = useState('all');
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [ownerOptions, setOwnerOptions] = useState<string[]>([]);
-    const [statusOptions] = useState(['Scheduled', 'Completed', 'Overdue', 'Cancelled']);
-    const [callForOptions] = useState(['Lead', 'Contact', 'Prospect', 'Customer']);
+    const [statusOptions] = useState(['Scheduled', 'Completed']);
+    const [callForOptions] = useState([
+        { value: 'Lead', label: 'Lead' },
+        { value: 'Contact', label: 'Client' },
+        { value: 'Accounts', label: 'Company' },
+        { value: 'Others', label: 'Others' }
+    ]);
 
     // Pagination
     const [page, setPage] = useState(0);
@@ -110,10 +126,7 @@ export function CallsReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
             const idsToExport = selected.length > 0 ? selected : reportData.map(r => r.name);
@@ -124,10 +137,16 @@ export function CallsReportView() {
             }
 
             const filters: any[] = [['Calls', 'name', 'in', idsToExport]];
+            // Fetch valid fields from backend API
+            const fieldsRes = await fetch('/api/method/company.company.crm_api.get_call_export_fields', { credentials: "include" });
+            if (!fieldsRes.ok) throw new Error("Failed to fetch Calls export fields metadata");
+            const validFields: { fieldname: string; label: string }[] = (await fieldsRes.json()).message || [];
+
+            const fieldsToFetch = [...validFields.map(f => f.fieldname), 'creation', 'modified'];
 
             const query = new URLSearchParams({
                 doctype: "Calls",
-                fields: JSON.stringify(selectedFields),
+                fields: JSON.stringify(fieldsToFetch),
                 filters: JSON.stringify(filters),
                 limit_page_length: "99999",
             });
@@ -136,25 +155,79 @@ export function CallsReportView() {
             if (!res.ok) throw new Error("Failed to fetch data for export");
             const data = (await res.json()).message || [];
 
-            // Export
-            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Calls Report');
 
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Calls");
-                XLSX.writeFile(workbook, "Calls_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Calls_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            // Define sheet columns dynamically
+            sheet.columns = validFields.map(f => ({
+                header: f.label,
+                key: f.fieldname
+            }));
+
+            const colCount = sheet.columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Populate rows dynamically
+            data.forEach((row: any) => {
+                const rowDataObj: Record<string, any> = {};
+                validFields.forEach(f => {
+                    let val = row[f.fieldname];
+                    if ((f.fieldname === 'call_start_time' || f.fieldname === 'call_end_time') && val) {
+                        val = dayjs(val).format('YYYY-MM-DD HH:mm:ss');
+                    }
+
+                    if (val === undefined || val === null || (typeof val === 'string' && val.trim() === '')) {
+                        val = '-';
+                    }
+                    rowDataObj[f.fieldname] = val;
+                });
+                sheet.addRow(rowDataObj);
+            });
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell) => {
+                        const value = cell.value ? String(cell.value) : '';
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                column.width = Math.max(maxLen + 4, 12);
+            });
+
+            // Row styling (alternating row background, alignment and borders)
+            sheet.eachRow((row, rowNumber) => {
+                if (rowNumber > 1) {
+                    for (let i = 1; i <= colCount; i++) {
+                        const cell = row.getCell(i);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        if (rowNumber % 2 === 0) {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF4F6F8' } };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                }
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Calls_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
 
         } catch (error) {
             console.error(error);
@@ -209,6 +282,7 @@ export function CallsReportView() {
         setCallFor('all');
         setStatus('all');
         setReminder('all');
+        setSortBy('modified_desc');
         if (user?.name) {
             setOwner(user.has_crm_permission ? user.name : 'all');
         }
@@ -217,6 +291,28 @@ export function CallsReportView() {
     useEffect(() => {
         getDoctypeList('User').then(setOwnerOptions);
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'call_date_desc') {
+            return dayjs(b.call_start_time).diff(dayjs(a.call_start_time));
+        }
+        if (sortBy === 'call_date_asc') {
+            return dayjs(a.call_start_time).diff(dayjs(b.call_start_time));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -290,8 +386,8 @@ export function CallsReportView() {
                         >
                             <MenuItem value="all">Call For</MenuItem>
                             {callForOptions.map((opt) => (
-                                <MenuItem key={opt} value={opt}>
-                                    {opt}
+                                <MenuItem key={opt.value} value={opt.value}>
+                                    {opt.label}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -351,40 +447,54 @@ export function CallsReportView() {
                             <MenuItem value="0">Disabled</MenuItem>
                         </Select>
                     </FormControl>
-                    <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateCallsPdf({
-                            reportData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Calls', value: reportData.length },
-                                { label: 'Scheduled', value: reportData.filter((r: any) => r.status === 'Scheduled').length },
-                                { label: 'Completed', value: reportData.filter((r: any) => r.status === 'Completed').length },
-                                { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="call_date_desc">Call Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="call_date_asc">Call Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
+                    <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                        >
+                            Export Excel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateCallsPdf({
+                                reportData: filteredData,
+                                selected,
+                                summary: summaryData.length > 0 ? summaryData : [
+                                    { label: 'Total Calls', value: reportData.length },
+                                    { label: 'Scheduled', value: reportData.filter((r: any) => r.status === 'Scheduled').length },
+                                    { label: 'Completed', value: reportData.filter((r: any) => r.status === 'Completed').length },
+                                    { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    </Stack>
                 </Card>
 
                 <Box
@@ -411,8 +521,54 @@ export function CallsReportView() {
                     )}
                 </Box>
 
-                <Card>
-                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                {owner !== 'all' && (
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'inline-flex',
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
+                            ].map((tab) => {
+                                const isActive = currentView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => setCurrentView(tab.value as any)}
+                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 3,
+                                            py: 0.75,
+                                            fontSize: '0.825rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: 'all 0.2s ease-in-out',
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                {currentView === 'list' ? (
+                    <Card>
+                        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                         <Scrollbar>
                             <Table size="medium" stickyHeader sx={{ borderCollapse: 'collapse' }}>
                                 <TableHead>
@@ -443,7 +599,7 @@ export function CallsReportView() {
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -503,6 +659,15 @@ export function CallsReportView() {
                         rowsPerPageOptions={[10, 25, 50]}
                     />
                 </Card>
+                ) : (
+                    <CallsCalendar
+                        reportData={reportData}
+                        owner={owner}
+                        fromDate={fromDate}
+                        toDate={toDate}
+                        onEventClick={handleViewCall}
+                    />
+                )}
             </Stack>
 
             <CallDetailsDialog
@@ -514,12 +679,6 @@ export function CallsReportView() {
                 }}
             />
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Calls"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }

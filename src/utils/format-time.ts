@@ -140,6 +140,7 @@ export function fTimeDist(date: DatePickerFormat): string {
   if (diffInWeeks < 4) return `${diffInWeeks} w`;
 
   const diffInMonths = now.diff(d, 'month');
+  if (diffInMonths < 1) return `${diffInWeeks} w`;
   if (diffInMonths < 12) return `${diffInMonths} M`;
 
   const diffInYears = now.diff(d, 'year');

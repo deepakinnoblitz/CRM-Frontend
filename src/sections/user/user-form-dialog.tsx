@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Switch from '@mui/material/Switch';
+import Avatar from '@mui/material/Avatar';
 import Snackbar from '@mui/material/Snackbar';
 import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -20,8 +21,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
+import { uploadFile } from 'src/api/data-import';
 import { getRoles, getModules } from 'src/api/users';
 import {
   fetchUserPermissions,
@@ -153,6 +156,23 @@ export function UserFormDialog({
   const showNewPassword = useBoolean();
   const showConfirmPassword = useBoolean();
   const [isSubmittingPermission, setIsSubmittingPermission] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const docname = selectedUser?.name || undefined;
+      const fileDoc = await uploadFile(file, docname ? 'User' : undefined, docname, docname ? 'user_image' : undefined);
+      setFormData({ ...formData, user_image: fileDoc.file_url || '' });
+    } catch (error) {
+      console.error('Failed to upload user image:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   // Validation state
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
@@ -192,15 +212,22 @@ export function UserFormDialog({
 
   const handleSubmitWrapper = () => {
     const validationErrors = validate();
-    if (Object.keys(validationErrors).length === 0) {
+    const errorKeys = Object.keys(validationErrors);
+
+    if (errorKeys.length === 0) {
       onSubmit();
     } else {
+      if (errorKeys.length > 1) {
+        setValidationSnackbar('Please fill in all required fields');
+      } else {
+        setValidationSnackbar(validationErrors[errorKeys[0]]);
+      }
+
       // Jump to the first tab with an error
       if (validationErrors.email || validationErrors.first_name) {
         setCurrentTab('details');
       } else if (validationErrors.roles) {
         setCurrentTab('roles');
-        setValidationSnackbar(validationErrors.roles);
       } else if (validationErrors.password) {
         setCurrentTab('password');
       }
@@ -370,8 +397,80 @@ export function UserFormDialog({
   };
 
   const renderUserDetailsTab = (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: 3, px: 4 }}>
       <Grid container spacing={3}>
+        <Grid size={{ xs: 12 }} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+          <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
+            Profile Picture
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
+                src={formData.user_image || ''}
+                alt={formData.full_name || 'User'}
+                sx={{
+                  width: 80,
+                  height: 80,
+                  border: '2px solid rgba(8, 163, 205, 0.3)',
+                }}
+              />
+              {uploading && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'rgba(0,0,0,0.4)',
+                    borderRadius: '50%',
+                  }}
+                >
+                  <CircularProgress size={24} sx={{ color: 'common.white' }} />
+                </Box>
+              )}
+            </Box>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Button
+                variant="contained"
+                component="label"
+                size="small"
+                disabled={uploading}
+                sx={{
+                  bgcolor: '#08a3cd',
+                  color: 'common.white',
+                  '&:hover': { bgcolor: '#068fb3' },
+                  textTransform: 'none',
+                  borderRadius: 1.5,
+                  px: 2,
+                }}
+              >
+                {formData.user_image ? 'Change Image' : 'Upload Image'}
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+              </Button>
+              {formData.user_image && (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => setFormData({ ...formData, user_image: '' })}
+                  sx={{ textTransform: 'none', borderRadius: 1.5, px: 2 }}
+                >
+                  Remove
+                </Button>
+              )}
+            </Stack>
+          </Box>
+        </Grid>
+
         <Grid size={{ xs: 12 }}>
           <FormControlLabel
             control={

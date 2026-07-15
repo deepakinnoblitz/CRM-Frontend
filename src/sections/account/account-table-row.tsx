@@ -110,15 +110,15 @@ export function AccountTableRow({
                 </Typography>
             </TableCell>
 
-            <TableCell>{row.phone_number}</TableCell>
+            <TableCell>{row.phone_number || '-'}</TableCell>
 
-            <TableCell>{row.gstin}</TableCell>
+            <TableCell>{row.gstin || '-'}</TableCell>
 
-            <TableCell>{row.city}</TableCell>
+            <TableCell>{row.city || '-'}</TableCell>
 
-            <TableCell>{row.state}</TableCell>
+            <TableCell>{row.state || '-'}</TableCell>
 
-            <TableCell>{row.country}</TableCell>
+            <TableCell>{row.country || '-'}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

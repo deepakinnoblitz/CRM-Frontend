@@ -140,7 +140,7 @@ export function EstimationListView({ hideTitle }: Props) {
     };
 
     const handleViewRow = (id: string) => {
-        router.push(`/estimations/${encodeURIComponent(id)}/view`);
+        router.push(`/estimations/${encodeURIComponent(id)}/view`, { from: '/deals?tab=estimations' });
     };
 
     const handleDeleteRow = useCallback((id: string) => {

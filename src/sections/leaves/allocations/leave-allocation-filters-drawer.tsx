@@ -5,6 +5,7 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -114,7 +115,6 @@ export function LeaveAllocationFiltersDrawer({
                 fullWidth
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -126,11 +126,11 @@ export function LeaveAllocationFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Status</option>
+                <MenuItem value="all">All Status</MenuItem>
                 {options.statuses.map((option) => (
-                    <option key={option} value={option}>
+                    <MenuItem key={option} value={option}>
                         {option}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
@@ -146,7 +146,6 @@ export function LeaveAllocationFiltersDrawer({
                 fullWidth
                 value={filters.leave_type}
                 onChange={(e) => handleFilterChange('leave_type', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -158,11 +157,11 @@ export function LeaveAllocationFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Types</option>
+                <MenuItem value="all">All Types</MenuItem>
                 {options.leaveTypes.map((option) => (
-                    <option key={option} value={option}>
+                    <MenuItem key={option} value={option}>
                         {option}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>

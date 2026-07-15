@@ -6,9 +6,12 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -224,30 +227,27 @@ export function AttendanceTableFiltersDrawer({
                             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                                 Status
                             </Typography>
-                            <TextField
-                                select
-                                fullWidth
-                                value={filters.status}
-                                onChange={(e) => onFilters({ status: e.target.value })}
-                                SelectProps={{ native: true }}
-                                size="small"
-                                sx={{
-                                    '& .MuiOutlinedInput-root': {
+                            <FormControl fullWidth size="small">
+                                <Select
+                                    value={filters.status}
+                                    onChange={(e) => onFilters({ status: e.target.value })}
+                                    displayEmpty
+                                    sx={{
                                         borderRadius: 1.5,
                                         bgcolor: 'background.neutral',
                                         '&:hover': {
                                             bgcolor: 'action.hover',
                                         },
-                                    },
-                                }}
-                            >
-                                <option value="all">All Status</option>
-                                <option value="Present">Present</option>
-                                <option value="Absent">Absent</option>
-                                <option value="Half Day">Half Day</option>
-                                <option value="On Leave">On Leave</option>
-                                <option value="Holiday">Holiday</option>
-                            </TextField>
+                                    }}
+                                >
+                                    <MenuItem value="all">All Status</MenuItem>
+                                    <MenuItem value="Present">Present</MenuItem>
+                                    <MenuItem value="Absent">Absent</MenuItem>
+                                    <MenuItem value="Half Day">Half Day</MenuItem>
+                                    <MenuItem value="On Leave">On Leave</MenuItem>
+                                    <MenuItem value="Holiday">Holiday</MenuItem>
+                                </Select>
+                            </FormControl>
                         </Stack>
 
                     </Stack>

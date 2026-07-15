@@ -36,6 +36,22 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { getDeal } from 'src/api/deals';
 import { getContact } from 'src/api/contacts';
 import { uploadFile } from 'src/api/data-import';
@@ -81,6 +97,7 @@ export function InvoiceCreateView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [paymentTermsOptions, setPaymentTermsOptions] = useState<any[]>([]);
+    const [bankAccountOptions, setBankAccountOptions] = useState<any[]>([]);
 
     const [searchParams] = useSearchParams();
     const queryDealId = searchParams.get('deal_id');
@@ -98,6 +115,7 @@ export function InvoiceCreateView() {
     const [billingAddress, setBillingAddress] = useState(estimationData?.billing_address || '');
     const [description, setDescription] = useState(estimationData?.description || '');
     const [remarks, setRemarks] = useState(estimationData?.terms_and_conditions || '');
+    const [bankAccount, setBankAccount] = useState(estimationData?.bank_account || '');
     const [attachments, setAttachments] = useState<any[]>(() => {
         try {
             return estimationData?.attachments ? (typeof estimationData.attachments === 'string' ? JSON.parse(estimationData.attachments) : estimationData.attachments) : [];
@@ -133,7 +151,7 @@ export function InvoiceCreateView() {
     const { enqueueSnackbar } = useSnackbar();
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
+    const [newItem, setNewItem] = useState<{ item_name: string; item_code: string; rate: number | '' }>({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
 
@@ -155,6 +173,7 @@ export function InvoiceCreateView() {
         }
     };
     const [customerError, setCustomerError] = useState(false);
+    const [billingNameError, setBillingNameError] = useState(false);
     const [itemError, setItemError] = useState(false);
     const [paymentTermsError, setPaymentTermsError] = useState(false);
 
@@ -163,7 +182,20 @@ export function InvoiceCreateView() {
         getDoctypeList('Item', ['name', 'item_name', 'rate', 'item_code']).then(setItemOptions);
         getDoctypeList('Tax Types', ['name', 'tax_name', 'tax_percentage', 'tax_type']).then(setTaxOptions);
         getDoctypeList('Deal', ['name']).then(setDealOptions);
+        getDoctypeList('Company Bank Account', ['name', 'account_holder_name', 'account_no']).then(setBankAccountOptions);
         fetchPaymentTermsOptions();
+
+        if (customerId) {
+            getContact(customerId)
+                .then((contact) => {
+                    const mappedOptions = contact.company_names?.map((id: string, idx: number) => ({
+                        name: id,
+                        account_name: contact.company_name_list?.[idx] || id
+                    })) || [];
+                    setBillingNameOptions(mappedOptions);
+                })
+                .catch((err) => console.error('Failed to fetch initial contact details:', err));
+        }
     }, []);
 
     // Prefill client from deal when navigated from the Deals table
@@ -201,6 +233,7 @@ export function InvoiceCreateView() {
 
                 if (mappedOptions.length === 1) {
                     setBillingName(mappedOptions[0].name);
+                    setBillingNameError(false);
                 } else {
                     setBillingName('');
                 }
@@ -314,7 +347,11 @@ export function InvoiceCreateView() {
 
         try {
             setCreatingItem(true);
-            const createdItem = await createItem(newItem);
+            const payload = {
+                ...newItem,
+                rate: newItem.rate === '' ? 0 : Number(newItem.rate)
+            };
+            const createdItem = await createItem(payload);
 
             // Add to item options with proper field mapping
             const formattedItem = {
@@ -390,6 +427,13 @@ export function InvoiceCreateView() {
         }
         setCustomerError(false);
 
+        if (!billingName) {
+            setBillingNameError(true);
+            enqueueSnackbar('Please select a Billing Name', { variant: 'error' });
+            return;
+        }
+        setBillingNameError(false);
+
         if (!paymentTerms || paymentTerms === 'Select Payment terms') {
             setPaymentTermsError(true);
             enqueueSnackbar('Please select Payment Terms', { variant: 'error' });
@@ -437,6 +481,7 @@ export function InvoiceCreateView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
+                bank_account: bankAccount,
                 attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
@@ -462,7 +507,7 @@ export function InvoiceCreateView() {
 
             await createInvoice(invoiceData);
             enqueueSnackbar('Invoice created successfully', { variant: 'success' });
-            setTimeout(() => router.push('/deals?tab=invoices'), 1500);
+            setTimeout(() => router.push('/deals?tab=invoices'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to create invoice', { variant: 'error' });
@@ -472,7 +517,7 @@ export function InvoiceCreateView() {
     };
 
     const handleCancel = () => {
-        router.push('/deals?tab=invoices');
+        router.push('/deals?tab=deals');
     };
 
     return (
@@ -597,11 +642,19 @@ export function InvoiceCreateView() {
                             options={billingNameOptions}
                             getOptionLabel={(option) => option.account_name || option.name || ''}
                             value={billingNameOptions.find((opt) => opt.name === billingName) || null}
-                            onChange={(_e, newValue) => setBillingName(newValue?.name || '')}
+                            onChange={(_e, newValue) => {
+                                setBillingName(newValue?.name || '');
+                                if (newValue?.name) {
+                                    setBillingNameError(false);
+                                }
+                            }}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
                                     label="Billing Name"
+                                    required
+                                    error={billingNameError}
+                                    helperText={billingNameError ? 'Please select a Billing Name' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
@@ -765,7 +818,7 @@ export function InvoiceCreateView() {
                         boxShadow: (theme) => theme.customShadows.z8,
                     }}>
                         <Table sx={{ minWidth: 960 }}>
-                            <TableHead sx={{ 
+                            <TableHead sx={{
                                 bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
                                 '& th:first-of-type': { borderTopLeftRadius: 11 },
                                 '& th:last-of-type': { borderTopRightRadius: 11 }
@@ -996,7 +1049,7 @@ export function InvoiceCreateView() {
                                                                 }
                                                             }}
                                                         >
-                                                            <ToggleButton value="Flat">₹</ToggleButton>
+                                                            <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                                             <ToggleButton value="Percentage">%</ToggleButton>
                                                         </ToggleButtonGroup>
                                                         <TextField
@@ -1120,10 +1173,10 @@ export function InvoiceCreateView() {
                                             </TableCell>
                                         ))}
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{renderCurrency(row.tax_amount)}</Typography>
                                         </TableCell>
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
+                                            <Typography variant="subtitle2" color="primary.main">{renderCurrency(row.sub_total)}</Typography>
                                         </TableCell>
                                         <TableCell sx={{ px: 1, py: 1 }}>
                                             <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
@@ -1161,7 +1214,7 @@ export function InvoiceCreateView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(itemsTotalTaxable)}</Typography>
                             </Stack>
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -1169,7 +1222,7 @@ export function InvoiceCreateView() {
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(totalTax)}</Typography>
                             </Stack>
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
@@ -1200,7 +1253,7 @@ export function InvoiceCreateView() {
                                         }
                                     }}
                                 >
-                                    <ToggleButton value="Flat">₹</ToggleButton>
+                                    <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                     <ToggleButton value="Percentage">%</ToggleButton>
                                 </ToggleButtonGroup>
                                 <TextField
@@ -1235,7 +1288,7 @@ export function InvoiceCreateView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(grandTotal, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>
@@ -1250,6 +1303,32 @@ export function InvoiceCreateView() {
                         }}
                     >
                         <Stack spacing={3}>
+                            <Autocomplete
+                                fullWidth
+                                options={bankAccountOptions}
+                                getOptionLabel={(option) => (option.account_no ? `${option.account_holder_name} / ${option.account_no}` : option.account_holder_name || option.name || '')}
+                                value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
+                                onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Bank Account"
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                )}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Description"
@@ -1397,7 +1476,10 @@ export function InvoiceCreateView() {
                             label="Rate"
                             type="number"
                             value={newItem.rate}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                setNewItem((prev) => ({ ...prev, rate: val === '' ? '' : Number(val) }));
+                            }}
                         />
                     </Stack>
                 </DialogContent>

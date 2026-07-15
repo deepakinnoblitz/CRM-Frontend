@@ -10,6 +10,22 @@ import IconButton from '@mui/material/IconButton';
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -20,6 +36,7 @@ export type InvoiceProps = {
     client_name: string;
     customer_name: string;
     billing_name?: string;
+    billing_account_name: string;
     invoice_date: string;
     grand_total: number;
     received_amount: number;
@@ -105,7 +122,7 @@ export function InvoiceTableRow({
                 {row.ref_no}
             </TableCell>
 
-            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{ row.billing_name }</TableCell>
+            <TableCell align="left" sx={{ fontWeight: 600, maxWidth: 240 }}>{ row.billing_account_name || row.billing_name }</TableCell>
             
             <TableCell align="left" sx={{ maxWidth: 240 }}>
                 <Stack spacing={0.5}>
@@ -120,11 +137,11 @@ export function InvoiceTableRow({
 
             <TableCell align="left" sx={{ fontWeight: 400 }}>{fDate(row.invoice_date)}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total, '16px')}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.received_amount)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{renderCurrency(row.received_amount, '16px')}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.balance_amount)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{renderCurrency(row.balance_amount, '16px')}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import { BsFillSendPlusFill } from "react-icons/bs";
 import { GrDocumentTime, GrDocumentVerified } from "react-icons/gr";
 
 import Box from '@mui/material/Box';
@@ -84,15 +83,35 @@ export function DealTableRow({
 
     const getStageColor = (stage: string) => {
         switch (stage) {
-            case 'Closed Won':
-                return 'success';
-            case 'Closed Lost':
-                return 'error';
+            case 'Just In':
+                return 'info';
+
+            case 'Working':
+                return 'primary';
+
+            case 'Estimation Created':
+            case 'Invoice Created':
+                return 'secondary';
+
+            case 'Estimation Sent':
+            case 'Invoice Sent':
             case 'Proposal Sent':
             case 'Negotiation':
                 return 'warning';
-            default:
+
+            case 'Special Approval':
                 return 'info';
+
+            case 'Closed Lost':
+                return 'error';
+
+            case 'Closed':
+            case 'Closed Won':
+            case 'Project Started':
+                return 'success';
+
+            default:
+                return 'default';
         }
     };
 
@@ -177,7 +196,11 @@ export function DealTableRow({
                 </Typography>
             </TableCell>
 
-            <TableCell>{row.expectedCloseDate || '-'}</TableCell>
+            <TableCell>
+                <Label variant="soft" color={getStageColor(row.stage)}>
+                    {row.stage}
+                </Label>
+            </TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
@@ -190,19 +213,6 @@ export function DealTableRow({
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
 
-                    <StyledTooltip title="Create Proposal" placement="top" arrow>
-                        <IconButton
-                            onClick={() => navigate(`/proposals/new?deal_id=${encodeURIComponent(row.id)}`)}
-                            sx={{
-                                color: '#8B5CF6',
-                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#8B5CF6', 0.08) }
-                            }}
-                        >
-                            <BsFillSendPlusFill size={20}/>
-                        </IconButton>
-                    </StyledTooltip>
-
                     <StyledTooltip title="Create Estimation" placement="top" arrow>
                         <IconButton
                             onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
@@ -212,7 +222,7 @@ export function DealTableRow({
                                 '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
                             }}
                         >
-                            <GrDocumentTime size={20}/>
+                            <GrDocumentTime size={20} />
                         </IconButton>
                     </StyledTooltip>
 
@@ -225,7 +235,7 @@ export function DealTableRow({
                                 '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
                             }}
                         >
-                            <GrDocumentVerified size={20}/>
+                            <GrDocumentVerified size={20} />
                         </IconButton>
                     </StyledTooltip>
 

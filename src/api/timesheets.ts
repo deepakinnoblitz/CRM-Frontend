@@ -25,9 +25,14 @@ async function fetchFrappeList(params: {
     };
 }) {
     const filters: any[] = [];
+    const or_filters: any[] = [];
 
     if (params.search) {
-        filters.push(['Timesheet', 'employee_name', 'like', `%${params.search}%`]);
+        const cleanSearch = params.search.trim();
+        or_filters.push(
+            ['Timesheet', 'employee_name', 'like', `%${cleanSearch}%`],
+            ['Timesheet', 'employee', 'like', `%${cleanSearch}%`]
+        );
     }
 
     if (params.filters) {
@@ -48,6 +53,7 @@ async function fetchFrappeList(params: {
         doctype: 'Timesheet',
         fields: JSON.stringify(["*"]),
         filters: JSON.stringify(filters),
+        or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
         order_by: orderByParam
@@ -55,7 +61,7 @@ async function fetchFrappeList(params: {
 
     const [res, countRes] = await Promise.all([
         frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}`)
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Timesheet&filters=${encodeURIComponent(JSON.stringify(filters))}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`)
     ]);
 
     if (!res.ok) throw new Error("Failed to fetch timesheets");

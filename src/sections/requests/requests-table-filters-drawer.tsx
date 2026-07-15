@@ -1,3 +1,5 @@
+import type { SwitchProps } from '@mui/material/Switch';
+
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
@@ -5,6 +7,9 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
+import { styled } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -16,6 +21,42 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+// Custom pill-style toggle matching Reminder settings
+const UnreadSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 46,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '250ms',
+        transition: theme.transitions.create(['transform'], { easing: 'ease', duration: 250 }),
+        '&.Mui-checked': {
+            transform: 'translateX(20px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#00b4d8',
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 20,
+        height: 20,
+        boxShadow: 'none',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#d1d5db',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], { duration: 250 }),
+    },
+}));
+
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
@@ -23,6 +64,7 @@ type FiltersProps = {
     status: string;
     startDate: string | null;
     endDate: string | null;
+    unread_messages: boolean;
 };
 
 type Props = {
@@ -167,7 +209,6 @@ export function RequestsTableFiltersDrawer({
                 fullWidth
                 value={filters.status}
                 onChange={(e) => handleFilterChange('status', e.target.value)}
-                SelectProps={{ native: true }}
                 size="small"
                 sx={{
                     '& .MuiOutlinedInput-root': {
@@ -179,16 +220,16 @@ export function RequestsTableFiltersDrawer({
                     },
                 }}
             >
-                <option value="all">All Statuses</option>
+                <MenuItem value="all">All Statuses</MenuItem>
                 {[
                     { value: 'Pending', label: 'Pending' },
                     { value: 'Approved', label: 'Approved' },
                     { value: 'Rejected', label: 'Rejected' },
                     { value: 'Clarification Requested', label: 'Clarification Requested' },
                 ].map((option) => (
-                    <option key={option.value} value={option.value}>
+                    <MenuItem key={option.value} value={option.value}>
                         {option.label}
-                    </option>
+                    </MenuItem>
                 ))}
             </TextField>
         </Stack>
@@ -228,6 +269,20 @@ export function RequestsTableFiltersDrawer({
         </Stack>
     );
 
+    const renderUnreadMessages = (
+        <Stack spacing={1.5}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                    Unread Messages
+                </Typography>
+                <UnreadSwitch
+                    checked={filters.unread_messages}
+                    onChange={(e) => onFilters({ unread_messages: e.target.checked })}
+                />
+            </Box>
+        </Stack>
+    );
+
     return (
         <Drawer
             anchor="right"
@@ -252,6 +307,7 @@ export function RequestsTableFiltersDrawer({
                     {isHR && renderEmployee}
                     {renderStatus}
                     {renderDateRange}
+                    {isHR && renderUnreadMessages}
                 </Stack>
             </Scrollbar>
 
@@ -291,3 +347,5 @@ export function RequestsTableFiltersDrawer({
         </Drawer>
     );
 }
+
+

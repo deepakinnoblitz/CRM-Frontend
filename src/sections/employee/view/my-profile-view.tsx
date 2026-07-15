@@ -1,6 +1,7 @@
 import type { IconType } from 'react-icons';
 
 import { IoCall } from "react-icons/io5";
+import { TbMoneybagPlus } from "react-icons/tb";
 import { FaPhoneVolume } from "react-icons/fa6";
 import { useState, useEffect, useCallback } from 'react'
 import {
@@ -263,7 +264,17 @@ export function MyProfileView() {
                                 </Box>
                                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
-                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{employee.designation} at {employee.department}</Typography>
+                                    {(() => {
+                                        const des = (employee.designation || '').trim();
+                                        const dep = (employee.department || '').trim();
+                                        const validDes = des && des !== '-';
+                                        const validDep = dep && dep !== '-';
+                                        
+                                        if (!validDes && !validDep) return null;
+                                        
+                                        const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
+                                        return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
+                                    })()}
                                 </Box>
                                 <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
                                     {renderStatus(employee.status)}
@@ -381,7 +392,7 @@ export function MyProfileView() {
                                     border: (theme) => `1px solid ${theme.palette.divider}`,
                                 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                                        <ReactIcon icon={FaDollarSign} size={20} sx={{ color: 'primary.main' }} />
+                                        <ReactIcon icon={TbMoneybagPlus} size={20} sx={{ color: 'primary.main' }} />
                                         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase' }}>
                                             Cost to Company (Monthly)
                                         </Typography>

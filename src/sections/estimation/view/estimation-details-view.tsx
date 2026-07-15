@@ -1,10 +1,10 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
-    IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags,
-    IoMdWallet, IoMdPrint, IoMdSwap, IoMdTrash, IoMdCreate,
-    IoMdPerson, IoMdCalendar, IoMdCash, IoMdList, IoMdLink, IoMdDownload
+    IoMdCube, IoMdSwap, IoMdCash, IoMdList, IoMdLink,
+    IoMdPrint, IoMdTrash, IoMdWallet, IoMdCreate, IoMdPerson,
+    IoMdListBox, IoMdCalendar, IoMdDownload, IoMdArrowBack, IoMdPricetags, IoMdCalculator
 } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -28,10 +28,26 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 import { handleDirectPrint } from 'src/utils/print';
 
+import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getEstimation, deleteEstimation, getEstimationPrintUrl, convertEstimationToInvoice } from 'src/api/estimation';
 
-import { Iconify } from 'src/components/iconify';
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 // ----------------------------------------------------------------------
@@ -40,6 +56,9 @@ export function EstimationDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+    const location = useLocation();
+
+    const backUrl = location.state?.from || '/reports/estimation';
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -48,6 +67,9 @@ export function EstimationDetailsView() {
     const [printing, setPrinting] = useState(false);
     const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
+    const [accountName, setAccountName] = useState<string>('');
+    const [bankAccountDetails, setBankAccountDetails] = useState<any>(null);
 
     const { enqueueSnackbar } = useSnackbar();
 
@@ -58,6 +80,62 @@ export function EstimationDetailsView() {
                 .finally(() => setFetching(false));
         }
     }, [id]);
+
+    useEffect(() => {
+        if (estimation?.bank_account) {
+            getDoctypeList('Company Bank Account', ['name', 'bank_name', 'account_holder_name', 'account_no', 'ifsc_code'], { name: estimation.bank_account })
+                .then((accounts: any[]) => {
+                    if (accounts && accounts.length > 0) {
+                        setBankAccountDetails(accounts[0]);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Bank Account details:', err);
+                    setBankAccountDetails(null);
+                });
+        }
+    }, [estimation?.bank_account]);
+
+    useEffect(() => {
+        if (estimation?.billing_name) {
+            getDoctypeList('Accounts', ['name', 'account_name'])
+                .then((accounts: any[]) => {
+                    const account = accounts.find((acc: any) => acc.name === estimation.billing_name);
+                    if (account?.account_name) {
+                        setAccountName(account.account_name);
+                    }
+                })
+                .catch((err) => {
+                    console.error('Failed to fetch Account details:', err);
+                    setAccountName('');
+                });
+        }
+    }, [estimation?.billing_name]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((estimation?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [estimation?.table_qecz]);
 
     if (fetching) {
         return (
@@ -71,7 +149,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => navigate(-1)} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(backUrl)} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -94,6 +172,7 @@ export function EstimationDetailsView() {
         total_amount,
         grand_total,
         table_qecz = [],
+        bank_account,
     } = estimation;
 
     let parsedAttachments: { name: string; url: string }[] = [];
@@ -130,7 +209,7 @@ export function EstimationDetailsView() {
             setConverting(true);
             const result = await convertEstimationToInvoice(id);
             if (result.alreadyCreated) {
-                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'info' });
+                enqueueSnackbar(result.message || `Invoice ${result.invoiceName} already created for this estimation.`, { variant: 'warning' });
                 router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`);
             } else {
                 router.push(`/invoices/${encodeURIComponent(result.invoiceName)}/view`, { converted: true });
@@ -149,7 +228,7 @@ export function EstimationDetailsView() {
         try {
             setDeleting(true);
             await deleteEstimation(id);
-            router.push('/estimations');
+            router.push('/deals?tab=estimations');
         } catch (error) {
             console.error('Failed to delete estimation:', error);
         } finally {
@@ -166,7 +245,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(-1)}
+                        onClick={() => navigate(backUrl)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -258,9 +337,12 @@ export function EstimationDetailsView() {
                             </Stack>
                             <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                                 <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
-                                    {billing_name || 'No Company Name'}
+                                    {accountName || billing_name || 'No Company Name'}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
+                                    ID: {billing_name}
+                                </Typography>
+                                <Typography variant="body2" color="text.primary" sx={{ mt: 0.5, fontWeight: 600, fontSize: '15px' }}>
                                     {customer_name || 'No Contact Name'}
                                 </Typography>
                                 <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 500 }}>
@@ -306,7 +388,7 @@ export function EstimationDetailsView() {
                                         <IoMdWallet size={18} style={{ color: '#7e7e7e' }} />
                                         <Typography variant="caption" color="text.secondary">Grand Total</Typography>
                                     </Stack>
-                                    <Typography variant="h6" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                    <Typography variant="h6" color="primary.main">{renderCurrency(grand_total, '18px')}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -337,7 +419,7 @@ export function EstimationDetailsView() {
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>HSN</TableCell>
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Description</TableCell>
                                         <TableCell width={60} align="center" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Qty</TableCell>
-                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
+                                        <TableCell width={120} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Discount</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Type</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Amt</TableCell>
@@ -348,7 +430,7 @@ export function EstimationDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>
@@ -357,20 +439,20 @@ export function EstimationDetailsView() {
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', maxWidth: 200 }}>{row.description}</Typography>
                                             </TableCell>
                                             <TableCell align="center" sx={{ py: 2 }}>{row.quantity}</TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.price)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.price)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 {row.discount > 0 ? (
                                                     <Typography variant="caption" color="success.main">
-                                                        -{row.discount_type === 'Flat' ? fCurrency(row.discount) : `${row.discount}%`}
+                                                        -{row.discount_type === 'Flat' ? renderCurrency(row.discount) : `${row.discount}%`}
                                                     </Typography>
                                                 ) : '-'}
                                             </TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 <Typography variant="caption" color="text.secondary">{row.tax_type || '-'}</Typography>
                                             </TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.tax_amount)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.tax_amount)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2" color="primary">{fCurrency(row.sub_total)}</Typography>
+                                                <Typography variant="subtitle2" color="primary">{renderCurrency(row.sub_total)}</Typography>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -422,6 +504,46 @@ export function EstimationDetailsView() {
                                 </Typography>
                             </Stack>
 
+                            <Stack spacing={1}>
+                                <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Company Bank Account</Typography>
+                                {bank_account ? (
+                                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04), border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
+                                        <Typography variant="subtitle1" color="text.primary" sx={{ fontWeight: 700, fontSize: '16px' }}>
+                                            {bankAccountDetails?.bank_name || 'Loading...'}
+                                        </Typography>
+                                        <Typography variant="caption" color="primary.main" sx={{ display: 'block', mt: 0.5, fontWeight: 700 }}>
+                                            ID: {bank_account}
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, whiteSpace: 'pre-wrap' }}>
+                                            Account Holder:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.account_holder_name || '-'}
+                                            </Box>
+                                             <Box sx={{ mb: 0.5 }} />
+                                            Account No:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.account_no || '-'}
+                                            </Box>
+                                              <Box sx={{ mb: 0.5 }} />
+                                            IFSC:{' '}
+                                            <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                {bankAccountDetails?.ifsc_code || '-'}
+                                            </Box>
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="body2" sx={{
+                                        p: 2,
+                                        borderRadius: 1.5,
+                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04),
+                                        border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                        color: 'text.secondary'
+                                    }}>
+                                        No bank account selected.
+                                    </Typography>
+                                )}
+                            </Stack>
+
                             {parsedAttachments.length > 0 && (
                                 <Stack spacing={1}>
                                     <Typography variant="subtitle2" color="text.secondary" sx={{ textTransform: 'uppercase', letterSpacing: 0.5 }}>Attachments</Typography>
@@ -466,21 +588,21 @@ export function EstimationDetailsView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
+                                <Typography variant="subtitle2">{renderCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" color="error.main">+{renderCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">-{renderCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -488,7 +610,7 @@ export function EstimationDetailsView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: '#08a3cd' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h5" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                <Typography variant="h5" color="primary.main">{renderCurrency(grand_total, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>

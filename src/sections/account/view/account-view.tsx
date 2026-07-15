@@ -145,7 +145,8 @@ export function AccountView() {
     const canReset =
         filters.country !== 'all' ||
         filters.state !== 'all' ||
-        filters.city !== 'all';
+        filters.city !== 'all' ||
+        !!filterName;
 
     useEffect(() => {
         loadPermissions();

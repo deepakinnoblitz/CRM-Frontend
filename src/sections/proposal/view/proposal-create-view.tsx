@@ -36,13 +36,13 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { useRouter } from 'src/routes/hooks';
 
 import { getDeal } from 'src/api/deals';
-import { getContact } from 'src/api/contacts';
-import { getDoctypeList } from 'src/api/leads';
 import { uploadFile } from 'src/api/data-import';
 import { createProposal } from 'src/api/proposal';
+import { getLead, getDoctypeList } from 'src/api/leads';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
+import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor';
 
 // ----------------------------------------------------------------------
 
@@ -76,13 +76,14 @@ export function ProposalCreateView() {
     const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [searchParams] = useSearchParams();
+    const leadParam = searchParams.get('lead');
     const prospectIdParam = searchParams.get('prospect_id');
     const clientIdParam = searchParams.get('client_id');
     const dealIdParam = searchParams.get('deal_id');
 
     // Form state
     const [proposalTitle, setProposalTitle] = useState('');
-    const [clientName, setClientName] = useState('');
+    const [clientName, setClientName] = useState(leadParam || '');
     const [customerName, setCustomerName] = useState('');
     const [billingName, setBillingName] = useState('');
     const [billingNameOptions, setBillingNameOptions] = useState<
@@ -117,7 +118,13 @@ export function ProposalCreateView() {
     const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-        getDoctypeList('Contacts', ['name', 'first_name', 'company_name'])
+        if (leadParam && customerOptions.length > 0) {
+            handleCustomerChange(leadParam);
+        }
+    }, [leadParam, customerOptions]);
+
+    useEffect(() => {
+        getDoctypeList('Lead', ['name', 'lead_name', 'company_name'])
             .then(setCustomerOptions)
             .catch(console.error);
 
@@ -150,26 +157,30 @@ export function ProposalCreateView() {
         }
     }, [dealIdParam]);
 
-    const handleCustomerChange = async (name: string) => {
+    const handleCustomerChange = async (name: string, opt?: any) => {
         setClientName(name);
         setClientError(false);
         if (name) {
             try {
-                const contact = await getContact(name);
-                setCustomerName(contact.first_name || '');
-                const mappedOptions =
-                    contact.company_names?.map((id: string, idx: number) => ({
-                        name: id,
-                        account_name: contact.company_name_list?.[idx] || id,
-                    })) || [];
-                setBillingNameOptions(mappedOptions);
-                if (mappedOptions.length === 1) {
-                    setBillingName(mappedOptions[0].name);
+                let leadDetails = opt;
+                if (!leadDetails || (!leadDetails.lead_name && !leadDetails.company_name)) {
+                    leadDetails = await getLead(name);
+                }
+                
+                const autoCustomerName = leadDetails?.lead_name || leadDetails?.customer_name || leadDetails?.title || '';
+                setCustomerName(autoCustomerName);
+                
+                const compName = leadDetails?.company_name || leadDetails?.company || '';
+                
+                if (compName) {
+                    setBillingNameOptions([{ name: compName, account_name: compName }]);
+                    setBillingName(compName);
                 } else {
+                    setBillingNameOptions([]);
                     setBillingName('');
                 }
             } catch (err) {
-                console.error('Failed to fetch contact details:', err);
+                console.error('Failed to fetch lead details:', err);
             }
         } else {
             setCustomerName('');
@@ -270,7 +281,7 @@ export function ProposalCreateView() {
             setClientError(true);
             hasError = true;
         }
-        if (!billingName){
+        if (!billingName) {
             setBillingError(true);
             hasError = true;
         }
@@ -312,9 +323,9 @@ export function ProposalCreateView() {
 
             const payload: any = {
                 proposal_title: proposalTitle,
-                client_name: clientName,
-                customer_name: customerName,
-                billing_name: billingName || undefined,
+                lead: clientName,
+                lead_name: customerName,
+                company_name: billingName || undefined,
                 prospect: prospect || undefined,
                 proposal_date: proposalDate,
                 valid_until: validUntil || undefined,
@@ -327,7 +338,7 @@ export function ProposalCreateView() {
 
             const result = await createProposal(payload);
             enqueueSnackbar('Proposal created successfully', { variant: 'success' });
-            setTimeout(() => router.push(`/proposals/${encodeURIComponent(result.name)}/view`), 1200);
+            setTimeout(() => router.push(`/proposals`), 600);
         } catch (err: any) {
             enqueueSnackbar(err.message || 'Failed to create proposal', { variant: 'error' });
         } finally {
@@ -348,7 +359,7 @@ export function ProposalCreateView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=proposals')}
+                        onClick={() => router.push('/proposals')}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -407,24 +418,24 @@ export function ProposalCreateView() {
                             fullWidth
                             options={customerOptions}
                             getOptionLabel={(opt) =>
-                                opt.first_name ? `${opt.first_name} (${opt.name})` : opt.name || ''
+                                opt.lead_name ? `${opt.lead_name} (${opt.name})` : opt.name || ''
                             }
                             value={customerOptions.find((o) => o.name === clientName) || null}
-                            onChange={(_e, val) => handleCustomerChange(val?.name || '')}
+                            onChange={(_e, val) => handleCustomerChange(val?.name || '', val)}
                             renderInput={(params) => (
                                 <TextField
                                     {...params}
-                                    label="Client"
+                                    label="Lead"
                                     required
                                     error={clientError}
-                                    helperText={clientError ? 'Please select a client' : ''}
+                                    helperText={clientError ? 'Please select a lead' : ''}
                                 />
                             )}
                             renderOption={(props, option) => (
                                 <li {...props} key={option.name}>
                                     <Stack spacing={0.5} sx={{ py: 0.5 }}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {option.first_name || option.name}
+                                            {option.lead_name || option.name}
                                         </Typography>
                                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                                             ID: {option.name}
@@ -437,36 +448,22 @@ export function ProposalCreateView() {
                         {/* Customer Name (auto-filled) */}
                         <TextField
                             fullWidth
-                            label="Client Name"
+                            label="Lead Name"
                             value={customerName}
                             slotProps={{ input: { readOnly: true } }}
                             sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}
                         />
 
-                        {/* Billing Name */}
-                        <Autocomplete
+                        {/* Company Name */}
+                        <TextField
                             fullWidth
-                            options={billingNameOptions}
-                            getOptionLabel={(opt) => opt.account_name || opt.name || ''}
-                            value={
-                                billingNameOptions.find((o) => o.name === billingName) || null
-                            }
-                            onChange={(_e, val) => { setBillingName(val?.name || ''); if (val?.name) setBillingError(false); }}
-                            renderInput={(params) => (
-                                <TextField {...params} label="Billing Name" required error={BillingError} helperText={BillingError ? 'Billing Name is required' : ''}/>
-                            )}
-                            renderOption={(props, option) => (
-                                <li {...props} key={option.name}>
-                                    <Stack spacing={0.5} sx={{ py: 0.5 }}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                            {option.account_name}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                                            ID: {option.name}
-                                        </Typography>
-                                    </Stack>
-                                </li>
-                            )}
+                            label="Company Name"
+                            value={billingName}
+                            slotProps={{ input: { readOnly: true } }}
+                            sx={{ bgcolor: (t) => alpha(t.palette.grey[500], 0.05) }}
+                            required
+                            error={BillingError}
+                            helperText={BillingError ? 'Company Name is required' : ''}
                         />
 
                         {/* Prospect / Deal */}
@@ -522,7 +519,7 @@ export function ProposalCreateView() {
                         />
 
                         {/* Status */}
-                        <TextField
+                        {/* <TextField
                             fullWidth
                             label="Status"
                             select
@@ -534,29 +531,30 @@ export function ProposalCreateView() {
                                     {s}
                                 </MenuItem>
                             ))}
-                        </TextField>
+                        </TextField> */}
 
                         {/* Description */}
-                        <TextField
-                            fullWidth
-                            label="Description"
-                            multiline
-                            rows={3}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            sx={{ gridColumn: { sm: 'span 2' } }}
-                        />
-                        
-                        <TextField
-                        fullWidth
-                        multiline
-                        rows={6}
-                        label="Terms and Conditions"
-                        value={termsAndConditions}
-                        onChange={(e) => setTermsAndConditions(e.target.value)}
-                        placeholder="Enter terms and conditions for this proposal..."
-                        sx={{ gridColumn: { sm: 'span 2' } }}
-                    />
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Description
+                            </Typography>
+                            <RichTextEditor
+                                value={description}
+                                onChange={(val: string) => setDescription(val)}
+                                placeholder="Enter proposal description..."
+                            />
+                        </Box>
+
+                        <Box sx={{ gridColumn: { sm: 'span 2' } }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Terms and Conditions
+                            </Typography>
+                            <RichTextEditor
+                                value={termsAndConditions}
+                                onChange={(val: string) => setTermsAndConditions(val)}
+                                placeholder="Enter terms and conditions for this proposal..."
+                            />
+                        </Box>
                     </Box>
                 </Card>
 

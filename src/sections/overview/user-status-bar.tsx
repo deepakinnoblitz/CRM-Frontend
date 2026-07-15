@@ -58,8 +58,15 @@ export function UserStatusBar() {
         isAutoStatusEnabled,
         isSystemMonitoring,
         remainingSeconds,
+        locationDialogOpen,
+        setLocationDialogOpen,
+        enableLocationTracking,
+        trackOnLogin,
+        trackOnLogout,
+        trackOnStatusChange,
     } = usePresence();
     const router = useRouter();
+    const displayName = user?.full_name || 'User';
 
     const isHR = user?.roles.some((role: string) =>
         ['HR', 'System Manager', 'Administrator'].includes(role)
@@ -68,6 +75,9 @@ export function UserStatusBar() {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
+    const [isLoggingLocation, setIsLoggingLocation] = useState(false);
+    const [pendingStatus, setPendingStatus] = useState<string | null>(null);
+    const [loadingMessage, setLoadingMessage] = useState('Logging Your Location');
     const [statusMsgDialogOpen, setStatusMsgDialogOpen] = useState(false);
     const [customMessage, setCustomMessageInput] = useState('');
     const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
@@ -100,6 +110,36 @@ export function UserStatusBar() {
         }
         return undefined;
     }, [loading, statusName]);
+
+    // Dynamic message rotator for the location logging overlay
+    useEffect(() => {
+        let interval: any;
+
+        if (isLoggingLocation) {
+            const messages = [
+                'Getting GPS Signal...',
+                'Fetching Location Data...',
+                'Saving Location Log...',
+                'Finalizing Status Change...'
+            ];
+
+            let index = 0;
+            setLoadingMessage(messages[0]);
+
+            interval = setInterval(() => {
+                index = (index + 1) % messages.length;
+                setLoadingMessage(messages[index]);
+            }, 1200);
+        } else {
+            setLoadingMessage('Logging Your Location');
+        }
+
+        return () => {
+            if (interval) {
+                clearInterval(interval);
+            }
+        };
+    }, [isLoggingLocation]);
 
     const handleClick = (event: React.MouseEvent<HTMLElement>) => {
         setAnchorEl(event.currentTarget);
@@ -180,12 +220,16 @@ export function UserStatusBar() {
     const performLogout = async () => {
         setInfoDialogOpen(false);
         setIsLogoutDialog(false);
+        setPendingStatus('Offline');
+        setIsLoggingLocation(true);
         try {
             await changeStatus('Offline');
             await logout();
             window.location.href = '/login';
         } catch (error) {
             console.error(error);
+            setIsLoggingLocation(false);
+            setPendingStatus(null);
         }
     };
 
@@ -232,11 +276,38 @@ export function UserStatusBar() {
                 setIsCheckingTimesheet(false);
             }
         }
-        await changeStatus(newStatus);
+        const willTrackLocation = 
+            enableLocationTracking && (
+                (newStatus === 'Offline' && trackOnLogout) ||
+                (statusName === 'Offline' && newStatus !== 'Offline' && (trackOnLogin || trackOnStatusChange)) ||
+                (statusName !== 'Offline' && newStatus !== 'Offline' && trackOnStatusChange)
+            );
+
+        if (willTrackLocation) {
+            setPendingStatus(newStatus);
+            setIsLoggingLocation(true);
+        }
+        handleClose();
+
+        let success: boolean;
+        try {
+            success = await changeStatus(newStatus);
+        } finally {
+            if (newStatus !== 'Offline') {
+                // For logout the page navigates away, so no need to reset.
+                // For all other statuses (including Available/Login), reset the loader.
+                setIsLoggingLocation(false);
+                setPendingStatus(null);
+            }
+        }
+        if (!success) {
+            setIsLoggingLocation(false);
+            setPendingStatus(null);
+            return;
+        }
         if (newStatus === 'Available') {
             triggerGreetingDialog();
         }
-        handleClose();
     };
 
     const handleStayOfflineAnyway = async () => {
@@ -244,7 +315,17 @@ export function UserStatusBar() {
         if (isLogoutDialog) {
             await performLogout();
         } else {
-            await changeStatus('Offline');
+            const willTrack = enableLocationTracking && trackOnLogout;
+            if (willTrack) {
+                setPendingStatus('Offline');
+                setIsLoggingLocation(true);
+            }
+            try {
+                await changeStatus('Offline');
+            } finally {
+                setIsLoggingLocation(false);
+                setPendingStatus(null);
+            }
             handleClose();
         }
     };
@@ -336,6 +417,8 @@ export function UserStatusBar() {
     if (isHR) {
         return null;
     }
+
+    const isPng = userAvatar?.toLowerCase().endsWith('.png') ?? false;
 
     return (
         <>
@@ -535,13 +618,34 @@ export function UserStatusBar() {
                             sx={{
                                 width: 48,
                                 height: 48,
-                                bgcolor: userAvatar ? 'common.white' : avatarColor,
-                                color: avatarTextColor,
+                                bgcolor: (t) => {
+                                    if (userAvatar) return 'common.white';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                    return colors[Math.abs(hash) % colors.length];
+                                },
+                                color: (t) => {
+                                    if (userAvatar) return 'inherit';
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return textColors[Math.abs(hash) % textColors.length];
+                                },
                                 fontWeight: 'bold',
-                                border: `2px solid ${userAvatar ? theme.palette.divider : 'transparent'}`,
+                                border: (t) => {
+                                    if (userAvatar) return `2px solid ${t.palette.divider}`;
+                                    const name = userName || '';
+                                    let hash = 0;
+                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
+                                    return `2px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+                                },
                             }}
                         >
-                            {initials}
+                            {userName.charAt(0).toUpperCase()}
                         </Avatar>
 
                         <Stack spacing={0.5} flex={1}>
@@ -726,18 +830,42 @@ export function UserStatusBar() {
                 <DialogContent sx={{ px: 4, pt: 6, pb: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     {/* Centered Avatar with Ring */}
                     <Box sx={{ position: 'relative', display: 'inline-flex', mb: 3 }}>
-                        <Avatar
-                            src={userAvatar}
-                            alt={userName}
-                            sx={{
-                                width: 100,
-                                height: 100,
-                                border: `4px solid ${theme.palette.background.paper}`,
-                                boxShadow: `0 0 0 2px ${alpha(theme.palette.success.main, 0.4)}, 0 12px 24px -4px ${alpha(theme.palette.common.black, 0.16)}`,
-                            }}
-                        >
-                            {initials}
-                        </Avatar>
+                              <IconButton
+                                sx={{
+                                p: '2px',
+                                width: 90,
+                                height: 90,
+                                background: `linear-gradient(135deg, ${theme.palette.primary.darker} 0%, #00f2ff 50%, ${theme.palette.primary.darker} 100%)`,
+                                backgroundSize: '200% 200%',
+                                animation: 'shimmer 2.5s ease infinite',
+                                '@keyframes shimmer': {
+                                    '0%': { backgroundPosition: '0% 50%' },
+                                    '50%': { backgroundPosition: '100% 50%' },
+                                    '100%': { backgroundPosition: '0% 50%' },
+                                },
+                                transition: theme.transitions.create('all'),
+                                '&:hover': {
+                                    transform: 'scale(1.05)',
+                                    boxShadow: `0 0 15px ${theme.palette.primary.main}40`,
+                                }
+                                }}
+                            >
+                                <Avatar
+                                src={userAvatar}
+                                alt={displayName}
+                                sx={{
+                                    width: 1,
+                                    height: 1,
+                                    bgcolor: !userAvatar ? stringToColor(displayName) : (isPng ? '#FFFFFF' : 'transparent'),
+                                    color: stringToDarkColor(displayName),
+                                    fontWeight: 600,
+                                    fontSize: '28px',
+                                    border: `2px solid ${theme.palette.background.paper}`,
+                                }}
+                                >
+                                {displayName.charAt(0).toUpperCase()}
+                                </Avatar>
+                            </IconButton>
                     </Box>
 
                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, letterSpacing: -0.5 }}>
@@ -768,8 +896,22 @@ export function UserStatusBar() {
                                     return;
                                 }
                             }
-                            await changeStatus('Available');
+                            const willTrack = enableLocationTracking && (trackOnLogin || trackOnStatusChange);
+                            if (willTrack) {
+                                setPendingStatus('Available');
+                                setIsLoggingLocation(true);
+                            }
                             setCheckInDialogOpen(false);
+                            let success = false;
+                            try {
+                                success = await changeStatus('Available');
+                            } finally {
+                                setIsLoggingLocation(false);
+                                setPendingStatus(null);
+                            }
+                            if (!success) {
+                                return;
+                            }
                             triggerGreetingDialog();
                         }}
                         sx={{
@@ -978,6 +1120,286 @@ export function UserStatusBar() {
                             OK
                         </Button>
                     )}
+                </DialogActions>
+            </Dialog>
+
+            {/* GPS Location Logging Overlay */}
+            <Dialog
+                open={isLoggingLocation}
+                disableEscapeKeyDown
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        width: '100%',
+                        maxWidth: 420,
+                        overflow: 'hidden',
+                        bgcolor: 'background.paper',
+                        boxShadow: theme.customShadows.z24,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    },
+                }}
+            >
+                <DialogContent
+                    sx={{
+                        py: 5,
+                        px: 4,
+                        textAlign: 'center',
+                    }}
+                >
+                    {/* Animated GPS Icon */}
+                    <Box
+                        sx={{
+                            position: 'relative',
+                            display: 'inline-flex',
+                            mb: 3,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: 92,
+                                height: 92,
+                                borderRadius: '50%',
+                                bgcolor: alpha('#08A3CD', 0.08),
+                                border: `2px solid ${alpha('#08A3CD', 0.15)}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                animation: 'gpsPulse 2s infinite',
+
+                                '@keyframes gpsPulse': {
+                                    '0%': {
+                                        boxShadow: `0 0 0 0 ${alpha('#08A3CD', 0.35)}`,
+                                    },
+                                    '70%': {
+                                        boxShadow: `0 0 0 22px ${alpha('#08A3CD', 0)}`,
+                                    },
+                                    '100%': {
+                                        boxShadow: `0 0 0 0 ${alpha('#08A3CD', 0)}`,
+                                    },
+                                },
+                            }}
+                        >
+                            <Iconify
+                                icon={"solar:gps-bold-duotone" as any}
+                                width={46}
+                                sx={{
+                                    color: '#08A3CD',
+                                }}
+                            />
+                        </Box>
+
+                        {/* Rotating Ring */}
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                width: 118,
+                                height: 118,
+                                borderRadius: '50%',
+                                border: `2px dashed ${alpha('#08A3CD', 0.18)}`,
+                                transform: 'translate(-50%, -50%)',
+                                animation: 'rotateRing 6s linear infinite',
+
+                                '@keyframes rotateRing': {
+                                    from: {
+                                        transform: 'translate(-50%, -50%) rotate(0deg)',
+                                    },
+                                    to: {
+                                        transform: 'translate(-50%, -50%) rotate(360deg)',
+                                    },
+                                },
+                            }}
+                        />
+                    </Box>
+
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            color: 'text.primary',
+                            my: 2,
+                        }}
+                    >
+                        {loadingMessage}
+                    </Typography>
+
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            color: 'text.secondary',
+                            mb: 4,
+                            lineHeight: 1.7,
+                        }}
+                    >
+                        {pendingStatus === 'Offline'
+                            ? 'Please wait while we securely capture your GPS location before completing the logout process.'
+                            : 'Please wait while we securely capture your GPS location before updating your status.'}
+                    </Typography>
+
+                    {/* Steps */}
+                    <Stack
+                        spacing={2}
+                        sx={{
+                            mb: 2,
+                            mx: 'auto',
+                            width: 'fit-content',
+                            textAlign: 'left',
+                        }}
+                    >
+                        {[
+                            {
+                                icon: 'solar:gps-bold',
+                                title: 'Getting Current Location',
+                            },
+                            {
+                                icon: 'solar:map-point-bold',
+                                title: 'Saving Location Log',
+                            },
+                            {
+                                icon: pendingStatus === 'Offline' ? 'solar:logout-bold' : 'solar:login-bold',
+                                title: pendingStatus === 'Offline' 
+                                    ? 'Completing Logout' 
+                                    : (pendingStatus === 'Available' ? 'Completing Check-In' : 'Updating Status'),
+                            },
+                        ].map((item) => (
+                            <Stack
+                                key={item.title}
+                                direction="row"
+                                spacing={2}
+                                alignItems="center"
+                            >
+                                <Box
+                                    sx={{
+                                        width: 42,
+                                        height: 42,
+                                        borderRadius: 2,
+                                        bgcolor: alpha('#08A3CD', 0.08),
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                    }}
+                                >
+                                    <Iconify
+                                        icon={item.icon as any}
+                                        width={20}
+                                        sx={{
+                                            color: '#08A3CD',
+                                        }}
+                                    />
+                                </Box>
+
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: 'text.primary',
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {item.title}
+                                </Typography>
+                            </Stack>
+                        ))}
+                    </Stack>
+                </DialogContent>
+            </Dialog>
+
+            {/* GPS Location Turn On Warning */}
+            <Dialog
+                open={locationDialogOpen}
+                onClose={() => setLocationDialogOpen(false)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        borderRadius: 3,
+                        p: 1,
+                    },
+                }}
+            >
+                <DialogContent
+                    sx={{
+                        textAlign: 'center',
+                        py: 4,
+                    }}
+                >
+                    <Box
+                        sx={{
+                            width: 90,
+                            height: 90,
+                            borderRadius: '50%',
+                            bgcolor: alpha(theme.palette.warning.main, 0.12),
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            mx: 'auto',
+                            mb: 3,
+                        }}
+                    >
+                        <Iconify
+                            icon={"solar:gps-bold-duotone" as any}
+                            width={48}
+                            sx={{
+                                color: 'warning.main',
+                            }}
+                        />
+                    </Box>
+
+                    <Typography
+                        variant="h5"
+                        sx={{
+                            fontWeight: 700,
+                            mb: 1,
+                        }}
+                    >
+                        Location Required
+                    </Typography>
+
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                            lineHeight: 1.8,
+                        }}
+                    >
+                        Please turn on your device location services and allow GPS
+                        permission to change your work status.
+                    </Typography>
+                </DialogContent>
+
+                <DialogActions
+                    sx={{
+                        px: 3,
+                        pb: 3,
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Button
+                        variant="outlined"
+                        onClick={() => setLocationDialogOpen(false)}
+                    >
+                        Cancel
+                    </Button>
+
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                            setLocationDialogOpen(false);
+
+                            navigator.geolocation.getCurrentPosition(
+                                () => {
+                                    // Permission granted
+                                },
+                                () => {
+                                    // Still denied
+                                }
+                            );
+                        }}
+                    >
+                        Try Again
+                    </Button>
                 </DialogActions>
             </Dialog>
 

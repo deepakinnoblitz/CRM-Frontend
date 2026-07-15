@@ -1,3 +1,5 @@
+import type { SwitchProps } from '@mui/material/Switch';
+
 import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
@@ -5,9 +7,14 @@ import Stack from '@mui/material/Stack';
 import Badge from '@mui/material/Badge';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import Switch from '@mui/material/Switch';
+import MenuItem from '@mui/material/MenuItem';
+import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -16,6 +23,42 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+// Custom pill-style toggle matching Reminder settings
+const UnreadSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 46,
+    height: 26,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 3,
+        transitionDuration: '250ms',
+        transition: theme.transitions.create(['transform'], { easing: 'ease', duration: 250 }),
+        '&.Mui-checked': {
+            transform: 'translateX(20px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#00b4d8',
+                opacity: 1,
+                border: 0,
+            },
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
+        width: 20,
+        height: 20,
+        boxShadow: 'none',
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: '#d1d5db',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], { duration: 250 }),
+    },
+}));
+
 // ----------------------------------------------------------------------
 
 type FiltersProps = {
@@ -23,6 +66,7 @@ type FiltersProps = {
     status: string;
     startDate: string | null;
     endDate: string | null;
+    unreadOnly: boolean;
 };
 
 type Props = {
@@ -30,7 +74,7 @@ type Props = {
     onOpen: () => void;
     onClose: () => void;
     filters: FiltersProps;
-    onFilters: (update: Partial<FiltersProps>) => void;
+    onFilters: (update: any, value?: any) => void;
     canReset: boolean;
     onResetFilters: () => void;
     options: {
@@ -38,6 +82,36 @@ type Props = {
     };
     isHR?: boolean;
 };
+
+function ToggleRow({
+    label,
+    description,
+    value,
+    onChange,
+}: {
+    label: string;
+    description?: string;
+    value: boolean;
+    onChange: () => void;
+}) {
+    return (
+        <Stack spacing={1}>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Box>
+                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                        {label}
+                    </Typography>
+                    {description && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                            {description}
+                        </Typography>
+                    )}
+                </Box>
+                <UnreadSwitch checked={value} onChange={onChange} />
+            </Box>
+        </Stack>
+    );
+}
 
 export function WFHAttendanceTableFiltersDrawer({
     open,
@@ -108,12 +182,15 @@ export function WFHAttendanceTableFiltersDrawer({
             <Autocomplete
                 fullWidth
                 size="small"
-                options={[{ name: 'all', employee_name: 'All Employees' }, ...options.employees]}
-                getOptionLabel={(option: any) => option.employee_name || option.name || ''}
-                isOptionEqualToValue={(option: any, value: any) => option.name === (value.name || value)}
-                value={options.employees.find((emp: any) => emp.name === filters.employee) || (filters.employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : null)}
+                options={['all', ...options.employees.map((e) => e.name)]}
+                getOptionLabel={(option) => {
+                    if (option === 'all') return 'All Employees';
+                    const emp = options.employees.find((e) => e.name === option);
+                    return emp ? `${emp.employee_name} (${emp.name})` : option;
+                }}
+                value={filters.employee || 'all'}
                 onChange={(event: any, newValue: any) => {
-                    handleFilterChange('employee', newValue?.name || 'all');
+                    handleFilterChange('employee', newValue || 'all');
                 }}
                 renderInput={(params: any) => (
                     <TextField
@@ -127,6 +204,30 @@ export function WFHAttendanceTableFiltersDrawer({
                         }}
                     />
                 )}
+                renderOption={(props, option) => {
+                    if (option === 'all') {
+                        const { key, ...itemProps } = props as any;
+                        return (
+                            <li key="all" {...itemProps}>
+                                All Employees
+                            </li>
+                        );
+                    }
+                    const emp = options.employees.find((e) => e.name === option);
+                    const { key, ...optionProps } = props as any;
+                    return (
+                        <li key={key} {...optionProps}>
+                            <Stack spacing={0.5}>
+                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                    {emp?.employee_name}
+                                </Typography>
+                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                    ID: {emp?.name}
+                                </Typography>
+                            </Stack>
+                        </li>
+                    );
+                }}
             />
         </Stack>
     );
@@ -136,34 +237,31 @@ export function WFHAttendanceTableFiltersDrawer({
             <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
                 Status
             </Typography>
-            <TextField
-                select
-                fullWidth
-                value={filters.status}
-                onChange={(e) => handleFilterChange('status', e.target.value)}
-                SelectProps={{ native: true }}
-                size="small"
-                sx={{
-                    '& .MuiOutlinedInput-root': {
+            <FormControl fullWidth size="small">
+                <Select
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    displayEmpty
+                    sx={{
                         borderRadius: 1.5,
                         bgcolor: 'background.neutral',
                         '&:hover': {
                             bgcolor: 'action.hover',
                         },
-                    },
-                }}
-            >
-                <option value="all">All Statuses</option>
-                {[
-                    { value: 'Rejected', label: 'Rejected' },
-                    { value: 'Pending', label: 'Pending' },
-                    { value: 'Approved', label: 'Approved' }
-                ].map((option) => (
-                    <option key={option.value} value={option.value}>
-                        {option.label}
-                    </option>
-                ))}
-            </TextField>
+                    }}
+                >
+                    <MenuItem value="all">All Statuses</MenuItem>
+                    {[
+                        { value: 'Rejected', label: 'Rejected' },
+                        { value: 'Pending', label: 'Pending' },
+                        { value: 'Approved', label: 'Approved' }
+                    ].map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                            {option.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
         </Stack>
     );
 
@@ -225,6 +323,13 @@ export function WFHAttendanceTableFiltersDrawer({
                     {isHR && renderEmployee}
                     {renderStatus}
                     {renderDateRange}
+                    {isHR && (
+                        <ToggleRow
+                            label="Unread Messages"
+                            value={filters.unreadOnly}
+                            onChange={() => onFilters("unreadOnly", !filters.unreadOnly)}
+                        />
+                    )}
                 </Stack>
             </Scrollbar>
 

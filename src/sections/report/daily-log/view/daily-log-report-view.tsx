@@ -4,14 +4,16 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -21,23 +23,28 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import RadioGroup from '@mui/material/RadioGroup';
 import FormControl from '@mui/material/FormControl';
+import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
-import ToggleButton from '@mui/material/ToggleButton';
 import { alpha, useTheme } from '@mui/material/styles';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import CircularProgress from '@mui/material/CircularProgress';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { fDate } from 'src/utils/format-time';
 
 import { getDoctypeList } from 'src/api/leads';
+import { getHRSettings } from 'src/api/hr-management';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchDetailedSessions } from 'src/api/presence-log';
+import { getHolidayList, populateHolidays } from 'src/api/holiday-lists';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -54,6 +61,42 @@ export function DailyLogReportView() {
     const theme = useTheme();
     const { user } = useAuth();
 
+    // -----------------------------------------------------------------
+    // Drag-to-scroll for Muster Roll table (ref-based, zero re-renders)
+    // -----------------------------------------------------------------
+    const musterScrollRef = useRef<HTMLDivElement | null>(null);
+    const isDragging = useRef(false);
+    const dragStartX = useRef(0);
+    const scrollStartLeft = useRef(0);
+
+    const musterDragMoved = useRef(0);
+
+    const handleMusterMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDragging.current = true;
+        dragStartX.current = e.clientX;
+        scrollStartLeft.current = el.scrollLeft;
+        musterDragMoved.current = 0;
+        el.style.cursor = 'grabbing';
+    };
+
+    const handleMusterMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!isDragging.current) return;
+        const el = musterScrollRef.current;
+        if (!el) return;
+        const dx = e.clientX - dragStartX.current;
+        musterDragMoved.current = Math.abs(dx);
+        el.scrollLeft = scrollStartLeft.current - dx;
+    };
+
+    const handleMusterMouseUp = () => {
+        const el = musterScrollRef.current;
+        if (!el) return;
+        isDragging.current = false;
+        el.style.cursor = 'grab';
+    };
+
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [exportingExcel, setExportingExcel] = useState(false);
@@ -65,7 +108,7 @@ export function DailyLogReportView() {
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
-    const [employee, setEmployee] = useState('all');
+    const [employee, setEmployee] = useState<string[]>([]);
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('login_date_desc');
     const [day, setDay] = useState('all');
@@ -77,6 +120,10 @@ export function DailyLogReportView() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
+    // Muster Roll Pagination
+    const [musterPage, setMusterPage] = useState(0);
+    const [musterRowsPerPage, setMusterRowsPerPage] = useState(50);
+
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
@@ -84,7 +131,77 @@ export function DailyLogReportView() {
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
 
-    const [currentView, setCurrentView] = useState<'list' | 'calendar'>('list');
+    const [currentView, setCurrentView] = useState<'list' | 'calendar' | 'muster'>('list');
+    const [openExportDialog, setOpenExportDialog] = useState(false);
+    const [exportType, setExportType] = useState<'excel' | 'pdf' | null>(null);
+    const [selectedExportView, setSelectedExportView] = useState<'list' | 'muster'>('list');
+    const [hrmsSettings, setHrmsSettings] = useState<any>(null);
+    const [holidays, setHolidays] = useState<any[]>([]);
+
+    useEffect(() => {
+        async function loadSettings() {
+            try {
+                const settings = await getHRSettings();
+                setHrmsSettings(settings);
+            } catch (error) {
+                console.error('Failed to load HRMS settings:', error);
+            }
+        }
+        loadSettings();
+    }, []);
+
+    const fetchHolidaysForRange = useCallback(async (start: dayjs.Dayjs, end: dayjs.Dayjs) => {
+        try {
+            const monthsToFetch: { month: string; year: string }[] = [];
+            let current = start.startOf('month');
+            while (current.isBefore(end) || current.isSame(end, 'month')) {
+                monthsToFetch.push({
+                    month: current.format('M'),
+                    year: current.format('YYYY')
+                });
+                current = current.add(1, 'month');
+            }
+
+            const allHolidays: any[] = [];
+            await Promise.all(monthsToFetch.map(async ({ month, year }) => {
+                try {
+                    const lists = await getDoctypeList('Holiday List', ['name'], {
+                        year: parseInt(year, 10),
+                        month_year: month,
+                    });
+
+                    if (lists && lists.length > 0) {
+                        const fullList = await getHolidayList(lists[0].name);
+                        if (fullList && fullList.holidays) {
+                            allHolidays.push(...fullList.holidays);
+                            return;
+                        }
+                    }
+
+                    const res = await populateHolidays(month, year);
+                    if (res && res.holidays) {
+                        allHolidays.push(...res.holidays);
+                    }
+                } catch (err) {
+                    console.error(`Failed to fetch holidays for ${month}/${year}:`, err);
+                }
+            }));
+            setHolidays(allHolidays);
+        } catch (error) {
+            console.error('Failed to fetch holidays for range:', error);
+        }
+    }, []);
+
+    useEffect(() => {
+        const start = fromDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((min, p) => p.login_date < min ? p.login_date : min, reportData[0].login_date))
+            : dayjs().startOf('month'));
+        const end = toDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((max, p) => p.login_date > max ? p.login_date : max, reportData[0].login_date))
+            : dayjs().endOf('month'));
+
+        fetchHolidaysForRange(start, end);
+    }, [fromDate, toDate, reportData, fetchHolidaysForRange]);
 
     useEffect(() => {
         if (user && user.roles) {
@@ -92,7 +209,7 @@ export function DailyLogReportView() {
             const hasHRRole = user.roles.some((role: string) => hrRoles.includes(role));
             setIsHR(hasHRRole);
             if (!hasHRRole && user.employee) {
-                setEmployee(user.employee);
+                setEmployee([user.employee]);
             }
         }
     }, [user]);
@@ -102,10 +219,10 @@ export function DailyLogReportView() {
     }, []);
 
     useEffect(() => {
-        if (employee === 'all') {
+        if (employee.length !== 1 && currentView === 'calendar') {
             setCurrentView('list');
         }
-    }, [employee]);
+    }, [employee, currentView]);
 
     const fetchReport = useCallback(async () => {
         if (fromDate && toDate && toDate.isBefore(fromDate, 'day')) {
@@ -122,7 +239,7 @@ export function DailyLogReportView() {
                 '',
                 status,
                 sortBy,
-                employee,
+                employee.length > 0 ? JSON.stringify(employee) : 'all',
                 day,
                 '',
                 fromDate?.format('YYYY-MM-DD') || '',
@@ -130,6 +247,7 @@ export function DailyLogReportView() {
             );
             setReportData(result.data || []);
             setPage(0);
+            setMusterPage(0);
         } catch (error) {
             console.error('Failed to fetch daily log report:', error);
         } finally {
@@ -148,22 +266,273 @@ export function DailyLogReportView() {
         fetchReport();
     }, [fetchReport]);
 
+    const getSessionRecord = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return reportData.find(
+            (row) => row.employee === employeeId && row.login_date === dateStr
+        );
+    }, [reportData]);
+
+    const handleMusterCellClick = (session: any) => {
+        if (musterDragMoved.current > 5) return;
+        handleViewDetails(session);
+    };
+
+    const getAttendanceStatus = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        const logs = reportData.filter(
+            (row) => row.employee === employeeId && row.login_date === dateStr
+        );
+
+        if (logs.length === 0) {
+            const isHoliday = holidays.some(
+                (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+            );
+            return isHoliday ? 'H' : 'A';
+        }
+
+        const isActive = logs.some((log) => log.status === 'Active');
+        if (isActive) {
+            return 'P';
+        }
+
+        const totalHours = logs.reduce((sum, log) => sum + (log.total_work_hours || 0), 0);
+        const presentThreshold = hrmsSettings?.present_threshold ?? 6.0;
+        const halfDayThreshold = hrmsSettings?.half_day_threshold ?? 4.0;
+
+        if (totalHours >= presentThreshold) return 'P';
+        if (totalHours >= halfDayThreshold) return 'HD';
+        return 'A';
+    }, [reportData, holidays, hrmsSettings]);
+
+    const getAttendanceTimes = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        const logs = reportData.filter(
+            (row) => row.employee === employeeId && row.login_date === dateStr
+        );
+
+        if (logs.length === 0) return { inTime: '---', outTime: '---' };
+
+        const validLogins = logs.map(l => l.login_time).filter(Boolean);
+        let earliestLoginStr = '';
+        if (validLogins.length > 0) {
+            const sorted = [...validLogins].sort((a, b) => dayjs(a).diff(dayjs(b)));
+            const earliest = dayjs(sorted[0]);
+            if (earliest.isValid()) {
+                earliestLoginStr = earliest.format('hh:mm A');
+            }
+        }
+
+        const hasActive = logs.some(l => l.status === 'Active');
+        let latestLogoutStr = '';
+        if (hasActive) {
+            latestLogoutStr = 'Active';
+        } else {
+            const validLogouts = logs.map(l => l.logout_time).filter(Boolean);
+            if (validLogouts.length > 0) {
+                const sorted = [...validLogouts].sort((a, b) => dayjs(b).diff(dayjs(a)));
+                const latest = dayjs(sorted[0]);
+                if (latest.isValid()) {
+                    latestLogoutStr = latest.format('hh:mm A');
+                }
+            }
+        }
+
+        const inTime = earliestLoginStr || '---';
+        const outTime = latestLogoutStr || '---';
+
+        return { inTime, outTime };
+    }, [reportData]);
+
+    const isDateHoliday = useCallback((date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return holidays.some(
+            (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+        );
+    }, [holidays]);
+
+    const getStatusStyles = (cellStatus: 'P' | 'A' | 'HD' | 'H') => {
+        switch (cellStatus) {
+            case 'P':
+                return {
+                    bgcolor: 'rgba(34, 197, 94, 0.14)',
+                    color: '#166534',
+                    fontWeight: 'bold',
+                };
+            case 'A':
+                return {
+                    bgcolor: 'rgba(239, 68, 68, 0.14)',
+                    color: '#991b1b',
+                    fontWeight: 'bold',
+                };
+            case 'HD':
+                return {
+                    bgcolor: 'rgba(234, 179, 8, 0.16)',
+                    color: '#c06803ff',
+                    fontWeight: 'bold',
+                };
+            case 'H':
+                return {
+                    bgcolor: 'rgba(244, 63, 94, 0.14)',
+                    color: '#9f1239',
+                    fontWeight: 'bold',
+                };
+            default:
+                return {};
+        }
+    };
+
+    const dates = (() => {
+        const start = fromDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((min, p) => p.login_date < min ? p.login_date : min, reportData[0].login_date))
+            : dayjs().startOf('month'));
+        const end = toDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((max, p) => p.login_date > max ? p.login_date : max, reportData[0].login_date))
+            : dayjs().endOf('month'));
+
+        const dateArray: dayjs.Dayjs[] = [];
+        let cur = start;
+        const maxDays = 366;
+        let count = 0;
+        while ((cur.isBefore(end) || cur.isSame(end, 'day')) && count < maxDays) {
+            dateArray.push(cur);
+            cur = cur.add(1, 'day');
+            count++;
+        }
+        return dateArray;
+    })();
+
+    const uniqueEmployees = Array.from(
+        new Map(
+            reportData.map((row) => [row.employee, { id: row.employee, name: row.employee_name }])
+        ).values()
+    );
+
+    const paginatedEmployees = uniqueEmployees.slice(
+        musterPage * musterRowsPerPage,
+        musterPage * musterRowsPerPage + musterRowsPerPage
+    );
+
     const handleReset = () => {
         setFromDate(null);
         setToDate(null);
         if (isHR) {
-            setEmployee('all');
+            setEmployee([]);
         } else if (user?.employee) {
-            setEmployee(user.employee);
+            setEmployee([user.employee]);
         }
         setStatus('all');
         setDay('all');
         setSortBy('login_date_desc');
     };
 
-    const handleExport = async () => {
+    const handleExport = async (targetView?: 'list' | 'muster') => {
+        const viewToExport = targetView || (currentView === 'muster' ? 'muster' : 'list');
         setExportingExcel(true);
         try {
+            if (viewToExport === 'muster') {
+                const workbook = new ExcelJS.Workbook();
+                const sheet = workbook.addWorksheet('Muster Roll Report');
+
+                const columns = [
+                    { header: 'Employee ID', key: 'employee_id', width: 15 },
+                    { header: 'Employee', key: 'employee_name', width: 25 }
+                ];
+
+                dates.forEach((date) => {
+                    columns.push({
+                        header: date.format('DD MMM (ddd)'),
+                        key: date.format('YYYY-MM-DD'),
+                        width: 20
+                    });
+                });
+
+                sheet.columns = columns;
+
+                for (let i = 1; i <= columns.length; i++) {
+                    const cell = sheet.getRow(1).getCell(i);
+                    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                }
+                sheet.getRow(1).height = 25;
+
+                uniqueEmployees.forEach((emp) => {
+                    const rowData: any = {
+                        employee_id: emp.id,
+                        employee_name: emp.name
+                    };
+                    dates.forEach((date) => {
+                        rowData[date.format('YYYY-MM-DD')] = getAttendanceStatus(emp.id, date);
+                    });
+
+                    const excelRow = sheet.addRow(rowData);
+                    excelRow.height = 60;
+
+                    for (let i = 3; i <= columns.length; i++) {
+                        const cell = excelRow.getCell(i);
+                        const date = dates[i - 3];
+                        const cellStatus = getAttendanceStatus(emp.id, date);
+                        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+                        if (cellStatus === 'P') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2F0D9' } };
+                            cell.font = { color: { argb: 'FF385723' }, bold: true };
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'A') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFCE4D6' } };
+                            cell.font = { color: { argb: 'FFC65911' }, bold: true };
+                        } else if (cellStatus === 'HD') {
+                            const times = getAttendanceTimes(emp.id, date);
+                            cell.value = `${times.inTime}\nto\n${times.outTime}`;
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF2CC' } };
+                            cell.font = { color: { argb: 'FF7F6000' }, bold: true };
+                            cell.alignment = { wrapText: true, vertical: 'middle', horizontal: 'center' };
+                        } else if (cellStatus === 'H') {
+                            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                            cell.font = { color: { argb: 'FF595959' }, bold: true };
+                        }
+                    }
+                });
+
+                // Merge Holiday columns
+                if (uniqueEmployees.length > 0) {
+                    dates.forEach((date, index) => {
+                        if (isDateHoliday(date)) {
+                            const colIndex = index + 3;
+                            sheet.mergeCells(2, colIndex, uniqueEmployees.length + 1, colIndex);
+                            const topCell = sheet.getRow(2).getCell(colIndex);
+                            topCell.value = 'HOLIDAY';
+                            topCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF2F2F2' } };
+                            topCell.font = { color: { argb: 'FF595959' }, bold: true, size: 10 };
+                            topCell.alignment = { textRotation: 90, vertical: 'middle', horizontal: 'center', wrapText: true };
+                        }
+                    });
+                }
+
+                sheet.eachRow((row, rowNumber) => {
+                    for (let i = 1; i <= columns.length; i++) {
+                        const cell = row.getCell(i);
+                        if (rowNumber > 1 && i <= 2) {
+                            cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                        }
+                        cell.border = {
+                            top: { style: 'thin', color: { argb: 'FF000000' } },
+                            bottom: { style: 'thin', color: { argb: 'FF000000' } },
+                            left: { style: 'thin', color: { argb: 'FF000000' } },
+                            right: { style: 'thin', color: { argb: 'FF000000' } }
+                        };
+                    }
+                });
+
+                const buffer = await workbook.xlsx.writeBuffer();
+                saveAs(new Blob([buffer]), `Muster_Roll_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+                enqueueSnackbar('Muster Roll Excel exported successfully!', { variant: 'success' });
+                return;
+            }
+
             const workbook = new ExcelJS.Workbook();
             const mainSheet = workbook.addWorksheet('Daily Log Report');
             const detailSheet = workbook.addWorksheet('Detailed Timing');
@@ -347,9 +716,91 @@ export function DailyLogReportView() {
         }
     };
 
-    const handleExportPdf = async () => {
+    const handleExportPdf = async (targetView?: 'list' | 'muster') => {
+        const viewToExport = targetView || (currentView === 'muster' ? 'muster' : 'list');
         setExportingPdf(true);
         try {
+            if (viewToExport === 'muster') {
+                const doc = new jsPDF('landscape');
+                const COLUMNS_PER_PAGE = 10;
+                const totalDates = dates.length;
+                const pageCount = Math.ceil(totalDates / COLUMNS_PER_PAGE);
+
+                for (let p = 0; p < pageCount; p++) {
+                    if (p > 0) {
+                        doc.addPage();
+                    }
+
+                    // Render header titles for this page
+                    doc.setFontSize(22);
+                    doc.setTextColor(14, 165, 233);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('Muster Roll Report', 14, 20);
+
+                    doc.setFontSize(9);
+                    doc.setTextColor(120);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`Generated on: ${dayjs().format('DD MMM YYYY, h:mm A')} | Page ${p + 1} of ${pageCount}`, 14, 27);
+
+                    // Accent line
+                    doc.setDrawColor(14, 165, 233);
+                    doc.setLineWidth(0.5);
+                    doc.line(14, 32, 280, 32);
+
+                    const startIndex = p * COLUMNS_PER_PAGE;
+                    const endIndex = Math.min(startIndex + COLUMNS_PER_PAGE, totalDates);
+                    const pageDates = dates.slice(startIndex, endIndex);
+
+                    // Header formatted cleanly as Day + Date (e.g. "Mon 23"), not stacked/wrapped digit-by-digit
+                    const headers = ['Employee', 'ID', ...pageDates.map(d => `${d.format('ddd')} ${d.format('DD')}`)];
+                    const body = uniqueEmployees.map(emp => [
+                        emp.name,
+                        emp.id,
+                        ...pageDates.map(date => getAttendanceStatus(emp.id, date))
+                    ]);
+
+                    autoTable(doc, {
+                        startY: 40,
+                        head: [headers],
+                        body,
+                        theme: 'grid',
+                        headStyles: { fillColor: [14, 165, 233], textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+                        styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak', lineWidth: 0.15, lineColor: [60, 60, 60], valign: 'middle' },
+                        columnStyles: {
+                            0: { cellWidth: 40 },
+                            1: { cellWidth: 20, halign: 'center' },
+                        },
+                        didParseCell: (data) => {
+                            if (data.column.index >= 2) {
+                                data.cell.styles.halign = 'center';
+                                const val = data.cell.text[0];
+                                if (val === 'P') {
+                                    data.cell.styles.fillColor = [226, 240, 217];
+                                    data.cell.styles.textColor = [56, 87, 35];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else if (val === 'A') {
+                                    data.cell.styles.fillColor = [252, 228, 214];
+                                    data.cell.styles.textColor = [198, 89, 17];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else if (val === 'HD') {
+                                    data.cell.styles.fillColor = [255, 242, 204];
+                                    data.cell.styles.textColor = [127, 96, 0];
+                                    data.cell.styles.fontStyle = 'bold';
+                                } else if (val === 'H') {
+                                    data.cell.styles.fillColor = [242, 242, 242];
+                                    data.cell.styles.textColor = [89, 89, 89];
+                                    data.cell.styles.fontStyle = 'bold';
+                                }
+                            }
+                        }
+                    });
+                }
+
+                doc.save(`Muster_Roll_Report_${dayjs().format('YYYY-MM-DD')}.pdf`);
+                enqueueSnackbar('Muster Roll PDF exported successfully!', { variant: 'success' });
+                return;
+            }
+
             const doc = new jsPDF('landscape');
 
             // Selection Logic
@@ -504,6 +955,16 @@ export function DailyLogReportView() {
         }
     };
 
+    const handleOpenExportDialog = (type: 'excel' | 'pdf') => {
+        setExportType(type);
+        if (type === 'pdf') {
+            setSelectedExportView('list');
+        } else {
+            setSelectedExportView(currentView === 'muster' ? 'muster' : 'list');
+        }
+        setOpenExportDialog(true);
+    };
+
     const handleViewDetails = (session: any) => {
         setSelectedSession(session);
         setOpenDetails(true);
@@ -597,43 +1058,6 @@ export function DailyLogReportView() {
                             />
                         </LocalizationProvider>
 
-                        <Autocomplete
-                            size="small"
-                            sx={{ flexGrow: 1, minWidth: 200 }}
-                            options={[{ name: 'all', employee_name: 'All Employees' }, ...employeeOptions]}
-                            getOptionLabel={(option) => option.name === 'all' ? option.employee_name : `${option.employee_name} (${option.name})`}
-                            value={employee === 'all' ? { name: 'all', employee_name: 'All Employees' } : (employeeOptions.find((opt) => opt.name === employee) || null)}
-                            onChange={(event, newValue) => {
-                                setEmployee(newValue?.name || 'all');
-                            }}
-                            disabled={!isHR}
-                            renderOption={(props, option) => (
-                                <li {...props} key={option.name}>
-                                    {option.name === 'all' ? (
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                            {option.employee_name}
-                                        </Typography>
-                                    ) : (
-                                        <Box>
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                                                {option.employee_name}
-                                            </Typography>
-                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                                ID: {option.name}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </li>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Employee"
-                                    placeholder="Select Employee"
-                                />
-                            )}
-                        />
-
                         <FormControl size="small" sx={{ flexGrow: 1, minWidth: 140 }}>
                             <Select
                                 value={status}
@@ -675,12 +1099,49 @@ export function DailyLogReportView() {
                             </Select>
                         </FormControl>
 
+                        <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            size="small"
+                            sx={{ flexGrow: 1, minWidth: 200 }}
+                            options={employeeOptions}
+                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            isOptionEqualToValue={(option, value) => option.name === value.name}
+                            value={employeeOptions.filter((opt) => employee.includes(opt.name))}
+                            onChange={(event, newValue) => {
+                                setEmployee(newValue.map((opt) => opt.name));
+                            }}
+                            disabled={!isHR}
+                            renderOption={(props, option, { selected: isSelected }) => (
+                                <li {...props} key={option.name}>
+                                    <Box sx={{ flexGrow: 1 }}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Box>
+                                    {isSelected && (
+                                        <Iconify icon={"solar:check-circle-bold" as any} width={20} sx={{ color: 'primary.main', ml: 1 }} />
+                                    )}
+                                </li>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    label="Employee"
+                                    placeholder="Select Employee(s)"
+                                />
+                            )}
+                        />
+
                         <Box sx={{ flexGrow: 1 }} />
                         <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
                             <Button
                                 variant="contained"
                                 startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
-                                onClick={handleExport}
+                                onClick={() => handleOpenExportDialog('excel')}
                                 disabled={reportData.length === 0 || exportingExcel}
                                 sx={{
                                     bgcolor: '#0ea5e9',
@@ -696,7 +1157,7 @@ export function DailyLogReportView() {
                             <Button
                                 variant="contained"
                                 startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                                onClick={handleExportPdf}
+                                onClick={() => handleOpenExportDialog('pdf')}
                                 disabled={reportData.length === 0 || exportingPdf}
                                 sx={{
                                     bgcolor: '#f43f5e',
@@ -730,52 +1191,57 @@ export function DailyLogReportView() {
                     <SummaryCard item={{ label: 'Inactive', value: inactiveSessions, indicator: 'red' }} />
                 </Box>
 
-                {employee !== 'all' && (
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                        <Box
-                            sx={{
-                                display: 'inline-flex',
-                                bgcolor: alpha(theme.palette.grey[500], 0.06),
-                                p: 0.5,
-                                borderRadius: '24px',
-                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
-                            }}
-                        >
-                            {[
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            bgcolor: alpha(theme.palette.grey[500], 0.06),
+                            p: 0.5,
+                            borderRadius: '24px',
+                            border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                        }}
+                    >
+                        {(employee.length !== 1
+                            ? [
                                 { value: 'list', label: 'List View', icon: 'solar:list-bold' },
-                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' }
-                            ].map((tab) => {
-                                const isActive = currentView === tab.value;
-                                return (
-                                    <Button
-                                        key={tab.value}
-                                        onClick={() => setCurrentView(tab.value as any)}
-                                        startIcon={<Iconify icon={tab.icon as any} width={16} />}
-                                        sx={{
-                                            borderRadius: '20px',
-                                            px: 3,
-                                            py: 0.75,
-                                            fontSize: '0.825rem',
-                                            fontWeight: isActive ? 700 : 600,
-                                            color: isActive ? '#fff' : theme.palette.text.secondary,
-                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
-                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
-                                            textTransform: 'capitalize',
-                                            transition: 'all 0.2s ease-in-out',
-                                            '&:hover': {
-                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
-                                            }
-                                        }}
-                                    >
-                                        {tab.label}
-                                    </Button>
-                                );
-                            })}
-                        </Box>
+                                { value: 'muster', label: 'Muster Roll View', icon: 'material-symbols:grid-on' }
+                            ]
+                            : [
+                                { value: 'list', label: 'List View', icon: 'solar:list-bold' },
+                                { value: 'calendar', label: 'Calendar View', icon: 'solar:calendar-bold' },
+                                { value: 'muster', label: 'Muster Roll View', icon: 'material-symbols:grid-on' }
+                            ]
+                        ).map((tab) => {
+                            const isActive = currentView === tab.value;
+                            return (
+                                <Button
+                                    key={tab.value}
+                                    onClick={() => setCurrentView(tab.value as any)}
+                                    startIcon={<Iconify icon={tab.icon as any} width={16} />}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 3,
+                                        py: 0.75,
+                                        fontSize: '0.825rem',
+                                        fontWeight: isActive ? 700 : 600,
+                                        color: isActive ? '#fff' : theme.palette.text.secondary,
+                                        bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                        boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                        }
+                                    }}
+                                >
+                                    {tab.label}
+                                </Button>
+                            );
+                        })}
                     </Box>
-                )}
+                </Box>
 
-                {currentView === 'list' ? (
+                {currentView === 'list' && (
                     <Card>
                         <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
                             <Scrollbar>
@@ -879,14 +1345,250 @@ export function DailyLogReportView() {
                             rowsPerPageOptions={[10, 25, 50]}
                         />
                     </Card>
-                ) : (
-                    <DailyLogCalendar 
-                        reportData={reportData} 
-                        employee={employee} 
+                )}
+
+                {currentView === 'calendar' && employee.length === 1 && (
+                    <DailyLogCalendar
+                        reportData={reportData}
+                        employee={employee[0]}
                         fromDate={fromDate}
                         toDate={toDate}
-                        onEventClick={handleViewDetails} 
+                        onEventClick={handleViewDetails}
                     />
+                )}
+
+                {currentView === 'muster' && (
+                    <Card sx={{ p: 2.5 }}>
+                        <Stack direction="row" spacing={2} sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1 }}>
+                            {[
+                                { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
+                                { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
+                                { label: 'Half Day', value: 'HD', color: 'rgba(234, 179, 8, 0.16)', textColor: '#854d0e' },
+                            ].map((item) => (
+                                <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
+                                    <Box
+                                        sx={{
+                                            width: 24,
+                                            height: 24,
+                                            borderRadius: '6px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: item.color,
+                                            color: item.textColor,
+                                            fontWeight: 700,
+                                            fontSize: '0.7rem',
+                                        }}
+                                    >
+                                        {item.hideValue ? '' : item.value}
+                                    </Box>
+                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                        {item.label}
+                                    </Typography>
+                                </Stack>
+                            ))}
+                        </Stack>
+
+                        <TableContainer
+                            ref={musterScrollRef}
+                            onMouseDown={handleMusterMouseDown}
+                            onMouseMove={handleMusterMouseMove}
+                            onMouseUp={handleMusterMouseUp}
+                            onMouseLeave={handleMusterMouseUp}
+                            sx={{
+                                position: 'relative',
+                                overflowX: 'auto',
+                                borderRadius: '12px',
+                                border: (t) => `1px solid ${t.palette.divider}`,
+                                bgcolor: 'background.paper',
+                                cursor: 'grab',
+                                userSelect: 'none',
+                            }}
+                        >
+                            <Table size="medium" sx={{ borderCollapse: 'collapse', minWidth: 800 }}>
+                                <TableHead>
+                                    <TableRow sx={{ bgcolor: '#f4f6f8' }}>
+                                        <TableCell
+                                            sx={{
+                                                position: 'sticky',
+                                                left: 0,
+                                                bgcolor: '#f4f6f8',
+                                                zIndex: 12,
+                                                minWidth: 220,
+                                                fontWeight: 700,
+                                                borderRight: (t) => `1px solid ${t.palette.divider}`
+                                            }}
+                                        >
+                                            Employee
+                                        </TableCell>
+                                        {dates.map((date) => (
+                                            <TableCell
+                                                key={date.format('YYYY-MM-DD')}
+                                                align="center"
+                                                sx={{
+                                                    minWidth: 120,
+                                                    p: 1.5,
+                                                    borderRight: (t) => `1px solid ${t.palette.divider}`
+                                                }}
+                                            >
+                                                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: 'text.secondary', textTransform: 'uppercase', fontSize: '0.85rem' }}>
+                                                    {date.format('MMM')}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ fontWeight: 400, display: 'block', color: 'text.secondary', fontSize: '0.75rem', mt: 0.3 }}>
+                                                    {date.format('ddd')}
+                                                </Typography>
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mt: 0.2, fontSize: 16 }}>
+                                                    {date.format('DD')}
+                                                </Typography>
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {loading ? (
+                                        <TableRow>
+                                            <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                <CircularProgress sx={{ color: '#08a3cd' }} />
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        <>
+                                            {paginatedEmployees.map((emp, empIndex) => (
+                                                <TableRow key={emp.id} hover sx={{ '& td': { py: 1.5 } }}>
+                                                    <TableCell
+                                                        sx={{
+                                                            position: 'sticky',
+                                                            left: 0,
+                                                            bgcolor: 'background.paper',
+                                                            zIndex: 10,
+                                                            borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                            boxShadow: '4px 0 8px -4px rgba(0,0,0,0.12)'
+                                                        }}
+                                                    >
+                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{emp.name}</Typography>
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled' }}>{emp.id}</Typography>
+                                                    </TableCell>
+                                                    {dates.map((date) => {
+                                                        const isHoliday = isDateHoliday(date);
+                                                        if (isHoliday) {
+                                                            if (empIndex === 0) {
+                                                                return (
+                                                                    <TableCell
+                                                                        key={date.format('YYYY-MM-DD')}
+                                                                        rowSpan={paginatedEmployees.length}
+                                                                        align="center"
+                                                                        sx={{
+                                                                            minWidth: 120,
+                                                                            borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                            borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                                                                            bgcolor: 'rgba(244, 63, 94, 0.08)',
+                                                                            p: 0,
+                                                                            verticalAlign: 'middle'
+                                                                        }}
+                                                                    >
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                flexDirection: 'column',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
+                                                                                height: '100%',
+                                                                                minHeight: 80,
+                                                                                textTransform: 'uppercase',
+                                                                                letterSpacing: 1.5,
+                                                                                fontSize: '0.825rem',
+                                                                                fontWeight: 800,
+                                                                                color: '#9f1239',
+                                                                            }}
+                                                                        >
+                                                                            Holiday
+                                                                        </Box>
+                                                                    </TableCell>
+                                                                );
+                                                            } else {
+                                                                return null;
+                                                            }
+                                                        }
+
+                                                        const cellStatus = getAttendanceStatus(emp.id, date);
+                                                        const showTime = cellStatus === 'P' || cellStatus === 'HD';
+                                                        const times = showTime ? getAttendanceTimes(emp.id, date) : null;
+                                                        const record = getSessionRecord(emp.id, date);
+                                                        const isClickable = !!record;
+                                                        return (
+                                                            <TableCell
+                                                                key={date.format('YYYY-MM-DD')}
+                                                                align="center"
+                                                                sx={{
+                                                                    minWidth: 120,
+                                                                    borderRight: (t) => `1px solid ${t.palette.divider}`,
+                                                                    borderBottom: (t) => `1px solid ${t.palette.divider}`
+                                                                }}
+                                                            >
+                                                                <Box
+                                                                    onClick={isClickable ? () => handleMusterCellClick(record) : undefined}
+                                                                    sx={{
+                                                                        px: showTime ? 1 : 0,
+                                                                        py: showTime ? 0.75 : 0,
+                                                                        width: showTime ? 90 : 32,
+                                                                        minHeight: 32,
+                                                                        borderRadius: '8px',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        justifyContent: 'center',
+                                                                        fontSize: '0.725rem',
+                                                                        cursor: isClickable ? 'pointer' : 'inherit',
+                                                                        transition: 'opacity 0.15s',
+                                                                        '&:hover': isClickable ? { opacity: 0.78, transform: 'scale(1.06)' } : {},
+                                                                        ...getStatusStyles(cellStatus),
+                                                                    }}
+                                                                >
+                                                                    {showTime && times ? (
+                                                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.15 }}>
+                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.inTime}</Box>
+                                                                            <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
+                                                                            <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
+                                                                        </Box>
+                                                                    ) : (
+                                                                        cellStatus
+                                                                    )}
+                                                                </Box>
+                                                            </TableCell>
+                                                        );
+                                                    })}
+                                                </TableRow>
+                                            ))}
+                                            {paginatedEmployees.length === 0 && (
+                                                <TableRow>
+                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
+                                                        <Stack spacing={1} alignItems="center">
+                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                No data found
+                                                            </Typography>
+                                                        </Stack>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                        <TablePagination
+                            component="div"
+                            count={uniqueEmployees.length}
+                            page={musterPage}
+                            onPageChange={(e, newPage) => setMusterPage(newPage)}
+                            rowsPerPage={musterRowsPerPage}
+                            onRowsPerPageChange={(e) => {
+                                setMusterRowsPerPage(parseInt(e.target.value, 10));
+                                setMusterPage(0);
+                            }}
+                            rowsPerPageOptions={[10, 25, 50, 100]}
+                        />
+                    </Card>
                 )}
             </Stack>
 
@@ -894,10 +1596,135 @@ export function DailyLogReportView() {
                 open={openDetails}
                 onClose={() => {
                     setOpenDetails(false);
-                    setSelectedSession(null);
+                    setTimeout(() => setSelectedSession(null), 200);
                 }}
                 session={selectedSession}
             />
+
+            <Dialog
+                open={openExportDialog}
+                onClose={() => setOpenExportDialog(false)}
+                maxWidth="xs"
+                fullWidth
+            >
+                <DialogTitle sx={{ pb: 1, fontWeight: 700 }}>
+                    Export Report
+                    <IconButton
+                        aria-label="close"
+                        onClick={() => setOpenExportDialog(false)}
+                        sx={{
+                            position: 'absolute',
+                            right: 12,
+                            top: 12,
+                            color: (t) => t.palette.grey[500],
+                        }}
+                    >
+                        <Iconify icon={"mingcute:close-line" as any} />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ py: 1.5 }}>
+                    <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
+                        {selectedExportView === 'muster'
+                            ? 'Please choose which data view you would like to export (Muster Roll is only available in Excel format):'
+                            : `Please choose which data view you would like to export to ${exportType === 'excel' ? 'Excel' : 'PDF'}:`
+                        }
+                    </Typography>
+                    <RadioGroup
+                        value={selectedExportView}
+                        onChange={(e) => setSelectedExportView(e.target.value as 'list' | 'muster')}
+                    >
+                        <FormControlLabel
+                            value="list"
+                            control={<Radio color="primary" />}
+                            label={
+                                <Box sx={{ ml: 0.5 }}>
+                                    <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                        <Iconify icon={"solar:list-bold" as any} width={18} sx={{ color: 'text.secondary' }} />
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>List View</Typography>
+                                    </Stack>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                        Exports detailed daily log logs, including login/logout times, durations, breaks, and intervals.
+                                    </Typography>
+                                </Box>
+                            }
+                            sx={{
+                                pt: 2,
+                                mt: 1,
+                                borderTop: (t) => `1px solid ${t.palette.divider}`,
+                                mb: 2,
+                                alignItems: 'flex-start'
+                            }}
+                        />
+                        {exportType !== 'pdf' && (
+                            <FormControlLabel
+                                value="muster"
+                                control={<Radio color="primary" />}
+                                label={
+                                    <Box sx={{ ml: 0.5 }}>
+                                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                                            <Iconify icon={"material-symbols:grid-on" as any} width={18} sx={{ color: 'text.secondary' }} />
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Muster Roll View</Typography>
+                                        </Stack>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                            Exports grid-based color-coded daily attendance summary (P, A, HD, H) for the selected dates (Excel format only).
+                                        </Typography>
+                                    </Box>
+                                }
+                                sx={{ alignItems: 'flex-start' }}
+                            />
+                        )}
+                    </RadioGroup>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 3, justifyContent: 'flex-end', gap: 1.5 }}>
+                    {selectedExportView === 'list' ? (
+                        <>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    setOpenExportDialog(false);
+                                    handleExport('list');
+                                }}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' }
+                                }}
+                            >
+                                Export Excel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => {
+                                    setOpenExportDialog(false);
+                                    handleExportPdf('list');
+                                }}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' }
+                                }}
+                            >
+                                Export PDF
+                            </Button>
+                        </>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                setOpenExportDialog(false);
+                                handleExport('muster');
+                            }}
+                            sx={{
+                                bgcolor: '#0ea5e9',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#0284c7' }
+                            }}
+                        >
+                            Export Excel
+                        </Button>
+                    )}
+                </DialogActions>
+            </Dialog>
         </DashboardContent>
     );
 }

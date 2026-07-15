@@ -755,7 +755,9 @@ export interface LeaveType {
     max_leaves?: number;
     status?: 'Active' | 'Inactive';
     carry_forward?: number;
-    reset_frequency?: 'Monthly' | 'Quarterly' | 'Half-Yearly' | 'Yearly';
+    reset_frequency?: 'Every 3 months' | 'Every 4 months' | 'Every 6 months' | 'Whole year';
+    restrict_during_probation?: number;
+    probation_period_months?: number;
     creation?: string;
     modified?: string;
 }
@@ -893,6 +895,80 @@ export async function deleteLeadFrom(name: string) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete lead source"));
     return true;
+}
+
+export interface CompanyBankAccount {
+    name: string;
+    bank_name: string;
+    account_holder_name?: string;
+    account_no?: string;
+    ifsc_code?: string;
+    upi_id?: string;
+    status?: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
+
+// Company Bank Account APIs
+export const fetchCompanyBankAccounts = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Company Bank Account", "bank_name", "like", `%${search}%`],
+        ["Company Bank Account", "account_no", "like", `%${search}%`],
+        ["Company Bank Account", "ifsc_code", "like", `%${search}%`],
+        ["Company Bank Account", "account_holder_name", "like", `%${search}%`],
+        ["Company Bank Account", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Company Bank Account", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "bank_name", "account_holder_name", "account_no", "ifsc_code", "upi_id", "status", "modified", "creation"]
+    });
+};
+
+export async function createCompanyBankAccount(data: Partial<CompanyBankAccount>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Company Bank Account", status: "Active", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create company bank account"));
+    return json.message;
+}
+
+export async function updateCompanyBankAccount(name: string, data: Partial<CompanyBankAccount>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Company Bank Account", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update company bank account"));
+    return json.message;
+}
+
+export async function deleteCompanyBankAccount(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Company Bank Account", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete company bank account"));
+    return true;
+}
+
+export async function getCompanyBankAccount(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Company Bank Account&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch company bank account details");
+    return (await res.json()).message;
 }
 
 export interface Service {
@@ -1214,6 +1290,98 @@ export interface PaymentType {
     modified?: string;
 }
 
+export interface TaxType {
+    name: string;
+    tax_name: string;
+    tax_percentage?: number;
+    tax_type: 'GST' | 'IGST';
+    status: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
+
+// Tax Types APIs
+export const fetchTaxTypesCustom = async (params: any) => {
+    const { search } = params;
+
+    const or_filters = search ? [
+        ["Tax Types", "tax_name", "like", `%${search}%`],
+        ["Tax Types", "tax_type", "like", `%${search}%`],
+    ] : undefined;
+
+    let orderByParam = "modified desc";
+    if (params.orderBy) {
+        if (params.order) {
+            orderByParam = `${params.orderBy} ${params.order}`;
+        } else {
+            orderByParam = `${params.orderBy} desc`;
+        }
+    }
+
+    const query = new URLSearchParams({
+        fields: JSON.stringify(["name", "tax_name", "tax_percentage", "tax_type", "status", "modified", "creation"]),
+        filters: JSON.stringify([]),
+        or_filters: or_filters ? JSON.stringify(or_filters) : "[]",
+        limit_start: String((params.page - 1) * params.page_size),
+        limit_page_length: String(params.page_size),
+        order_by: orderByParam,
+        _: String(Date.now())
+    });
+
+    const [res, countRes] = await Promise.all([
+        frappeRequest(`/api/resource/Tax Types?${query.toString()}`),
+        frappeRequest(`/api/method/company.company.frontend_api.get_permitted_count?doctype=Tax Types&filters=${encodeURIComponent(JSON.stringify([]))}&or_filters=${or_filters ? encodeURIComponent(JSON.stringify(or_filters)) : "[]"}`)
+    ]);
+
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to fetch tax types"));
+    }
+
+    const data = await res.json();
+    const countData = await countRes.json();
+
+    return {
+        data: data.data || [],
+        total: countData.message || 0
+    };
+};
+
+export async function createTaxTypeCustom(data: Partial<TaxType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/resource/Tax Types", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create tax type"));
+    return json.data || json.message;
+}
+
+export async function updateTaxTypeCustom(name: string, data: Partial<TaxType>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Tax Types/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update tax type"));
+    return json.data || json.message;
+}
+
+export async function deleteTaxTypeCustom(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Tax Types/${encodeURIComponent(name)}`, {
+        method: "DELETE",
+        headers
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete tax type"));
+    return true;
+}
+
 // Payment Type APIs
 export const fetchPaymentTypesCustom = async (params: any) => {
     const { search } = params;
@@ -1294,5 +1462,197 @@ export async function deletePaymentTypeCustom(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete payment type"));
     return true;
 }
+
+export interface CrmEmailTemplateCategory {
+    name: string;
+    category: string;
+    creation?: string;
+    modified?: string;
+}
+
+// CRM Email Template Category APIs
+export const fetchCrmEmailTemplateCategories = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["CRM Email Template Category", "category", "like", `%${search}%`],
+        ["CRM Email Template Category", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("CRM Email Template Category", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "category", "modified", "creation"]
+    });
+};
+
+export async function createCrmEmailTemplateCategory(data: Partial<CrmEmailTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "CRM Email Template Category", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create email template category"));
+    return json.message;
+}
+
+export async function updateCrmEmailTemplateCategory(name: string, data: Partial<CrmEmailTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/CRM Email Template Category/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update email template category"));
+    return json.data || json.message;
+}
+
+export async function renameCrmEmailTemplateCategory(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "CRM Email Template Category",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename email template category"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "CRM Email Template Category",
+                name: newName,
+                fieldname: { category: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch CRM Email Template Category after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching CRM Email Template Category after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteCrmEmailTemplateCategory(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "CRM Email Template Category", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete email template category"));
+    return true;
+}
+
+export interface CrmWhatsAppTemplateCategory {
+    name: string;
+    category: string;
+    creation?: string;
+    modified?: string;
+}
+
+// CRM WhatsApp Template Category APIs
+export const fetchCrmWhatsAppTemplateCategories = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["CRM WhatsApp Template Category", "category", "like", `%${search}%`],
+        ["CRM WhatsApp Template Category", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("CRM WhatsApp Template Category", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "category", "modified", "creation"]
+    });
+};
+
+export async function createCrmWhatsAppTemplateCategory(data: Partial<CrmWhatsAppTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "CRM WhatsApp Template Category", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create whatsapp template category"));
+    return json.message;
+}
+
+export async function updateCrmWhatsAppTemplateCategory(name: string, data: Partial<CrmWhatsAppTemplateCategory>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/CRM WhatsApp Template Category/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update whatsapp template category"));
+    return json.data || json.message;
+}
+
+export async function renameCrmWhatsAppTemplateCategory(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "CRM WhatsApp Template Category",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename whatsapp template category"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "CRM WhatsApp Template Category",
+                name: newName,
+                fieldname: { category: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch CRM WhatsApp Template Category after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching CRM WhatsApp Template Category after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteCrmWhatsAppTemplateCategory(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "CRM WhatsApp Template Category", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete whatsapp template category"));
+    return true;
+}
+
+
 
 

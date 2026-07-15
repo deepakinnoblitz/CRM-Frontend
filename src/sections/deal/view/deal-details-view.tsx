@@ -1,9 +1,8 @@
-import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from "react-icons/io";
-import { GrDocumentTime } from "react-icons/gr";
-import { GrDocumentStore } from "react-icons/gr";
 import { useState, useEffect, useCallback } from 'react';
-import { HiOutlineDocumentText, HiOutlineClipboardDocumentCheck, HiOutlineUser, HiOutlineCalendar, HiOutlineBriefcase, HiOutlineDocumentPlus, HiOutlineBuildingOffice, HiOutlineClock, HiOutlineDocumentCheck as HiOutlineDocCheck } from "react-icons/hi2";
+import { useParams, useLocation } from 'react-router-dom';
+import { GrDocumentTime , GrDocumentStore } from "react-icons/gr";
+import { HiOutlineUser, HiOutlineClock, HiOutlineCalendar, HiOutlineBriefcase, HiOutlineDocumentText, HiOutlineBuildingOffice, HiOutlineClipboardDocumentCheck } from "react-icons/hi2";
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -23,8 +22,16 @@ import { useRouter } from 'src/routes/hooks';
 import { getDeal, updateDeal } from 'src/api/deals';
 import { fetchRelatedInvoices } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { fetchRelatedProposals } from 'src/api/proposal';
 import { fetchRelatedEstimations } from 'src/api/estimation';
+import { getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
+
+import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { EmailAutomationDialog } from 'src/sections/lead/email-automation-dialog';
+import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
+
+import { DealRelatedList } from '../deal-related-list';
 
 const STAGE_OPTIONS = [
     { value: 'Just In', label: 'Just In' },
@@ -34,7 +41,6 @@ const STAGE_OPTIONS = [
     { value: 'Invoice Created', label: 'Invoice\nCreated' },
     { value: 'Invoice Sent', label: 'Invoice\nSent' },
     { value: 'Special Approval', label: 'Special\nApproval' },
-    { value: 'Ready for Delivery', label: 'Ready for\nDelivery' },
     { value: 'Project Started', label: 'Project\nStarted' },
     { value: 'Closed', label: 'Closed' },
 ];
@@ -49,22 +55,19 @@ const getClipPath = (index: number, total: number) => {
     return 'polygon(0 0, calc(100% - 12px) 0, 100% 50%, calc(100% - 12px) 100%, 0 100%, 12px 50%)';
 };
 
-import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/confirm-dialog';
-
-import { DealRelatedList } from '../deal-related-list';
-
 // ----------------------------------------------------------------------
 
 export function DealDetailsView() {
     const { id } = useParams();
     const theme = useTheme();
     const router = useRouter();
+    const location = useLocation();
+
+    const backPath = location.state?.from || '/deals';
 
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentTab, setCurrentTab] = useState('proposals');
+    const [currentTab, setCurrentTab] = useState('estimations');
     const [selectedStage, setSelectedStage] = useState<string | null>(null);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [confirmUpdate, setConfirmUpdate] = useState(false);
@@ -73,6 +76,11 @@ export function DealDetailsView() {
         message: '',
         severity: 'success',
     });
+
+    const [automationData, setAutomationData] = useState<any>(null);
+    const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
+    const [emailAutomationData, setEmailAutomationData] = useState<any>(null);
+    const [openEmailAutomationDialog, setOpenEmailAutomationDialog] = useState(false);
 
     useEffect(() => {
         if (deal && deal.stage) {
@@ -95,6 +103,31 @@ export function DealDetailsView() {
                 message: `Prospect stage updated from "${previousStage}" to "${selectedStage}" successfully`,
                 severity: 'success'
             });
+
+            // Fetch WhatsApp automation preview
+            try {
+                const preview = await getAutomationPreview('Deal', deal.name, previousStage);
+                if (preview && preview.show_confirmation) {
+                    setAutomationData(preview);
+                    setOpenAutomationDialog(true);
+                }
+            } catch (automationErr: any) {
+                console.error('Failed to fetch WhatsApp automation preview:', automationErr);
+            }
+            try {
+                const emailPreview = await getEmailAutomationPreview(
+                    "Deal",
+                    deal.name,
+                    previousStage
+                );
+
+                if (emailPreview?.show_confirmation) {
+                    setEmailAutomationData(emailPreview);
+                    setOpenEmailAutomationDialog(true);
+                }
+            } catch (err) {
+                console.error(err);
+            }
         } catch (err: any) {
             console.error('Failed to update stage:', err);
             setSnackbar({
@@ -106,6 +139,82 @@ export function DealDetailsView() {
             setUpdatingStage(false);
         }
     }, [deal, selectedStage]);
+
+    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
+        if (!deal || !automationData) return;
+        try {
+            await sendAutomationMessage(
+                automationData.automation_name,
+                'Deal',
+                deal.name,
+                proposalName
+            );
+
+            const latestMsg = await getLatestWhatsAppMessage(deal.name, true);
+            if (latestMsg && latestMsg.status === 'Failed') {
+                let errMsg = 'Unable to send WhatsApp message.';
+                try {
+                    if (latestMsg.raw_payload) {
+                        const payload = JSON.parse(latestMsg.raw_payload);
+                        const fbErrMessage = payload?.error?.error?.message || payload?.error?.message || payload?.error;
+                        if (fbErrMessage) {
+                            errMsg = fbErrMessage.replace(/^\(#\d+\)\s*/, '');
+                        }
+                    }
+                } catch (e) {
+                    console.error("Failed to parse raw_payload:", e);
+                }
+                throw new Error(errMsg);
+            }
+
+            setSnackbar({
+                open: true,
+                message: 'WhatsApp Message Sent Successfully',
+                severity: 'success'
+            });
+        } catch (err: any) {
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to send message.',
+                severity: 'error'
+            });
+            throw err;
+        }
+    }, [deal, automationData]);
+
+    const handleSendEmailAutomation = useCallback(async (proposalName: string | null, attachments?: { file_url: string }[] | null) => {
+
+        if (!deal || !emailAutomationData) return;
+
+        try {
+
+            await sendEmailAutomationMessage(
+                emailAutomationData.automation_name,
+                "Deal",
+                deal.name,
+                proposalName,
+                attachments
+            );
+
+            setSnackbar({
+                open: true,
+                message: "Email sent successfully.",
+                severity: "success",
+            });
+
+        } catch (err: any) {
+
+            setSnackbar({
+                open: true,
+                message: err.message || "Failed to send Email.",
+                severity: "error",
+                });
+
+            throw err;
+        }
+    },
+        [deal, emailAutomationData]
+    );
 
     const handleStageUpdateClick = useCallback(async () => {
         if (!deal || !selectedStage) return;
@@ -163,19 +272,13 @@ export function DealDetailsView() {
                 .catch((err) => console.error('Failed to fetch deal details:', err))
                 .finally(() => setLoading(false));
         } else {
-            setCurrentTab('proposals');
+            setCurrentTab('estimations');
         }
     }, [id]);
 
     const handleCreateEstimation = useCallback(() => {
         if (deal) {
             router.push(`/estimations/new?deal_id=${deal.name}&client_id=${deal.contact}`);
-        }
-    }, [deal, router]);
-
-    const handleCreateProposal = useCallback(() => {
-        if (deal) {
-            router.push(`/proposals/new?deal_id=${deal.name}`);
         }
     }, [deal, router]);
 
@@ -186,7 +289,6 @@ export function DealDetailsView() {
     }, [deal, router]);
 
     const TABS = [
-        { value: 'proposals', label: 'Proposals', icon: <HiOutlineDocumentPlus size={18} /> },
         { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
         { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
         { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
@@ -223,7 +325,7 @@ export function DealDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals')}
+                        onClick={() => router.push(backPath)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -237,21 +339,6 @@ export function DealDetailsView() {
                         }}
                     >
                         Go Back
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCreateProposal}
-                        startIcon={<HiOutlineDocumentPlus size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            background: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-                            color: '#fff',
-                            '&:hover': { bgcolor: '#6A22C4' }
-                        }}
-                    >
-                        Create Proposal
                     </Button>
                     <Button
                         variant="contained"
@@ -383,11 +470,10 @@ export function DealDetailsView() {
                             flexDirection: 'column',
                         }}
                     >
-                        <Scrollbar
+                        <Box
                             sx={{
                                 p: 4,
                                 flexGrow: 1,
-                                height: 1,
                             }}>
                             <Stack spacing={5}>
                                 {/* Prospect Identity */}
@@ -441,7 +527,7 @@ export function DealDetailsView() {
                                     </Typography>
                                 </Box>
                             </Stack>
-                        </Scrollbar>
+                        </Box>
                     </Box>
 
                     {/* Main Content: Tabs & Related Data */}
@@ -496,6 +582,32 @@ export function DealDetailsView() {
                     </Button>
                 }
             />
+
+            {automationData && (
+                <WhatsappAutomationDialog
+                    open={openAutomationDialog}
+                    onClose={() => {
+                        setOpenAutomationDialog(false);
+                        setAutomationData(null);
+                    }}
+                    automation={automationData}
+                    lead={deal}
+                    onSend={handleSendAutomationMessage}
+                />
+            )}
+
+            {emailAutomationData && (
+                <EmailAutomationDialog
+                    open={openEmailAutomationDialog}
+                    onClose={() => {
+                        setOpenEmailAutomationDialog(false);
+                        setEmailAutomationData(null);
+                    }}
+                    automation={emailAutomationData}
+                    lead={deal}
+                    onSend={handleSendEmailAutomation}
+                />
+            )}
 
             <Snackbar
                 open={snackbar.open}

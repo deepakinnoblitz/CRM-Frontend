@@ -10,7 +10,7 @@ export interface Deal {
     contact_name?: string;
     value: number;
     expected_close_date?: string;
-    stage: 'Just In' | 'Working' | 'Estimation Created' | 'Estimation Sent' | 'Invoice Created' | 'Invoice Sent' | 'Special Approval' | 'Ready for Delivery' | 'Project Started' | 'Closed';
+    stage: 'Just In' | 'Working' | 'Proposal Sent' | 'Estimation Created' | 'Estimation Sent' | 'Invoice Created' | 'Invoice Sent' | 'Special Approval' | 'Project Started' | 'Closed';
     probability?: number;
     type?: 'Existing Business' | 'New Business';
     source_lead?: string;

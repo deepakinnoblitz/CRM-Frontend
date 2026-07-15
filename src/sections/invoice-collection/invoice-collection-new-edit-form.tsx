@@ -5,7 +5,6 @@ import type {
 import dayjs from 'dayjs';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 
-// 2️⃣ MUI Components (sorted alphabetically)
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
@@ -169,10 +168,12 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
             onLoadingChange?.(true);
             if (currentInvoiceCollection) {
                 await updateInvoiceCollection(currentInvoiceCollection.name, submissionData);
-                setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Invoice Collection Update success!', severity: 'success' });
+                sessionStorage.setItem('invoice_collection_success_message', 'Invoice Collection Update success!');
             } else {
                 await createInvoiceCollection(submissionData);
-                setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Invoice Collection Created successfully', severity: 'success' });
+                sessionStorage.setItem('invoice_collection_success_message', 'Invoice Collection Created successfully');
             }
             setTimeout(() => router.push('/deals?tab=invoices&subtab=collections'), 1500);
         } catch (error: any) {
@@ -257,7 +258,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         type="number"
                         value={formData.amount_to_pay}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                     />
@@ -284,7 +285,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                             }
                         }}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                         }}
                         error={!!errors.amount_collected}
                         helperText={errors.amount_collected}
@@ -297,7 +298,7 @@ const InvoiceCollectionNewEditForm = forwardRef(({ currentInvoiceCollection, onL
                         type="number"
                         value={formData.amount_pending}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                         sx={{

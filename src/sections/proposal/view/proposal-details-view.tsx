@@ -1,15 +1,14 @@
-import {IoMdCreate} from "react-icons/io";
-import { useParams } from 'react-router-dom';
-import { IoMdArrowBack } from 'react-icons/io';
 import { useState, useEffect, useCallback } from 'react';
+import { useParams, useLocation } from 'react-router-dom';
+import { IoMdCreate , IoMdArrowBack } from "react-icons/io";
 import {
     HiOutlineUser,
-    HiOutlineCalendar,
-    HiOutlineBuildingOffice,
     HiOutlineClock,
+    HiOutlineCalendar,
     HiOutlinePaperClip,
-    HiOutlineDocumentText,
     HiOutlineCheckCircle,
+    HiOutlineDocumentText,
+    HiOutlineBuildingOffice,
 } from 'react-icons/hi2';
 
 import Box from '@mui/material/Box';
@@ -23,12 +22,10 @@ import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
-import MenuItem from '@mui/material/MenuItem';
 import Backdrop from '@mui/material/Backdrop';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
-import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -78,7 +75,11 @@ const STATUS_COLORS: Record<string, any> = {
 export function ProposalDetailsView() {
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
+    const location = useLocation();
     const theme = useTheme();
+
+    const backUrl = location.state?.from || '/proposals';
+    const backState = location.state?.filters ? { filters: location.state.filters } : undefined;
 
     const [proposal, setProposal] = useState<any>(null);
     const [billingAccountName, setBillingAccountName] = useState<string>('');
@@ -105,10 +106,10 @@ export function ProposalDetailsView() {
                 .then(async (data) => {
                     setProposal(data);
                     setSelectedStatus(data.status || 'Draft');
-                    
-                    if (data.billing_name) {
+
+                    if (data.company_name) {
                         try {
-                            const accountData = await getAccount(data.billing_name);
+                            const accountData = await getAccount(data.company_name);
                             if (accountData && accountData.account_name) {
                                 setBillingAccountName(accountData.account_name);
                             }
@@ -138,6 +139,7 @@ export function ProposalDetailsView() {
             });
         } catch (err: any) {
             setSnackbar({ open: true, message: err.message || 'Failed to update status', severity: 'error' });
+            setSelectedStatus(proposal.status || 'Draft');
         } finally {
             setUpdatingStatus(false);
         }
@@ -176,7 +178,7 @@ export function ProposalDetailsView() {
                     <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 800 }}>
                         Proposal Not Found
                     </Typography>
-                    <Button onClick={() => router.push('/proposals')} sx={{ mt: 3 }} variant="contained">
+                    <Button onClick={() => router.push(backUrl, backState)} sx={{ mt: 3 }} variant="contained">
                         Go back to proposals
                     </Button>
                 </Box>
@@ -197,7 +199,7 @@ export function ProposalDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/deals?tab=proposals')}
+                        onClick={() => router.push(backUrl, backState)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
@@ -238,43 +240,62 @@ export function ProposalDetailsView() {
                 }}>
                     {STATUS_OPTIONS.map((stage, index) => {
                         const activeIndex = STATUS_OPTIONS.indexOf(selectedStatus);
-                        const isCompletedOrActive = index <= activeIndex;
+                        const isCompleted = index < activeIndex;
                         const isActive = index === activeIndex;
+                        const isPending = index > activeIndex;
 
                         return (
                             <Box
                                 key={stage}
                                 onClick={() => setSelectedStatus(stage)}
                                 sx={{
-                                    height: 46,
+                                    height: 50,
                                     display: 'flex',
                                     flex: '1 1 0',
-                                    minWidth: { xs: 100, md: 92 },
+                                    minWidth: { xs: 125, md: 110 },
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    px: 1,
+                                    pl: index === 0 ? 3 : 4.5,
+                                    pr: index === STATUS_OPTIONS.length - 1 ? 3 : 2,
                                     ml: index === 0 ? 0 : '-10px',
                                     cursor: 'pointer',
                                     userSelect: 'none',
                                     clipPath: getClipPath(index, STATUS_OPTIONS.length),
-                                    bgcolor: isCompletedOrActive ? '#2081C3' : (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[700], 0.5) : '#e0e0e0b5',
-                                    color: isCompletedOrActive ? 'common.white' : (themeVar) => themeVar.palette.mode === 'dark' ? 'text.secondary' : '#4c545a',
-                                    fontWeight: isActive ? 800 : 600,
-                                    fontSize: { xs: 11, md: 12 },
-                                    lineHeight: 1.15,
-                                    textAlign: 'center',
+                                    bgcolor: isCompleted
+                                        ? '#22c55e'
+                                        : isActive
+                                            ? '#2081C3'
+                                            : (themeVar) => themeVar.palette.mode === 'dark' ? alpha(themeVar.palette.grey[700], 0.4) : '#f4f6f8',
+                                    color: isCompleted || isActive
+                                        ? 'common.white'
+                                        : (themeVar) => themeVar.palette.mode === 'dark' ? 'text.secondary' : '#4c545a',
                                     transition: 'all 0.2s',
-                                    whiteSpace: 'pre-line',
                                     position: 'relative',
                                     zIndex: STATUS_OPTIONS.length - index,
                                     '&:hover': {
-                                        opacity: 0.88,
+                                        opacity: 0.92,
                                     }
                                 }}
                             >
-                                <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === STATUS_OPTIONS.length - 1 ? 0 : 1 }}>
-                                    {stage}
-                                </Typography>
+                                <Stack direction="row" alignItems="center" spacing={1.2} sx={{ zIndex: 1 }}>
+                                    {isCompleted && (
+                                        <Iconify icon="solar:check-circle-bold" width={18} sx={{ color: 'common.white' }} />
+                                    )}
+                                    {isActive && (
+                                        <Iconify icon={"solar:stop-circle-bold" as any} width={18} sx={{ color: 'common.white' }} />
+                                    )}
+                                    {isPending && (
+                                        <Box sx={{ width: 16, height: 16, borderRadius: '50%', border: '2px solid', borderColor: 'currentColor', opacity: 0.6 }} />
+                                    )}
+                                    <Stack spacing={0.2} sx={{ textAlign: 'left' }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: { xs: 12, md: 13 }, lineHeight: 1.2 }}>
+                                            {stage}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ fontWeight: 500, fontSize: 10, opacity: 0.8, lineHeight: 1.1 }}>
+                                            {isCompleted ? 'Completed' : isActive ? 'Current' : 'Pending'}
+                                        </Typography>
+                                    </Stack>
+                                </Stack>
                             </Box>
                         );
                     })}
@@ -301,11 +322,12 @@ export function ProposalDetailsView() {
             </Card>
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
-                <Box sx={{ display: 'flex', minHeight: '75vh', flexDirection: { xs: 'column', md: 'row' } }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Sidebar */}
                     <Box
                         sx={{
                             width: { xs: '100%', md: 320 },
+                            flexShrink: 0,
                             borderRight: { xs: 'none', md: `1px solid ${theme.palette.divider}` },
                             borderBottom: { xs: `1px solid ${theme.palette.divider}`, md: 'none' },
                             bgcolor: alpha(theme.palette.grey[500], 0.02),
@@ -331,8 +353,8 @@ export function ProposalDetailsView() {
                                 <Box>
                                     <SectionHeader title="Proposal Information" />
                                     <Stack spacing={2.5} sx={{ mt: 2.5 }}>
-                                        <DetailItem label="Client" value={proposal.customer_name || proposal.client_name} subValue={proposal.client_name} icon={<HiOutlineUser size={20} />} />
-                                        <DetailItem label="Billing Name" value={billingAccountName || proposal.billing_name || '—'} subValue={billingAccountName ? proposal.billing_name : undefined} icon={<HiOutlineBuildingOffice size={20} />} />
+                                        <DetailItem label="Lead" value={proposal.lead_name || proposal.lead} subValue={proposal.lead} icon={<HiOutlineUser size={20} />} />
+                                        <DetailItem label="Company Name" value={billingAccountName || proposal.company_name || '—'} subValue={billingAccountName ? proposal.company_name : undefined} icon={<HiOutlineBuildingOffice size={20} />} />
                                         <DetailItem label="Proposal Date" value={fDate(proposal.proposal_date)} icon={<HiOutlineCalendar size={20} />} />
                                         {proposal.valid_until && (
                                             <DetailItem label="Valid Until" value={fDate(proposal.valid_until)} icon={<HiOutlineClock size={20} />} />
@@ -347,16 +369,6 @@ export function ProposalDetailsView() {
                                         <DetailItem label="Created By" value={proposal.created_by || '—'} icon={<HiOutlineUser size={20} />} />
                                     </Stack>
                                 </Box>
-
-                                {/* Description */}
-                                {proposal.description && (
-                                    <Box>
-                                        <SectionHeader title="Description" />
-                                        <Typography variant="body2" sx={{ mt: 1.5, color: 'text.secondary', fontWeight: 500, lineHeight: 1.7 }}>
-                                            {proposal.description}
-                                        </Typography>
-                                    </Box>
-                                )}
 
                                 {/* Sync Info */}
                                 <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.primary.main, 0.04), border: (t) => `1px solid ${alpha(t.palette.primary.main, 0.1)}` }}>
@@ -374,6 +386,24 @@ export function ProposalDetailsView() {
                     {/* Main Content */}
                     <Box sx={{ flexGrow: 1, p: 4, overflow: 'auto' }}>
                         <Stack spacing={4}>
+                            {/* Description */}
+                            {proposal.description && (
+                                <Box>
+                                    <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+                                        Description
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
+                                        }}
+                                        dangerouslySetInnerHTML={{ __html: proposal.description }}
+                                    />
+                                </Box>
+                            )}
+
                             {/* Terms & Conditions */}
                             {proposal.terms_and_conditions && (
                                 <Box>
@@ -384,7 +414,7 @@ export function ProposalDetailsView() {
                                         sx={{
                                             p: 3,
                                             borderRadius: 2,
-                                            bgcolor: (t) => alpha(t.palette.grey[500], 0.04),
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
                                             border: (t) => `1px solid ${t.palette.divider}`,
                                         }}
                                         dangerouslySetInnerHTML={{ __html: proposal.terms_and_conditions }}
@@ -424,15 +454,22 @@ export function ProposalDetailsView() {
                                                                 <Chip
                                                                     label={att.file_name || att.attachment?.split('/')?.pop() || '—'}
                                                                     size="small"
-                                                                    icon={<Iconify icon={"solar:file-bold" as any} width={14} />}
+                                                                    icon={<HiOutlineDocumentText size={16} style={{ color: '#ffffff', marginLeft: 8, marginRight: 2 }} />}
                                                                     sx={{
-                                                                        maxWidth: 150,
+                                                                        height: 'auto',
                                                                         bgcolor: '#22c55e',
                                                                         color: '#ffffff',
-                                                                        fontWeight: 600,
+                                                                        fontWeight: 500,
                                                                         '& .MuiChip-icon': {
-                                                                            color: '#ffffff',
                                                                             ml: 0.5,
+                                                                            color: '#ffffff',
+                                                                        },
+                                                                        '& .MuiChip-label': {
+                                                                            whiteSpace: 'normal',
+                                                                            wordBreak: 'break-all',
+                                                                            display: 'inline-block',
+                                                                            py: 0.5,
+                                                                            lineHeight: 1.2,
                                                                         },
                                                                     }}
                                                                 />
@@ -511,42 +548,101 @@ export function ProposalDetailsView() {
                 </Alert>
             </Snackbar>
 
-            <Dialog open={!!viewAttachment} onClose={() => setViewAttachment(null)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ pb: 2 }}>View Attachment Details</DialogTitle>
-                <DialogContent>
-                    <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {viewAttachment?.attachment && (
-                            <Box sx={{
-                                mb: 2, 
-                                p: 2, 
-                                border: '1px solid', 
-                                borderColor: 'divider', 
-                                borderRadius: 1, 
-                                textAlign: 'center',
-                                bgcolor: (themeVar) => alpha(themeVar.palette.grey[500], 0.04)
-                            }}>
-                                <Typography variant="subtitle2" sx={{ mb: 1.5 }}>File Preview</Typography>
-                                <Button 
-                                    variant="outlined" 
-                                    color="inherit"
-                                    onClick={() => window.open(viewAttachment.attachment)}
-                                    startIcon={<Iconify icon="solar:link-bold" />}
-                                >
-                                    Open File in New Tab
-                                </Button>
+            <Dialog
+                open={!!viewAttachment}
+                onClose={() => setViewAttachment(null)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{ sx: { borderRadius: 2 } }}
+            >
+                <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid', borderColor: 'divider' }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800 }}>Attachment Details</Typography>
+                    <IconButton
+                        onClick={() => setViewAttachment(null)}
+                        sx={{
+                            color: theme.palette.grey[500],
+                            bgcolor: 'background.paper',
+                            '&:hover': { bgcolor: 'background.default' },
+                        }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent dividers sx={{ px: 3, pb: 4, pt: 3 }}>
+                    {viewAttachment && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* Document Info Card */}
+                            <Box sx={{ p: 2.5, borderRadius: 2, bgcolor: (t) => alpha(t.palette.grey[500], 0.04), border: (t) => `1px dashed ${alpha(t.palette.grey[500], 0.2)}` }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 3 }}>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                            <Iconify icon="solar:document-bold" width={14} />
+                                            File Name
+                                        </Typography>
+                                        <Typography variant="subtitle2" sx={{ wordBreak: 'break-all' }}>{viewAttachment.file_name || viewAttachment.attachment?.split('/')?.pop() || '—'}</Typography>
+                                    </Box>
+
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                            <Iconify icon={"solar:diskette-bold" as any} width={14} />
+                                            File Size
+                                        </Typography>
+                                        <Typography variant="subtitle2">{viewAttachment.file_size || '—'}</Typography>
+                                    </Box>
+                                </Box>
+
+                                <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, textTransform: 'uppercase', fontWeight: 600 }}>
+                                        <Iconify icon="solar:notes-bold" width={14} />
+                                        Description
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ color: viewAttachment.description ? 'text.primary' : 'text.disabled' }}>
+                                        {viewAttachment.description || 'No description provided.'}
+                                    </Typography>
+                                </Box>
                             </Box>
-                        )}
-                        
-                        <DetailItem label="File Name" value={viewAttachment?.file_name || viewAttachment?.attachment?.split('/')?.pop()} icon={<HiOutlineDocumentText size={20} />} />
-                        <DetailItem label="Description" value={viewAttachment?.description} icon={<HiOutlineDocumentText size={20} />} />
-                        <DetailItem label="File Size" value={viewAttachment?.file_size} icon={<HiOutlineDocumentText size={20} />} />
-                        <DetailItem label="Uploaded By" value={viewAttachment?.uploaded_by} icon={<HiOutlineUser size={20} />} />
-                        <DetailItem label="Uploaded On" value={viewAttachment?.uploaded_on ? new Date(viewAttachment.uploaded_on).toLocaleString() : undefined} icon={<HiOutlineCalendar size={20} />} />
-                    </Box>
+
+                            {/* Meta Info */}
+                            <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 2, px: 1 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.success.main, 0.1), color: 'success.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon="solar:calendar-date-bold" width={16} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded On</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>
+                                            {viewAttachment.uploaded_on ? new Date(viewAttachment.uploaded_on).toLocaleString() : '—'}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box sx={{ width: 32, height: 32, borderRadius: '50%', bgcolor: (t) => alpha(t.palette.warning.main, 0.1), color: 'warning.main', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon={"solar:user-circle-bold" as any} width={16} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>Uploaded By</Typography>
+                                        <Typography variant="subtitle2" sx={{ fontSize: 13 }}>{viewAttachment.uploaded_by || '—'}</Typography>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </Box>
+                    )}
                 </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setViewAttachment(null)} color="inherit">
-                        Close
+                <DialogActions sx={{ m: 1 }}>
+                    <Button
+                        onClick={() => {
+                            if (viewAttachment?.attachment) {
+                                window.open(viewAttachment.attachment, '_blank');
+                            }
+                        }}
+                        variant="contained"
+                        disabled={!viewAttachment?.attachment}
+                        startIcon={<Iconify icon="solar:eye-bold" />}
+                    >
+                        View File
                     </Button>
                 </DialogActions>
             </Dialog>

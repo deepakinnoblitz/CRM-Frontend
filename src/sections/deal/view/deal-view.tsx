@@ -1,8 +1,10 @@
 import type { Dayjs } from 'dayjs';
 
 import dayjs from 'dayjs';
+import { IoList } from "react-icons/io5";
 import { RiMailSendLine } from "react-icons/ri";
 import { useSearchParams } from 'react-router-dom';
+import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useState, useEffect, useCallback } from 'react';
 import { GrDocumentTime, GrDocumentStore } from "react-icons/gr";
 import { HiOutlineBriefcase, HiOutlineDocumentPlus, HiOutlineDocumentCheck } from "react-icons/hi2";
@@ -53,9 +55,9 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { DealTableRow } from '../deal-table-row';
 import { TableNoData } from '../../lead/table-no-data';
+import DealKanbanBoard from '../kanban/deal-kanban-board';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DealTableFiltersDrawer } from '../deal-table-filters-drawer';
-import { ProposalListView } from '../../proposal/view/proposal-list-view';
 import { LeadTableHead as DealTableHead } from '../../lead/lead-table-head';
 import { EstimationListView } from '../../estimation/view/estimation-list-view';
 import { InvoiceManagementView } from '../../invoice/view/invoice-management-view';
@@ -93,20 +95,31 @@ export function DealView() {
     const STAGE_OPTIONS = [
         { value: 'Just In', label: 'Just In' },
         { value: 'Working', label: 'Working' },
+        { value: 'Proposal Sent', label: 'Proposal Sent' },
         { value: 'Estimation Created', label: 'Estimation Created' },
         { value: 'Estimation Sent', label: 'Estimation Sent' },
         { value: 'Invoice Created', label: 'Invoice Created' },
         { value: 'Invoice Sent', label: 'Invoice Sent' },
         { value: 'Special Approval', label: 'Special Approval' },
-        { value: 'Ready for Delivery', label: 'Ready for Delivery' },
         { value: 'Project Started', label: 'Project Started' },
         { value: 'Closed', label: 'Closed' },
+    ];
+
+    const STATUS_OPTIONS = [
+        { value: 'Draft', label: 'Draft' },
+        { value: 'Sent', label: 'Sent' },
+        { value: 'Approved', label: 'Approved' },
+        { value: 'Rejected', label: 'Rejected' },
+        { value: 'Expired', label: 'Expired' },
     ];
 
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentDealId, setCurrentDealId] = useState<string | null>(null);
+    const [currentProposalId, setCurrentProposalId] = useState<string | null>(null);
     const [viewOnly, setViewOnly] = useState(false);
+    const [DealviewMode, setDealViewMode] = useState<'deallist' | 'dealkanban'>('deallist');
+
 
 
     // Form state
@@ -131,6 +144,7 @@ export function DealView() {
 
     // Alert & Dialog State
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
         message: '',
@@ -223,7 +237,7 @@ export function DealView() {
         }
     }, [account, contactOptions]);
 
-    const handleOpenCreate = () => {
+    const handleOpenCreate = (selectedStage?: any) => {
         setViewOnly(false);
         setCurrentDealId(null);
         setDealTitle('');
@@ -231,7 +245,7 @@ export function DealView() {
         setContact('');
         setValue('');
         setExpectedCloseDate(null);
-        setStage('Just In');
+        setStage(selectedStage && typeof selectedStage === 'string' ? selectedStage : 'Just In');
         setProbability('');
         setDealType('New Business');
         setSourceLead('');
@@ -438,6 +452,8 @@ export function DealView() {
         setOpenCreate(true);
     };
 
+
+
     const handleViewRow = (id: string) => {
         router.push(`/deals/${encodeURIComponent(id)}/view`);
     };
@@ -639,13 +655,7 @@ export function DealView() {
                                 icon={<HiOutlineBriefcase size={22} />}
                                 iconPosition="start"
                             />
-                            <Tab
-                                key="proposals"
-                                value="proposals"
-                                label="Proposal"
-                                icon={<RiMailSendLine size={22} />}
-                                iconPosition="start"
-                            />
+
                             <Tab
                                 key="estimations"
                                 value="estimations"
@@ -662,150 +672,219 @@ export function DealView() {
                             />
                         </Tabs>
 
-                        {currentTab === 'deals' && permissions.write && (
-                            <Button
-                                variant="contained"
-                                startIcon={<Iconify icon="mingcute:add-line" />}
-                                onClick={handleOpenCreate}
-                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                            >
-                                New Prospect
-                            </Button>
+                        {currentTab === 'deals' && (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <Box sx={{
+                                    display: 'flex',
+                                    p: 0.5,
+                                    bgcolor: '#F4F6F8',
+                                    borderRadius: '999px',
+                                    border: (theme) => `1px solid ${theme.palette.divider}`,
+                                }}>
+                                    <Button
+                                        disableRipple
+                                        onClick={() => setDealViewMode('deallist')}
+                                        startIcon={<IoList size={18} />}
+                                        sx={{
+                                            borderRadius: '999px',
+                                            px: 2.5,
+                                            py: 0.6,
+                                            typography: 'subtitle2',
+                                            fontWeight: 700,
+                                            color: DealviewMode === 'deallist' ? 'common.white' : 'text.secondary',
+                                            bgcolor: DealviewMode === 'deallist' ? '#08a3cd' : 'transparent',
+                                            boxShadow: DealviewMode === 'deallist' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            transition: 'all 0.2s',
+                                            '&:hover': {
+                                                bgcolor: DealviewMode === 'deallist' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: DealviewMode === 'deallist' ? 'common.white' : 'text.primary',
+                                            }
+                                        }}
+                                    >
+                                        List View
+                                    </Button>
+                                    <Button
+                                        disableRipple
+                                        onClick={() => setDealViewMode('dealkanban')}
+                                        startIcon={<TbLayoutKanbanFilled size={18} />}
+                                        sx={{
+                                            borderRadius: '999px',
+                                            px: 2.5,
+                                            py: 0.6,
+                                            typography: 'subtitle2',
+                                            fontWeight: 700,
+                                            color: DealviewMode === 'dealkanban' ? 'common.white' : 'text.secondary',
+                                            bgcolor: DealviewMode === 'dealkanban' ? '#08a3cd' : 'transparent',
+                                            boxShadow: DealviewMode === 'dealkanban' ? '0px 4px 10px rgba(8, 163, 205, 0.24)' : 'none',
+                                            transition: 'all 0.2s',
+                                            '&:hover': {
+                                                bgcolor: DealviewMode === 'dealkanban' ? '#068fb3' : 'rgba(145, 158, 171, 0.08)',
+                                                color: DealviewMode === 'dealkanban' ? 'common.white' : 'text.primary',
+                                            }
+                                        }}
+                                    >
+                                        Kanban View
+                                    </Button>
+                                </Box>
+
+                                {permissions.write && (
+                                    <Button
+                                        variant="contained"
+                                        startIcon={<Iconify icon="mingcute:add-line" />}
+                                        onClick={() => handleOpenCreate()}
+                                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                                    >
+                                        New Prospect
+                                    </Button>
+                                )}
+                            </Box>
                         )}
+
+
                     </Stack>
 
                     {currentTab === 'deals' && (
                         <>
-                            <Card>
-                                <DealTableToolbar
-                                    numSelected={selected.length}
-                                    filterName={filterName}
-                                    onFilterName={(e) => {
-                                        setFilterName(e.target.value);
-                                        setPage(0);
-                                    }}
-                                    searchPlaceholder="Search Prospects..."
-                                    onOpenFilter={() => setOpenFilters(true)}
-                                    canReset={canReset}
-                                    sortBy={sortBy}
-                                    onSortChange={setSortBy}
-                                    onDelete={handleBulkDelete}
-                                    sortOptions={[
-                                        { value: 'modified_desc', label: 'Newest First' },
-                                        { value: 'modified_asc', label: 'Oldest First' },
-                                        { value: 'deal_title_asc', label: 'Title: A to Z' },
-                                        { value: 'deal_title_desc', label: 'Title: Z to A' },
-                                        { value: 'account_asc', label: 'Company: A to Z' },
-                                        { value: 'account_desc', label: 'Company: Z to A' },
-                                        { value: 'contact_name_asc', label: 'Client Name: A to Z' },
-                                        { value: 'contact_name_desc', label: 'Client Name: Z to A' },
-                                        { value: 'value_desc', label: 'Prospect Value: High to Low' },
-                                        { value: 'value_asc', label: 'Prospect Value: Low to High' },
-                                    ]}
+                            {DealviewMode === 'deallist' ? (
+                                <Card>
+                                    <DealTableToolbar
+                                        numSelected={selected.length}
+                                        filterName={filterName}
+                                        onFilterName={(e) => {
+                                            setFilterName(e.target.value);
+                                            setPage(0);
+                                        }}
+                                        searchPlaceholder="Search Prospects..."
+                                        onOpenFilter={() => setOpenFilters(true)}
+                                        canReset={canReset}
+                                        sortBy={sortBy}
+                                        onSortChange={setSortBy}
+                                        onDelete={handleBulkDelete}
+                                        sortOptions={[
+                                            { value: 'modified_desc', label: 'Newest First' },
+                                            { value: 'modified_asc', label: 'Oldest First' },
+                                            { value: 'deal_title_asc', label: 'Title: A to Z' },
+                                            { value: 'deal_title_desc', label: 'Title: Z to A' },
+                                            { value: 'account_asc', label: 'Company: A to Z' },
+                                            { value: 'account_desc', label: 'Company: Z to A' },
+                                            { value: 'contact_name_asc', label: 'Client Name: A to Z' },
+                                            { value: 'contact_name_desc', label: 'Client Name: Z to A' },
+                                            { value: 'value_desc', label: 'Prospect Value: High to Low' },
+                                            { value: 'value_asc', label: 'Prospect Value: Low to High' },
+                                        ]}
+                                    />
+
+                                    <Scrollbar>
+                                        <TableContainer sx={{ overflow: 'unset' }}>
+                                            <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+                                                <DealTableHead
+                                                    rowCount={total}
+                                                    numSelected={selected.length}
+                                                    onSelectAllRows={(checked: boolean) =>
+                                                        handleSelectAllRows(
+                                                            checked,
+                                                            data.map((row) => row.name)
+                                                        )
+                                                    }
+                                                    hideCheckbox
+                                                    showIndex
+                                                    headLabel={[
+                                                        { id: 'deal_title', label: 'Title' },
+                                                        { id: 'account', label: 'Company' },
+                                                        { id: 'contact', label: 'Client' },
+                                                        { id: 'stage', label: 'Stage' },
+                                                        { id: 'actions', label: 'Actions', align: 'right' },
+                                                    ]}
+                                                />
+
+                                                <TableBody>
+                                                    {loading ? (
+                                                        <TableRow>
+                                                            <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                                <CircularProgress sx={{ color: '#08a3cd' }} />
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ) : (
+                                                        <>
+                                                            {data.map((row, index) => (
+                                                                <DealTableRow
+                                                                    key={row.name}
+                                                                    index={page * rowsPerPage + index}
+                                                                    hideCheckbox
+                                                                    row={{
+                                                                        id: row.name,
+                                                                        title: row.deal_title ?? '-',
+                                                                        account: row.account ?? '-',
+                                                                        accountName: row.account_name ?? '',
+                                                                        contact: row.contact ?? '-',
+                                                                        contactName: row.contact_name ?? '',
+                                                                        value: row.value ?? 0,
+                                                                        stage: row.stage ?? '-',
+                                                                        expectedCloseDate: row.expected_close_date ?? '-',
+                                                                        avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
+                                                                    }}
+                                                                    selected={selected.includes(row.name)}
+                                                                    onSelectRow={() => handleSelectRow(row.name)}
+                                                                    onEdit={() => handleEditRow(row.name)}
+                                                                    onDelete={() => handleDeleteClick(row.name)}
+                                                                    onView={() => handleViewRow(row.name)}
+                                                                    canEdit={permissions.write}
+                                                                    canDelete={permissions.delete}
+                                                                />
+                                                            ))}
+
+                                                            {notFound && <TableNoData searchQuery={filterName} />}
+
+                                                            {empty && (
+                                                                <TableRow>
+                                                                    <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
+                                                                        <EmptyContent
+                                                                            title="No Prospects found"
+                                                                            description="Create a new Prospect to track your sales pipeline."
+                                                                            icon="solar:hand-stars-bold-duotone"
+                                                                        />
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )}
+
+                                                            {!empty && !notFound && (
+                                                                <TableEmptyRows
+                                                                    height={68}
+                                                                    emptyRows={data.length < 5 ? 5 - data.length : 0}
+                                                                />
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </TableBody>
+                                            </Table>
+                                        </TableContainer>
+                                    </Scrollbar>
+
+                                    <TablePagination
+                                        component="div"
+                                        page={page}
+                                        count={total}
+                                        rowsPerPage={rowsPerPage}
+                                        onPageChange={onChangePage}
+                                        rowsPerPageOptions={[10, 25, 50]}
+                                        onRowsPerPageChange={onChangeRowsPerPage}
+                                    />
+                                </Card>
+                            ) : (
+                                <DealKanbanBoard
+                                    deals={data}
+                                    stages={STAGE_OPTIONS}
+                                    onOpenDeal={(id) => handleViewRow(id)}
+                                    onEditDeal={(id) => handleEditRow(id)}
+                                    onDeleteDeal={(id) => handleDeleteClick(id)}
+                                    onAddDeal={(selectedStage) => handleOpenCreate(selectedStage)}
+                                    permissions={permissions}
                                 />
-
-                                <Scrollbar>
-                                    <TableContainer sx={{ overflow: 'unset' }}>
-                                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
-                                            <DealTableHead
-                                                rowCount={total}
-                                                numSelected={selected.length}
-                                                onSelectAllRows={(checked: boolean) =>
-                                                    handleSelectAllRows(
-                                                        checked,
-                                                        data.map((row) => row.name)
-                                                    )
-                                                }
-                                                hideCheckbox
-                                                showIndex
-                                                headLabel={[
-                                                    { id: 'deal_title', label: 'Title' },
-                                                    { id: 'account', label: 'Company' },
-                                                    { id: 'contact', label: 'Client' },
-                                                    { id: 'expected_close_date', label: 'Expected Close' },
-                                                    { id: 'actions', label: 'Actions', align: 'right' },
-                                                ]}
-                                            />
-
-                                            <TableBody>
-                                                {loading ? (
-                                                    <TableRow>
-                                                        <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
-                                                            <CircularProgress sx={{ color: '#08a3cd' }} />
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ) : (
-                                                    <>
-                                                        {data.map((row, index) => (
-                                                            <DealTableRow
-                                                                key={row.name}
-                                                                index={page * rowsPerPage + index}
-                                                                hideCheckbox
-                                                                row={{
-                                                                    id: row.name,
-                                                                    title: row.deal_title ?? '-',
-                                                                    account: row.account ?? '-',
-                                                                    accountName: row.account_name ?? '',
-                                                                    contact: row.contact ?? '-',
-                                                                    contactName: row.contact_name ?? '',
-                                                                    value: row.value ?? 0,
-                                                                    stage: row.stage ?? '-',
-                                                                    expectedCloseDate: row.expected_close_date ?? '-',
-                                                                    avatarUrl: `${CONFIG.assetsDir}/images/avatar/avatar-25.webp`,
-                                                                }}
-                                                                selected={selected.includes(row.name)}
-                                                                onSelectRow={() => handleSelectRow(row.name)}
-                                                                onEdit={() => handleEditRow(row.name)}
-                                                                onDelete={() => handleDeleteClick(row.name)}
-                                                                onView={() => handleViewRow(row.name)}
-                                                                canEdit={permissions.write}
-                                                                canDelete={permissions.delete}
-                                                            />
-                                                        ))}
-
-                                                        {notFound && <TableNoData searchQuery={filterName} />}
-
-                                                        {empty && (
-                                                            <TableRow>
-                                                                <TableCell colSpan={10} align="center" sx={{ py: 10 }}>
-                                                                    <EmptyContent
-                                                                        title="No Prospects found"
-                                                                        description="Create a new Prospect to track your sales pipeline."
-                                                                        icon="solar:hand-stars-bold-duotone"
-                                                                    />
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        )}
-
-                                                        {!empty && !notFound && (
-                                                            <TableEmptyRows
-                                                                height={68}
-                                                                emptyRows={data.length < 5 ? 5 - data.length : 0}
-                                                            />
-                                                        )}
-                                                    </>
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </TableContainer>
-                                </Scrollbar>
-
-                                <TablePagination
-                                    component="div"
-                                    page={page}
-                                    count={total}
-                                    rowsPerPage={rowsPerPage}
-                                    onPageChange={onChangePage}
-                                    rowsPerPageOptions={[10, 25, 50]}
-                                    onRowsPerPageChange={onChangeRowsPerPage}
-                                />
-                            </Card>
+                            )}
                         </>
                     )}
-                    
-                    {currentTab === 'proposals' && (
-                        <ProposalListView hideTitle />
-                    )}
+
+
 
                     {currentTab === 'estimations' && (
                         <EstimationListView hideTitle />
@@ -842,6 +921,8 @@ export function DealView() {
                         </Button>
                     }
                 />
+
+
 
                 <Snackbar
                     open={snackbar.open}

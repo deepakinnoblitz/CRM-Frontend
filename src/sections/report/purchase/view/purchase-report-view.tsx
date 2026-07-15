@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -8,6 +9,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -16,6 +19,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
+import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
 import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
@@ -27,6 +31,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { usePdfExport } from 'src/hooks/use-pdf-export';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/purchase';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -37,9 +43,23 @@ import { generatePurchasePdf } from 'src/components/export/pdf/purchase-pdf-gene
 
 import { useAuth } from 'src/auth/auth-context';
 
-import { ExportFieldsDialog } from '../../export-fields-dialog';
-
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 export function PurchaseReportView() {
     const { user } = useAuth();
@@ -54,6 +74,7 @@ export function PurchaseReportView() {
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
     const [toDate, setToDate] = useState<dayjs.Dayjs | null>(null);
     const [vendor, setVendor] = useState<any>(null);
+    const [sortBy, setSortBy] = useState('modified_desc');
 
     // Options
     const [vendorOptions, setVendorOptions] = useState<{ name: string; first_name: string }[]>([]);
@@ -95,56 +116,261 @@ export function PurchaseReportView() {
         setSelected(newSelected);
     };
 
-    // Export Fields Dialog
-    const [openExportFields, setOpenExportFields] = useState(false);
-
-    const handleExport = async (selectedFields: string[], format: 'excel' | 'csv') => {
+    const handleExport = async () => {
         setLoading(true);
         try {
-            const filters: any[] = [];
-            if (selected.length > 0) {
-                filters.push(['Purchase', 'name', 'in', selected]);
-            } else {
-                if (fromDate) filters.push(['Purchase', 'bill_date', '>=', fromDate.format('YYYY-MM-DD')]);
-                if (toDate) filters.push(['Purchase', 'bill_date', '<=', toDate.format('YYYY-MM-DD')]);
-                if (vendor) filters.push(['Purchase', 'vendor_name', '=', vendor.name]);
-                if (user?.has_crm_permission) filters.push(['Purchase', 'owner', '=', user.name]);
+            if (reportData.length === 0) {
+                setLoading(false);
+                return;
             }
 
-            const query = new URLSearchParams({
-                doctype: "Purchase",
-                fields: JSON.stringify(selectedFields),
-                filters: JSON.stringify(filters),
-                limit_page_length: "99999",
+            // Build filters
+            const listFilters: Record<string, any> = {};
+            if (vendor) listFilters.vendor_name = vendor.name;
+            if (fromDate) listFilters.from_date = fromDate.format('YYYY-MM-DD');
+            if (toDate) listFilters.to_date = toDate.format('YYYY-MM-DD');
+            if (user?.has_crm_permission) listFilters.owner = user.name;
+
+            const res = await fetch(`/api/method/company.company.crm_api.get_purchase_export_data?filters=${encodeURIComponent(JSON.stringify(listFilters))}`, {
+                method: 'GET',
+                credentials: "include"
             });
 
-            const res = await fetch(`/api/method/frappe.client.get_list?${query.toString()}`, { credentials: "include" });
             if (!res.ok) throw new Error("Failed to fetch data for export");
-            const data = (await res.json()).message || [];
 
-            const worksheet = XLSX.utils.json_to_sheet(data);
-            if (format === 'excel') {
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Purchases");
-                XLSX.writeFile(workbook, "Purchase_Report.xlsx");
-            } else {
-                const csvOutput = XLSX.utils.sheet_to_csv(worksheet);
-                const blob = new Blob([csvOutput], { type: 'text/csv;charset=utf-8;' });
-                const link = document.createElement("a");
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", "Purchase_Report.csv");
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            const jsonResponse = await res.json();
+            const data = jsonResponse.message || [];
+
+            const workbook = new ExcelJS.Workbook();
+            const sheet = workbook.addWorksheet('Purchase Report');
+
+            // Define sheet columns in the exact order requested
+            const columns = [
+                { header: 'Purchase ID', key: 'purchase_id' },
+                { header: 'Vendor', key: 'vendor_real_name' },
+                { header: 'Vendor ID', key: 'vendor_name' },
+                { header: 'Bill No', key: 'bill_no' },
+                { header: 'Bill Date', key: 'bill_date' },
+                { header: 'Service', key: 'service' },
+                { header: 'HSN', key: 'hsn_code' },
+                { header: 'Description', key: 'description' },
+                { header: 'Qty', key: 'qty' },
+                { header: 'Price', key: 'price' },
+                { header: 'Discount', key: 'discount' },
+                { header: 'Tax Type', key: 'tax_type' },
+                { header: 'Tax Amount', key: 'tax_amount' },
+                { header: 'Total', key: 'total' },
+                { header: 'Grand Total', key: 'grand_total' },
+                { header: 'Total Tax', key: 'total_tax' },
+                { header: 'Overall Discount', key: 'overall_discount' },
+                { header: 'Overall Discount Type', key: 'overall_discount_type' },
+                { header: 'Payment Type', key: 'payment_type' },
+                { header: 'Owner', key: 'owner' },
+                { header: 'Attachments', key: 'attachments' },
+            ];
+
+            sheet.columns = columns;
+            const colCount = columns.length;
+
+            // Header Row Styling (Teal/blue fill FF0ea5e9, bold white font)
+            for (let i = 1; i <= colCount; i++) {
+                const cell = sheet.getRow(1).getCell(i);
+                cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                cell.alignment = { vertical: 'middle', horizontal: 'center' };
             }
+            sheet.getRow(1).height = 25;
+
+            // Group items by purchase ID
+            const groups: Record<string, any[]> = {};
+            const purchaseIdsOrdered: string[] = [];
+
+            data.forEach((item: any) => {
+                const purId = item.purchase_id;
+                if (!groups[purId]) {
+                    groups[purId] = [];
+                    purchaseIdsOrdered.push(purId);
+                }
+                groups[purId].push(item);
+            });
+
+            let currentRow = 2; // header is row 1
+            const groupEndRows: number[] = [];
+
+            // Populate rows dynamically
+            purchaseIdsOrdered.forEach((purId, groupIdx) => {
+                const items = groups[purId];
+                const totalTax = items.reduce((sum, it) => sum + (Number(it.tax_amount) || 0), 0);
+                const startRow = currentRow;
+                const endRow = startRow + items.length - 1;
+                groupEndRows.push(endRow);
+
+                items.forEach((item, itemIdx) => {
+                    const rowDataObj: Record<string, any> = {};
+
+                    // Purchase-level fields (merged columns) are populated on the first row only of the group
+                    if (itemIdx === 0) {
+                        rowDataObj.purchase_id = item.purchase_id || '-';
+                        rowDataObj.vendor_real_name = item.vendor_real_name || '-';
+                        rowDataObj.vendor_name = item.vendor_name || '-';
+                        rowDataObj.bill_no = item.bill_no || '-';
+                        rowDataObj.bill_date = item.bill_date ? dayjs(item.bill_date).format('YYYY-MM-DD') : '-';
+                        rowDataObj.owner = item.owner || '-';
+
+                        rowDataObj.grand_total = item.grand_total !== undefined && item.grand_total !== null && !isNaN(Number(item.grand_total)) ? Number(item.grand_total) : '-';
+                        rowDataObj.total_tax = !isNaN(Number(totalTax)) ? Number(totalTax) : totalTax;
+                        rowDataObj.overall_discount = item.overall_discount !== undefined && item.overall_discount !== null && !isNaN(Number(item.overall_discount)) ? Number(item.overall_discount) : '-';
+                        rowDataObj.overall_discount_type = item.overall_discount_type || '-';
+                        rowDataObj.payment_type = item.payment_type || '-';
+                        rowDataObj.attachments = ''; // Will be set as link object below
+                    } else {
+                        rowDataObj.purchase_id = '';
+                        rowDataObj.vendor_real_name = '';
+                        rowDataObj.vendor_name = '';
+                        rowDataObj.bill_no = '';
+                        rowDataObj.bill_date = '';
+                        rowDataObj.owner = '';
+
+                        rowDataObj.grand_total = '';
+                        rowDataObj.total_tax = '';
+                        rowDataObj.overall_discount = '';
+                        rowDataObj.overall_discount_type = '';
+                        rowDataObj.payment_type = '';
+                        rowDataObj.attachments = '';
+                    }
+
+                    // Item-level fields (unmerged columns) populated on every row as numbers if numeric
+                    rowDataObj.service = item.service || '-';
+                    rowDataObj.hsn_code = item.hsn_code !== undefined && item.hsn_code !== null && !isNaN(Number(item.hsn_code)) ? Number(item.hsn_code) : (item.hsn_code || '-');
+                    rowDataObj.description = item.description || '-';
+                    rowDataObj.qty = item.qty !== undefined && item.qty !== null && !isNaN(Number(item.qty)) ? Number(item.qty) : '-';
+                    rowDataObj.price = item.price !== undefined && item.price !== null && !isNaN(Number(item.price)) ? Number(item.price) : '-';
+                    rowDataObj.discount = item.discount !== undefined && item.discount !== null && !isNaN(Number(item.discount)) ? Number(item.discount) : '-';
+                    rowDataObj.tax_type = item.tax_type || '-';
+                    rowDataObj.tax_amount = item.tax_amount !== undefined && item.tax_amount !== null && !isNaN(Number(item.tax_amount)) ? Number(item.tax_amount) : '-';
+                    rowDataObj.total = item.total !== undefined && item.total !== null && !isNaN(Number(item.total)) ? Number(item.total) : '-';
+
+                    const newRow = sheet.addRow(rowDataObj);
+                    (newRow as any).isDataRow = true;
+                    currentRow++;
+                });
+
+                // Apply merging for purchase-level columns:
+                if (items.length > 1) {
+                    const columnsToMerge = [
+                        1,  // purchase_id
+                        2,  // vendor_real_name
+                        3,  // vendor_name
+                        4,  // bill_no
+                        5,  // bill_date
+                        15, // grand_total
+                        16, // total_tax
+                        17, // overall_discount
+                        18, // overall_discount_type
+                        19, // payment_type
+                        20, // owner
+                        21, // attachments
+                    ];
+
+                    columnsToMerge.forEach(colIndex => {
+                        sheet.mergeCells(startRow, colIndex, endRow, colIndex);
+                    });
+                }
+
+                // Add Hyperlink with actual filename to Attachments cell on the first row of the group
+                const attachCell = sheet.getCell(startRow, 21);
+                if (items[0].attachments && items[0].attachments !== '-') {
+                    const attachmentUrl = items[0].attachments;
+                    const parts = attachmentUrl.split('/');
+                    const filename = parts[parts.length - 1] || 'Download';
+                    const token = items[0].attachment_token;
+                    const dlUrl = `${window.location.origin}/api/method/company.company.crm_api.download_purchase_attachment?file_path=${encodeURIComponent(attachmentUrl)}&token=${encodeURIComponent(token)}`;
+
+                    attachCell.value = {
+                        text: filename,
+                        hyperlink: dlUrl
+                    };
+                    attachCell.font = {
+                        color: { argb: 'FF0000FF' },
+                        underline: true
+                    };
+                } else {
+                    attachCell.value = '-';
+                }
+            });
+
+            // Row styling (thin black border, white background, alignments)
+            const totalRows = sheet.rowCount;
+            for (let r = 1; r <= totalRows; r++) {
+                const row = sheet.getRow(r);
+                const isHeader = r === 1;
+                for (let c = 1; c <= colCount; c++) {
+                    const cell = row.getCell(c);
+                    
+                    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+                    
+                    const isGroupEnd = groupEndRows.includes(r);
+                    cell.border = {
+                        top: { style: 'thin', color: { argb: 'FF000000' } },
+                        bottom: { style: isGroupEnd ? 'medium' : 'thin', color: { argb: 'FF000000' } },
+                        left: { style: 'thin', color: { argb: 'FF000000' } },
+                        right: { style: 'thin', color: { argb: 'FF000000' } }
+                    };
+
+                    if (isHeader) {
+                        cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0ea5e9' } };
+                    } else {
+                        // Use a clean, uniform white background for all rows
+                        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFFFFF' } };
+                        
+                        // Retain the download style font if it was set on first-row attachments cell
+                        const isAttachmentHyperlink = (c === 21 && cell.value && typeof cell.value === 'object' && (cell.value as any).hyperlink);
+                        if (!isAttachmentHyperlink) {
+                            // Default font styling
+                            cell.font = { name: 'Arial', size: 10 };
+                        }
+                    }
+                }
+            }
+
+            // Auto-fit column widths
+            sheet.columns?.forEach((column: any) => {
+                if (!column) return;
+                let maxLen = 0;
+                if (column.eachCell) {
+                    column.eachCell({ includeEmpty: true }, (cell: any) => {
+                        let value = '';
+                        if (cell.value) {
+                            if (typeof cell.value === 'object') {
+                                value = cell.value.text ? String(cell.value.text) : '';
+                            } else {
+                                value = String(cell.value);
+                            }
+                        }
+                        if (value.length > maxLen) {
+                            maxLen = value.length;
+                        }
+                    });
+                }
+                
+                let minWidth = 12;
+                if (column.key === 'description') minWidth = 25;
+                if (column.key === 'attachments') minWidth = 15;
+                if (column.key === 'owner') minWidth = 20;
+                column.width = Math.max(maxLen + 4, minWidth);
+            });
+
+            const buffer = await workbook.xlsx.writeBuffer();
+            saveAs(new Blob([buffer]), `Purchase_Report_${dayjs().format('YYYY-MM-DD')}.xlsx`);
+
         } catch (error) {
             console.error(error);
         } finally {
             setLoading(false);
         }
     };
+
 
     const handleViewPurchase = useCallback((id: string) => {
         navigate(`/purchase/${encodeURIComponent(id)}`);
@@ -198,6 +424,7 @@ export function PurchaseReportView() {
         setFromDate(null);
         setToDate(null);
         setVendor(null);
+        setSortBy('modified_desc');
     };
 
     useEffect(() => {
@@ -205,6 +432,28 @@ export function PurchaseReportView() {
             setVendorOptions(contacts);
         });
     }, []);
+
+    const filteredData = [...reportData].sort((a, b) => {
+        if (sortBy === 'creation_desc') {
+            return dayjs(b.creation).diff(dayjs(a.creation));
+        }
+        if (sortBy === 'creation_asc') {
+            return dayjs(a.creation).diff(dayjs(b.creation));
+        }
+        if (sortBy === 'modified_desc') {
+            return dayjs(b.modified).diff(dayjs(a.modified));
+        }
+        if (sortBy === 'modified_asc') {
+            return dayjs(a.modified).diff(dayjs(b.modified));
+        }
+        if (sortBy === 'purchase_date_desc') {
+            return dayjs(b.bill_date).diff(dayjs(a.bill_date));
+        }
+        if (sortBy === 'purchase_date_asc') {
+            return dayjs(a.bill_date).diff(dayjs(b.bill_date));
+        }
+        return 0;
+    });
 
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
@@ -305,11 +554,25 @@ export function PurchaseReportView() {
                             </li>
                         )}
                     />
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                        <Select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                            sx={{ height: 40 }}
+                        >
+                            <MenuItem value="creation_desc">Created ↓ (Latest)</MenuItem>
+                            <MenuItem value="creation_asc">Created ↑ (Oldest)</MenuItem>
+                            <MenuItem value="modified_desc">Modified ↓ (Latest)</MenuItem>
+                            <MenuItem value="modified_asc">Modified ↑ (Oldest)</MenuItem>
+                            <MenuItem value="purchase_date_desc">Purchase Date ↓ (Latest)</MenuItem>
+                            <MenuItem value="purchase_date_asc">Purchase Date ↑ (Oldest)</MenuItem>
+                        </Select>
+                    </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={() => setOpenExportFields(true)}
+                        onClick={handleExport}
                         disabled={reportData.length === 0}
                         sx={{ mr: 1 }}
                     >
@@ -319,7 +582,7 @@ export function PurchaseReportView() {
                         variant="contained"
                         startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
                         onClick={() => handleExportPdf(() => generatePurchasePdf({
-                            reportData,
+                            reportData: filteredData,
                             selected,
                             summary: summaryData.length > 0 ? summaryData : [
                                 { label: 'Total Purchase Bills', value: reportData.length },
@@ -385,7 +648,6 @@ export function PurchaseReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Vendor</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill No</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Bill Date</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Item</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Qty</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Grand Total</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary', position: 'sticky', right: 0, bgcolor: '#f4f6f8', zIndex: 11 }}>Actions</TableCell>
@@ -394,13 +656,13 @@ export function PurchaseReportView() {
                                 <TableBody>
                                     {loading ? (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                            <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                 <CircularProgress sx={{ color: '#08a3cd' }} />
                                             </TableCell>
                                         </TableRow>
                                     ) : (
                                         <>
-                                            {reportData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
+                                            {filteredData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage).map((row, index) => {
                                                 const isSelected = selected.indexOf(row.name) !== -1;
                                                 return (
                                                     <TableRow
@@ -418,12 +680,22 @@ export function PurchaseReportView() {
                                                             <Checkbox checked={isSelected} onClick={(event) => handleClick(event, row.name)} />
                                                         </TableCell>
                                                         <TableCell>{row.name}</TableCell>
-                                                        <TableCell>{row.vendor_name}{row.vendor_real_name ? ` - ${row.vendor_real_name}` : ''}</TableCell>
+                                                        <TableCell align="left" sx={{ maxWidth: 240 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.vendor_real_name || row.vendor_name || '-'}
+                                                                </Typography>
+                                                                {row.vendor_name && (
+                                                                    <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                        {row.vendor_name}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
+                                                        </TableCell>
                                                         <TableCell>{row.bill_no}</TableCell>
                                                         <TableCell>{row.bill_date ? dayjs(row.bill_date).format('DD MMM YYYY') : '-'}</TableCell>
-                                                        <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.service}</TableCell>
                                                         <TableCell>{row.quantity}</TableCell>
-                                                        <TableCell sx={{ fontWeight: 700 }}>₹{row.grand_total?.toLocaleString() || 0}</TableCell>
+                                                        <TableCell sx={{ fontWeight: 700 }}>{renderCurrency(row.grand_total, '16px')}</TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewPurchase(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
@@ -434,7 +706,7 @@ export function PurchaseReportView() {
                                             })}
                                             {reportData.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
+                                                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
                                                         <Stack spacing={1} alignItems="center">
                                                             <Iconify icon={"eva:slash-outline" as any} width={48} sx={{ color: 'text.disabled' }} />
                                                             <Typography variant="body2" sx={{ color: 'text.disabled' }}>No data found</Typography>
@@ -461,12 +733,6 @@ export function PurchaseReportView() {
             </Stack>
 
 
-            <ExportFieldsDialog
-                open={openExportFields}
-                onClose={() => setOpenExportFields(false)}
-                doctype="Purchase"
-                onExport={handleExport}
-            />
         </DashboardContent>
     );
 }
@@ -533,7 +799,7 @@ function SummaryCard({ item }: { item: any }) {
                     </Typography>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
                         {item.datatype === 'Currency' || (typeof item.value === 'number' && item.label.toLowerCase().includes('amount'))
-                            ? `₹${item.value?.toLocaleString()}`
+                            ? renderCurrency(item.value, '24px')
                             : item.value?.toLocaleString()}
                     </Typography>
                 </Box>

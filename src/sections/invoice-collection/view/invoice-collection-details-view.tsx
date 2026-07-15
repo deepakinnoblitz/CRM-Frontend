@@ -24,6 +24,22 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { getInvoice } from 'src/api/invoice';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoiceCollection, deleteInvoiceCollection, fetchInvoiceCollections } from 'src/api/invoice-collection';
@@ -106,7 +122,6 @@ export function InvoiceCollectionDetailsView() {
         invoice,
         customer,
         customer_name,
-        company_name,
         collection_date,
         amount_to_pay,
         amount_collected,
@@ -216,7 +231,7 @@ export function InvoiceCollectionDetailsView() {
                                             <IoMdCash size={14} style={{ color: '#919EAB' }} />
                                             <Typography variant="caption" color="text.disabled">Grand Total</Typography>
                                         </Stack>
-                                        <Typography variant="subtitle1" sx={{ mt: 0.5 }}>{fCurrency(invoiceDetails.grand_total || 0)}</Typography>
+                                        <Typography variant="subtitle1" sx={{ mt: 0.5 }}>{renderCurrency(invoiceDetails.grand_total || 0, '18px')}</Typography>
                                     </>
                                 )}
                                 <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
@@ -224,7 +239,7 @@ export function InvoiceCollectionDetailsView() {
                                     <IoMdCash size={14} style={{ color: '#919EAB' }} />
                                     <Typography variant="caption" color="text.disabled">Amount to Pay</Typography>
                                 </Stack>
-                                <Typography variant="h6" sx={{ mt: 0.5 }}>{fCurrency(amount_to_pay)}</Typography>
+                                <Typography variant="h6" sx={{ mt: 0.5 }}>{renderCurrency(amount_to_pay, '18px')}</Typography>
                             </Box>
                         </Stack>
 
@@ -246,16 +261,6 @@ export function InvoiceCollectionDetailsView() {
                                     <Typography variant="caption" color="text.disabled">Name</Typography>
                                 </Stack>
                                 <Typography variant="body2" sx={{ mt: 0.5 }}>{customer_name || '-'}</Typography>
-                                {company_name && (
-                                    <>
-                                        <Divider sx={{ my: 1.5, borderStyle: 'dashed' }} />
-                                        <Stack direction="row" alignItems="center" spacing={1}>
-                                            <IoMdDocument size={14} style={{ color: '#919EAB' }} />
-                                            <Typography variant="caption" color="text.disabled">Company</Typography>
-                                        </Stack>
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>{company_name}</Typography>
-                                    </>
-                                )}
                             </Box>
                         </Stack>
 
@@ -296,14 +301,14 @@ export function InvoiceCollectionDetailsView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Amount to Pay</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2">{fCurrency(amount_to_pay)}</Typography>
+                                <Typography variant="subtitle2">{renderCurrency(amount_to_pay)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                     <IoMdCash size={20} style={{ color: '#02c281' }} />
                                     <Typography variant="body2" color="text.secondary">Amount Collected</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">{fCurrency(amount_collected)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">{renderCurrency(amount_collected)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -315,7 +320,7 @@ export function InvoiceCollectionDetailsView() {
                                     )}
                                     <Typography variant="subtitle1" sx={{ color: (amount_pending || 0) > 0 ? 'error.main' : 'success.main' }}>Amount Pending</Typography>
                                 </Stack>
-                                <Typography variant="h5" color={(amount_pending || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(amount_pending)}</Typography>
+                                <Typography variant="h5" color={(amount_pending || 0) > 0 ? "error.main" : "success.main"}>{renderCurrency(amount_pending, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>

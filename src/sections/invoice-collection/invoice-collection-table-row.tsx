@@ -10,6 +10,22 @@ import IconButton from '@mui/material/IconButton';
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -95,11 +111,11 @@ export function InvoiceCollectionTableRow({
 
             <TableCell align="left" sx={{ fontWeight: 500 }}>{row.mode_of_payment}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.amount_to_pay)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.amount_to_pay, '16px')}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{fCurrency(row.amount_collected)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'success.main' }}>{renderCurrency(row.amount_collected, '16px')}</TableCell>
 
-            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{fCurrency(row.amount_pending || 0)}</TableCell>
+            <TableCell align="right" sx={{ fontWeight: 700, color: 'error.main' }}>{renderCurrency(row.amount_pending || 0, '16px')}</TableCell>
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>

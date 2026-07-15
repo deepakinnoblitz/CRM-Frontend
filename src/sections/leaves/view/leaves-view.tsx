@@ -87,12 +87,14 @@ export function LeavesView() {
         employee: string | null;
         startDate: string | null;
         endDate: string | null;
+        unread_messages: boolean;
     }>({
         status: 'all',
         leave_type: 'all',
         employee: null,
         startDate: null,
         endDate: null,
+        unread_messages: false,
     });
 
     const [openCreate, setOpenCreate] = useState(false);
@@ -111,7 +113,7 @@ export function LeavesView() {
     const [uploading, setUploading] = useState(false);
     const [totalDays, setTotalDays] = useState(0);
     const [balanceInfo, setBalanceInfo] = useState<{ remaining: number, unit: string } | null>(null);
-    const [probationInfo, setProbationInfo] = useState<{ is_probation: boolean, restricted_types: string[] } | null>(null);
+    const [probationInfo, setProbationInfo] = useState<{ is_probation: boolean; restricted_types: string[]; probation_end_date: string | null; } | null>(null);
 
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
     const [leaveTypeOptions, setLeaveTypeOptions] = useState<any[]>([]);
@@ -146,6 +148,7 @@ export function LeavesView() {
             ...(filters.leave_type !== 'all' ? { leave_type: filters.leave_type } : {}),
             ...(filters.startDate ? { start_date: filters.startDate } : {}),
             ...(filters.endDate ? { end_date: filters.endDate } : {}),
+            ...(filters.unread_messages ? { unread_messages: true } : {}),
         },
         orderBy,
         order,
@@ -171,13 +174,13 @@ export function LeavesView() {
     // Fetch probation info when employee changes
     useEffect(() => {
         if (employee) {
-            getEmployeeProbationInfo(employee)
+            getEmployeeProbationInfo(employee, fromDate || undefined)
                 .then(setProbationInfo)
                 .catch(console.error);
         } else {
             setProbationInfo(null);
         }
-    }, [employee]);
+    }, [employee, fromDate]);
 
     // Calculate total days and check balance
     useEffect(() => {
@@ -426,6 +429,7 @@ export function LeavesView() {
             employee: null,
             startDate: null,
             endDate: null,
+            unread_messages: false,
         });
         setFilterName('');
     };
@@ -438,7 +442,7 @@ export function LeavesView() {
         setOpenFilters(false);
     };
 
-    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || !!filterName;
+    const canReset = filters.status !== 'all' || filters.leave_type !== 'all' || filters.employee !== null || filters.startDate !== null || filters.endDate !== null || filters.unread_messages || !!filterName;
 
     const onChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);

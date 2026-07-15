@@ -24,8 +24,23 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { handleDirectPrint } from 'src/utils/print';
 import { fCurrency } from 'src/utils/format-number';
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getPurchase, deletePurchase, getPurchasePrintUrl, getDoctypeList } from 'src/api/purchase';
@@ -42,6 +57,7 @@ export function PurchaseDetailsView() {
 
     const [purchase, setPurchase] = useState<any>(null);
     const [contactDetails, setContactDetails] = useState<any>(null);
+    const [itemNames, setItemNames] = useState<Record<string, string>>({});
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [printing, setPrinting] = useState(false);
@@ -67,6 +83,31 @@ export function PurchaseDetailsView() {
                 .catch(err => console.error('Failed to fetch contact details', err));
         }
     }, [purchase]);
+
+    useEffect(() => {
+        const services = Array.from(new Set((purchase?.table_qecz || [])
+            .map((item: any) => item?.service)
+            .filter(Boolean)));
+
+        if (!services.length) {
+            setItemNames({});
+            return;
+        }
+
+        getDoctypeList('Item', ['name', 'item_name'], { name: ['in', services] })
+            .then((items: any[]) => {
+                const mapped = items.reduce((acc: Record<string, string>, item: any) => {
+                    if (item?.name) {
+                        acc[item.name] = item.item_name || item.name;
+                    }
+                    return acc;
+                }, {});
+                setItemNames(mapped);
+            })
+            .catch((err) => {
+                console.error('Failed to fetch Item names:', err);
+            });
+    }, [purchase?.table_qecz]);
 
     if (fetching) {
         return (
@@ -200,6 +241,23 @@ export function PurchaseDetailsView() {
                             Edit Purchase
                         </Button>
                     )}
+                    {(balance_amount || 0) >= 0 && (
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/purchase-collections/new?purchase=${encodeURIComponent(id || '')}`)}
+                            startIcon={<IoMdCash size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#36b37e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#2b9065' }
+                            }}
+                        >
+                            Create Settlement
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -279,7 +337,7 @@ export function PurchaseDetailsView() {
                                         <IoMdWallet size={18} style={{ color: '#08a3cd' }} />
                                         <Typography variant="caption" color="text.secondary">Grand Total</Typography>
                                     </Stack>
-                                    <Typography variant="subtitle1" color="primary.main">{fCurrency(grand_total)}</Typography>
+                                    <Typography variant="subtitle1" color="primary.main">{renderCurrency(grand_total, '18px')}</Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                                     <Stack direction="row" alignItems="center" spacing={1}>
@@ -290,7 +348,7 @@ export function PurchaseDetailsView() {
                                         )}
                                         <Typography variant="caption" color="text.secondary">Balance Due</Typography>
                                     </Stack>
-                                    <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                                    <Typography variant="h6" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{renderCurrency(balance_amount, '18px')}</Typography>
                                 </Stack>
                             </Stack>
                         </Stack>
@@ -314,7 +372,7 @@ export function PurchaseDetailsView() {
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>HSN</TableCell>
                                         <TableCell sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Description</TableCell>
                                         <TableCell width={60} align="center" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Qty</TableCell>
-                                        <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
+                                        <TableCell width={120} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Price</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Discount</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Type</TableCell>
                                         <TableCell width={100} align="right" sx={{ fontWeight: 'fontWeightBold', py: 2 }}>Tax Amt</TableCell>
@@ -325,7 +383,7 @@ export function PurchaseDetailsView() {
                                     {table_qecz.map((row: any, index: number) => (
                                         <TableRow key={index} sx={{ '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02) } }}>
                                             <TableCell sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2">{row.service}</Typography>
+                                                <Typography variant="subtitle2">{itemNames[row.service] || row.service || '-'}</Typography>
                                             </TableCell>
                                             <TableCell sx={{ py: 2 }}>
                                                 <Typography variant="body2">{row.hsn_code || '-'}</Typography>
@@ -334,20 +392,20 @@ export function PurchaseDetailsView() {
                                                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', maxWidth: 200 }}>{row.description}</Typography>
                                             </TableCell>
                                             <TableCell align="center" sx={{ py: 2 }}>{row.quantity}</TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.price)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.price)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 {row.discount > 0 ? (
                                                     <Typography variant="caption" color="success.main">
-                                                        -{row.discount_type === 'Flat' ? fCurrency(row.discount) : `${row.discount}%`}
+                                                        -{row.discount_type === 'Flat' ? renderCurrency(row.discount) : `${row.discount}%`}
                                                     </Typography>
                                                 ) : '-'}
                                             </TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
                                                 <Typography variant="caption" color="text.secondary">{row.tax_type || '-'}</Typography>
                                             </TableCell>
-                                            <TableCell align="right" sx={{ py: 2 }}>{fCurrency(row.tax_amount)}</TableCell>
+                                            <TableCell align="right" sx={{ py: 2 }}>{renderCurrency(row.tax_amount)}</TableCell>
                                             <TableCell align="right" sx={{ py: 2 }}>
-                                                <Typography variant="subtitle2" color="primary">{fCurrency(row.sub_total)}</Typography>
+                                                <Typography variant="subtitle2" color="primary">{renderCurrency(row.sub_total)}</Typography>
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -429,21 +487,21 @@ export function PurchaseDetailsView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2">{fCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
+                                <Typography variant="subtitle2">{renderCurrency(table_qecz.reduce((sum: number, row: any) => sum + (row.sub_total - row.tax_amount), 0))}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="error.main">+{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" color="error.main">+{renderCurrency(totalTax)}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" alignItems="center" spacing={1}>
                                     <IoMdPricetags size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Discount ({overall_discount_type === 'Flat' ? 'Flat' : `${overall_discount}%`})</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">-{fCurrency(discountAmount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">-{renderCurrency(discountAmount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -451,14 +509,14 @@ export function PurchaseDetailsView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: 'primary.main' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h6">{fCurrency(grand_total)}</Typography>
+                                <Typography variant="h6">{renderCurrency(grand_total, '20px')}</Typography>
                             </Stack>
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
                                 <Stack direction="row" spacing={1.5} alignItems="center">
                                     <IoMdCash size={20} style={{ color: '#02c281' }} />
                                     <Typography variant="body2" color="text.secondary">Paid Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" color="success.main">{fCurrency(paid_amount)}</Typography>
+                                <Typography variant="subtitle2" color="success.main">{renderCurrency(paid_amount)}</Typography>
                             </Stack>
                             <Divider sx={{ borderStyle: 'dashed' }} />
                             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -470,7 +528,7 @@ export function PurchaseDetailsView() {
                                     )}
                                     <Typography variant="subtitle1" sx={{ color: (balance_amount || 0) > 0 ? 'error.main' : 'success.main' }}>Balance Due</Typography>
                                 </Stack>
-                                <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{fCurrency(balance_amount)}</Typography>
+                                <Typography variant="h5" color={(balance_amount || 0) > 0 ? "error.main" : "success.main"}>{renderCurrency(balance_amount, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>

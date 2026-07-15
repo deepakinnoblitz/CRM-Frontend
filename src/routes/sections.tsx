@@ -1,11 +1,9 @@
 import type { RouteObject } from 'react-router';
 
 import { lazy, Suspense } from 'react';
-import { varAlpha } from 'minimal-shared/utils';
 import { Outlet, Navigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
-import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
 
 import { useSocket } from 'src/hooks/use-socket';
 import { UnreadCountsProvider } from 'src/hooks/unread-counts-context';
@@ -38,6 +36,7 @@ export const DashboardPage = lazy(() => import('src/pages/dashboard'));
 
 export const BlogPage = lazy(() => import('src/pages/blog'));
 export const LeadsPage = lazy(() => import('src/pages/leads'));
+export const LeadDetailsPage = lazy(() => import('src/pages/leads/details'));
 export const UsersPage = lazy(() => import('src/pages/users'));
 export const ContactPage = lazy(() => import('src/pages/contact'));
 export const AccountsPage = lazy(() => import('src/pages/accounts'));
@@ -61,6 +60,62 @@ export const ProposalListPage = lazy(() => import('src/pages/proposals/list'));
 export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
 export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
 export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
+
+export const EmailTemplateListPage = lazy(() => import('src/pages/email-templates/list'));
+export const EmailTemplateCreatePage = lazy(() => import('src/pages/email-templates/new'));
+export const EmailTemplateEditPage = lazy(() => import('src/pages/email-templates/edit'));
+export const EmailTemplateDetailsPage = lazy(() => import('src/pages/email-templates/details'));
+
+export const WhatsAppTemplateListPage = lazy(() => import('src/pages/whatsapp-templates/list'));
+export const WhatsAppTemplateCreatePage = lazy(() => import('src/pages/whatsapp-templates/new'));
+export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-templates/edit'));
+export const WhatsAppTemplateDetailsPage = lazy(() => import('src/pages/whatsapp-templates/details'));
+
+export const MetaAppsListPage = lazy(() => import('src/pages/lead-integration/meta-apps/list'));
+export const MetaAppsCreatePage = lazy(() => import('src/pages/lead-integration/meta-apps/new'));
+export const MetaAppsEditPage = lazy(() => import('src/pages/lead-integration/meta-apps/edit'));
+export const MetaAppsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-apps/details'));
+
+export const MetaPagesListPage = lazy(() => import('src/pages/lead-integration/meta-pages/list'));
+export const MetaPagesCreatePage = lazy(() => import('src/pages/lead-integration/meta-pages/new'));
+export const MetaPagesEditPage = lazy(() => import('src/pages/lead-integration/meta-pages/edit'));
+export const MetaPagesDetailsPage = lazy(() => import('src/pages/lead-integration/meta-pages/details'));
+
+export const MetaFormsListPage = lazy(() => import('src/pages/lead-integration/meta-forms/list'));
+export const MetaFormsCreatePage = lazy(() => import('src/pages/lead-integration/meta-forms/new'));
+export const MetaFormsEditPage = lazy(() => import('src/pages/lead-integration/meta-forms/edit'));
+export const MetaFormsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-forms/details'));
+
+export const MetaWebhookLogsPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/list'));
+export const MetaWebhookLogViewPage = lazy(() => import('src/pages/lead-integration/meta-webhook-logs/view'));
+export const MetaQueuePage = lazy(() => import('src/pages/lead-integration/meta-queue/list'));
+export const MetaQueueViewPage = lazy(() => import('src/pages/lead-integration/meta-queue/view'));
+export const MetaLeadsPage = lazy(() => import('src/pages/lead-integration/meta-lead/list'));
+export const MetaLeadsViewPage = lazy(() => import('src/pages/lead-integration/meta-lead/view'));
+
+export const EmailCampaignListPage = lazy(() => import('src/pages/email-campaigns/list'));
+export const EmailCampaignCreatePage = lazy(() => import('src/pages/email-campaigns/new'));
+export const EmailCampaignEditPage = lazy(() => import('src/pages/email-campaigns/edit'));
+export const EmailCampaignDetailsPage = lazy(() => import('src/pages/email-campaigns/details'));
+
+export const WhatsAppCampaignListPage = lazy(() => import('src/pages/whatsapp-campaigns/list'));
+export const WhatsAppCampaignCreatePage = lazy(() => import('src/pages/whatsapp-campaigns/new'));
+export const WhatsAppCampaignEditPage = lazy(() => import('src/pages/whatsapp-campaigns/edit'));
+export const WhatsAppCampaignDetailsPage = lazy(() => import('src/pages/whatsapp-campaigns/details'));
+
+export const EmailAutomationListPage = lazy(() => import('src/pages/email-automations/list'));
+export const EmailAutomationCreatePage = lazy(() => import('src/pages/email-automations/new'));
+export const EmailAutomationEditPage = lazy(() => import('src/pages/email-automations/edit'));
+export const EmailAutomationDetailsPage = lazy(() => import('src/pages/email-automations/details'));
+
+export const WhatsAppAutomationListPage = lazy(() => import('src/pages/whatsapp-automations/list'));
+export const WhatsAppAutomationCreatePage = lazy(() => import('src/pages/whatsapp-automations/new'));
+export const WhatsAppAutomationEditPage = lazy(() => import('src/pages/whatsapp-automations/edit'));
+export const WhatsAppAutomationDetailsPage = lazy(() => import('src/pages/whatsapp-automations/details'));
+
+
+export const EmailSettingsPage = lazy(() => import('src/pages/email-settings'));
+export const WhatsAppSettingsPage = lazy(() => import('src/pages/whatsapp-settings'));
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
@@ -76,9 +131,12 @@ export const InvoiceCollectionReportPage = lazy(() => import('src/pages/reports/
 export const PurchaseCollectionReportPage = lazy(() => import('src/pages/reports/purchase-settlement-report'));
 export const TimesheetReportPage = lazy(() => import('src/pages/reports/timesheet'));
 export const AttendanceReportPage = lazy(() => import('src/pages/reports/attendance'));
+export const LeaveAllocationReportPage = lazy(() => import('src/pages/reports/leave-allocation'));
 export const DailyLogReportPage = lazy(() => import('src/pages/reports/daily-log'));
 export const TaskReportPage = lazy(() => import('src/pages/reports/task-manager'));
 export const SalarySlipReportPage = lazy(() => import('src/pages/reports/salary-slip'));
+export const ProposalReportPage = lazy(() => import('src/pages/reports/proposal'));
+export const ProspectsReportPage = lazy(() => import('src/pages/reports/prospects'));
 export const EmployeePage = lazy(() => import('src/pages/employee'));
 export const EmployeeDetailsPage = lazy(() => import('src/pages/employee/details'));
 export const AttendancePage = lazy(() => import('src/pages/attendance'));
@@ -143,10 +201,14 @@ export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const EmailTemplateCategoryPage = lazy(() => import('../pages/email-template-category'));
+export const WhatsAppTemplateCategoryPage = lazy(() => import('../pages/whatsapp-template-category'));
 export const ServicePage = lazy(() => import('src/pages/service'));
 export const ItemPage = lazy(() => import('src/pages/item'));
 export const PaymentTermsPage = lazy(() => import('../pages/payment-terms'));
 export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
+export const TaxTypesPage = lazy(() => import('src/pages/tax-types'));
+export const CompanyBankAccountPage = lazy(() => import('src/pages/company-bank-account'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
 
 
@@ -174,7 +236,13 @@ export const routesSection: RouteObject[] = [
     ),
     children: [
       { index: true, element: <DashboardPage /> },
-      { path: 'leads', element: <LeadsPage /> },
+      {
+        path: 'leads',
+        children: [
+          { index: true, element: <LeadsPage /> },
+          { path: ':id/view', element: <LeadDetailsPage /> },
+        ],
+      },
       { path: 'users', element: <UsersPage /> },
       { path: 'user-permissions', element: <UserPermissionsPage /> },
       { path: 'user-profile', element: <ProfilePage /> },
@@ -223,6 +291,115 @@ export const routesSection: RouteObject[] = [
           { path: ':id/view', element: <ProposalDetailsPage /> },
         ],
       },
+      {
+        path: 'email-templates',
+        children: [
+          { index: true, element: <EmailTemplateListPage /> },
+          { path: 'new', element: <EmailTemplateCreatePage /> },
+          { path: ':id/edit', element: <EmailTemplateEditPage /> },
+          { path: ':id/view', element: <EmailTemplateDetailsPage /> },
+        ],
+      },
+      {
+        path: 'email-campaigns',
+        children: [
+          { index: true, element: <EmailCampaignListPage /> },
+          { path: 'new', element: <EmailCampaignCreatePage /> },
+          { path: ':id/edit', element: <EmailCampaignEditPage /> },
+          { path: ':id/view', element: <EmailCampaignDetailsPage /> },
+        ],
+      },
+      {
+        path: 'whatsapp-campaigns',
+        children: [
+          { index: true, element: <WhatsAppCampaignListPage /> },
+          { path: 'new', element: <WhatsAppCampaignCreatePage /> },
+          { path: ':id/edit', element: <WhatsAppCampaignEditPage /> },
+          { path: ':id/view', element: <WhatsAppCampaignDetailsPage /> },
+        ],
+      },
+      {
+        path: 'email-automations',
+        children: [
+          { index: true, element: <EmailAutomationListPage /> },
+          { path: 'new', element: <EmailAutomationCreatePage /> },
+          { path: ':id/edit', element: <EmailAutomationEditPage /> },
+          { path: ':id/view', element: <EmailAutomationDetailsPage /> },
+        ],
+      },
+      { path: 'email-settings', element: <EmailSettingsPage /> },
+      {
+        path: 'whatsapp-templates',
+        children: [
+          { index: true, element: <WhatsAppTemplateListPage /> },
+          { path: 'new', element: <WhatsAppTemplateCreatePage /> },
+          { path: ':id/edit', element: <WhatsAppTemplateEditPage /> },
+          { path: ':id/view', element: <WhatsAppTemplateDetailsPage /> },
+        ],
+      },
+      {
+        path: 'whatsapp-automation',
+        children: [
+          { index: true, element: <WhatsAppAutomationListPage /> },
+          { path: 'new', element: <WhatsAppAutomationCreatePage /> },
+          { path: ':id/edit', element: <WhatsAppAutomationEditPage /> },
+          { path: ':id/view', element: <WhatsAppAutomationDetailsPage /> },
+        ],
+      },
+      { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
+      {
+        path: 'lead-integration',
+        children: [
+          {
+            path: 'meta-apps',
+            children: [
+              { index: true, element: <MetaAppsListPage /> },
+              { path: 'new', element: <MetaAppsCreatePage /> },
+              { path: ':id/edit', element: <MetaAppsEditPage /> },
+              { path: ':id/view', element: <MetaAppsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'meta-pages',
+            children: [
+              { index: true, element: <MetaPagesListPage /> },
+              { path: 'new', element: <MetaPagesCreatePage /> },
+              { path: ':id/edit', element: <MetaPagesEditPage /> },
+              { path: ':id/view', element: <MetaPagesDetailsPage /> },
+            ],
+          },
+          {
+            path: 'meta-forms',
+            children: [
+              { index: true, element: <MetaFormsListPage /> },
+              { path: 'new', element: <MetaFormsCreatePage /> },
+              { path: ':id/edit', element: <MetaFormsEditPage /> },
+              { path: ':id/view', element: <MetaFormsDetailsPage /> },
+            ],
+          },
+          {
+            path: 'webhook-logs',
+            children: [
+              { index: true, element: <MetaWebhookLogsPage /> },
+              { path: ':id/view', element: <MetaWebhookLogViewPage /> },
+            ],
+          },
+          {
+            path: 'meta-queue',
+            children: [
+              { index: true, element: <MetaQueuePage /> },
+              { path: ':id/view', element: <MetaQueueViewPage /> },
+            ],
+          },
+          {
+            path: 'meta-leads',
+            children: [
+              { index: true, element: <MetaLeadsPage /> },
+              { path: ':id/view', element: <MetaLeadsViewPage /> },
+            ],
+          },
+        ],
+      },
       { path: 'blog', element: <BlogPage /> },
 
       {
@@ -239,7 +416,7 @@ export const routesSection: RouteObject[] = [
       { path: 'requests', element: <RequestsPage /> },
       { path: 'announcements', element: <AnnouncementsPage /> },
       {
-        path: 'assets',
+        path: 'asset',
         children: [
           { index: true, element: <AssetsPage /> },
           { path: 'list', element: <AssetsPage /> },
@@ -262,10 +439,14 @@ export const routesSection: RouteObject[] = [
       { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
       { path: 'leave-type', element: <LeaveTypePage /> },
       { path: 'master/lead-from', element: <LeadFromPage /> },
+      { path: 'master/email-template-category', element: <EmailTemplateCategoryPage /> },
+      { path: 'master/whatsapp-template-category', element: <WhatsAppTemplateCategoryPage /> },
       { path: 'master/service', element: <ServicePage /> },
       { path: 'master/item', element: <ItemPage /> },
       { path: 'master/payment-terms', element: <PaymentTermsPage /> },
       { path: 'master/payment-type', element: <PaymentTypePage /> },
+      { path: 'master/tax-types', element: <TaxTypesPage /> },
+      { path: 'master/company-bank-account', element: <CompanyBankAccountPage /> },
       { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
       { path: 'timesheet-reports', element: <TimesheetReportPage /> },
       {
@@ -333,9 +514,12 @@ export const routesSection: RouteObject[] = [
           { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
           { path: 'timesheet', element: <TimesheetReportPage /> },
           { path: 'attendance', element: <AttendanceReportPage /> },
+          { path: 'leave-allocation', element: <LeaveAllocationReportPage /> },
           { path: 'daily-log', element: <DailyLogReportPage /> },
           { path: 'task-manager', element: <TaskReportPage /> },
           { path: 'salary-slip', element: <SalarySlipReportPage /> },
+          { path: 'proposal', element: <ProposalReportPage /> },
+          { path: 'prospects', element: <ProspectsReportPage /> },
         ],
       },
       { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },

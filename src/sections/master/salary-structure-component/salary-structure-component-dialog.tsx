@@ -6,6 +6,7 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -171,6 +172,7 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                                 if (error === 'name') setError('');
                             }}
                             error={error === 'name'}
+                            helperText={error === 'name' ? 'Component name is required' : ''}
                             disabled={loading}
                             autoFocus
                             InputLabelProps={{ shrink: true }}
@@ -188,14 +190,13 @@ export function SalaryStructureComponentDialog({ open, onClose, onSuccess, id }:
                                 // clear percentage when switching to Deduction
                                 if (e.target.value === 'Deduction') setPercentage('');
                             }}
-                            SelectProps={{ native: true }}
                             disabled={loading}
                             InputLabelProps={{ shrink: true }}
                         >
                             {TYPE_OPTIONS.map((opt) => (
-                                <option key={opt} value={opt}>
+                                <MenuItem key={opt} value={opt}>
                                     {opt}
-                                </option>
+                                </MenuItem>
                             ))}
                         </TextField>
 

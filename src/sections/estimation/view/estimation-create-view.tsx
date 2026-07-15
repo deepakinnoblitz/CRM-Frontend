@@ -35,6 +35,22 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 import { getDeal } from 'src/api/deals';
 import { createItem } from 'src/api/invoice';
 import { getContact } from 'src/api/contacts';
@@ -76,6 +92,7 @@ export function EstimationCreateView() {
     const [itemOptions, setItemOptions] = useState<any[]>([]);
     const [taxOptions, setTaxOptions] = useState<any[]>([]);
     const [dealOptions, setDealOptions] = useState<any[]>([]);
+    const [bankAccountOptions, setBankAccountOptions] = useState<any[]>([]);
 
     const [clientName, setClientName] = useState('');
     const [customerName, setCustomerName] = useState('');
@@ -86,6 +103,7 @@ export function EstimationCreateView() {
     const [billingAddress, setBillingAddress] = useState('');
     const [description, setDescription] = useState('');
     const [remarks, setRemarks] = useState('');
+    const [bankAccount, setBankAccount] = useState('');
     const [attachments, setAttachments] = useState<any[]>([]);
     const [uploading, setUploading] = useState(false);
 
@@ -116,7 +134,7 @@ export function EstimationCreateView() {
 
     const [itemDialogOpen, setItemDialogOpen] = useState(false);
     const [contactDialogOpen, setContactDialogOpen] = useState(false);
-    const [newItem, setNewItem] = useState({ item_name: '', item_code: '', rate: 0 });
+    const [newItem, setNewItem] = useState<{ item_name: string; item_code: string; rate: number | '' }>({ item_name: '', item_code: '', rate: 0 });
     const [activeRowIndex, setActiveRowIndex] = useState<number | null>(null);
     const [creatingItem, setCreatingItem] = useState(false);
 
@@ -176,6 +194,10 @@ export function EstimationCreateView() {
         getDoctypeList('Deal', ['name', 'deal_title'])
             .then(setDealOptions)
             .catch((error) => console.error('Failed to load Deal data:', error));
+
+         getDoctypeList('Company Bank Account', ['name', 'account_holder_name', 'account_no'])
+            .then(setBankAccountOptions)
+            .catch((error) => console.error('Failed to load Bank Account data:', error));
     }, []);
 
     const handleCustomerChange = async (name: string) => {
@@ -308,7 +330,11 @@ export function EstimationCreateView() {
 
         try {
             setCreatingItem(true);
-            const createdItem = await createItem(newItem);
+            const payload = {
+                ...newItem,
+                rate: newItem.rate === '' ? 0 : Number(newItem.rate)
+            };
+            const createdItem = await createItem(payload);
 
             // Add to item options with proper field mapping
             const formattedItem = {
@@ -420,6 +446,7 @@ export function EstimationCreateView() {
                 billing_address: billingAddress,
                 description,
                 terms_and_conditions: remarks,
+                bank_account: bankAccount,
                 attachments: attachmentUrl,
                 overall_discount_type: discountType,
                 overall_discount: discountValue,
@@ -445,7 +472,7 @@ export function EstimationCreateView() {
 
             await createEstimation(estimationData);
             enqueueSnackbar('Estimation created successfully', { variant: 'success' });
-            setTimeout(() => router.push('/estimations'), 1500);
+            setTimeout(() => router.push('/deals?tab=estimations'), 600);
         } catch (err: any) {
             console.error(err);
             enqueueSnackbar(err.message || 'Failed to create estimation', { variant: 'error' });
@@ -455,7 +482,7 @@ export function EstimationCreateView() {
     };
 
     const handleCancel = () => {
-        router.push('/estimations');
+        router.push('/deals?tab=deals');
     };
 
     return (
@@ -871,7 +898,7 @@ export function EstimationCreateView() {
                                                                 }
                                                             }}
                                                         >
-                                                            <ToggleButton value="Flat">₹</ToggleButton>
+                                                            <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                                             <ToggleButton value="Percentage">%</ToggleButton>
                                                         </ToggleButtonGroup>
                                                         <TextField
@@ -982,10 +1009,10 @@ export function EstimationCreateView() {
                                             </TableCell>
                                         ))}
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{fCurrency(row.tax_amount)}</Typography>
+                                            <Typography variant="body2" sx={{ fontWeight: 'fontWeightMedium' }}>{renderCurrency(row.tax_amount)}</Typography>
                                         </TableCell>
                                         <TableCell align="right" sx={{ px: 1, py: 1, borderRight: (theme) => `1px solid ${theme.palette.divider}` }}>
-                                            <Typography variant="subtitle2" color="primary.main">{fCurrency(row.sub_total)}</Typography>
+                                            <Typography variant="subtitle2" color="primary.main">{renderCurrency(row.sub_total)}</Typography>
                                         </TableCell>
                                         <TableCell sx={{ px: 1, py: 1 }}>
                                             <IconButton color="error" onClick={() => handleRemoveRow(index)} size="small" sx={{ opacity: 0.6, '&:hover': { opacity: 1 } }}>
@@ -1023,7 +1050,7 @@ export function EstimationCreateView() {
                                     <IoMdListBox size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Taxable Amount</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(itemsTotalTaxable)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(itemsTotalTaxable)}</Typography>
                             </Stack>
 
                             <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -1031,7 +1058,7 @@ export function EstimationCreateView() {
                                     <IoMdCalculator size={18} style={{ color: '#7e7e7e' }} />
                                     <Typography variant="body2" color="text.secondary">Total Tax</Typography>
                                 </Stack>
-                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(totalTax)}</Typography>
+                                <Typography variant="subtitle2" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(totalTax)}</Typography>
                             </Stack>
 
                             <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
@@ -1062,7 +1089,7 @@ export function EstimationCreateView() {
                                         }
                                     }}
                                 >
-                                    <ToggleButton value="Flat">₹</ToggleButton>
+                                    <ToggleButton value="Flat"><span style={{ fontFamily: 'Arial' }}>₹</span></ToggleButton>
                                     <ToggleButton value="Percentage">%</ToggleButton>
                                 </ToggleButtonGroup>
                                 <TextField
@@ -1097,7 +1124,7 @@ export function EstimationCreateView() {
                                     <IoMdWallet size={24} style={{ color: '#08a3cd' }} />
                                     <Typography variant="subtitle1" sx={{ color: '#08a3cd' }}>Grand Total</Typography>
                                 </Stack>
-                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{fCurrency(grandTotal)}</Typography>
+                                <Typography variant="h6" color="primary" sx={{ width: 120, textAlign: 'right' }}>{renderCurrency(grandTotal, '20px')}</Typography>
                             </Stack>
                         </Stack>
                     </Box>
@@ -1112,6 +1139,32 @@ export function EstimationCreateView() {
                         }}
                     >
                         <Stack spacing={3}>
+                            <Autocomplete
+                                fullWidth
+                                options={bankAccountOptions}
+                                getOptionLabel={(option) => (option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name || '')}
+                                value={bankAccountOptions.find((opt) => opt.name === bankAccount) || null}
+                                onChange={(_e, newValue) => setBankAccount(newValue?.name || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Bank Account"
+                                    />
+                                )}
+                                renderOption={(props, option) => (
+                                    <li {...props} key={option.name}>
+                                        <Stack spacing={0.5} sx={{ py: 0.5 }}>
+                                            <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 600 }}>
+                                                {option.account_no ? `${option.account_holder_name} - ${option.account_no}` : option.account_holder_name || option.name}
+                                            </Typography>
+                                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                ID: {option.name}
+                                            </Typography>
+                                        </Stack>
+                                    </li>
+                                )}
+                            />
+
                             <TextField
                                 fullWidth
                                 label="Description"
@@ -1259,7 +1312,10 @@ export function EstimationCreateView() {
                             label="Rate"
                             type="number"
                             value={newItem.rate}
-                            onChange={(e) => setNewItem((prev) => ({ ...prev, rate: Number(e.target.value) }))}
+                             onChange={(e) => {
+                                 const val = e.target.value;
+                                 setNewItem((prev) => ({ ...prev, rate: val === '' ? '' : Number(val) }));
+                             }}
                         />
                     </Stack>
                 </DialogContent>

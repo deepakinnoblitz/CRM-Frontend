@@ -1,34 +1,20 @@
-import { FiList } from "react-icons/fi";
-import { FaTasks } from "react-icons/fa";
 import { CgNotes } from "react-icons/cg";
 import { TbReport } from "react-icons/tb";
-import { FiUserPlus } from "react-icons/fi";
 import { GoTasklist } from "react-icons/go";
-import { RiAppsLine } from "react-icons/ri";
 import { RxCalendar } from "react-icons/rx";
-import { FaUsersCog } from "react-icons/fa";
-import { MdContacts } from "react-icons/md";
 import { PiMoneyWavy } from "react-icons/pi";
-import { FaHandshake } from "react-icons/fa";
-import { LuUsersRound } from "react-icons/lu";
-import { RiUserAddLine } from "react-icons/ri";
 import { BiPurchaseTag } from "react-icons/bi";
-import { BsFillBellFill } from "react-icons/bs";
 import { IoHomeOutline } from "react-icons/io5";
-import { TbReportSearch } from "react-icons/tb";
 import { IoMdFolderOpen } from "react-icons/io";
-import { RiSettings3Line } from "react-icons/ri";
-import { FaBuildingUser } from "react-icons/fa6";
-import { MdSpaceDashboard } from "react-icons/md";
-import { BsCalendar4Range } from "react-icons/bs";
-import { LuCalendarCheck2 } from "react-icons/lu";
-import { TbReportAnalytics } from "react-icons/tb";
-import { LuFileSpreadsheet } from "react-icons/lu";
-import { LuUserRoundSearch } from "react-icons/lu";
+import { FiList , FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
-import { RiCalendarScheduleLine } from "react-icons/ri";
-import { MdOutlineLaptopWindows } from "react-icons/md";
+import { FaMeta, FaBuildingUser, FaLink } from "react-icons/fa6";
+import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
+import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
+import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
+import { RiAppsLine ,  RiUserAddLine , RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
+import { LuUsersRound , LuCalendarCheck2 , LuFileSpreadsheet , LuUserRoundSearch } from "react-icons/lu";
 
 import { Iconify } from 'src/components/iconify';
 
@@ -43,7 +29,14 @@ export type NavItem = {
   children?: {
     title: string;
     path: string;
+    icon?: React.ReactNode;
     info?: React.ReactNode;
+    children?: {
+      title: string;
+      path: string;
+      icon?: React.ReactNode;
+      info?: React.ReactNode;
+    }[];
   }[];
 };
 
@@ -76,8 +69,7 @@ export const hrNavData = [
     children: [
       { title: 'Attendance List', path: '/attendance' },
       { title: 'Daily Log', path: '/daily-log' },
-      { title: 'WFH Attendance', path: '/wfh-attendance' },
-      { title: 'Import Attendance', path: '/import-attendance' },
+      { title: 'WFH Attendance', path: '/wfh-attendance' }
     ],
   },
   {
@@ -121,12 +113,12 @@ export const hrNavData = [
   },
   {
     title: 'Asset Records',
-    path: '/assets',
+    path: '/asset',
     icon: <MdOutlineLaptopWindows size={18} />,
     children: [
-      { title: 'Asset List', path: '/assets/list' },
-      { title: 'Asset Assignments', path: '/assets/assignments' },
-      { title: 'Asset Requests', path: '/assets/requests' },
+      { title: 'Asset List', path: '/asset/list' },
+      { title: 'Asset Assignments', path: '/asset/assignments' },
+      { title: 'Asset Requests', path: '/asset/requests' },
     ],
   },
   {
@@ -168,6 +160,7 @@ export const hrNavData = [
       { title: 'Daily Log Report', path: '/reports/daily-log' },
       { title: 'Task Report', path: '/reports/task-manager' },
       { title: 'Timesheet Report', path: '/timesheet-reports' },
+      { title: 'Leave Allocation Report', path: '/reports/leave-allocation' },
       { title: 'Employee Overall Report', path: '/employee-overall-report' },
       { title: 'Salary Slip Report', path: '/reports/salary-slip' },
     ],
@@ -232,7 +225,7 @@ export const employeeNavData = [
   {
     title: 'My Request List',
     path: '/requests',
-    icon: <FiList   size={18} />,
+    icon: <FiList size={18} />,
   },
   {
     title: 'My Timesheet',
@@ -256,11 +249,11 @@ export const employeeNavData = [
   },
   {
     title: 'My Assets',
-    path: '/assets',
+    path: '/asset',
     icon: <MdOutlineLaptopWindows size={18} />,
     children: [
-      { title: 'My Asset List', path: '/assets/assignments' },
-      { title: 'My Asset Requests', path: '/assets/requests' },
+      { title: 'My Asset List', path: '/asset/assignments' },
+      { title: 'My Asset Requests', path: '/asset/requests' },
     ],
   },
   {
@@ -345,6 +338,11 @@ export const crmNavData = [
     icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
   },
   {
+    title: 'Proposal',
+    path: '/proposals',
+    icon: <RiMailSendLine size={22} />,
+  },
+  {
     title: 'Deals',
     path: '/deals',
     icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
@@ -378,7 +376,9 @@ export const crmNavData = [
       { title: 'Clients Report', path: '/reports/contact' },
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' }
+      { title: 'Meeting Report', path: '/reports/meeting' },
+      { title: 'Proposal Report', path: '/reports/proposal' },
+      { title: 'Prospects Report', path: '/reports/prospects' }
     ]
   },
   {
@@ -408,7 +408,12 @@ export const crmAndSalesNavData = [
   {
     title: 'Company',
     path: '/accounts',
-    icon: <FaBuildingUser size={20}/>,
+    icon: <FaBuildingUser size={20} />,
+  },
+  {
+    title: 'Proposal',
+    path: '/proposals',
+    icon: <RiMailSendLine size={22} />,
   },
   {
     title: 'Prospects',
@@ -429,9 +434,51 @@ export const crmAndSalesNavData = [
     title: 'Calendar',
     path: '/events',
     icon: <BsCalendar4Range size={18} />
-,
+    ,
   },
-    {
+  {
+    title: 'Mail Automation',
+    path: '/email-templates',
+    icon: <RiMailSendLine size={22} />,
+    children: [
+      { title: 'Email Templates', path: '/email-templates' },
+      { title: 'Email Campaigns', path: '/email-campaigns' },
+      { title: 'Email Automations', path: '/email-automations' },
+      { title: 'Email Settings', path: '/email-settings' },
+    ],
+  },
+  {
+    title: 'WhatsApp Automation',
+    path: '/whatsapp-templates',
+    icon: <FaWhatsapp size={22} />,
+    children: [
+      { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
+      { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
+      { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
+      { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
+    ],
+  },
+  {
+    title: 'Lead Integration',
+    path: '/lead-integration/meta-apps',
+    icon: <FaLink size={22} />,
+    children: [
+      { 
+        title: 'Meta Integration', 
+        path: '/lead-integration/meta-apps',
+        icon: <FaMeta size={18} />,
+        children: [
+          { title: 'Meta Apps', path: '/lead-integration/meta-apps' },
+          { title: 'Meta Pages', path: '/lead-integration/meta-pages' },
+          { title: 'Meta Forms', path: '/lead-integration/meta-forms' },
+          { title: 'Meta Leads', path: '/lead-integration/meta-leads' },
+          { title: 'Webhook Logs', path: '/lead-integration/webhook-logs' },
+          { title: 'Meta Queue', path: '/lead-integration/meta-queue' },
+        ]
+      }
+    ],
+  },
+  {
     title: 'Masters',
     path: '/master',
     icon: <IoMdFolderOpen size={22} />,
@@ -441,6 +488,10 @@ export const crmAndSalesNavData = [
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
       { title: 'Payment Type', path: '/master/payment-type' },
+      { title: 'Tax Types', path: '/master/tax-types' },
+      { title: 'Company Bank Account', path: '/master/company-bank-account' },
+      { title: 'Email Template Category', path: '/master/email-template-category' },
+      { title: 'WhatsApp Template Category', path: '/master/whatsapp-template-category' },
     ],
   },
   {
@@ -453,9 +504,11 @@ export const crmAndSalesNavData = [
       { title: 'Company Report', path: '/reports/account' },
       { title: 'Calls Report', path: '/reports/calls' },
       { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Proposal Report', path: '/reports/proposal' },
+      { title: 'Prospects Report', path: '/reports/prospects' },
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
+      { title: 'Purchase Report', path: '/reports/purchase' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
@@ -556,13 +609,6 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
       addItems(employeeNavData);
       addItems(crmAndSalesNavData);
     }
-    addItems([
-      {
-        title: 'User Management',
-        path: '/users',
-        icon: <FaUsersCog size={22} />,
-      }
-    ]);
     return { hasAccess: true, navData: mergedNav };
   }
 

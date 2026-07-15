@@ -22,7 +22,6 @@ import { fCurrency } from 'src/utils/format-number';
 
 import { fetchInvoices } from 'src/api/invoice';
 import { fetchEstimations } from 'src/api/estimation';
-import { fetchRelatedProposals } from 'src/api/proposal';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -33,9 +32,25 @@ import { LeadTableHead as DataTableHead } from '../lead/lead-table-head';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 type Props = {
     dealId: string;
-    type: 'invoices' | 'estimations' | 'proposals' | 'stage_history';
+    type: 'invoices' | 'estimations' | 'stage_history';
     deal?: any;
 };
 
@@ -70,17 +85,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                     page_size: rowsPerPage,
                     filters: { deal_id: dealId },
                 });
-            } else if (type === 'proposals') {
-                const rows = await fetchRelatedProposals(dealId);
-                setData(rows);
-                setTotal(rows.length);
-                const s = rows.reduce((acc: any, curr: any) => {
-                    acc.total += 0;
-                    return acc;
-                }, { total: 0, paid: 0, balance: 0 });
-                setSummary(s);
-                setLoading(false);
-                return;
+
             } else if (type === 'stage_history') {
                 const hist = deal?.stage_history || [];
                 setData(hist);
@@ -144,15 +149,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                 { id: 'action', label: 'Actions', align: 'right' },
             ];
         }
-        if (type === 'proposals') {
-            return [
-                { id: 'reference_no', label: 'Reference No' },
-                { id: 'proposal_title', label: 'Title' },
-                { id: 'proposal_date', label: 'Date' },
-                { id: 'status', label: 'Status' },
-                { id: 'action', label: '' },
-            ];
-        }
+
         return [
             { id: 'ref_no', label: 'Ref No' },
             { id: 'estimate_date', label: 'Date' },
@@ -172,8 +169,6 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
     const handleCreate = () => {
         if (type === 'estimations') {
             router.push(`/estimations/new?deal_id=${dealId}`);
-        } else if (type === 'proposals') {
-            router.push(`/proposals/new?prospect_id=${dealId}`);
         } else {
             router.push(`/invoices/new?deal_id=${dealId}`);
         }
@@ -238,9 +233,9 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                     {renderSNoCell()}
                     <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                     <TableCell>{row.invoice_date ? fDate(row.invoice_date) : '-'}</TableCell>
-                    <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{fCurrency(row.received_amount)}</TableCell>
-                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{fCurrency(row.balance_amount)}</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'success.main', fontWeight: 600 }}>{renderCurrency(row.received_amount)}</TableCell>
+                    <TableCell align="right" sx={{ color: 'error.main', fontWeight: 700 }}>{renderCurrency(row.balance_amount)}</TableCell>
                     <TableCell align="right">
                         <IconButton
                             color="primary"
@@ -258,7 +253,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                 {renderSNoCell()}
                 <TableCell sx={{ fontWeight: 700 }}>{row.ref_no}</TableCell>
                 <TableCell>{row.estimate_date ? fDate(row.estimate_date) : '-'}</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 600 }}>{fCurrency(row.grand_total)}</TableCell>
+                <TableCell align="right" sx={{ fontWeight: 600 }}>{renderCurrency(row.grand_total)}</TableCell>
                 <TableCell align="right">
                     <IconButton
                         color="primary"
@@ -272,52 +267,6 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
         );
     };
 
-    const renderProposalRow = (row: any, index: number) => {
-        const serialNumber = index + 1 + page * rowsPerPage;
-        return (
-            <TableRow key={row.name} hover>
-                <TableCell align="center">
-                    <Box
-                        sx={{
-                            width: 28,
-                            height: 28,
-                            display: 'flex',
-                            borderRadius: '50%',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.08),
-                            color: 'primary.main',
-                            typography: 'subtitle2',
-                            fontWeight: 800,
-                            border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
-                            mx: 'auto',
-                            transition: (themeVar) => themeVar.transitions.create(['all'], { duration: themeVar.transitions.duration.shorter }),
-                            '&:hover': {
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                transform: 'scale(1.1)',
-                            },
-                        }}
-                    >
-                        {serialNumber}
-                    </Box>
-                </TableCell>
-                <TableCell sx={{ fontWeight: 700, color: 'primary.main' }}>{row.reference_no || row.name}</TableCell>
-                <TableCell sx={{ fontWeight: 600 }}>{row.proposal_title}</TableCell>
-                <TableCell>{row.proposal_date ? fDate(row.proposal_date) : '-'}</TableCell>
-                <TableCell>{row.status || 'Draft'}</TableCell>
-                <TableCell align="right">
-                    <IconButton
-                        color="primary"
-                        onClick={() => router.push(`/proposals/${encodeURIComponent(row.name)}/view`)}
-                        size="small"
-                    >
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
-                </TableCell>
-            </TableRow>
-        );
-    };
 
     return (
         <Stack spacing={3}>
@@ -331,14 +280,14 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                             flexGrow: 1,
                             gridTemplateColumns: {
                                 xs: 'repeat(1, 1fr)',
-                                sm: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
-                                md: type === 'estimations' || type === 'proposals' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                sm: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
+                                md: type === 'estimations' ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)',
                             },
                         }}
                     >
                         <SummaryCard
                             title="Total Volume"
-                            value={fCurrency(summary.total)}
+                            value={renderCurrency(summary.total, '20px')}
                             icon="solar:wad-of-money-bold"
                             color={theme.palette.primary.main}
                         />
@@ -350,25 +299,19 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                                 icon="solar:document-text-bold"
                                 color={theme.palette.info.main}
                             />
-                        ) : type === 'proposals' ? (
-                            <SummaryCard
-                                title="Total Proposals"
-                                value={String(total)}
-                                icon="solar:document-text-bold"
-                                color={theme.palette.secondary.main}
-                            />
+
                         ) : (
                             <>
                                 <SummaryCard
                                     title="Total Received"
-                                    value={fCurrency(summary.paid)}
+                                    value={renderCurrency(summary.paid, '20px')}
                                     icon="solar:check-circle-bold"
                                     color={theme.palette.success.main}
                                 />
 
                                 <SummaryCard
                                     title="Outstanding"
-                                    value={fCurrency(summary.balance)}
+                                    value={renderCurrency(summary.balance, '20px')}
                                     icon="solar:info-circle-bold"
                                     color={theme.palette.error.main}
                                 />
@@ -376,16 +319,16 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                         )}
                     </Box>
 
-                    <Button
+                    {/* <Button
                         variant="contained"
-                        color={type === 'estimations' ? "info" : type === 'proposals' ? "secondary" : "success"}
+                        color={type === 'estimations' ? "info" : "success"}
                         size="small"
                         startIcon={<Iconify icon="mingcute:add-line" width={16} />}
                         onClick={handleCreate}
                         sx={{ height: 40, px: 2, ml: 3 }}
                     >
-                        New {type === 'estimations' ? 'Estimation' : type === 'proposals' ? 'Proposal' : 'Invoice'}
-                    </Button>
+                        New {type === 'estimations' ? 'Estimation' : 'Invoice'}
+                    </Button> */}
                 </Stack>
             )}
 
@@ -410,9 +353,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                                     </TableRow>
                                 ) : (
                                     <>
-                                        {type === 'proposals'
-                                            ? data.map((row, index) => renderProposalRow(row, index))
-                                            : data.map((row, index) => renderRow(row, index))}
+                                        {data.map((row, index) => renderRow(row, index))}
                                         {data.length === 0 && (
                                             <TableRow>
                                                 <TableCell colSpan={10}>
@@ -445,7 +386,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
     );
 }
 
-function SummaryCard({ title, value, icon, color }: { title: string; value: string; icon: string; color: string }) {
+function SummaryCard({ title, value, icon, color }: { title: string; value: React.ReactNode; icon: string; color: string }) {
     return (
         <Stack
             direction="row"

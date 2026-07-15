@@ -40,8 +40,9 @@ async function fetchFrappeList(params: {
     const or_filters: any[] = [];
 
     if (params.search) {
-        or_filters.push(['Salary Slip', 'employee_name', 'like', `%${params.search}%`]);
-        or_filters.push(['Salary Slip', 'employee', 'like', `%${params.search}%`]);
+        const cleanSearch = params.search.trim();
+        or_filters.push(['Salary Slip', 'employee_name', 'like', `%${cleanSearch}%`]);
+        or_filters.push(['Salary Slip', 'employee', 'like', `%${cleanSearch}%`]);
     }
 
     if (params.filterValues) {

@@ -40,7 +40,8 @@ export function usePendingAssetRequests(
     limit: number = 10,
     requestType: string = 'all',
     status: string = 'all',
-    sortBy: string = 'creation desc'
+    sortBy: string = 'creation desc',
+    unreadOnly: boolean = false
 ) {
     const [data, setData] = useState<any[]>([]);
     const [total, setTotal] = useState(0);
@@ -49,7 +50,7 @@ export function usePendingAssetRequests(
     const refetch = useCallback(async () => {
         setLoading(true);
         try {
-            const result = await fetchPendingAssetRequests(page, limit, requestType, status, sortBy);
+            const result = await fetchPendingAssetRequests(page, limit, requestType, status, sortBy, { unreadOnly });
             setData(result.data);
             setTotal(result.total);
         } catch (error) {
@@ -57,7 +58,7 @@ export function usePendingAssetRequests(
         } finally {
             setLoading(false);
         }
-    }, [page, limit, requestType, status, sortBy]);
+    }, [page, limit, requestType, status, sortBy, unreadOnly]);
 
     useEffect(() => {
         refetch();

@@ -7,6 +7,8 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
+import { fTimeDist } from 'src/utils/format-time';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
@@ -91,6 +93,10 @@ export type LeadProps = {
   avatarUrl: string;
   isVerified: boolean;
   country?: string;
+  modified?: string;
+  leads_type?: string;
+  leads_from?: string;
+  service?: string;
 };
 
 type LeadTableRowProps = {
@@ -164,7 +170,7 @@ export function LeadTableRow({
         </TableCell>
       )}
 
-      <TableCell component="th" scope="row">
+      <TableCell component="th" scope="row" sx={{ width: 260, minWidth: 240 }}>
         <Box
           sx={{
             gap: 2,
@@ -178,17 +184,9 @@ export function LeadTableRow({
         </Box>
       </TableCell>
 
-      <TableCell>
-        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
-          {row.company}
-        </Typography>
-      </TableCell>
+      <TableCell>{row.service || '-'}</TableCell>
 
-      <TableCell>{row.phone}</TableCell>
-
-      <TableCell>{row.email}</TableCell>
-
-      <TableCell>{row.country || '-'}</TableCell>
+      <TableCell sx={{ width: 180, minWidth: 160 }}>{row.phone}</TableCell>
 
       <TableCell>
         <Label
@@ -203,8 +201,36 @@ export function LeadTableRow({
         </Label>
       </TableCell>
 
-      <TableCell align="right">
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+      <TableCell sx={{ width: 260, minWidth: 240 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
+          {row.company}
+        </Typography>
+      </TableCell>
+
+      <TableCell>{row.leads_type || '-'}</TableCell>
+
+      <TableCell>{row.leads_from || '-'}</TableCell>
+
+      <TableCell>{row.country || '-'}</TableCell>
+
+      <TableCell 
+        align="right" 
+        sx={{ 
+          pr: 3, 
+          width: 180, 
+          minWidth: 160, 
+          whiteSpace: 'nowrap',
+          position: 'sticky',
+          right: 0,
+          backgroundColor: 'background.paper',
+          boxShadow: '-4px 0px 10px -4px rgba(0,0,0,0.1)',
+          zIndex: 1,
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, alignItems: 'center' }}>
+          <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, display: 'inline-block' }}>
+            {row.modified ? fTimeDist(row.modified) : '-'}
+          </Box>
           <IconButton onClick={onView} sx={{ color: 'info.main' }}>
             <Iconify icon="solar:eye-bold" />
           </IconButton>

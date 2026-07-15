@@ -163,18 +163,24 @@ export function BadgesView() {
     setLoadingAssignments(true);
     try {
       const activeFilters: any[] = [];
+      const orFilters: any[] = [];
       if (filters.employee) activeFilters.push(['employee', '=', filters.employee]);
       if (filters.badge) activeFilters.push(['badge', '=', filters.badge]);
       if (filters.startDate) activeFilters.push(['awarded_on', '>=', filters.startDate]);
       if (filters.endDate) activeFilters.push(['awarded_on', '<=', filters.endDate]);
       if (filters.awarded_by) activeFilters.push(['awarded_by', '=', filters.awarded_by]);
 
+      if (filterName) {
+        const cleanSearch = filterName.trim();
+        orFilters.push(['employee_name', 'like', `%${cleanSearch}%`]);
+        orFilters.push(['employee', 'like', `%${cleanSearch}%`]);
+      }
+
       const response = await fetchFrappeList('Employee Badge Assignment', {
         page: page + 1,
         page_size: rowsPerPage,
-        search: filterName,
-        searchField: 'employee_name',
         filters: activeFilters.length ? activeFilters : undefined,
+        or_filters: orFilters.length ? orFilters : undefined,
         fields: [
           'name',
           'employee',
@@ -350,7 +356,7 @@ export function BadgesView() {
             setFilterName(event.target.value);
             setPage(0);
           }}
-          placeholder={currentTab === 'badges' ? 'Search badge...' : 'Search employee...'}
+          placeholder={currentTab === 'badges' ? 'Search badge...' : 'Search employee name or ID...'}
           sortBy={sortBy}
           onSortChange={(value) => {
             setSortBy(value);

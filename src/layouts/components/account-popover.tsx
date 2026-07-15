@@ -89,7 +89,7 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       }
 
       const fcmResponse = await logout();
-            
+
       // Wait 3 seconds so the user can read the debug message before the page reloads
       await new Promise(resolve => setTimeout(resolve, 3000));
     } catch (error) {

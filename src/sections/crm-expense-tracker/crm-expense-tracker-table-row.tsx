@@ -14,6 +14,22 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
+
 export type CRMExpenseTrackerTableRowProps = {
     row: {
         id: string;
@@ -105,7 +121,7 @@ export function CRMExpenseTrackerTableRow({
             </TableCell>
 
             <TableCell align="left" sx={{ fontWeight: 700 }}>
-                {fCurrency(amount)}
+                {renderCurrency(amount)}
             </TableCell>
 
             <TableCell align="right">

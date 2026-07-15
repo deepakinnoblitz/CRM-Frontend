@@ -1,5 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 type DashboardView = 'HR' | 'CRM';
@@ -14,6 +16,7 @@ type DashboardViewContextType = {
 const DashboardViewContext = createContext<DashboardViewContextType | undefined>(undefined);
 
 export function DashboardViewProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [view, setView] = useState<DashboardView>(() => {
     // Try to get from localStorage
     if (typeof window !== 'undefined') {
@@ -22,6 +25,24 @@ export function DashboardViewProvider({ children }: { children: React.ReactNode 
     }
     return 'HR';
   });
+
+  useEffect(() => {
+    if (user && user.roles) {
+      const hasHR = user.roles.some((role: string) => role.toLowerCase() === 'hr');
+      const hasCRM = user.roles.some((role: string) =>
+        ['crm user', 'crm and sales'].includes(role.toLowerCase())
+      );
+
+      // If user has CRM roles but NOT HR role, force view to CRM
+      if (hasCRM && !hasHR && view !== 'CRM') {
+        setView('CRM');
+      }
+      // If user has HR role but NOT CRM roles, force view to HR
+      else if (hasHR && !hasCRM && view !== 'HR') {
+        setView('HR');
+      }
+    }
+  }, [user, view]);
 
   const handleSetView = useCallback((newView: DashboardView) => {
     setView(newView);

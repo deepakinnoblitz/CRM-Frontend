@@ -1,5 +1,6 @@
 import type dayjs from 'dayjs';
 
+import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -38,7 +39,17 @@ import { LeadTableToolbar as ExpenseTrackerTableToolbar } from '../../lead/lead-
 
 // ----------------------------------------------------------------------
 
+const SORT_OPTIONS = [
+    { value: 'creation_desc', label: 'Newest First' },
+    { value: 'creation_asc', label: 'Oldest First' },
+    { value: 'amount_desc', label: 'Amount: High to Low' },
+    { value: 'amount_asc', label: 'Amount: Low to High' },
+    { value: 'titlenotes_asc', label: 'Title: A to Z' },
+    { value: 'titlenotes_desc', label: 'Title: Z to A' },
+];
+
 export default function ExpenseTrackerView() {
+    const { enqueueSnackbar } = useSnackbar();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -114,13 +125,17 @@ export default function ExpenseTrackerView() {
         try {
             if (currentData) {
                 await updateExpenseTracker(currentData.name, formData);
+                enqueueSnackbar('Expense Tracker entry updated successfully', { variant: 'success' });
             } else {
                 await createExpenseTracker(formData);
+                enqueueSnackbar('Expense Tracker entry created successfully', { variant: 'success' });
             }
             handleCloseDialog();
             refreshData();
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
+            const action = currentData ? 'update' : 'create';
+            enqueueSnackbar(error.message || `Failed to ${action} entry, please try again`, { variant: 'error' });
         }
     };
 
@@ -129,9 +144,11 @@ export default function ExpenseTrackerView() {
             try {
                 await deleteExpenseTracker(confirmDelete.id);
                 setConfirmDelete({ open: false, id: null });
+                enqueueSnackbar('Expense Tracker entry deleted successfully', { variant: 'success' });
                 refreshData();
-            } catch (error) {
+            } catch (error: any) {
                 console.error(error);
+                enqueueSnackbar(error.message || 'Failed to delete entry', { variant: 'error' });
             }
         }
     };
@@ -212,6 +229,9 @@ export default function ExpenseTrackerView() {
                     canReset={canReset}
                     searchPlaceholder="Search by title..."
                     onDelete={() => { }}
+                    sortBy={sortBy}
+                    onSortChange={(value: string) => { setSortBy(value); setPage(0); }}
+                    sortOptions={SORT_OPTIONS}
                 />
 
                 <Scrollbar>

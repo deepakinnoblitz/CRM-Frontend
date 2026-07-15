@@ -78,6 +78,14 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
         });
     }, []);
 
+    useEffect(() => {
+        const searchParams = new URLSearchParams(window.location.search);
+        const purchaseParam = searchParams.get('purchase');
+        if (purchaseParam && !currentPurchaseCollection) {
+            handlePurchaseChange(purchaseParam);
+        }
+    }, [currentPurchaseCollection]);
+
     const handleChange = (field: string, value: any) => {
         setFormData(prev => {
             const updated = { ...prev, [field]: value };
@@ -159,12 +167,13 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
             onLoadingChange?.(true);
             if (currentPurchaseCollection) {
                 await updatePurchaseCollection(currentPurchaseCollection.name, submissionData);
-                setSnackbar({ open: true, message: 'Update success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Settlement Update success!', severity: 'success' });
+                setTimeout(() => router.push('/purchase?tab=collections', { message: 'Settlement Update success!' }), 1500);
             } else {
                 await createPurchaseCollection(submissionData);
-                setSnackbar({ open: true, message: 'Create success!', severity: 'success' });
+                setSnackbar({ open: true, message: 'Settlement Create success!', severity: 'success' });
+                setTimeout(() => router.push('/purchase?tab=collections', { message: 'Settlement Create success!' }), 1500);
             }
-            setTimeout(() => router.push('/purchase?tab=collections'), 1500);
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Something went wrong', severity: 'error' });
             console.error(error);
@@ -247,7 +256,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                         type="number"
                         value={formData.amount_to_pay}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                     />
@@ -274,7 +283,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                             }
                         }}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                         }}
                         error={!!errors.amount_collected}
                         helperText={errors.amount_collected}
@@ -287,7 +296,7 @@ const PurchaseCollectionNewEditForm = forwardRef(({ currentPurchaseCollection, o
                         type="number"
                         value={formData.amount_pending}
                         InputProps={{
-                            startAdornment: <InputAdornment position="start">₹</InputAdornment>,
+                            startAdornment: <InputAdornment position="start"><span style={{ fontFamily: 'Arial', fontWeight: 500, fontSize: 17, color: 'GrayText' }}>₹ </span></InputAdornment>,
                             readOnly: true,
                         }}
                         sx={{
