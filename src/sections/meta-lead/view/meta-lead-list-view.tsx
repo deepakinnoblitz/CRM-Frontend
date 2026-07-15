@@ -114,7 +114,8 @@ export function MetaLeadListView() {
         setPage(0);
     }, []);
 
-    const canReset = filters.meta_app !== 'all' || filters.meta_page !== 'all' || filters.meta_form !== 'all' || filters.processing_status !== 'all';
+    const canReset = filters.meta_app !== 'all' || filters.meta_page !== 'all' || filters.meta_form !== 'all' || filters.processing_status !== 'all' || !!filterName;
+
 
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 

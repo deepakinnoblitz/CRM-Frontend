@@ -99,7 +99,8 @@ export function MetaWebhookLogListView() {
         setPage(0);
     }, []);
 
-    const canReset = filters.http_status !== 'all' || filters.status !== 'all';
+    const canReset = filters.http_status !== 'all' || filters.status !== 'all' || !!filterName;
+
 
     const currentSortLabel = SORT_OPTIONS.find(opt => opt.value === sortBy)?.label || 'Newest First';
 
