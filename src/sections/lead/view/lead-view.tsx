@@ -1502,12 +1502,12 @@ export function LeadView() {
                   showIndex
                   headLabel={[
                     { id: 'lead_name', label: 'Name', width: 260, minWidth: 240 },
-                    { id: 'company_name', label: 'Company', width: 260, minWidth: 240 },
+                    { id: 'service', label: 'Service', minWidth: 180 },
                     { id: 'phone_number', label: 'Phone', width: 180, minWidth: 160 },
                     { id: 'workflow_state', label: 'Status' },
+                    { id: 'company_name', label: 'Company', width: 260, minWidth: 240 },
                     { id: 'leads_type', label: 'Leads Type', minWidth: 120 },
                     { id: 'leads_from', label: 'Leads From', minWidth: 120 },
-                    { id: 'service', label: 'Service' },
                     { id: 'country', label: 'Country' },
                     {
                       id: 'actions',
