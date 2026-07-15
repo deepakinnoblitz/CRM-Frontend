@@ -184,11 +184,7 @@ export function LeadTableRow({
         </Box>
       </TableCell>
 
-      <TableCell sx={{ width: 260, minWidth: 240 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
-          {row.company}
-        </Typography>
-      </TableCell>
+      <TableCell>{row.service || '-'}</TableCell>
 
       <TableCell sx={{ width: 180, minWidth: 160 }}>{row.phone}</TableCell>
 
@@ -205,11 +201,15 @@ export function LeadTableRow({
         </Label>
       </TableCell>
 
+      <TableCell sx={{ width: 260, minWidth: 240 }}>
+        <Typography variant="body2" sx={{ fontWeight: 600, maxWidth: 240 }}>
+          {row.company}
+        </Typography>
+      </TableCell>
+
       <TableCell>{row.leads_type || '-'}</TableCell>
 
       <TableCell>{row.leads_from || '-'}</TableCell>
-
-      <TableCell>{row.service || '-'}</TableCell>
 
       <TableCell>{row.country || '-'}</TableCell>
 
