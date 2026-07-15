@@ -14,6 +14,7 @@ import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -42,6 +43,7 @@ import { fDate } from 'src/utils/format-time';
 
 import { getDoctypeList } from 'src/api/leads';
 import { getHRSettings } from 'src/api/hr-management';
+import { fetchLeaveApplications } from 'src/api/leaves';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchDetailedSessions } from 'src/api/presence-log';
 import { getHolidayList, populateHolidays } from 'src/api/holiday-lists';
@@ -53,6 +55,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { useAuth } from 'src/auth/auth-context';
 
 import { DailyLogCalendar } from './daily-log-calendar';
+import { LeavesDetailsDialog } from '../../leaves/leaves-details-dialog';
 import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-log-details-dialog';
 
 // ----------------------------------------------------------------------
@@ -127,9 +130,10 @@ export function DailyLogReportView() {
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
 
-    // Details Dialog
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedSession, setSelectedSession] = useState<any>(null);
+    const [openLeaveDetails, setOpenLeaveDetails] = useState(false);
+    const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
 
     const [currentView, setCurrentView] = useState<'list' | 'calendar' | 'muster'>('list');
     const [openExportDialog, setOpenExportDialog] = useState(false);
@@ -137,6 +141,7 @@ export function DailyLogReportView() {
     const [selectedExportView, setSelectedExportView] = useState<'list' | 'muster'>('list');
     const [hrmsSettings, setHrmsSettings] = useState<any>(null);
     const [holidays, setHolidays] = useState<any[]>([]);
+    const [leaveApplications, setLeaveApplications] = useState<any[]>([]);
 
     useEffect(() => {
         async function loadSettings() {
@@ -246,6 +251,28 @@ export function DailyLogReportView() {
                 toDate?.format('YYYY-MM-DD') || ''
             );
             setReportData(result.data || []);
+
+            const startFallback = fromDate || (result.data && result.data.length > 0
+                ? dayjs(result.data.reduce((min: string, p: any) => p.login_date < min ? p.login_date : min, result.data[0].login_date))
+                : dayjs().startOf('month'));
+            const endFallback = toDate || (result.data && result.data.length > 0
+                ? dayjs(result.data.reduce((max: string, p: any) => p.login_date > max ? p.login_date : max, result.data[0].login_date))
+                : dayjs().endOf('month'));
+
+            const startD = startFallback.subtract(3, 'month').format('YYYY-MM-DD');
+            const endD = endFallback.format('YYYY-MM-DD');
+
+            const leavesRes = await fetchLeaveApplications({
+                page: 1,
+                page_size: 2000,
+                filters: {
+                    start_date: startD,
+                    end_date: endD,
+                    workflow_state: 'Approved'
+                }
+            });
+            setLeaveApplications(leavesRes.data || []);
+
             setPage(0);
             setMusterPage(0);
         } catch (error) {
@@ -273,10 +300,31 @@ export function DailyLogReportView() {
         );
     }, [reportData]);
 
-    const handleMusterCellClick = (session: any) => {
+    const handleMusterCellClick = (session: any, leave?: any) => {
         if (musterDragMoved.current > 5) return;
-        handleViewDetails(session);
+        if (session) {
+            handleViewDetails(session);
+        } else if (leave) {
+            setSelectedLeaveId(leave.name);
+            setOpenLeaveDetails(true);
+        }
     };
+
+    const getApprovedLeaveForDate = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        const dateStr = date.format('YYYY-MM-DD');
+        return leaveApplications.find((leave) => {
+            if (leave.employee !== employeeId) return false;
+            const isApproved = (leave.workflow_state === 'Approved' || leave.status === 'Approved');
+            if (!isApproved) return false;
+            
+            const from = dayjs(leave.from_date);
+            const to = dayjs(leave.to_date);
+            return (date.isSame(from, 'day') || date.isAfter(from, 'day')) && 
+                   (date.isSame(to, 'day') || date.isBefore(to, 'day'));
+        });
+    }, [leaveApplications]);
+
+    const isLeaveStatus = useCallback((val: string) => !['P', 'A', 'HD', 'H'].includes(val), []);
 
     const getAttendanceStatus = useCallback((employeeId: string, date: dayjs.Dayjs) => {
         const dateStr = date.format('YYYY-MM-DD');
@@ -288,7 +336,13 @@ export function DailyLogReportView() {
             const isHoliday = holidays.some(
                 (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
             );
-            return isHoliday ? 'H' : 'A';
+            if (isHoliday) return 'H';
+
+            const leave = getApprovedLeaveForDate(employeeId, date);
+            if (leave) {
+                return leave.leave_type;
+            }
+            return 'A';
         }
 
         const isActive = logs.some((log) => log.status === 'Active');
@@ -302,8 +356,14 @@ export function DailyLogReportView() {
 
         if (totalHours >= presentThreshold) return 'P';
         if (totalHours >= halfDayThreshold) return 'HD';
+
+        const leave = getApprovedLeaveForDate(employeeId, date);
+        if (leave) {
+            return leave.leave_type;
+        }
+
         return 'A';
-    }, [reportData, holidays, hrmsSettings]);
+    }, [reportData, holidays, hrmsSettings, getApprovedLeaveForDate]);
 
     const getAttendanceTimes = useCallback((employeeId: string, date: dayjs.Dayjs) => {
         const dateStr = date.format('YYYY-MM-DD');
@@ -351,35 +411,78 @@ export function DailyLogReportView() {
         );
     }, [holidays]);
 
-    const getStatusStyles = (cellStatus: 'P' | 'A' | 'HD' | 'H') => {
-        switch (cellStatus) {
-            case 'P':
-                return {
-                    bgcolor: 'rgba(34, 197, 94, 0.14)',
-                    color: '#166534',
-                    fontWeight: 'bold',
-                };
-            case 'A':
-                return {
-                    bgcolor: 'rgba(239, 68, 68, 0.14)',
-                    color: '#991b1b',
-                    fontWeight: 'bold',
-                };
-            case 'HD':
-                return {
-                    bgcolor: 'rgba(234, 179, 8, 0.16)',
-                    color: '#c06803ff',
-                    fontWeight: 'bold',
-                };
-            case 'H':
-                return {
-                    bgcolor: 'rgba(244, 63, 94, 0.14)',
-                    color: '#9f1239',
-                    fontWeight: 'bold',
-                };
-            default:
-                return {};
+    const getStatusStyles = (cellStatus: string) => {
+        if (cellStatus === 'P') {
+            return {
+                bgcolor: 'rgba(34, 197, 94, 0.14)',
+                color: '#166534',
+                fontWeight: 'bold',
+            };
         }
+        if (cellStatus === 'A') {
+            return {
+                bgcolor: 'rgba(239, 68, 68, 0.14)',
+                color: '#991b1b',
+                fontWeight: 'bold',
+            };
+        }
+        if (cellStatus === 'HD') {
+            return {
+                bgcolor: 'rgba(234, 179, 8, 0.16)',
+                color: '#c06803ff',
+                fontWeight: 'bold',
+            };
+        }
+        if (cellStatus === 'H') {
+            return {
+                bgcolor: 'rgba(244, 63, 94, 0.14)',
+                color: '#9f1239',
+                fontWeight: 'bold',
+            };
+        }
+
+        const statusLower = cellStatus.toLowerCase();
+        if (statusLower.includes('unpaid')) {
+            return {
+                bgcolor: 'rgba(126, 34, 206, 0.14)',
+                color: '#6b21a8',
+                fontWeight: 'bold',
+            };
+        }
+        if (statusLower.includes('paid')) {
+            return {
+                bgcolor: 'rgba(29, 78, 216, 0.14)',
+                color: '#1e40af',
+                fontWeight: 'bold',
+            };
+        }
+        if (statusLower.includes('permission')) {
+            return {
+                bgcolor: 'rgba(3, 105, 161, 0.14)',
+                color: '#075985',
+                fontWeight: 'bold',
+            };
+        }
+        if (statusLower.includes('sick')) {
+            return {
+                bgcolor: 'rgba(219, 39, 119, 0.14)',
+                color: '#9d174d',
+                fontWeight: 'bold',
+            };
+        }
+        if (statusLower.includes('casual')) {
+            return {
+                bgcolor: 'rgba(13, 148, 136, 0.14)',
+                color: '#115e59',
+                fontWeight: 'bold',
+            };
+        }
+
+        return {
+            bgcolor: 'rgba(75, 85, 99, 0.14)',
+            color: '#374151',
+            fontWeight: 'bold',
+        };
     };
 
     const dates = (() => {
@@ -1364,12 +1467,16 @@ export function DailyLogReportView() {
                                 { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
                                 { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
                                 { label: 'Half Day', value: 'HD', color: 'rgba(234, 179, 8, 0.16)', textColor: '#854d0e' },
+                                { label: 'Unpaid Leave', value: 'Unpaid', color: 'rgba(126, 34, 206, 0.14)', textColor: '#6b21a8' },
+                                { label: 'Paid Leave', value: 'Paid', color: 'rgba(29, 78, 216, 0.14)', textColor: '#1e40af' },
+                                { label: 'Permission', value: 'Permission', color: 'rgba(3, 105, 161, 0.14)', textColor: '#075985' },
                             ].map((item) => (
                                 <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
                                     <Box
                                         sx={{
-                                            width: 24,
+                                            minWidth: 32,
                                             height: 24,
+                                            px: 0.75,
                                             borderRadius: '6px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1513,9 +1620,11 @@ export function DailyLogReportView() {
 
                                                         const cellStatus = getAttendanceStatus(emp.id, date);
                                                         const showTime = cellStatus === 'P' || cellStatus === 'HD';
+                                                        const isLeave = isLeaveStatus(cellStatus);
+                                                        const leaveRecord = isLeave ? getApprovedLeaveForDate(emp.id, date) : null;
                                                         const times = showTime ? getAttendanceTimes(emp.id, date) : null;
                                                         const record = getSessionRecord(emp.id, date);
-                                                        const isClickable = !!record;
+                                                        const isClickable = !!record || !!leaveRecord;
                                                         return (
                                                             <TableCell
                                                                 key={date.format('YYYY-MM-DD')}
@@ -1527,11 +1636,11 @@ export function DailyLogReportView() {
                                                                 }}
                                                             >
                                                                 <Box
-                                                                    onClick={isClickable ? () => handleMusterCellClick(record) : undefined}
+                                                                    onClick={isClickable ? () => handleMusterCellClick(record, leaveRecord) : undefined}
                                                                     sx={{
-                                                                        px: showTime ? 1 : 0,
-                                                                        py: showTime ? 0.75 : 0,
-                                                                        width: showTime ? 90 : 32,
+                                                                        px: (showTime || isLeave) ? 1 : 0,
+                                                                        py: (showTime || isLeave) ? 0.75 : 0,
+                                                                        width: showTime ? 90 : (isLeave ? 80 : 32),
                                                                         minHeight: 32,
                                                                         borderRadius: '8px',
                                                                         display: 'inline-flex',
@@ -1550,6 +1659,26 @@ export function DailyLogReportView() {
                                                                             <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
                                                                             <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
                                                                         </Box>
+                                                                    ) : isLeave ? (
+                                                                        <Tooltip
+                                                                            title={
+                                                                                leaveRecord?.permission_hours
+                                                                                    ? `${leaveRecord.permission_hours} mins permission`
+                                                                                    : leaveRecord?.leave_type || cellStatus
+                                                                            }
+                                                                            arrow
+                                                                        >
+                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
+                                                                                <Box component="span" sx={{ fontWeight: 700 }}>
+                                                                                    {cellStatus.replace(/\s*leave\s*/gi, '')}
+                                                                                </Box>
+                                                                                {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 && (
+                                                                                    <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.8, mt: 0.2 }}>
+                                                                                        {leaveRecord.permission_hours}m
+                                                                                    </Box>
+                                                                                )}
+                                                                            </Box>
+                                                                        </Tooltip>
                                                                     ) : (
                                                                         cellStatus
                                                                     )}
@@ -1599,6 +1728,15 @@ export function DailyLogReportView() {
                     setTimeout(() => setSelectedSession(null), 200);
                 }}
                 session={selectedSession}
+            />
+
+            <LeavesDetailsDialog
+                open={openLeaveDetails}
+                onClose={() => {
+                    setOpenLeaveDetails(false);
+                    setSelectedLeaveId(null);
+                }}
+                leaveId={selectedLeaveId}
             />
 
             <Dialog
