@@ -34,25 +34,25 @@ export default defineConfig(({ mode }) => ({
 
   server: {
     port: PORT,
-    host: 'trail.erp.innoblitz.in',
+    host: 'erp.innoblitz.in',
     hmr: {
-      host: 'trail.erp.innoblitz.in',
+      host: 'erp.innoblitz.in',
     },
     proxy: {
       // 🔹 Frappe APIs 
       '/api': {
-        target: 'https://trail.erp.innoblitz.in',
+        target: 'erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       },
       // 🔹 File assets
       '/files': {
-        target: 'https://trail.erp.innoblitz.in',
+        target: 'https://erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       },
       '/private': {
-        target: 'https://trail.erp.innoblitz.in',
+        target: 'https://erp.innoblitz.in',
         changeOrigin: true,
         secure: false,
       }
