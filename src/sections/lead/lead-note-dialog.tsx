@@ -123,13 +123,10 @@ export default function LeadNoteDialog({ open, onClose, selectedNote, onSave }: 
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
-                    <Button variant="outlined" color="inherit" onClick={onClose} disabled={isSaving}>
-                        Cancel
-                    </Button>
-                    <Button variant="contained" color="primary" onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? 'Saving...' : 'Save'}
-                    </Button>
-                </DialogActions>
+    <Button variant="contained" color="primary" onClick={handleSave} disabled={isSaving}>
+        {isSaving ? 'Saving...' : 'Save'}
+    </Button>
+</DialogActions>
             </Dialog>
 
             <Snackbar

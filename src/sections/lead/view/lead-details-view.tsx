@@ -25,13 +25,13 @@ import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Grid from '@mui/material/Grid';
 import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
@@ -42,13 +42,13 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { getToDo } from 'src/api/todo';
 import { getCall } from 'src/api/calls';
 import { CONFIG } from 'src/config-global';
 import { getMeeting } from 'src/api/meetings';
-import { fDateTime } from 'src/utils/format-time';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getDoc, getLead, saveLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
 
@@ -58,8 +58,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
-import LeadNoteDialog from '../lead-note-dialog';
 
+import LeadNoteDialog from '../lead-note-dialog';
 import { LeadConvertDialog } from '../lead-convert-dialog';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
@@ -1282,20 +1282,20 @@ export function LeadDetailsView() {
                                     setOpenNoteDialog(true);
                                 }}
                                 sx={{
-                                    borderRadius: 1.5,
+                                    borderRadius: 5.5,
                                     fontWeight: 700,
                                     textTransform: 'none',
-                                    px: 2,
-                                    height: 34,
+                                    px: 2.1,
+                                    height: 32,
                                     bgcolor: '#2081C3',
                                     color: '#fff',
                                     fontSize: '0.8125rem',
+                                    letterSpacing: 0.2,
                                     '&:hover': { bgcolor: '#1a699f' },
                                     boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
                                 }}
-                                startIcon={<Iconify icon="solar:add-circle-bold" sx={{ color: '#fff' }} />}
                             >
-                                Add Note
+                                + Add Note
                             </Button>
                         </Stack>
 
@@ -1307,7 +1307,7 @@ export function LeadDetailsView() {
                                         No notes added yet
                                     </Typography>
                                     <Typography variant="caption" sx={{ color: 'text.disabled', mt: 0.5 }}>
-                                        Click "Add Note" to create a note.
+                                        Click &quot;Add Note&quot; to create a note.
                                     </Typography>
                                 </Box>
                             ) : (
@@ -1359,10 +1359,25 @@ export function LeadDetailsView() {
                                                 />
                                             )}
                                             
-                                            {note.creation && (
-                                                <Typography variant="caption" sx={{ color: 'text.disabled', mt: 1.5, display: 'block', fontWeight: 600 }}>
-                                                    {fDateTime(note.creation)}
-                                                </Typography>
+                                            {(note.creation || note.owner) && (
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    justifyContent="space-between"
+                                                    mt={1.5}
+                                                >
+                                                    {note.creation ? (
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                            {fDateTime(note.creation)}
+                                                        </Typography>
+                                                    ) : <span />}
+
+                                                    {note.owner && (
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                            {note.owner}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
                                             )}
                                         </Card>
                                     ))}
