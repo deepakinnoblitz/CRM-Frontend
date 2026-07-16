@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { useBoolean } from 'minimal-shared/hooks';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -26,6 +26,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { uploadFile } from 'src/api/data-import';
 import { getRoles, getModules } from 'src/api/users';
+import { fetchRolePermissions } from 'src/api/permission-management';
 import {
   fetchUserPermissions,
   createUserPermission,
@@ -144,6 +145,11 @@ export function UserFormDialog({
   const [userPermissions, setUserPermissions] = useState<any[]>([]);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
   const [openPermissionDialog, setOpenPermissionDialog] = useState(false);
+
+  // Role Permissions state (Permission Management)
+  const [rolePermissions, setRolePermissions] = useState<any[]>([]);
+  const [loadingRolePermissions, setLoadingRolePermissions] = useState(false);
+  const [selectedRoleForView, setSelectedRoleForView] = useState<any | null>(null);
   const [permissionFormData, setPermissionFormData] = useState({
     allow: 'Employee',
     for_value: '',
@@ -296,6 +302,29 @@ export function UserFormDialog({
       setLoadingPermissions(false);
     }
   };
+
+  const loadRolePermissions = useCallback(async () => {
+    const selectedRoles = formData.roles || [];
+    if (selectedRoles.length === 0) {
+      setRolePermissions([]);
+      return;
+    }
+    setLoadingRolePermissions(true);
+    try {
+      const data = await fetchRolePermissions(selectedRoles);
+      setRolePermissions(data);
+    } catch (err) {
+      console.error('Failed to load role permissions:', err);
+    } finally {
+      setLoadingRolePermissions(false);
+    }
+  }, [formData.roles]);
+
+  useEffect(() => {
+    if (currentTab === 'role-permissions') {
+      loadRolePermissions();
+    }
+  }, [currentTab, formData.roles, loadRolePermissions]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
@@ -598,19 +627,19 @@ export function UserFormDialog({
 
         <Grid container spacing={3}>
           {roles.map((role) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
-                <FormControlLabel
-                  control={
-                    <Android12Switch
-                      checked={(formData.roles || []).includes(role.name)}
-                      onChange={() => handleRoleToggle(role.name)}
-                      size="small"
-                    />
-                  }
-                  label={role.name}
-                />
-              </Grid>
-            ))}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
+              <FormControlLabel
+                control={
+                  <Android12Switch
+                    checked={(formData.roles || []).includes(role.name)}
+                    onChange={() => handleRoleToggle(role.name)}
+                    size="small"
+                  />
+                }
+                label={role.name}
+              />
+            </Grid>
+          ))}
         </Grid>
       </Stack>
     </Box>
@@ -800,10 +829,94 @@ export function UserFormDialog({
     </Box>
   );
 
+  const handlePermissionToggle = (pmName: string, pmLabel: string) => {
+    const currentPerms = formData.custom_permissions || [];
+    const exists = currentPerms.some((p: any) => p.permission_manager === pmName);
+    let newPerms;
+    if (exists) {
+      newPerms = currentPerms.filter((p: any) => p.permission_manager !== pmName);
+    } else {
+      newPerms = [...currentPerms, { permission_manager: pmName, permission_name: pmLabel }];
+    }
+    setFormData({ ...formData, custom_permissions: newPerms });
+  };
+
+  const renderRolePermissionsTab = (
+    <Box sx={{ p: 3 }}>
+      <Stack spacing={3}>
+        <Box>
+          <Typography variant="h6" sx={{ mb: 1 }}>Role Permissions</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select the specific frontend roles (permissions) to assign to this user.
+          </Typography>
+        </Box>
+
+        {loadingRolePermissions ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : rolePermissions.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 5, border: '1px dashed', borderColor: 'divider', borderRadius: 1.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              No active permissions found. Make sure at least one role (e.g. HR, CRM And Sales, Employee) is selected in the Roles tab.
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {rolePermissions.map((rp) => {
+              const isChecked = (formData.custom_permissions || []).some(
+                (p: any) => p.permission_manager === rp.name
+              );
+              return (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={rp.name}>
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+                    <FormControlLabel
+                      control={
+                        <Android12Switch
+                          checked={isChecked}
+                          onChange={() => handlePermissionToggle(rp.name, rp.frontend_role_name)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Stack spacing={0.25}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, pl: 1 }}>
+                            {rp.frontend_role_name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1 }}>
+                            {rp.backend_master_role}
+                          </Typography>
+                        </Stack>
+                      }
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => setSelectedRoleForView(rp)}
+                      sx={{
+                        p: 0.5,
+                        width: 28,
+                        height: 28,
+                        color: 'text.secondary',
+                        bgcolor: 'action.hover',
+                        '&:hover': { bgcolor: 'action.selected', color: 'primary.main' }
+                      }}
+                    >
+                      <Iconify icon="solar:eye-bold" width={16} height={16} />
+                    </IconButton>
+                  </Stack>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Stack>
+    </Box>
+  );
+
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
-        <DialogTitle sx={{borderBottom: (theme) => `1px solid ${theme.palette.divider}`,}}>
+        <DialogTitle sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
           {selectedUser ? 'Edit User' : 'New User'}
           <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
             <Iconify icon="mingcute:close-line" />
@@ -816,7 +929,8 @@ export function UserFormDialog({
           sx={{ px: 3, borderBottom: 1, borderColor: 'divider' }}
         >
           <Tab label="User Details" value="details" />
-          <Tab label="Roles & Permissions" value="roles" />
+          <Tab label="Roles" value="roles" />
+          <Tab label="Role Permission" value="role-permissions" />
           {/* <Tab label="Allow Modules" value="modules" /> */}
           {selectedUser && <Tab label="User Permissions" value="permissions" />}
           <Tab label="Password" value="password" />
@@ -825,6 +939,7 @@ export function UserFormDialog({
         <DialogContent sx={{ p: 0 }}>
           {currentTab === 'details' && renderUserDetailsTab}
           {currentTab === 'roles' && renderRolesTab}
+          {currentTab === 'role-permissions' && renderRolePermissionsTab}
           {/* {currentTab === 'modules' && renderModulesTab} */}
           {currentTab === 'permissions' && selectedUser && renderUserPermissionsTab}
           {currentTab === 'password' && renderPasswordTab}
@@ -852,6 +967,129 @@ export function UserFormDialog({
           {validationSnackbar}
         </Alert>
       </Snackbar>
+
+      {/* Role Details Viewer Dialog */}
+      <Dialog
+        open={!!selectedRoleForView}
+        onClose={() => setSelectedRoleForView(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, pr: 6 }}>
+          Role Permissions: {selectedRoleForView?.frontend_role_name}
+          <IconButton onClick={() => setSelectedRoleForView(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Box sx={{ overflowX: 'auto', p: 3 }}>
+            {(() => {
+              const groupedPermissions = selectedRoleForView?.permissions || [];
+              const sortedPermissions = [...groupedPermissions].sort((a: any, b: any) =>
+                (a.module_id || '').localeCompare(b.module_id || '')
+              );
+
+              const moduleRowSpans: { [key: string]: number } = {};
+              sortedPermissions.forEach((perm: any) => {
+                moduleRowSpans[perm.module_id] = (moduleRowSpans[perm.module_id] || 0) + 1;
+              });
+
+              const renderedModules: { [key: string]: boolean } = {};
+
+              return sortedPermissions.length > 0 ? (
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', border: '1px solid #e0e0e0' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#1ba5ea', color: 'white' }}>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'left', border: '1px solid #1ba5ea', width: '20%' }}>Menu Name</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'left', border: '1px solid #1ba5ea', width: '30%' }}>Access Name</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Add</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Edit</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>View</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Delete</th>
+                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Export</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedPermissions.map((perm: any) => {
+                      const showModuleCell = !renderedModules[perm.module_id];
+                      if (showModuleCell) {
+                        renderedModules[perm.module_id] = true;
+                      }
+
+                      return (
+                        <tr key={perm.name} style={{ borderBottom: '1px solid #e0e0e0' }}>
+                           {showModuleCell && (
+                            <td
+                              rowSpan={moduleRowSpans[perm.module_id]}
+                              style={{
+                                padding: '12px 16px',
+                                fontWeight: 700,
+                                border: '1px solid #e0e0e0',
+                                textAlign: 'center',
+                                verticalAlign: 'middle',
+                                backgroundColor: '#f9f9f9',
+                                color: '#133B27'
+                              }}
+                            >
+                              {(perm.module_id || '')
+                                .replace(/_/g, ' ')
+                                .split(' ')
+                                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                                .join(' ')}
+                            </td>
+                          )}
+                          <td style={{ padding: '12px 16px', border: '1px solid #e0e0e0', color: 'text.primary', fontWeight: 500 }}>
+                            {(perm.screen_id || '')
+                              .replace(/_/g, ' ')
+                              .split(' ')
+                              .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                              .join(' ')}
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+                            <Iconify
+                              icon={(perm.add_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
+                              sx={{ color: perm.add_permission ? 'success.main' : 'text.disabled' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+                            <Iconify
+                              icon={(perm.edit_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
+                              sx={{ color: perm.edit_permission ? 'success.main' : 'text.disabled' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+                            <Iconify
+                              icon={(perm.view_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
+                              sx={{ color: perm.view_permission ? 'success.main' : 'text.disabled' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+                            <Iconify
+                              icon={(perm.delete_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
+                              sx={{ color: perm.delete_permission ? 'success.main' : 'text.disabled' }}
+                            />
+                          </td>
+                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
+                            <Iconify
+                              icon={(perm.export_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
+                              sx={{ color: perm.export_permission ? 'success.main' : 'text.disabled' }}
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              ) : (
+                <Box sx={{ py: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" color="text.secondary">No screen permissions defined.</Typography>
+                </Box>
+              );
+            })()}
+          </Box>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

@@ -81,6 +81,7 @@ export const UserView = forwardRef(
       send_welcome_email: 1 as 0 | 1,
       new_password: '',
       user_image: '',
+      custom_permissions: [] as { permission_manager: string; permission_name: string }[],
     });
 
     const [snackbar, setSnackbar] = useState({
@@ -114,6 +115,7 @@ export const UserView = forwardRef(
         send_welcome_email: 1,
         new_password: '',
         user_image: '',
+        custom_permissions: [],
       });
       setOpenCreate(true);
     };
@@ -152,6 +154,7 @@ export const UserView = forwardRef(
           send_welcome_email: 0,
           new_password: '',
           user_image: fullUserData.user_image || '',
+          custom_permissions: fullUserData.custom_permissions || [],
         });
 
         setOpenCreate(true);
@@ -182,6 +185,7 @@ export const UserView = forwardRef(
             roles: formData.roles,
             block_modules: formData.block_modules,
             user_image: formData.user_image,
+            custom_permissions: formData.custom_permissions,
           });
 
           // Trigger password change if provided during update
@@ -207,6 +211,7 @@ export const UserView = forwardRef(
             send_welcome_email: formData.send_welcome_email,
             new_password: formData.new_password,
             user_image: formData.user_image,
+            custom_permissions: formData.custom_permissions,
           });
           setSnackbar({ open: true, message: 'User created successfully', severity: 'success' });
         }
