@@ -538,12 +538,24 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
+export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any) {
+  const roles: string[] = user?.roles || [];
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
+      // Check custom module permissions
+      if (user?.permissions?.custom_permissions_assigned) {
+        const moduleKey = item.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+        const menuMapping = user?.permissions?.menu_mapping || {};
+        const checkKey = menuMapping[moduleKey] || moduleKey;
+        
+        const menus = user?.permissions?.menus || {};
+        if (menus[checkKey] === false) {
+          return;
+        }
+      }
       // Clone the item to avoid mutating the original data
       const itemClone = {
         ...item,
