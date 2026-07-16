@@ -16,6 +16,9 @@ type Props = {
     write: boolean;
     delete: boolean;
   };
+  hasMore?: boolean;
+  onLoadMore?: VoidFunction;
+  loadingMore?: boolean;
 };
 
 const COLUMN_COLORS = [
@@ -37,6 +40,9 @@ export default function LeadKanbanBoard({
   onDeleteLead,
   onAddLead,
   permissions,
+  hasMore,
+  onLoadMore,
+  loadingMore,
 }: Props) {
   const columns = useMemo(() => {
     const states =
@@ -155,6 +161,9 @@ export default function LeadKanbanBoard({
               onDeleteLead={onDeleteLead}
               onAddLead={onAddLead}
               permissions={permissions}
+              hasMoreServer={hasMore}
+              onLoadMoreServer={onLoadMore}
+              loadingMoreServer={loadingMore}
             />
           ))}
         </Stack>

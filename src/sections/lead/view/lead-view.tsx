@@ -35,7 +35,7 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
-import { useLeads } from 'src/hooks/useLeads';
+import { useLeads, useKanbanLeads } from 'src/hooks/useLeads';
 
 import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
@@ -223,6 +223,13 @@ export function LeadView() {
     sortBy
   );
 
+  const { data: kanbanLeads, loading: kanbanLoading, hasMore: kanbanHasMore, loadMore: loadMoreKanban, refetch: refetchKanban } = useKanbanLeads(
+    filterName,
+    filters,
+    sortBy,
+    viewMode === 'kanban'
+  );
+
   const handleFilters = (update: any) => {
     setFilters((prev) => ({ ...prev, ...update }));
     table.onResetPage();
@@ -399,6 +406,7 @@ export function LeadView() {
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
+      await refetchKanban();
       setOpenDelete(false);
     } catch (e: any) {
       console.error(e);
@@ -416,6 +424,7 @@ export function LeadView() {
       setSnackbar({ open: true, message: `${table.selected.length} leads deleted successfully`, severity: 'success' });
       table.onSelectAllRows(false, []);
       await refetch();
+      await refetchKanban();
     } catch (e: any) {
       console.error(e);
       const friendlyMsg = getFriendlyErrorMessage(e);
@@ -551,6 +560,7 @@ export function LeadView() {
       }
 
       await refetch();
+      await refetchKanban();
       handleCloseCreate();
     } catch (err: any) {
       console.error(err);
@@ -1303,6 +1313,7 @@ export function LeadView() {
                       setCurrentTab('general');
                       handleCloseCreate();
                       refetch();
+                      refetchKanban();
                     }}
                     sx={{ mt: 4, borderRadius: 1.5 }}
                   >
@@ -1602,15 +1613,22 @@ export function LeadView() {
               onRowsPerPageChange={table.onChangeRowsPerPage}
             />
           </Card>
+        ) : kanbanLoading && kanbanLeads.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(118vh - 170px)' }}>
+            <CircularProgress sx={{ color: '#08a3cd' }} />
+          </Box>
         ) : (
           <LeadKanbanBoard
-            leads={data}
+            leads={kanbanLeads}
             workflowStates={allWorkflowStates}
             onOpenLead={(id) => handleViewRow({ id })}
             onEditLead={(id) => handleEditRow({ id })}
             onDeleteLead={(id) => handleDeleteClick(id)}
             onAddLead={(selectedState) => handleOpenCreate(selectedState)}
             permissions={permissions}
+            hasMore={kanbanHasMore}
+            onLoadMore={loadMoreKanban}
+            loadingMore={kanbanLoading}
           />
         )}
       </DashboardContent>
@@ -1681,6 +1699,7 @@ export function LeadView() {
                   const newActions = await getWorkflowActions('Lead', newStage);
                   setWorkflowActions(newActions);
                   await refetch(); // Refresh table data
+                  await refetchKanban();
                   setSnackbar({ open: true, message: 'Workflow status updated successfully', severity: 'success' });
                 }
                 setPendingWorkflowChange(null);
