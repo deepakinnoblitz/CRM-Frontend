@@ -111,7 +111,9 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 }}
                             >
-                                <DetailItem label="Subject" value={meeting.title} fullWidth />
+                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, gridColumn: '1 / -1' }}>
+                                    <DetailItem label="Subject" value={meeting.title} fullWidth />
+                                </Box>
                                 <DetailItem label="Enter ID" value={meeting.enter_id} icon="solar:hashtag-bold" />
                                 <DetailItem label="Meet For" value={meeting.meet_for} icon="solar:user-bold" />
                                 <DetailItem label="Reference" value={meeting.meet_for === 'Lead' ? meeting.lead_name : meeting.meet_for === 'Contact' ? meeting.contact_name : meeting.accounts_name || '-'} icon="solar:link-bold" />

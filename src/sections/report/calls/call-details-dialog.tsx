@@ -151,7 +151,9 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 }}
                             >
-                                <DetailItem label="Subject" value={call.title} fullWidth />
+                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, gridColumn: '1 / -1' }}>
+                                    <DetailItem label="Subject" value={call.title} fullWidth />
+                                </Box>
                                 <DetailItem label="Call For" value={call.call_for} icon="solar:user-bold" />
                                 <DetailItem label="Reference" value={call.lead_name} icon="solar:link-bold" />
                                 <DetailItem label="Start Time" value={call.call_start_time ? new Date(call.call_start_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
