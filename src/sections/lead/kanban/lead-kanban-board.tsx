@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -6,6 +6,12 @@ import Stack from '@mui/material/Stack';
 import LeadKanbanColumn from './lead-kanban-column';
 
 type Props = {
+  columnsData?: Record<string, {
+    leads: any[];
+    hasMore: boolean;
+    loading: boolean;
+    loadMore: VoidFunction;
+  }>;
   leads: any[];
   workflowStates: string[];
   onOpenLead: (leadId: string) => void;
@@ -33,6 +39,7 @@ const COLUMN_COLORS = [
 ];
 
 export default function LeadKanbanBoard({
+  columnsData,
   leads,
   workflowStates,
   onOpenLead,
@@ -151,21 +158,28 @@ export default function LeadKanbanBoard({
             p: 1,
           }}
         >
-          {columns.map((column) => (
-            <LeadKanbanColumn
-              key={column.id}
-              column={column}
-              leads={leads}
-              onOpenLead={onOpenLead}
-              onEditLead={onEditLead}
-              onDeleteLead={onDeleteLead}
-              onAddLead={onAddLead}
-              permissions={permissions}
-              hasMoreServer={hasMore}
-              onLoadMoreServer={onLoadMore}
-              loadingMoreServer={loadingMore}
-            />
-          ))}
+          {columns.map((column) => {
+            const colData = columnsData?.[column.id];
+            const hasMoreServer = colData ? colData.hasMore : hasMore;
+            const onLoadMoreServer = colData ? colData.loadMore : onLoadMore;
+            const loadingMoreServer = colData ? colData.loading : loadingMore;
+
+            return (
+              <LeadKanbanColumn
+                key={column.id}
+                column={column}
+                leads={leads}
+                onOpenLead={onOpenLead}
+                onEditLead={onEditLead}
+                onDeleteLead={onDeleteLead}
+                onAddLead={onAddLead}
+                permissions={permissions}
+                hasMoreServer={hasMoreServer}
+                onLoadMoreServer={onLoadMoreServer}
+                loadingMoreServer={loadingMoreServer}
+              />
+            );
+          })}
         </Stack>
       </Box>
     </Box>

@@ -3,7 +3,7 @@ import { MuiTelInput } from 'mui-tel-input';
 import { IoMdCloudDownload } from "react-icons/io";
 import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -223,11 +223,12 @@ export function LeadView() {
     sortBy
   );
 
-  const { data: kanbanLeads, loading: kanbanLoading, hasMore: kanbanHasMore, loadMore: loadMoreKanban, refetch: refetchKanban } = useKanbanLeads(
+  const { columnsData: kanbanColumnsData, data: kanbanLeads, loading: kanbanLoading, refetch: refetchKanban } = useKanbanLeads(
     filterName,
     filters,
     sortBy,
-    viewMode === 'kanban'
+    viewMode === 'kanban',
+    allWorkflowStates
   );
 
   const handleFilters = (update: any) => {
@@ -403,10 +404,12 @@ export function LeadView() {
     if (!deleteId) return;
     try {
       setDeleting(true);
+      const deletedLead = data.find((l: any) => l.name === deleteId) || (kanbanLeads as any[]).find((l: any) => l.name === deleteId);
+      const stage = deletedLead?.workflow_state;
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
-      await refetchKanban();
+      await refetchKanban(stage);
       setOpenDelete(false);
     } catch (e: any) {
       console.error(e);
@@ -420,11 +423,15 @@ export function LeadView() {
 
   const handleBulkDelete = async () => {
     try {
+      const stagesToRefetch = Array.from(new Set(table.selected.map(id => {
+        const lead = data.find((l: any) => l.name === id) || (kanbanLeads as any[]).find((l: any) => l.name === id);
+        return lead?.workflow_state;
+      }).filter(Boolean))) as string[];
       await Promise.all(table.selected.map((id) => deleteLead(id)));
       setSnackbar({ open: true, message: `${table.selected.length} leads deleted successfully`, severity: 'success' });
       table.onSelectAllRows(false, []);
       await refetch();
-      await refetchKanban();
+      await refetchKanban(stagesToRefetch);
     } catch (e: any) {
       console.error(e);
       const friendlyMsg = getFriendlyErrorMessage(e);
@@ -551,6 +558,17 @@ export function LeadView() {
         remarks,
       };
 
+      const affectedStages: string[] = [];
+      if (currentLeadId) {
+        const oldLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+        if (oldLead?.workflow_state) affectedStages.push(oldLead.workflow_state);
+        if (leadData.workflow_state && leadData.workflow_state !== oldLead?.workflow_state) {
+          affectedStages.push(leadData.workflow_state);
+        }
+      } else {
+        affectedStages.push(leadData.workflow_state || allWorkflowStates[0] || 'New Lead');
+      }
+
       if (currentLeadId) {
         await updateLead(currentLeadId, leadData);
         setSnackbar({ open: true, message: 'Lead updated successfully', severity: 'success' });
@@ -560,7 +578,7 @@ export function LeadView() {
       }
 
       await refetch();
-      await refetchKanban();
+      await refetchKanban(affectedStages);
       handleCloseCreate();
     } catch (err: any) {
       console.error(err);
@@ -1309,11 +1327,13 @@ export function LeadView() {
                     color="inherit"
                     variant="outlined"
                     onClick={() => {
+                      const convertedLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+                      const stage = convertedLead?.workflow_state;
                       setConvertResult(null);
                       setCurrentTab('general');
                       handleCloseCreate();
                       refetch();
-                      refetchKanban();
+                      refetchKanban(stage);
                     }}
                     sx={{ mt: 4, borderRadius: 1.5 }}
                   >
@@ -1619,6 +1639,7 @@ export function LeadView() {
           </Box>
         ) : (
           <LeadKanbanBoard
+            columnsData={kanbanColumnsData}
             leads={kanbanLeads}
             workflowStates={allWorkflowStates}
             onOpenLead={(id) => handleViewRow({ id })}
@@ -1626,9 +1647,6 @@ export function LeadView() {
             onDeleteLead={(id) => handleDeleteClick(id)}
             onAddLead={(selectedState) => handleOpenCreate(selectedState)}
             permissions={permissions}
-            hasMore={kanbanHasMore}
-            onLoadMore={loadMoreKanban}
-            loadingMore={kanbanLoading}
           />
         )}
       </DashboardContent>
@@ -1690,6 +1708,9 @@ export function LeadView() {
                 const newStage = pendingWorkflowChange.next_state;
 
                 if (currentLeadId) {
+                  const transitionedLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+                  const oldStage = transitionedLead?.workflow_state;
+
                   // Use applyWorkflowAction instead of updateLead to respect/trigger workflow logic
                   await applyWorkflowAction('Lead', currentLeadId, action);
 
@@ -1699,7 +1720,12 @@ export function LeadView() {
                   const newActions = await getWorkflowActions('Lead', newStage);
                   setWorkflowActions(newActions);
                   await refetch(); // Refresh table data
-                  await refetchKanban();
+
+                  const stages = [];
+                  if (oldStage) stages.push(oldStage);
+                  if (newStage) stages.push(newStage);
+                  await refetchKanban(stages);
+
                   setSnackbar({ open: true, message: 'Workflow status updated successfully', severity: 'success' });
                 }
                 setPendingWorkflowChange(null);
