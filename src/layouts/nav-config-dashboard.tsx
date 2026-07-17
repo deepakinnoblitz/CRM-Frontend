@@ -9,7 +9,7 @@ import { IoMdFolderOpen } from "react-icons/io";
 import { FiList , FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
-import { FaMeta, FaBuildingUser, FaLink } from "react-icons/fa6";
+import { FaMeta, FaLink, FaBuildingUser } from "react-icons/fa6";
 import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
 import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
 import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
@@ -484,6 +484,8 @@ export const crmAndSalesNavData = [
     icon: <IoMdFolderOpen size={22} />,
     children: [
       { title: 'Lead From', path: '/master/lead-from' },
+      { title: 'Call Status', path: '/master/call-status' },
+      { title: 'Meeting Status', path: '/master/meeting-status' },
       { title: 'Service', path: '/master/service' },
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
