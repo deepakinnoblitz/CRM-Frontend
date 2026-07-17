@@ -50,6 +50,7 @@ import { getCall, deleteCall, type Call } from 'src/api/calls';
 import { getMeeting, deleteMeeting, type Meeting } from 'src/api/meetings';
 import { fetchEvents, updateEvent, createEvent, deleteEvent, type CalendarEvent } from 'src/api/events';
 
+import { Loader } from 'src/components/loader';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
@@ -77,11 +78,14 @@ const getLocalDateStr = (dateStr: string) => {
     return dayjs(dateStr).format('YYYY-MM-DD');
 };
 
+let isCalendarInitialized = false;
+
 export function EventsView() {
     const theme = useTheme();
     const navigate = useNavigate();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(!isCalendarInitialized);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [eventData, setEventData] = useState<Partial<CalendarEvent>>(INITIAL_EVENT_STATE);
@@ -186,6 +190,8 @@ export function EventsView() {
             setSnackbar({ open: true, message: error.message || 'Failed to load events', severity: 'error' });
         } finally {
             setLoadingEvents(false);
+            isCalendarInitialized = true;
+            setInitialLoading(false);
         }
     }, []);
 
@@ -725,6 +731,24 @@ export function EventsView() {
             return finalBryntumEvent;
         });
     }, [events, theme, eventTypeFilter]);
+
+    if (initialLoading) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Box
+                    sx={{
+                        height: '70vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Loader />
+                </Box>
+            </DashboardContent>
+        );
+    }
 
     return (
         <>
