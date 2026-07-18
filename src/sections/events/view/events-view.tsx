@@ -57,6 +57,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
+import { EventDetailsDialog } from 'src/sections/events/event-details-dialog';
+
 
 // ----------------------------------------------------------------------
 
@@ -101,6 +103,8 @@ export function EventsView() {
     const [openCallDialog, setOpenCallDialog] = useState(false);
     const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
     const [openTodoDialog, setOpenTodoDialog] = useState(false);
+    const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+    const [selectedDetailsEvent, setSelectedDetailsEvent] = useState<CalendarEvent | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -1688,6 +1692,17 @@ export function EventsView() {
                     onSuccess={loadEvents}
                 />
 
+                <EventDetailsDialog
+                    open={openDetailsDialog}
+                    onClose={() => {
+                        setOpenDetailsDialog(false);
+                        setSelectedDetailsEvent(null);
+                    }}
+                    eventId={selectedDetailsEvent ? selectedDetailsEvent.name : null}
+                    eventRefType={selectedDetailsEvent ? selectedDetailsEvent.reference_doctype : null}
+                    eventRefName={selectedDetailsEvent ? selectedDetailsEvent.reference_docname : null}
+                />
+
                 <Popover
                     open={Boolean(popoverAnchorEl)}
                     anchorEl={popoverAnchorEl}
@@ -1728,6 +1743,13 @@ export function EventsView() {
                                         {clickedEvent.subject}
                                     </Typography>
                                     <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                        <IconButton size="small" onClick={() => {
+                                            setPopoverAnchorEl(null);
+                                            setSelectedDetailsEvent(clickedEvent);
+                                            setOpenDetailsDialog(true);
+                                        }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                            <Iconify icon="solar:eye-bold" width={20} />
+                                        </IconButton>
                                         <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
                                             <Iconify icon="solar:pen-bold" width={20} />
                                         </IconButton>
