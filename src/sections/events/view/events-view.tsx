@@ -59,7 +59,6 @@ import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 import { EventDetailsDialog } from 'src/sections/events/event-details-dialog';
 
-
 import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------

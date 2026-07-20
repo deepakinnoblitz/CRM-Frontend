@@ -25,6 +25,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
 import { MeetingStatusDialog } from '../meeting-status-dialog';
@@ -48,6 +50,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function MeetingStatusView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meeting_status;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.meeting_status ? !!user?.permissions?.actions?.meeting_status?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.meeting_status ? !!user?.permissions?.actions?.meeting_status?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.meeting_status ? !!user?.permissions?.actions?.meeting_status?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -140,14 +148,16 @@ export function MeetingStatusView() {
         <Typography variant="h4" flexGrow={1}>
           Meeting Status
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Meeting Status
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Meeting Status
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -195,6 +205,8 @@ export function MeetingStatusView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 
