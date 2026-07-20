@@ -52,6 +52,9 @@ export function CallsReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.calls_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.calls_report ? !!user?.permissions?.actions?.calls_report?.export : true;
+
     const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -462,38 +465,42 @@ export function CallsReportView() {
                         </Select>
                     </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateCallsPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Calls', value: reportData.length },
-                                    { label: 'Scheduled', value: reportData.filter((r: any) => r.status === 'Scheduled').length },
-                                    { label: 'Completed', value: reportData.filter((r: any) => r.status === 'Completed').length },
-                                    { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 37,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generateCallsPdf({
+                                    reportData: filteredData,
+                                    selected,
+                                    summary: summaryData.length > 0 ? summaryData : [
+                                        { label: 'Total Calls', value: reportData.length },
+                                        { label: 'Scheduled', value: reportData.filter((r: any) => r.status === 'Scheduled').length },
+                                        { label: 'Completed', value: reportData.filter((r: any) => r.status === 'Completed').length },
+                                        { label: 'With Reminder', value: reportData.filter((r: any) => r.remind_before).length },
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 37,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        )}
                     </Stack>
                 </Card>
 

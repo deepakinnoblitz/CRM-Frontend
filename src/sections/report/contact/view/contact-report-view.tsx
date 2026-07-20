@@ -51,6 +51,9 @@ export function ContactReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.clients_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.clients_report ? !!user?.permissions?.actions?.clients_report?.export : true;
+
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
@@ -469,37 +472,41 @@ export function ContactReportView() {
                         </Select>
                     </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateContactPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Contacts', value: reportData.length },
-                                    { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
-                                    { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 37,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generateContactPdf({
+                                    reportData: filteredData,
+                                    selected,
+                                    summary: summaryData.length > 0 ? summaryData : [
+                                        { label: 'Total Contacts', value: reportData.length },
+                                        { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
+                                        { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 37,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        )}
                     </Stack>
                 </Card>
 
