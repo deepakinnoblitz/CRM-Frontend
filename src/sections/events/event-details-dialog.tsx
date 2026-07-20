@@ -21,8 +21,10 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { LeadDetailsDialog } from 'src/sections/report/lead-details-dialog';
+import { CallDetailsDialog } from 'src/sections/report/calls/call-details-dialog';
 import { AccountDetailsDialog } from 'src/sections/report/account/account-details-dialog';
 import { ContactDetailsDialog } from 'src/sections/report/contact/contact-details-dialog';
+import { MeetingDetailsDialog } from 'src/sections/report/meeting/meeting-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -165,6 +167,29 @@ export function EventDetailsDialog({ open, onClose, eventId, eventRefName, event
             {status}
         </Label>
     );
+
+    const resolvedType = eventRefType || (event ? event.reference_doctype : null);
+    const resolvedName = eventRefName || (event ? event.reference_docname : null);
+
+    if (resolvedType === 'Calls') {
+        return (
+            <CallDetailsDialog
+                open={open}
+                onClose={handleClose}
+                callId={resolvedName}
+            />
+        );
+    }
+
+    if (resolvedType === 'Meeting') {
+        return (
+            <MeetingDetailsDialog
+                open={open}
+                onClose={handleClose}
+                meetingId={resolvedName}
+            />
+        );
+    }
 
     return (
         <>

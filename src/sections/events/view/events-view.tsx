@@ -409,6 +409,48 @@ export function EventsView() {
     const calendarRef = useRef<BryntumCalendar>(null);
     const initialDateRef = useRef(new Date());
 
+    useEffect(() => {
+        const savedDateStr = sessionStorage.getItem('calendar_saved_date');
+        const savedMode = sessionStorage.getItem('calendar_saved_mode');
+        const savedFilter = sessionStorage.getItem('calendar_saved_filter');
+        const reopenEventId = sessionStorage.getItem('calendar_reopen_event_id');
+
+        if (savedFilter) {
+            setEventTypeFilter(savedFilter);
+            sessionStorage.removeItem('calendar_saved_filter');
+        }
+
+        if (savedMode && calendarRef.current?.instance) {
+            calendarRef.current.instance.mode = savedMode;
+            sessionStorage.removeItem('calendar_saved_mode');
+        }
+
+        if (savedDateStr) {
+            const date = new Date(savedDateStr);
+            if (calendarRef.current?.instance) {
+                calendarRef.current.instance.date = date;
+            } else {
+                initialDateRef.current = date;
+            }
+            setMiniCalDate(dayjs(date));
+            sessionStorage.removeItem('calendar_saved_date');
+        }
+
+        if (reopenEventId && events.length > 0) {
+            const foundEvent = events.find(e => e.name === reopenEventId);
+            if (foundEvent) {
+                setTimeout(() => {
+                    const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${reopenEventId}"]`) || document.querySelector(`[data-event-id="${reopenEventId}"]`);
+                    if (element) {
+                        setClickedEvent(foundEvent);
+                        setPopoverAnchorEl(element as HTMLElement);
+                    }
+                }, 300);
+            }
+            sessionStorage.removeItem('calendar_reopen_event_id');
+        }
+    }, [events, calendarRef.current?.instance]);
+
     const stateRef = useRef<any>({});
     stateRef.current = {
         events,
@@ -1697,6 +1739,14 @@ export function EventsView() {
                     onClose={() => {
                         setOpenDetailsDialog(false);
                         setSelectedDetailsEvent(null);
+                        if (clickedEvent) {
+                            setTimeout(() => {
+                                const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${clickedEvent.name}"]`) || document.querySelector(`[data-event-id="${clickedEvent.name}"]`);
+                                if (element) {
+                                    setPopoverAnchorEl(element as HTMLElement);
+                                }
+                            }, 100);
+                        }
                     }}
                     eventId={selectedDetailsEvent ? selectedDetailsEvent.name : null}
                     eventRefType={selectedDetailsEvent ? selectedDetailsEvent.reference_doctype : null}
@@ -1742,14 +1792,23 @@ export function EventsView() {
                                     }}>
                                         {clickedEvent.subject}
                                     </Typography>
-                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
-                                        <IconButton size="small" onClick={() => {
-                                            setPopoverAnchorEl(null);
-                                            setSelectedDetailsEvent(clickedEvent);
-                                            setOpenDetailsDialog(true);
-                                        }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                            <Iconify icon="solar:eye-bold" width={20} />
-                                        </IconButton>
+                                     <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                         <IconButton size="small" onClick={() => {
+                                             if (calendarRef.current?.instance) {
+                                                 const calendar = calendarRef.current.instance;
+                                                 const dateObj = calendar.date instanceof Date ? calendar.date : new Date(calendar.date);
+                                                 sessionStorage.setItem('calendar_saved_date', dateObj.toISOString());
+                                                 sessionStorage.setItem('calendar_saved_mode', calendar.mode || 'month');
+                                             }
+                                             sessionStorage.setItem('calendar_saved_filter', eventTypeFilter || 'All');
+                                             sessionStorage.setItem('calendar_reopen_event_id', clickedEvent?.name || '');
+
+                                             setPopoverAnchorEl(null);
+                                             setSelectedDetailsEvent(clickedEvent);
+                                             setOpenDetailsDialog(true);
+                                         }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                             <Iconify icon="solar:eye-bold" width={20} />
+                                         </IconButton>
                                         <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
                                             <Iconify icon="solar:pen-bold" width={20} />
                                         </IconButton>
