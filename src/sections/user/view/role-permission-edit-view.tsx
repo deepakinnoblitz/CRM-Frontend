@@ -157,6 +157,42 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         setPermissions(updated);
     };
 
+    const allSelected = permissions.length > 0 && permissions.every(
+        (p) => p.add_permission && p.edit_permission && p.view_permission && p.delete_permission && p.export_permission && p.import_permission
+    );
+
+    const handleSelectAll = () => {
+        const targetVal = allSelected ? 0 : 1;
+        const updated = permissions.map((p) => ({
+            ...p,
+            add_permission: targetVal,
+            edit_permission: targetVal,
+            view_permission: targetVal,
+            delete_permission: targetVal,
+            export_permission: targetVal,
+            import_permission: targetVal,
+        }));
+        setPermissions(updated);
+    };
+    const toggleAllRowPermissions = (idx: number) => {
+        const updated = [...permissions];
+        const row = updated[idx];
+        const allChecked = !!(row.add_permission && row.edit_permission && row.view_permission && row.delete_permission && row.export_permission && row.import_permission);
+        const targetVal = allChecked ? 0 : 1;
+
+        updated[idx] = {
+            ...row,
+            add_permission: targetVal,
+            edit_permission: targetVal,
+            view_permission: targetVal,
+            delete_permission: targetVal,
+            export_permission: targetVal,
+            import_permission: targetVal,
+        };
+
+        setPermissions(updated);
+    };
+
     const getRowSpan = (rows: PermissionAccess[], index: number) => {
         const currentModule = rows[index].module_id;
         if (index > 0 && rows[index - 1].module_id === currentModule) {
@@ -267,6 +303,26 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                         Go Back
                     </Button>
                     <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={handleSelectAll}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            borderColor: '#08a3cd',
+                            color: '#08a3cd',
+                            '&:hover': {
+                                bgcolor: (theme) => alpha('#08a3cd', 0.04),
+                                borderColor: '#068fb3',
+                                color: '#068fb3',
+                            }
+                        }}
+                    >
+                        {allSelected ? 'Deselect All' : 'Select All'}
+                    </Button>
+                    <Button
                         variant="contained"
                         onClick={handleSave}
                         disabled={saving}
@@ -341,6 +397,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                 <TableRow sx={{ bgcolor: '#08a3cd' }}>
                                     <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Menu Name</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Access Name</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>All</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Add</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Edit</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>View</TableCell>
@@ -372,6 +429,12 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                                     <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                         {row.screen_id}
                                                     </TableCell>
+                                                    <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+                                                        <Android12Switch
+                                                            checked={!!(row.add_permission && row.edit_permission && row.view_permission && row.delete_permission && row.export_permission && row.import_permission)}
+                                                            onChange={() => toggleAllRowPermissions(idx)}
+                                                        />
+                                                    </TableCell>
                                                     {renderToggleCell(row, idx, 'add_permission')}
                                                     {renderToggleCell(row, idx, 'edit_permission')}
                                                     {renderToggleCell(row, idx, 'view_permission')}
@@ -383,7 +446,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                         })
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                                            <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                                                 <EmptyContent
                                                     title="No permissions loaded"
                                                     description="Select Backend Master Role to load the fields."

@@ -9,6 +9,8 @@ import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export type ContactProps = {
@@ -37,6 +39,7 @@ type ContactTableRowProps = {
     onDelete: () => void;
     canEdit?: boolean;
     canDelete?: boolean;
+    canView?: boolean;
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -50,9 +53,16 @@ export function ContactTableRow({
     onDelete,
     canEdit = true,
     canDelete = true,
+    canView = true,
     hideCheckbox = false,
     index,
 }: ContactTableRowProps) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.contact;
+
+    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.contact?.view : canView;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.contact?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.contact?.delete : canDelete;
     return (
         <TableRow
             hover
@@ -179,15 +189,17 @@ export function ContactTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }}>
-                        <Iconify icon="solar:eye-bold" />
-                    </IconButton>
-                    {canEdit && (
+                    {displayView && (
+                        <IconButton onClick={onView} sx={{ color: 'info.main' }}>
+                            <Iconify icon="solar:eye-bold" />
+                        </IconButton>
+                    )}
+                    {displayEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {displayDelete && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>
