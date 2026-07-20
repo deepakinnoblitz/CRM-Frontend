@@ -4,23 +4,26 @@ import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
-import { styled } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, styled } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
+import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { getDoctypeList } from 'src/api/leads';
+import { createMeetingStatus, fetchMeetingStatuses } from 'src/api/masters';
 import { type Meeting, createMeeting, updateMeeting, deleteMeeting } from 'src/api/meetings';
 
 import { Iconify } from 'src/components/iconify';
@@ -103,6 +106,28 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
     const [contactOptions, setContactOptions] = useState<any[]>([]);
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [userOptions, setUserOptions] = useState<any[]>([]);
+    const [meetingStatusOptions, setMeetingStatusOptions] = useState<string[]>([]);
+    const [createMeetingStatusOpen, setCreateMeetingStatusOpen] = useState(false);
+    const [newMeetingStatusName, setNewMeetingStatusName] = useState('');
+    const [creatingMeetingStatus, setCreatingMeetingStatus] = useState(false);
+
+    const handleCreateMeetingStatusSubmit = async () => {
+        if (!newMeetingStatusName.trim()) return;
+        try {
+            setCreatingMeetingStatus(true);
+            await createMeetingStatus({ meeting_status: newMeetingStatusName.trim(), status: 'Active' });
+            setMeetingStatusOptions((prev) => [...prev, newMeetingStatusName.trim()]);
+            setMeetingData((prev) => ({ ...prev, completed_meet_status: newMeetingStatusName.trim() }));
+            setCreateMeetingStatusOpen(false);
+            setSnackbar({ open: true, message: 'Meeting Status created successfully', severity: 'success' });
+        } catch (err: any) {
+            console.error(err);
+            const friendlyMsg = getFriendlyErrorMessage(err);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+        } finally {
+            setCreatingMeetingStatus(false);
+        }
+    };
 
     useEffect(() => {
         if (open) {
@@ -112,6 +137,14 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
             getDoctypeList('User', ['name', 'full_name']).then((users) => {
                 setUserOptions(users.filter((u: any) => u.name !== 'Administrator' && u.name !== 'Guest'));
             });
+            fetchMeetingStatuses({
+                page: 1,
+                page_size: 1000,
+                filters: [['Meeting Status', 'status', '=', 'Active']]
+            }).then((res) => {
+                const options = (res.data || []).map((item: any) => item.meeting_status);
+                setMeetingStatusOptions(options);
+            }).catch(console.error);
         }
     }, [open]);
 
@@ -417,47 +450,76 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                 </Select>
                                             </FormControl>
                                         </Grid>
-
                                         {meetingData.outgoing_call_status === 'Completed' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
                                                 <Autocomplete
                                                     fullWidth
-                                                    options={[
-                                                        'Called – No Response',
-                                                        'Called – Phone Switched Off',
-                                                        'Called – Number Not Reachable',
-                                                        'Called – Wrong Number',
-                                                        'Called – Left Voicemail',
-                                                        'Called – Asked to Call Later',
-                                                        'Called – Spoke Briefly',
-                                                        'Spoke to Prospect – Not Available',
-                                                        'Spoke to Prospect – Confirmed Interest',
-                                                        'Spoke to Prospect – Needs More Time',
-                                                        'Spoke to Prospect – Will Revert Soon',
-                                                        'Spoke to Prospect – Awaiting Internal Discussion',
-                                                        'Demo Scheduled',
-                                                        'Demo Completed',
-                                                        'Demo Rescheduled',
-                                                        'Prospect Did Not Attend Demo',
-                                                        'Proposal / Quotation Sent',
-                                                        'Pricing Discussion Ongoing',
-                                                        'Negotiation in Progress',
-                                                        'Awaiting Prospect Approval',
-                                                        'Deal Won – Order Confirmed',
-                                                        'Deal Lost – Price Issue',
-                                                        'Deal Lost – No Requirement',
-                                                        'Deal Lost – Competitor Chosen',
-                                                        'Order Processing Started',
-                                                        'Payment Received',
-                                                        'Delivery / Implementation Started',
-                                                        'Post-Sales Follow-up Scheduled',
-                                                        'Lead Not Interested',
-                                                        'Lead Invalid',
-                                                        'Lead Closed – No Response',
-                                                        'Others'
-                                                    ]}
+                                                    options={meetingStatusOptions}
                                                     value={meetingData.completed_meet_status || null}
-                                                    onChange={(_, newValue) => setMeetingData({ ...meetingData, completed_meet_status: newValue || '' })}
+                                                    onChange={(_, newValue: any) => {
+                                                        if (typeof newValue === 'string') {
+                                                            setMeetingData({ ...meetingData, completed_meet_status: newValue });
+                                                        } else if (newValue && newValue.isNew) {
+                                                            setNewMeetingStatusName(newValue.inputValue);
+                                                            setCreateMeetingStatusOpen(true);
+                                                        } else {
+                                                            setMeetingData({ ...meetingData, completed_meet_status: newValue || '' });
+                                                        }
+                                                    }}
+                                                    filterOptions={(options, params) => {
+                                                        const filtered = filter(options, params) as any[];
+                                                        const { inputValue } = params;
+                                                        const isExisting = options.some((option) => inputValue === option);
+
+                                                        if (inputValue !== '' && !isExisting) {
+                                                            filtered.push({
+                                                                inputValue,
+                                                                label: `+ Create "${inputValue}"`,
+                                                                isNew: true,
+                                                            });
+                                                        } else if (inputValue === '') {
+                                                            filtered.push({
+                                                                inputValue: '',
+                                                                label: '+ Create Meeting Status',
+                                                                isNew: true,
+                                                            });
+                                                        }
+                                                        return filtered;
+                                                    }}
+                                                    getOptionLabel={(option: any) => {
+                                                        if (typeof option === 'string') return option;
+                                                        if (option.inputValue) return option.inputValue;
+                                                        return option.label || '';
+                                                    }}
+                                                    renderOption={(props, option: any) => {
+                                                        const { key, ...optionProps } = props as any;
+                                                        return (
+                                                            <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                                                                        <Iconify icon="solar:add-circle-bold" width={24} />
+                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Meeting Status'}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.label || option
+                                                                )}
+                                                            </Box>
+                                                        );
+                                                    }}
                                                     renderInput={(params) => <TextField {...params} label="Meeting Status" />}
                                                 />
                                             </Grid>
@@ -628,6 +690,47 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     </Button>
                 }
             />
+
+            <Dialog
+                open={createMeetingStatusOpen}
+                onClose={() => !creatingMeetingStatus && setCreateMeetingStatusOpen(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Meeting Status</Typography>
+                    <IconButton
+                        onClick={() => !creatingMeetingStatus && setCreateMeetingStatusOpen(false)}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+                    <TextField
+                        fullWidth
+                        label="Meeting Status"
+                        value={newMeetingStatusName}
+                        onChange={(e) => setNewMeetingStatusName(e.target.value)}
+                        required
+                        autoFocus
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateMeetingStatusSubmit}
+                        disabled={creatingMeetingStatus || !newMeetingStatusName.trim()}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {creatingMeetingStatus ? 'Creating...' : 'Create'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}

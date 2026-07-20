@@ -14,6 +14,7 @@ import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
@@ -42,6 +43,7 @@ import { fDate } from 'src/utils/format-time';
 
 import { runReport } from 'src/api/reports';
 import { getDoctypeList } from 'src/api/leads';
+import { fetchLeaveApplications } from 'src/api/leaves';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Label } from 'src/components/label';
@@ -52,6 +54,7 @@ import { useAuth } from 'src/auth/auth-context';
 
 import { AttendanceCalendar } from './attendance-calendar';
 import { AttendanceDetailsDialog } from '../attendance-details-dialog';
+import { LeavesDetailsDialog } from '../../leaves/leaves-details-dialog';
 
 
 export function AttendanceReportView() {
@@ -121,9 +124,14 @@ export function AttendanceReportView() {
     // --- end drag-scroll ---
 
     // Open details dialog only when user clicked (not dragged)
-    const handleMusterCellClick = (attendanceName: string) => {
+    const handleMusterCellClick = (attendanceName?: string, leave?: any) => {
         if (musterDragMoved.current > 15) return; // was a drag, not a click
-        handleViewDetails(attendanceName);
+        if (attendanceName) {
+            handleViewDetails(attendanceName);
+        } else if (leave) {
+            setSelectedLeaveId(leave.name);
+            setOpenLeaveDetails(true);
+        }
     };
 
     const handleViewChange = useCallback((newView: 'list' | 'calendar' | 'muster') => {
@@ -171,6 +179,13 @@ export function AttendanceReportView() {
     // Details Dialog
     const [openDetails, setOpenDetails] = useState(false);
     const [selectedAttendanceName, setSelectedAttendanceName] = useState<string | null>(null);
+
+    // Leave Details Dialog
+    const [openLeaveDetails, setOpenLeaveDetails] = useState(false);
+    const [selectedLeaveId, setSelectedLeaveId] = useState<string | null>(null);
+
+    // Leave Applications (fetched alongside report data)
+    const [leaveApplications, setLeaveApplications] = useState<any[]>([]);
 
     const handleViewDetails = (name: string) => {
         setSelectedAttendanceName(name);
@@ -275,16 +290,35 @@ export function AttendanceReportView() {
         return attendanceMap.get(`${employeeId}_${dateStr}`);
     }, [attendanceMap]);
 
+    const getApprovedLeaveForDate = useCallback((employeeId: string, date: dayjs.Dayjs) => {
+        if (!leaveApplications.length) return null;
+        return leaveApplications.find((leave) => {
+            if (leave.employee !== employeeId) return false;
+            const isApproved = leave.workflow_state === 'Approved' || leave.status === 'Approved';
+            if (!isApproved) return false;
+            const from = dayjs(leave.from_date);
+            const to = dayjs(leave.to_date);
+            return (date.isSame(from, 'day') || date.isAfter(from, 'day')) &&
+                   (date.isSame(to, 'day') || date.isBefore(to, 'day'));
+        }) || null;
+    }, [leaveApplications]);
+
+    const isLeaveStatus = useCallback((val: string) => !['P', 'A', 'HD', 'H', ''].includes(val), []);
+
     const getAttendanceStatus = useCallback((employeeId: string, date: dayjs.Dayjs) => {
         const record = getAttendanceRecord(employeeId, date);
         if (!record) return '';
         if (record.status === 'Missing') return '';
         if (record.status === 'Present') return 'P';
-        if (record.status === 'Absent') return 'A';
         if (record.status === 'Half Day') return 'HD';
         if (record.status === 'Holiday') return 'H';
+        if (record.status === 'Absent') {
+            const leave = getApprovedLeaveForDate(employeeId, date);
+            if (leave) return leave.leave_type as string;
+            return 'A';
+        }
         return record.status;
-    }, [getAttendanceRecord]);
+    }, [getAttendanceRecord, getApprovedLeaveForDate]);
 
     const getAttendanceTimes = useCallback((employeeId: string, date: dayjs.Dayjs) => {
         const record = getAttendanceRecord(employeeId, date);
@@ -314,36 +348,18 @@ export function AttendanceReportView() {
         return holidayDatesSet.has(dateStr);
     }, [holidayDatesSet]);
 
-
-    const getStatusStyles = (cellStatus: 'P' | 'A' | 'HD' | 'H' | string) => {
-        switch (cellStatus) {
-            case 'P':
-                return {
-                    bgcolor: 'rgba(34, 197, 94, 0.14)',
-                    color: '#166534',
-                    fontWeight: 'bold',
-                };
-            case 'A':
-                return {
-                    bgcolor: 'rgba(239, 68, 68, 0.14)',
-                    color: '#991b1b',
-                    fontWeight: 'bold',
-                };
-            case 'HD':
-                return {
-                    bgcolor: 'rgba(254, 240, 138, 0.5)',
-                    color: '#854d0e',
-                    fontWeight: 'bold',
-                };
-            case 'H':
-                return {
-                    bgcolor: 'rgba(244, 63, 94, 0.14)',
-                    color: '#9f1239',
-                    fontWeight: 'bold',
-                };
-            default:
-                return {};
-        }
+    const getStatusStyles = (cellStatus: string) => {
+        if (cellStatus === 'P') return { bgcolor: 'rgba(34, 197, 94, 0.14)', color: '#166534', fontWeight: 'bold' };
+        if (cellStatus === 'A') return { bgcolor: 'rgba(239, 68, 68, 0.14)', color: '#991b1b', fontWeight: 'bold' };
+        if (cellStatus === 'HD') return { bgcolor: 'rgba(254, 240, 138, 0.5)', color: '#854d0e', fontWeight: 'bold' };
+        if (cellStatus === 'H') return { bgcolor: 'rgba(244, 63, 94, 0.14)', color: '#9f1239', fontWeight: 'bold' };
+        const s = cellStatus.toLowerCase();
+        if (s.includes('unpaid')) return { bgcolor: 'rgba(126, 34, 206, 0.14)', color: '#6b21a8', fontWeight: 'bold' };
+        if (s.includes('paid')) return { bgcolor: 'rgba(29, 78, 216, 0.14)', color: '#1e40af', fontWeight: 'bold' };
+        if (s.includes('permission')) return { bgcolor: 'rgba(3, 105, 161, 0.14)', color: '#075985', fontWeight: 'bold' };
+        if (s.includes('sick')) return { bgcolor: 'rgba(219, 39, 119, 0.14)', color: '#9d174d', fontWeight: 'bold' };
+        if (s.includes('casual')) return { bgcolor: 'rgba(13, 148, 136, 0.14)', color: '#115e59', fontWeight: 'bold' };
+        return { bgcolor: 'rgba(75, 85, 99, 0.14)', color: '#374151', fontWeight: 'bold' };
     };
 
     const handleOpenExportDialog = (type: 'excel' | 'pdf') => {
@@ -403,6 +419,22 @@ export function AttendanceReportView() {
 
             setReportData(finalData);
             setPage(0);
+
+            // Fetch approved leave applications for the same date range
+            try {
+                const leavesRes = await fetchLeaveApplications({
+                    page: 1,
+                    page_size: 2000,
+                    filters: {
+                        start_date: fromDate.format('YYYY-MM-DD'),
+                        end_date: toDate.format('YYYY-MM-DD'),
+                        workflow_state: 'Approved'
+                    }
+                });
+                setLeaveApplications(leavesRes.data || []);
+            } catch {
+                setLeaveApplications([]);
+            }
         } catch (error) {
             console.error('Failed to fetch attendance report:', error);
         } finally {
@@ -1083,19 +1115,54 @@ export function AttendanceReportView() {
                                                                         <TableCell sx={{ fontWeight: 600 }}>{row.employee_name}</TableCell>
                                                                         <TableCell>{row.employee}</TableCell>
                                                                         <TableCell>
-                                                                            <Label
-                                                                                variant="soft"
-                                                                                color={
-                                                                                    (row.status === 'Present' && 'success') ||
-                                                                                    (row.status === 'Absent' && 'error') ||
-                                                                                    (row.status === 'Half Day' && 'warning') ||
-                                                                                    (row.status === 'On Leave' && 'info') ||
-                                                                                    (row.status === 'Holiday' && 'secondary') ||
-                                                                                    'default'
+                                                                            {(() => {
+                                                                                const rowDate = dayjs(row.attendance_date);
+                                                                                const approvedLeave = row.status === 'Absent'
+                                                                                    ? getApprovedLeaveForDate(row.employee, rowDate)
+                                                                                    : null;
+                                                                                const displayStatus = approvedLeave ? approvedLeave.leave_type : row.status;
+                                                                                const isLeave = !!approvedLeave;
+                                                                                if (isLeave) {
+                                                                                    const styles = getStatusStyles(displayStatus);
+                                                                                    const isPermission = displayStatus.toLowerCase().includes('permission');
+                                                                                    return (
+                                                                                        <Box
+                                                                                            sx={{
+                                                                                                display: 'inline-flex',
+                                                                                                flexDirection: 'column',
+                                                                                                alignItems: 'center',
+                                                                                                px: 1.25,
+                                                                                                py: 0.4,
+                                                                                                borderRadius: '6px',
+                                                                                                fontSize: '0.75rem',
+                                                                                                ...styles
+                                                                                            }}
+                                                                                        >
+                                                                                            <span>{displayStatus.replace(/\s*leave\s*/gi, '')}</span>
+                                                                                            {isPermission && approvedLeave?.permission_hours > 0 && (
+                                                                                                <span style={{ fontSize: '0.65rem', opacity: 0.8 }}>
+                                                                                                    {approvedLeave.permission_hours}m
+                                                                                                </span>
+                                                                                            )}
+                                                                                        </Box>
+                                                                                    );
                                                                                 }
-                                                                            >
-                                                                                {row.status}
-                                                                            </Label>
+                                                                                return (
+                                                                                    <Label
+                                                                                        variant="soft"
+                                                                                        color={
+                                                                                            (row.status === 'Present' && 'success') ||
+                                                                                            (row.status === 'Absent' && 'error') ||
+                                                                                            (row.status === 'Half Day' && 'warning') ||
+                                                                                            (row.status === 'On Leave' && 'info') ||
+                                                                                            (row.status === 'Holiday' && 'secondary') ||
+                                                                                            'default'
+                                                                                        }
+                                                                                    >
+                                                                                        {row.status}
+                                                                                    </Label>
+                                                                                );
+                                                                            })()}
                                                                         </TableCell>
                                                                         <TableCell>{row.in_time || '---'}</TableCell>
                                                                         <TableCell>{row.out_time || '---'}</TableCell>
@@ -1164,12 +1231,16 @@ export function AttendanceReportView() {
                                         { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
                                         { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
                                         { label: 'Half Day', value: 'HD', color: 'rgba(254, 240, 138, 0.5)', textColor: '#854d0e' },
+                                        { label: 'Unpaid Leave', value: 'Unpaid', color: 'rgba(126, 34, 206, 0.14)', textColor: '#6b21a8' },
+                                        { label: 'Paid Leave', value: 'Paid', color: 'rgba(29, 78, 216, 0.14)', textColor: '#1e40af' },
+                                        { label: 'Permission', value: 'Permission', color: 'rgba(3, 105, 161, 0.14)', textColor: '#075985' },
                                     ].map((item) => (
                                         <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
                                             <Box
                                                 sx={{
-                                                    width: 24,
+                                                    minWidth: 32,
                                                     height: 24,
+                                                    px: 0.75,
                                                     borderRadius: '6px',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1334,9 +1405,11 @@ export function AttendanceReportView() {
 
                                                                 const cellStatus = getAttendanceStatus(emp.id, date);
                                                                 const showTime = cellStatus === 'P' || cellStatus === 'HD';
+                                                                const isLeave = isLeaveStatus(cellStatus);
+                                                                const leaveRecord = isLeave ? getApprovedLeaveForDate(emp.id, date) : null;
                                                                 const times = showTime ? getAttendanceTimes(emp.id, date) : null;
                                                                 const record = getAttendanceRecord(emp.id, date);
-                                                                const isClickable = !!record?.name;
+                                                                const isClickable = !!record?.name || !!leaveRecord;
                                                                 return (
                                                                     <TableCell
                                                                         key={date.format('YYYY-MM-DD')}
@@ -1348,11 +1421,11 @@ export function AttendanceReportView() {
                                                                         }}
                                                                     >
                                                                         <Box
-                                                                            onClick={isClickable ? () => handleMusterCellClick(record.name) : undefined}
+                                                                            onClick={isClickable ? () => handleMusterCellClick(isLeave ? undefined : record?.name, isLeave ? leaveRecord : undefined) : undefined}
                                                                             sx={{
-                                                                                px: showTime ? 1 : 0,
-                                                                                py: showTime ? 0.75 : 0,
-                                                                                width: showTime ? 90 : 32,
+                                                                                px: (showTime || isLeave) ? 1 : 0,
+                                                                                py: (showTime || isLeave) ? 0.75 : 0,
+                                                                                width: showTime ? 90 : (isLeave ? 80 : 32),
                                                                                 minHeight: 32,
                                                                                 borderRadius: '8px',
                                                                                 display: 'inline-flex',
@@ -1371,6 +1444,26 @@ export function AttendanceReportView() {
                                                                                     <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.6, my: 0.1, textTransform: 'lowercase' }}>to</Box>
                                                                                     <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700 }}>{times.outTime}</Box>
                                                                                 </Box>
+                                                                            ) : isLeave ? (
+                                                                                <Tooltip
+                                                                                    title={
+                                                                                        leaveRecord?.permission_hours
+                                                                                            ? `${leaveRecord.permission_hours} mins permission`
+                                                                                            : leaveRecord?.leave_type || cellStatus
+                                                                                    }
+                                                                                    arrow
+                                                                                >
+                                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
+                                                                                        <Box component="span" sx={{ fontWeight: 700 }}>
+                                                                                            {cellStatus.replace(/\s*leave\s*/gi, '')}
+                                                                                        </Box>
+                                                                                        {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 && (
+                                                                                            <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.8, mt: 0.2 }}>
+                                                                                                {leaveRecord.permission_hours}m
+                                                                                            </Box>
+                                                                                        )}
+                                                                                    </Box>
+                                                                                </Tooltip>
                                                                             ) : (
                                                                                 cellStatus
                                                                             )}
@@ -1569,6 +1662,15 @@ export function AttendanceReportView() {
                     setOpenDetails(false);
                     setSelectedAttendanceName(null);
                 }}
+            />
+
+            <LeavesDetailsDialog
+                open={openLeaveDetails}
+                onClose={() => {
+                    setOpenLeaveDetails(false);
+                    setSelectedLeaveId(null);
+                }}
+                leaveId={selectedLeaveId}
             />
         </DashboardContent>
     );

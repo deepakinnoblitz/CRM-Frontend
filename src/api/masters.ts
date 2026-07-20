@@ -1653,6 +1653,194 @@ export async function deleteCrmWhatsAppTemplateCategory(name: string) {
     return true;
 }
 
+export interface CallStatus {
+    name: string;
+    call_status: string;
+    status: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
 
+// Call Status APIs
+export const fetchCallStatuses = (params: any) => {
+    const { search, ...restParams } = params;
 
+    const or_filters = search ? [
+        ["Call Status", "call_status", "like", `%${search}%`],
+        ["Call Status", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Call Status", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "call_status", "status", "modified", "creation"]
+    });
+};
+
+export async function createCallStatus(data: Partial<CallStatus>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Call Status", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Call Status"));
+    return json.message;
+}
+
+export async function updateCallStatus(name: string, data: Partial<CallStatus>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest(`/api/resource/Call Status/${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update Call Status"));
+    return json.data || json.message;
+}
+
+export async function renameCallStatus(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Call Status",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename Call Status"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "Call Status",
+                name: newName,
+                fieldname: { call_status: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch Call Status after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching Call Status after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteCallStatus(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Call Status", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete Call Status"));
+    return true;
+}
+
+export interface MeetingStatus {
+    name: string;
+    meeting_status: string;
+    status: 'Active' | 'Inactive';
+    creation?: string;
+    modified?: string;
+}
+
+// Meeting Status APIs
+export const fetchMeetingStatuses = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Meeting Status", "meeting_status", "like", `%${search}%`],
+        ["Meeting Status", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Meeting Status", {
+        ...restParams,
+        search: undefined,
+        or_filters
+    });
+};
+
+export async function createMeetingStatus(data: Partial<MeetingStatus>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Meeting Status", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create Meeting Status"));
+    return json.data || json.message;
+}
+
+export async function updateMeetingStatus(name: string, data: Partial<MeetingStatus>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Meeting Status", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update Meeting Status"));
+    return json.data || json.message;
+}
+
+export async function renameMeetingStatus(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doctype: "Meeting Status",
+            old_name: oldName,
+            new_name: newName,
+            merge: false
+        })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename Meeting Status"));
+
+    try {
+        const touchRes = await frappeRequest("/api/method/frappe.client.set_value", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+                doctype: "Meeting Status",
+                name: newName,
+                fieldname: { meeting_status: newName }
+            })
+        });
+        if (!touchRes.ok) {
+            console.error("Failed to touch Meeting Status after rename");
+        }
+    } catch (touchErr) {
+        console.error("Error touching Meeting Status after rename:", touchErr);
+    }
+
+    return json.message;
+}
+
+export async function deleteMeetingStatus(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Meeting Status", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete Meeting Status"));
+    return true;
+}
 

@@ -52,6 +52,7 @@ import {
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -105,6 +106,13 @@ export function InterviewsView() {
     const [dialogTab, setDialogTab] = useState(0);
     const [viewInterview, setViewInterview] = useState<any>(null);
     const [editInterview, setEditInterview] = useState<any>(null);
+
+    const [confirmDelete, setConfirmDelete] = useState(false);
+    const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
+    const [bulkDeleteLoading, setBulkDeleteLoading] = useState(false);
 
     // Form state
     const [formData, setFormData] = useState<any>({
@@ -288,24 +296,44 @@ export function InterviewsView() {
         }
     }, []);
 
-    const handleDeleteRow = useCallback(async (name: string) => {
+    const handleDeleteRow = useCallback((name: string) => {
+        setDeleteTarget(name);
+        setConfirmDelete(true);
+    }, []);
+
+    const onConfirmDelete = async () => {
+        if (!deleteTarget || deleteLoading) return;
+        setDeleteLoading(true);
         try {
-            await deleteInterview(name);
+            await deleteInterview(deleteTarget);
             setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+            setConfirmDelete(false);
             refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
+        } finally {
+            setDeleteLoading(false);
+            setDeleteTarget(null);
         }
-    }, [refetch]);
+    };
 
-    const handleBulkDelete = async () => {
+    const handleBulkDelete = () => {
+        setConfirmBulkDelete(true);
+    };
+
+    const onConfirmBulkDelete = async () => {
+        if (bulkDeleteLoading) return;
+        setBulkDeleteLoading(true);
         try {
             await Promise.all(selected.map((name) => deleteInterview(name)));
             setSnackbar({ open: true, message: 'Deleted successfully', severity: 'success' });
+            setConfirmBulkDelete(false);
             setSelected([]);
             refetch();
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Bulk delete failed', severity: 'error' });
+        } finally {
+            setBulkDeleteLoading(false);
         }
     };
 
@@ -1111,6 +1139,34 @@ export function InterviewsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 interview={viewInterview}
+            />
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={confirmDelete}
+                onClose={() => setConfirmDelete(false)}
+                title="Delete Interview"
+                content="Are you sure you want to delete this interview?"
+                isLoading={deleteLoading}
+                action={
+                    <Button variant="contained" color="error" onClick={onConfirmDelete} disabled={deleteLoading}>
+                        Delete
+                    </Button>
+                }
+            />
+
+            {/* Confirm Bulk Delete Dialog */}
+            <ConfirmDialog
+                open={confirmBulkDelete}
+                onClose={() => setConfirmBulkDelete(false)}
+                title="Delete Interviews"
+                content={`Are you sure you want to delete ${selected.length} selected interviews?`}
+                isLoading={bulkDeleteLoading}
+                action={
+                    <Button variant="contained" color="error" onClick={onConfirmBulkDelete} disabled={bulkDeleteLoading}>
+                        Delete
+                    </Button>
+                }
             />
 
             <InterviewTableFiltersDrawer
