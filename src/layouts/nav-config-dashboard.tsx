@@ -571,10 +571,22 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
           if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
           if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return false;
           if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return false;
+
+          // Custom module/screen permission filtering
+          if (user?.permissions?.custom_permissions_assigned) {
+            const childKey = child.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+            const menuMapping = user?.permissions?.menu_mapping || {};
+            const checkKey = menuMapping[childKey] || childKey;
+
+            const menus = user?.permissions?.menus || {};
+            if (menus[checkKey] === false) {
+              return false;
+            }
+          }
           return true;
         });
-        // If a group item like 'Attendance Records' or 'Report' has no children left, hide it
-        if (['Attendance Records', 'Report'].includes(itemClone.title) && itemClone.children.length === 0) return;
+        // If a group item like 'Employee Records', 'Attendance Records', 'Leaves Records', or 'Report' has no children left, hide it
+        if (itemClone.children.length === 0) return;
       }
 
       // Handle top-level items (mostly for Employee View)
