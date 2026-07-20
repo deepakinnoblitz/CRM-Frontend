@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchDepartments, fetchProjects, fetchActivityTypes, fetchBankAccounts, fetchClaimTypes, fetchAssetCategories, fetchEvaluationTraitCategories, fetchDesignations, fetchSalaryStructureComponents, fetchLeaveTypes, fetchLeadFroms, fetchCompanyBankAccounts, fetchServices, fetchItems, fetchPaymentTerms, fetchPaymentTypesCustom, fetchCrmEmailTemplateCategories, fetchCrmWhatsAppTemplateCategories, fetchTaxTypesCustom } from 'src/api/masters';
+import { fetchItems, fetchProjects, fetchServices, fetchLeadFroms, fetchClaimTypes, fetchLeaveTypes, fetchDepartments, fetchBankAccounts, fetchDesignations, fetchPaymentTerms, fetchCallStatuses, fetchActivityTypes, fetchTaxTypesCustom, fetchMeetingStatuses, fetchAssetCategories, fetchPaymentTypesCustom, fetchCompanyBankAccounts, fetchEvaluationTraitCategories, fetchSalaryStructureComponents, fetchCrmEmailTemplateCategories, fetchCrmWhatsAppTemplateCategories } from 'src/api/masters';
 
 export function useDepartments(
   page: number = 1,
@@ -783,5 +783,82 @@ export function useCrmWhatsAppTemplateCategories(
   return { data, total, loading, error, refetch };
 }
 
+export function useCallStatuses(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchCallStatuses({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch Call Statuses:', err);
+      setError(err.message || 'Failed to fetch Call Statuses');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
 
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+
+export function useMeetingStatuses(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'modified',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: any) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchMeetingStatuses({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch Meeting Statuses:', err);
+      setError(err.message || 'Failed to fetch Meeting Statuses');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}

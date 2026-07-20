@@ -1,0 +1,178 @@
+import { useState, useEffect } from 'react';
+
+import Box from '@mui/material/Box';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import { IconButton } from '@mui/material';
+import Snackbar from '@mui/material/Snackbar';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+
+import { type MeetingStatus, createMeetingStatus, renameMeetingStatus, updateMeetingStatus } from 'src/api/masters';
+
+import { Iconify } from 'src/components/iconify';
+
+// ----------------------------------------------------------------------
+
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => Promise<void> | void;
+  currentMeetingStatus?: MeetingStatus | null;
+};
+
+export function MeetingStatusDialog({ open, onClose, onSuccess, currentMeetingStatus }: Props) {
+  const [meetingStatus, setMeetingStatus] = useState('');
+  const [status, setStatus] = useState<'Active' | 'Inactive'>('Active');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
+
+  const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
+
+  useEffect(() => {
+    if (open) {
+      if (currentMeetingStatus) {
+        setMeetingStatus(currentMeetingStatus.meeting_status || '');
+        setStatus(currentMeetingStatus.status || 'Active');
+      } else {
+        setMeetingStatus('');
+        setStatus('Active');
+      }
+      setError('');
+    }
+  }, [open, currentMeetingStatus]);
+
+  const handleSubmit = async () => {
+    if (!meetingStatus.trim()) {
+      setError('Meeting Status');
+      setSnackbar({ open: true, message: 'Meeting Status is required', severity: 'error' });
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError('');
+
+      if (currentMeetingStatus) {
+        let currentId = currentMeetingStatus.name;
+        if (currentMeetingStatus.meeting_status !== meetingStatus) {
+          await renameMeetingStatus(currentMeetingStatus.name, meetingStatus);
+          currentId = meetingStatus;
+        }
+        await updateMeetingStatus(currentId, { meeting_status: meetingStatus, status });
+      } else {
+        await createMeetingStatus({ meeting_status: meetingStatus, status });
+      }
+
+      await onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error(err);
+      const msg = err.message || 'Failed to save Meeting Status';
+      setError(msg);
+      setSnackbar({ open: true, message: msg, severity: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          boxShadow: (themeVar: any) => themeVar.customShadows.z24,
+        }
+      }}
+    >
+      <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Typography variant="h6">{currentMeetingStatus ? 'Edit Meeting Status' : 'New Meeting Status'}</Typography>
+        <IconButton
+          aria-label="close"
+          onClick={onClose}
+          sx={{
+            color: (theme) => theme.palette.grey[500],
+          }}
+        >
+          <Iconify icon="mingcute:close-line" />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Box
+          sx={{
+            display: 'grid',
+            margin: '1rem',
+            columnGap: 2,
+            rowGap: 3,
+            gridTemplateColumns: '1fr',
+          }}
+        >
+          <TextField
+            required
+            fullWidth
+            label="Meeting Status"
+            value={meetingStatus}
+            onChange={(e) => {
+              setMeetingStatus(e.target.value);
+              if (error === 'Meeting Status') setError('');
+            }}
+            error={error === 'Meeting Status'}
+            helperText={error === 'Meeting Status' ? 'Meeting Status is required' : ''}
+            disabled={loading}
+            placeholder="e.g. Meeting Completed"
+          />
+
+          <TextField
+            select
+            fullWidth
+            label="Status"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as 'Active' | 'Inactive')}
+            SelectProps={{ native: true }}
+            InputLabelProps={{ shrink: true }}
+            disabled={loading}
+          >
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+          </TextField>
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ p: 2 }}>
+        <Button
+          variant="contained"
+          onClick={handleSubmit}
+          disabled={loading}
+          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+        >
+          {loading ? (currentMeetingStatus ? 'Updating...' : 'Creating...') : (currentMeetingStatus ? 'Update' : 'Create')}
+        </Button>
+      </DialogActions>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Dialog>
+  );
+}

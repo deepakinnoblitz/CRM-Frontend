@@ -50,12 +50,15 @@ import { getCall, deleteCall, type Call } from 'src/api/calls';
 import { getMeeting, deleteMeeting, type Meeting } from 'src/api/meetings';
 import { fetchEvents, updateEvent, createEvent, deleteEvent, type CalendarEvent } from 'src/api/events';
 
+import { Loader } from 'src/components/loader';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
+import { EventDetailsDialog } from 'src/sections/events/event-details-dialog';
+
 
 // ----------------------------------------------------------------------
 
@@ -77,11 +80,14 @@ const getLocalDateStr = (dateStr: string) => {
     return dayjs(dateStr).format('YYYY-MM-DD');
 };
 
+let isCalendarInitialized = false;
+
 export function EventsView() {
     const theme = useTheme();
     const navigate = useNavigate();
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(!isCalendarInitialized);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
     const [openDialog, setOpenDialog] = useState(false);
     const [eventData, setEventData] = useState<Partial<CalendarEvent>>(INITIAL_EVENT_STATE);
@@ -97,6 +103,8 @@ export function EventsView() {
     const [openCallDialog, setOpenCallDialog] = useState(false);
     const [openMeetingDialog, setOpenMeetingDialog] = useState(false);
     const [openTodoDialog, setOpenTodoDialog] = useState(false);
+    const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
+    const [selectedDetailsEvent, setSelectedDetailsEvent] = useState<CalendarEvent | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -186,6 +194,8 @@ export function EventsView() {
             setSnackbar({ open: true, message: error.message || 'Failed to load events', severity: 'error' });
         } finally {
             setLoadingEvents(false);
+            isCalendarInitialized = true;
+            setInitialLoading(false);
         }
     }, []);
 
@@ -398,6 +408,48 @@ export function EventsView() {
     // Bryntum Calendar configuration and logic (New Calendar UI)
     const calendarRef = useRef<BryntumCalendar>(null);
     const initialDateRef = useRef(new Date());
+
+    useEffect(() => {
+        const savedDateStr = sessionStorage.getItem('calendar_saved_date');
+        const savedMode = sessionStorage.getItem('calendar_saved_mode');
+        const savedFilter = sessionStorage.getItem('calendar_saved_filter');
+        const reopenEventId = sessionStorage.getItem('calendar_reopen_event_id');
+
+        if (savedFilter) {
+            setEventTypeFilter(savedFilter);
+            sessionStorage.removeItem('calendar_saved_filter');
+        }
+
+        if (savedMode && calendarRef.current?.instance) {
+            calendarRef.current.instance.mode = savedMode;
+            sessionStorage.removeItem('calendar_saved_mode');
+        }
+
+        if (savedDateStr) {
+            const date = new Date(savedDateStr);
+            if (calendarRef.current?.instance) {
+                calendarRef.current.instance.date = date;
+            } else {
+                initialDateRef.current = date;
+            }
+            setMiniCalDate(dayjs(date));
+            sessionStorage.removeItem('calendar_saved_date');
+        }
+
+        if (reopenEventId && events.length > 0) {
+            const foundEvent = events.find(e => e.name === reopenEventId);
+            if (foundEvent) {
+                setTimeout(() => {
+                    const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${reopenEventId}"]`) || document.querySelector(`[data-event-id="${reopenEventId}"]`);
+                    if (element) {
+                        setClickedEvent(foundEvent);
+                        setPopoverAnchorEl(element as HTMLElement);
+                    }
+                }, 300);
+            }
+            sessionStorage.removeItem('calendar_reopen_event_id');
+        }
+    }, [events, calendarRef.current?.instance]);
 
     const stateRef = useRef<any>({});
     stateRef.current = {
@@ -725,6 +777,24 @@ export function EventsView() {
             return finalBryntumEvent;
         });
     }, [events, theme, eventTypeFilter]);
+
+    if (initialLoading) {
+        return (
+            <DashboardContent maxWidth="xl">
+                <Box
+                    sx={{
+                        height: '70vh',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Loader />
+                </Box>
+            </DashboardContent>
+        );
+    }
 
     return (
         <>
@@ -1664,6 +1734,25 @@ export function EventsView() {
                     onSuccess={loadEvents}
                 />
 
+                <EventDetailsDialog
+                    open={openDetailsDialog}
+                    onClose={() => {
+                        setOpenDetailsDialog(false);
+                        setSelectedDetailsEvent(null);
+                        if (clickedEvent) {
+                            setTimeout(() => {
+                                const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${clickedEvent.name}"]`) || document.querySelector(`[data-event-id="${clickedEvent.name}"]`);
+                                if (element) {
+                                    setPopoverAnchorEl(element as HTMLElement);
+                                }
+                            }, 100);
+                        }
+                    }}
+                    eventId={selectedDetailsEvent ? selectedDetailsEvent.name : null}
+                    eventRefType={selectedDetailsEvent ? selectedDetailsEvent.reference_doctype : null}
+                    eventRefName={selectedDetailsEvent ? selectedDetailsEvent.reference_docname : null}
+                />
+
                 <Popover
                     open={Boolean(popoverAnchorEl)}
                     anchorEl={popoverAnchorEl}
@@ -1703,7 +1792,23 @@ export function EventsView() {
                                     }}>
                                         {clickedEvent.subject}
                                     </Typography>
-                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                     <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                         <IconButton size="small" onClick={() => {
+                                             if (calendarRef.current?.instance) {
+                                                 const calendar = calendarRef.current.instance;
+                                                 const dateObj = calendar.date instanceof Date ? calendar.date : new Date(calendar.date);
+                                                 sessionStorage.setItem('calendar_saved_date', dateObj.toISOString());
+                                                 sessionStorage.setItem('calendar_saved_mode', calendar.mode || 'month');
+                                             }
+                                             sessionStorage.setItem('calendar_saved_filter', eventTypeFilter || 'All');
+                                             sessionStorage.setItem('calendar_reopen_event_id', clickedEvent?.name || '');
+
+                                             setPopoverAnchorEl(null);
+                                             setSelectedDetailsEvent(clickedEvent);
+                                             setOpenDetailsDialog(true);
+                                         }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                             <Iconify icon="solar:eye-bold" width={20} />
+                                         </IconButton>
                                         <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
                                             <Iconify icon="solar:pen-bold" width={20} />
                                         </IconButton>
