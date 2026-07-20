@@ -35,6 +35,8 @@ import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { MetaWebhookLogFiltersDrawer, MetaWebhookLogFilters } from '../meta-webhook-log-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -72,6 +74,12 @@ function formatDatetime(val?: string) {
 // ----------------------------------------------------------------------
 
 export function MetaWebhookLogListView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.webhook_logs;
+    const canCreate = hasCustomPerms && user?.permissions?.actions?.webhook_logs ? !!user?.permissions?.actions?.webhook_logs?.create : true;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.webhook_logs ? !!user?.permissions?.actions?.webhook_logs?.edit : true;
+    const canDelete = hasCustomPerms && user?.permissions?.actions?.webhook_logs ? !!user?.permissions?.actions?.webhook_logs?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');

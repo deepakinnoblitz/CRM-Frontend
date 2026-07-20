@@ -38,6 +38,8 @@ import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { MetaLeadsFiltersDrawer, MetaLeadsFilters } from '../meta-leads-filters-drawer';
 // ----------------------------------------------------------------------
 
@@ -77,6 +79,12 @@ function formatDatetime(val?: string) {
 // ----------------------------------------------------------------------
 
 export function MetaLeadListView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_leads;
+    const canCreate = hasCustomPerms && user?.permissions?.actions?.meta_leads ? !!user?.permissions?.actions?.meta_leads?.create : true;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_leads ? !!user?.permissions?.actions?.meta_leads?.edit : true;
+    const canDelete = hasCustomPerms && user?.permissions?.actions?.meta_leads ? !!user?.permissions?.actions?.meta_leads?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
