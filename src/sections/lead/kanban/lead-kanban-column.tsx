@@ -17,6 +17,7 @@ type Props = {
     name: string;
     color: string;
     leadIds: string[];
+    total?: number;
   };
   leads: any[];
   onOpenLead: (leadId: string) => void;
@@ -173,7 +174,7 @@ export default function LeadKanbanColumn({
               fontSize: 13,
             }}
           >
-            {columnLeads.length}
+            {column.total ?? columnLeads.length}
           </Box>
 
           <Typography

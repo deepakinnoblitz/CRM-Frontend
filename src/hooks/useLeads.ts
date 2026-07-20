@@ -56,6 +56,7 @@ export function useKanbanLeads(
         page: number;
         loading: boolean;
         hasMore: boolean;
+        total: number;
     }>>({});
 
     const [trigger, setTrigger] = useState(0);
@@ -80,7 +81,8 @@ export function useKanbanLeads(
                     leads: [],
                     page: 1,
                     loading: false,
-                    hasMore: false
+                    hasMore: false,
+                    total: 0
                 }
             }));
             return;
@@ -89,7 +91,7 @@ export function useKanbanLeads(
         setColumns(prev => ({
             ...prev,
             [stage]: {
-                ...(prev[stage] || { leads: [], page: pageNum }),
+                ...(prev[stage] || { leads: [], page: pageNum, total: 0 }),
                 loading: true
             }
         }));
@@ -116,7 +118,8 @@ export function useKanbanLeads(
                         leads: newLeads,
                         page: pageNum,
                         loading: false,
-                        hasMore
+                        hasMore,
+                        total: res.total
                     }
                 };
             });
@@ -125,7 +128,7 @@ export function useKanbanLeads(
             setColumns(prev => ({
                 ...prev,
                 [stage]: {
-                    ...(prev[stage] || { leads: [], page: pageNum }),
+                    ...(prev[stage] || { leads: [], page: pageNum, total: 0 }),
                     loading: false,
                     hasMore: false
                 }
@@ -137,13 +140,14 @@ export function useKanbanLeads(
     useEffect(() => {
         if (!enabled || workflowStates.length === 0) return;
 
-        const initialColumns: Record<string, { leads: Lead[]; page: number; loading: boolean; hasMore: boolean }> = {};
+        const initialColumns: Record<string, { leads: Lead[]; page: number; loading: boolean; hasMore: boolean; total: number }> = {};
         workflowStates.forEach(stage => {
             initialColumns[stage] = {
                 leads: [],
                 page: 1,
                 loading: true,
-                hasMore: false
+                hasMore: false,
+                total: 0
             };
         });
         setColumns(initialColumns);
@@ -170,10 +174,11 @@ export function useKanbanLeads(
             hasMore: boolean;
             loading: boolean;
             loadMore: VoidFunction;
+            total: number;
         }> = {};
 
         workflowStates.forEach(stage => {
-            const col = columns[stage] || { leads: [], page: 1, loading: false, hasMore: false };
+            const col = columns[stage] || { leads: [], page: 1, loading: false, hasMore: false, total: 0 };
             result[stage] = {
                 leads: col.leads,
                 hasMore: col.hasMore,
@@ -182,7 +187,8 @@ export function useKanbanLeads(
                     if (!col.loading && col.hasMore) {
                         fetchColumn(stage, col.page + 1);
                     }
-                }
+                },
+                total: col.total ?? 0
             };
         });
 

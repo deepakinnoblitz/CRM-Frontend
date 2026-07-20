@@ -11,6 +11,7 @@ type Props = {
     hasMore: boolean;
     loading: boolean;
     loadMore: VoidFunction;
+    total?: number;
   }>;
   leads: any[];
   workflowStates: string[];
@@ -71,9 +72,10 @@ export default function LeadKanbanBoard({
         name: state,
         color: COLUMN_COLORS[index % COLUMN_COLORS.length],
         leadIds: stateLeads.map((lead) => lead.name),
+        total: columnsData?.[state]?.total,
       };
     });
-  }, [leads, workflowStates]);
+  }, [leads, workflowStates, columnsData]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
