@@ -13,6 +13,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { PurchaseListView } from './purchase-list-view';
 import { PurchaseCollectionListView } from '../../purchase-collection/view/purchase-collection-list-view';
 
@@ -27,12 +29,34 @@ const TABS = [
 
 export function PurchaseManagementView() {
     const router = useRouter();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+    const canCreatePurchase = hasCustomPerms && user?.permissions?.actions?.purchase ? !!user?.permissions?.actions?.purchase?.create : true;
+    const canCreatePurchaseCollections = hasCustomPerms && user?.permissions?.actions?.purchase_collection ? !!user?.permissions?.actions?.purchase_collection?.create : true;
+    const canViewCollections = hasCustomPerms && user?.permissions?.actions?.purchase_collection ? !!user?.permissions?.actions?.purchase_collection?.view : true;
+    
     const pathname = usePathname();
 
     const searchParams = new URLSearchParams(window.location.search);
     const tabParam = searchParams.get('tab');
 
-    const [currentTab, setCurrentTab] = useState(tabParam === 'collections' ? 'collections' : 'purchases');
+    const [currentTab, setCurrentTab] = useState(tabParam === 'collections' && canViewCollections ? 'collections' : 'purchases');
+
+    const tabs = [
+        {
+            value: 'purchases',
+            label: 'Purchases',
+            icon: <HiOutlineShoppingBag size={22} />,
+        },
+        ...(canViewCollections
+            ? [{
+                value: 'collections',
+                label: 'Settlements',
+                icon: <HiOutlineBanknotes size={22} />,
+            }]
+            : []),
+    ];
 
     const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
         setCurrentTab(newValue);
@@ -57,6 +81,8 @@ export function PurchaseManagementView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
                 <Typography variant="h4">Purchase Management</Typography>
+                {((currentTab === 'purchases' && canCreatePurchase) ||
+                (currentTab === 'collections' && canCreatePurchaseCollections)) && (
                 <Button
                     variant="contained"
                     color="info"
@@ -65,6 +91,7 @@ export function PurchaseManagementView() {
                 >
                     {currentTab === 'purchases' ? 'New Purchase' : 'New Settlement'}
                 </Button>
+                )}
             </Stack>
 
             <Tabs
@@ -89,13 +116,19 @@ export function PurchaseManagementView() {
                     },
                 }}
             >
-                {TABS.map((tab) => (
-                    <Tab key={tab.value} label={tab.label} icon={tab.icon} value={tab.value} iconPosition="start" />
+                {tabs.map((tab) => (
+                    <Tab
+                        key={tab.value}
+                        value={tab.value}
+                        label={tab.label}
+                        icon={tab.icon}
+                        iconPosition="start"
+                    />
                 ))}
             </Tabs>
 
             {currentTab === 'purchases' && <PurchaseListView hideHeader />}
-            {currentTab === 'collections' && <PurchaseCollectionListView hideHeader />}
+            {currentTab === 'collections' && canViewCollections && <PurchaseCollectionListView hideHeader />}
         </DashboardContent>
     );
 }

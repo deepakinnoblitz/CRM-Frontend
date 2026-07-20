@@ -28,6 +28,7 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -54,7 +55,11 @@ export default function PurchaseCollectionTableRow({
     index,
 }: Props) {
     const { name, purchase, amount_to_pay, collection_date, amount_collected, amount_pending, mode_of_payment } = row;
-
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase_collection;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.purchase_collection?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.purchase_collection?.delete : true;
+    
     return (
         <TableRow
             hover
@@ -124,12 +129,12 @@ export default function PurchaseCollectionTableRow({
                     <IconButton onClick={onViewRow} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-                    {isLatest && (
+                    {isLatest && displayEdit && (
                         <IconButton onClick={onEditRow} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {isLatest && (
+                    {isLatest && displayDelete &&(
                         <IconButton onClick={onDeleteRow} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

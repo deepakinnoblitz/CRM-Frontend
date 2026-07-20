@@ -160,3 +160,13 @@ export async function fetchRolePermissions(roles: string[]): Promise<PermissionM
 
     return details.filter((d): d is PermissionManagement => d !== null);
 }
+
+export async function getPopulatedPermissions(backendMasterRole: string): Promise<PermissionAccess[]> {
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_populated_permissions?backend_master_role=${encodeURIComponent(backendMasterRole)}`);
+    if (!res.ok) {
+        const error = await res.json();
+        throw new Error(handleFrappeError(error, "Failed to populate default permissions"));
+    }
+    const json = await res.json();
+    return json.message || [];
+}

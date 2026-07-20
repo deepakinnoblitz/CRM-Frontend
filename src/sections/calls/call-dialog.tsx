@@ -63,6 +63,8 @@ type Props = {
     selectedCall?: Call | null;
     initialData?: Partial<Call>;
     onSuccess?: () => void;
+    canEdit?: boolean;
+    canDelete?: boolean;
 };
 
 const INITIAL_CALL_STATE: Partial<Call> = {
@@ -83,7 +85,7 @@ const INITIAL_CALL_STATE: Partial<Call> = {
     participants: [],
 };
 
-export default function CallDialog({ open, onClose, selectedCall, initialData, onSuccess }: Props) {
+export default function CallDialog({ open, onClose, selectedCall, initialData, onSuccess, canEdit = true, canDelete = true }: Props) {
     const [callData, setCallData] = useState<Partial<Call>>(INITIAL_CALL_STATE);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -563,7 +565,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
-                    {selectedCall && (
+                    {selectedCall && canDelete && (
                         <Button
                             color="error"
                             variant="contained"
@@ -574,17 +576,19 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                             Delete
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        color="info"
-                        onClick={handleSaveCall}
-                        disabled={isSubmitting}
-                        sx={{ borderRadius: 1, px: 3 }}
-                    >
-                        {isSubmitting 
-                            ? (selectedCall ? 'Saving...' : 'Creating...') 
-                            : (selectedCall ? 'Save Changes' : 'Create Call')}
-                    </Button>
+                    {((!selectedCall && canEdit) || (selectedCall && canEdit)) && (
+                        <Button
+                            variant="contained"
+                            color="info"
+                            onClick={handleSaveCall}
+                            disabled={isSubmitting}
+                            sx={{ borderRadius: 1, px: 3 }}
+                        >
+                            {isSubmitting 
+                                ? (selectedCall ? 'Saving...' : 'Creating...') 
+                                : (selectedCall ? 'Save Changes' : 'Create Call')}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 

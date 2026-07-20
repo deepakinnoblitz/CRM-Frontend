@@ -30,74 +30,74 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 // Android 12 Switch Style
 const Android12Switch = styled(Switch)(({ theme }) => ({
-  width: 40,
-  height: 24,
-  padding: 0,
-  '& .MuiSwitch-switchBase': {
+    width: 40,
+    height: 24,
     padding: 0,
-    margin: 4,
-    transitionDuration: '200ms',
-    '&.Mui-checked': {
-      transform: 'translateX(16px)',
-      color: '#fff',
-      '& + .MuiSwitch-track': {
-        backgroundColor: theme.palette.primary.main,
-        opacity: 1,
-        border: 0,
-      },
-      '& .MuiSwitch-thumb': {
-        backgroundColor: '#fff',
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 4,
+        transitionDuration: '200ms',
+        '&.Mui-checked': {
+            transform: 'translateX(16px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: theme.palette.primary.main,
+                opacity: 1,
+                border: 0,
+            },
+            '& .MuiSwitch-thumb': {
+                backgroundColor: '#fff',
+                width: 16,
+                height: 16,
+            },
+        },
+        '&.Mui-disabled + .MuiSwitch-track': {
+            opacity: 0.5,
+        },
+    },
+    '& .MuiSwitch-thumb': {
+        boxSizing: 'border-box',
         width: 16,
         height: 16,
-      },
+        backgroundColor: '#fff',
+        boxShadow: 'none',
     },
-    '&.Mui-disabled + .MuiSwitch-track': {
-      opacity: 0.5,
+    '& .MuiSwitch-track': {
+        borderRadius: 24 / 2,
+        backgroundColor: '#cbd5e1',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 200,
+        }),
     },
-  },
-  '& .MuiSwitch-thumb': {
-    boxSizing: 'border-box',
-    width: 16,
-    height: 16,
-    backgroundColor: '#fff',
-    boxShadow: 'none',
-  },
-  '& .MuiSwitch-track': {
-    borderRadius: 24 / 2,
-    backgroundColor: '#cbd5e1',
-    opacity: 1,
-    transition: theme.transitions.create(['background-color'], {
-      duration: 200,
-    }),
-  },
 }));
 
 // Android 12 Button Style
 const Android12Button = styled(Button)(({ theme }) => ({
-  borderRadius: 20,
-  textTransform: 'none',
-  fontWeight: 500,
-  padding: '8px 20px',
-  fontSize: '0.925rem',
-  boxShadow: 'none',
-  '&:hover': {
+    borderRadius: 20,
+    textTransform: 'none',
+    fontWeight: 500,
+    padding: '8px 20px',
+    fontSize: '0.925rem',
     boxShadow: 'none',
-  },
+    '&:hover': {
+        boxShadow: 'none',
+    },
 }));
 
 // Android 12 Loading Button Style
 const Android12LoadingButton = styled(LoadingButton)(({ theme }) => ({
-  borderRadius: 20,
-  textTransform: 'none',
-  fontWeight: 500,
-  padding: '8px 20px',
-  fontSize: '0.925rem',
-  boxShadow: 'none',
-  '&:hover': {
+    borderRadius: 20,
+    textTransform: 'none',
+    fontWeight: 500,
+    padding: '8px 20px',
+    fontSize: '0.925rem',
     boxShadow: 'none',
-  },
+    '&:hover': {
+        boxShadow: 'none',
+    },
 }));
-import { getRolePermission, updateRolePermission, type PermissionAccess } from 'src/api/permission-management';
+import { getRolePermission, updateRolePermission, getPopulatedPermissions, type PermissionAccess } from 'src/api/permission-management';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -140,6 +140,38 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         };
         loadRecord();
     }, [name]);
+
+    const handleReloadPermissions = async () => {
+        if (!backendMasterRole) return;
+        setLoading(true);
+        try {
+            const populated = await getPopulatedPermissions(backendMasterRole);
+            // Merge existing permissions with the new default permissions from backend
+            const merged = populated.map((newItem) => {
+                const existing = permissions.find(
+                    (p) => p.module_id === newItem.module_id && p.screen_id === newItem.screen_id
+                );
+                if (existing) {
+                    return {
+                        ...newItem,
+                        add_permission: existing.add_permission,
+                        edit_permission: existing.edit_permission,
+                        view_permission: existing.view_permission,
+                        delete_permission: existing.delete_permission,
+                        export_permission: existing.export_permission,
+                        import_permission: existing.import_permission,
+                    };
+                }
+                return newItem;
+            });
+            setPermissions(merged);
+            enqueueSnackbar('Permissions synced with defaults from backend successfully', { variant: 'success' });
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to sync permissions.', { variant: 'error' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const togglePermission = (idx: number, field: keyof PermissionAccess) => {
         const updated = [...permissions];
@@ -323,6 +355,26 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                         {allSelected ? 'Deselect All' : 'Select All'}
                     </Button>
                     <Button
+                        variant="outlined"
+                        color="info"
+                        onClick={handleReloadPermissions}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            px: 2.5,
+                            borderColor: '#02c281',
+                            color: '#02c281',
+                            '&:hover': {
+                                bgcolor: (theme) => alpha('#02c281', 0.04),
+                                borderColor: '#007850',
+                                color: '#007850',
+                            }
+                        }}
+                    >
+                        Sync/Reload Defaults
+                    </Button>
+                    <Button
                         variant="contained"
                         onClick={handleSave}
                         disabled={saving}
@@ -394,16 +446,15 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                     <TableContainer sx={{ border: '1px solid rgba(224, 224, 224, 1)', borderRadius: 1 }}>
                         <Scrollbar>
                             <Table size="medium">
-                                <TableRow sx={{ bgcolor: '#08a3cd' }}>
-                                    <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Menu Name</TableCell>
-                                    <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Access Name</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>All</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Add</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Edit</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>View</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Delete</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Export</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Import</TableCell>
+                                <TableRow sx={{ bgcolor: '#08a3cd', position: 'sticky', top: 0, zIndex: 1 }}>
+                                    <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>All</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Edit</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>View</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Delete</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Export</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Import</TableCell>
                                 </TableRow>
 
                                 <TableBody>
@@ -412,20 +463,6 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                             const span = getRowSpan(permissions, idx);
                                             return (
                                                 <TableRow key={idx} hover sx={{ borderBottom: '1px solid rgba(224, 224, 224, 1)' }}>
-                                                    {span > 0 && (
-                                                        <TableCell
-                                                            rowSpan={span}
-                                                            sx={{
-                                                                verticalAlign: 'middle',
-                                                                borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                                                fontWeight: 'bold',
-                                                                color: 'text.primary',
-                                                                bgcolor: 'rgba(244, 246, 248, 0.4)'
-                                                            }}
-                                                        >
-                                                            {getFriendlyModuleName(row.module_id)}
-                                                        </TableCell>
-                                                    )}
                                                     <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                         {row.screen_id}
                                                     </TableCell>
@@ -446,7 +483,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                         })
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                                            <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                                                 <EmptyContent
                                                     title="No permissions loaded"
                                                     description="Select Backend Master Role to load the fields."

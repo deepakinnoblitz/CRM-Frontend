@@ -57,6 +57,8 @@ import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 const INITIAL_EVENT_STATE: Partial<CalendarEvent> = {
@@ -80,6 +82,12 @@ const getLocalDateStr = (dateStr: string) => {
 export function EventsView() {
     const theme = useTheme();
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.events;
+    const canCreateEvent = hasCustomPerms ? !!user?.permissions?.actions?.events?.create : true;
+    const canEditEvent = hasCustomPerms ? !!user?.permissions?.actions?.events?.edit : true;
+    const canDeleteEvent = hasCustomPerms ? !!user?.permissions?.actions?.events?.delete : true;
+
     const [events, setEvents] = useState<CalendarEvent[]>([]);
     const [loadingEvents, setLoadingEvents] = useState(false);
     const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -436,6 +444,14 @@ export function EventsView() {
         },
         beforeEventCreate: ({ date }: any) => {
             const { handleOpenTypeDialog: stateHandleOpenTypeDialog } = stateRef.current;
+            if (!canCreateEvent) {
+                setSnackbar({
+                    open: true,
+                    message: 'You do not have permission to add events.',
+                    severity: 'error',
+                });
+                return false;
+            }
             const dateStr = dayjs(date).format('YYYY-MM-DDTHH:mm:ss');
             stateHandleOpenTypeDialog(dateStr);
             return false;
@@ -449,6 +465,16 @@ export function EventsView() {
                 const isLocked =
                     eventRecord.get?.('isCompletedLocked') === true ||
                     eventRecord.data?.isCompletedLocked === true;
+
+                if (!canEditEvent) {
+                    stateSetSnackbar({
+                        open: true,
+                        message: 'You do not have permission to edit events.',
+                        severity: 'error',
+                    });
+                    stateLoadEvents();
+                    return false;
+                }
 
                 if (isLocked) {
                     stateSetSnackbar({
@@ -477,6 +503,15 @@ export function EventsView() {
         eventResizeEnd: async ({ eventRecord, startDate, endDate }: any) => {
             const { loadEvents: reload, setSnackbar: stateSetSnackbar } = stateRef.current;
             try {
+                if (!canEditEvent) {
+                    stateSetSnackbar({
+                        open: true,
+                        message: 'You do not have permission to edit events.',
+                        severity: 'error',
+                    });
+                    reload();
+                    return;
+                }
                 await updateEvent(eventRecord.id, {
                     starts_on: dayjs(startDate).format('YYYY-MM-DD HH:mm:ss'),
                     ends_on: endDate ? dayjs(endDate).format('YYYY-MM-DD HH:mm:ss') : undefined
@@ -991,14 +1026,16 @@ export function EventsView() {
                             Manage your schedule and important events
                         </Typography>
                     </Box>
-                    <Button
-                        variant="contained"
-                        color="info"
-                        startIcon={<Iconify icon="mingcute:add-line" />}
-                        onClick={() => handleOpenTypeDialog()}
-                    >
-                        Add Events
-                    </Button>
+                    {canCreateEvent && (
+                        <Button
+                            variant="contained"
+                            color="info"
+                            startIcon={<Iconify icon="mingcute:add-line" />}
+                            onClick={() => handleOpenTypeDialog()}
+                        >
+                            Add Events
+                        </Button>
+                    )}
                 </Stack>
 
                 {/* 1. Full width Event Types Legend */}
@@ -1508,19 +1545,21 @@ export function EventsView() {
                     </DialogContent>
 
                     <DialogActions sx={{ p: 3, pt: 2, gap: 1.5 }}>
-                        {selectedEvent && (
+                        {selectedEvent && canDeleteEvent && (
                             <Button color="error" variant="outlined" onClick={() => setConfirmDelete({ open: true, id: selectedEvent.name })} sx={{ mr: 'auto', borderRadius: 1 }}>
                                 Delete
                             </Button>
                         )}
-                        <Button
-                            variant="contained"
-                            color="info"
-                            onClick={handleSaveEvent}
-                            sx={{ borderRadius: 1, px: 3 }}
-                        >
-                            {selectedEvent ? 'Save Changes' : 'Create Event'}
-                        </Button>
+                        {((!selectedEvent && canCreateEvent) || (selectedEvent && canEditEvent)) && (
+                            <Button
+                                variant="contained"
+                                color="info"
+                                onClick={handleSaveEvent}
+                                sx={{ borderRadius: 1, px: 3 }}
+                            >
+                                {selectedEvent ? 'Save Changes' : 'Create Event'}
+                            </Button>
+                        )}
                     </DialogActions>
                 </Dialog>
 
@@ -1646,6 +1685,8 @@ export function EventsView() {
                     selectedCall={selectedCallDoc}
                     initialData={selectedDate ? { call_start_time: selectedDate } : undefined}
                     onSuccess={loadEvents}
+                    canEdit={canEditEvent}
+                    canDelete={canDeleteEvent}
                 />
 
                 <MeetingDialog
@@ -1654,6 +1695,8 @@ export function EventsView() {
                     selectedMeeting={selectedMeetingDoc}
                     initialData={selectedDate ? { from: selectedDate } : undefined}
                     onSuccess={loadEvents}
+                    canEdit={canEditEvent}
+                    canDelete={canDeleteEvent}
                 />
 
                 <TodoDialog
@@ -1662,6 +1705,8 @@ export function EventsView() {
                     selectedTodo={selectedTodoDoc}
                     initialData={selectedDate ? { date: selectedDate.split('T')[0] } : undefined}
                     onSuccess={loadEvents}
+                    canEdit={canEditEvent}
+                    canDelete={canDeleteEvent}
                 />
 
                 <Popover
@@ -1704,12 +1749,16 @@ export function EventsView() {
                                         {clickedEvent.subject}
                                     </Typography>
                                     <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
-                                        <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                            <Iconify icon="solar:pen-bold" width={20} />
-                                        </IconButton>
-                                        <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
-                                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-                                        </IconButton>
+                                        {canEditEvent && (
+                                            <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                                <Iconify icon="solar:pen-bold" width={20} />
+                                            </IconButton>
+                                        )}
+                                        {canDeleteEvent && (
+                                            <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
+                                                <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                                            </IconButton>
+                                        )}
                                         <IconButton size="small" onClick={handleClosePopover} sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}>
                                             <Iconify icon="mingcute:close-line" width={20} />
                                         </IconButton>

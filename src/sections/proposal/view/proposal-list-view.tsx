@@ -398,7 +398,10 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                     onOpenProposal={handleViewRow}
                     onEditProposal={handleEditRow}
                     onDeleteProposal={handleDeleteRow}
-                    permissions={{ write: true, delete: true }}
+                    permissions={{
+                        write: hasCustomPerms ? !!user?.permissions?.actions?.proposal?.edit : true,
+                        delete: hasCustomPerms ? !!user?.permissions?.actions?.proposal?.delete : true,
+                    }}
                 />
             )}
 

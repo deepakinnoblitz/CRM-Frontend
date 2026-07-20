@@ -12,6 +12,8 @@ import { fCurrency } from 'src/utils/format-number';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
@@ -57,6 +59,11 @@ export function CRMExpenseTrackerTableRow({
     hideCheckbox = false,
 }: CRMExpenseTrackerTableRowProps) {
     const { type, titlenotes, amount, date_time, name } = row;
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.crm_expenses;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.edit : onEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.delete : onDelete;
+    const showActions = displayEdit || displayDelete;
 
     return (
         <TableRow
@@ -124,17 +131,23 @@ export function CRMExpenseTrackerTableRow({
                 {renderCurrency(amount)}
             </TableCell>
 
-            <TableCell align="right">
-                <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <IconButton size="small" color="info" onClick={onEdit}>
-                        <Iconify icon="solar:pen-bold" />
-                    </IconButton>
+            {showActions && (
+                <TableCell align="right">
+                    <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+                        {displayEdit && (
+                            <IconButton size="small" color="info" onClick={onEdit}>
+                                <Iconify icon="solar:pen-bold" />
+                            </IconButton>
+                        )}
 
-                    <IconButton size="small" color="error" onClick={onDelete}>
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                </Box>
-            </TableCell>
+                        {displayDelete && (
+                            <IconButton size="small" color="error" onClick={onDelete}>
+                                <Iconify icon="solar:trash-bin-trash-bold" />
+                            </IconButton>
+                        )}
+                    </Box>
+                </TableCell>
+            )}
         </TableRow>
     );
 }

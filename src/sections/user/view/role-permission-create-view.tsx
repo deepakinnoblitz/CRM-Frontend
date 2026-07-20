@@ -72,7 +72,7 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { createRolePermission, type PermissionAccess } from 'src/api/permission-management';
+import { createRolePermission, type PermissionAccess, getPopulatedPermissions } from 'src/api/permission-management';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -96,138 +96,23 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
     const [frontendRoleNameError, setFrontendRoleNameError] = useState(false);
     const [backendMasterRoleError, setBackendMasterRoleError] = useState(false);
 
-    const handleMasterRoleChange = (newRole: string) => {
+    const handleMasterRoleChange = async (newRole: string) => {
         setBackendMasterRole(newRole);
         setFormError(null);
 
-        const modulesList: { module: string; screen: string }[] = [];
-        if (newRole === 'HR') {
-            modulesList.push(
-                { module: "dashboard", screen: "HR Dashboard" },
-                { module: "task_manager", screen: "Task Manager" },
-                { module: "employee", screen: "Employee List" },
-                { module: "employee", screen: "Users List" },
-                { module: "attendance", screen: "Attendance List" },
-                { module: "attendance", screen: "Daily Log" },
-                { module: "attendance", screen: "WFH Attendance" },
-                { module: "leaves", screen: "Leave Application" },
-                { module: "leaves", screen: "Leave Allocate" },
-                { module: "requests", screen: "Request List" },
-                { module: "timesheets", screen: "Timesheets" },
-                { module: "salary_slips", screen: "Salary Slips" },
-                { module: "holidays", screen: "Holidays List" },
-                { module: "announcements", screen: "Announcements" },
-                { module: "asset", screen: "Asset List" },
-                { module: "asset", screen: "Asset Assignments" },
-                { module: "asset", screen: "Asset Requests" },
-                { module: "expenses", screen: "Company Expenses" },
-                { module: "expenses", screen: "Reimbursement Claim List" },
-                { module: "employee_performance", screen: "Employee Evaluation" },
-                { module: "employee_performance", screen: "Badges" },
-                { module: "employee_performance", screen: "Employee Monthly Award" },
-                { module: "recruitment", screen: "Job Opening List" },
-                { module: "recruitment", screen: "Job Applicant List" },
-                { module: "recruitment", screen: "Interview List" },
-                { module: "recruitment", screen: "Employee Referral List" },
-                { module: "reports", screen: "Attendance Report" },
-                { module: "reports", screen: "Daily Log Report" },
-                { module: "reports", screen: "Task Report" },
-                { module: "reports", screen: "Timesheet Report" },
-                { module: "reports", screen: "Leave Allocation Report" },
-                { module: "reports", screen: "Employee Overall Report" },
-                { module: "reports", screen: "Salary Slip Report" },
-                { module: "masters", screen: "Department" },
-                { module: "masters", screen: "Project" },
-                { module: "masters", screen: "Activity Type" },
-                { module: "masters", screen: "Claim Type" },
-                { module: "masters", screen: "Bank Account" },
-                { module: "masters", screen: "Asset Category" },
-                { module: "masters", screen: "Criteria Category" },
-                { module: "masters", screen: "Designation" },
-                { module: "masters", screen: "Salary Component" },
-                { module: "masters", screen: "Leave Type" },
-                { module: "reminders", screen: "Reminders" }
-            );
-        } else if (newRole === 'Employee') {
-            modulesList.push(
-                { module: "dashboard", screen: "Employee Dashboard" },
-                { module: "profile", screen: "My Profile" },
-                { module: "tasks", screen: "My Tasks" },
-                { module: "attendance", screen: "My Attendance" },
-                { module: "daily_log", screen: "My Daily Log" },
-                { module: "leaves", screen: "My Leave Application" },
-                { module: "requests", screen: "My Request List" },
-                { module: "timesheets", screen: "My Timesheet" },
-                { module: "wfh_attendance", screen: "My WFH Attendance" },
-                { module: "salary_slips", screen: "My Salary Slip" },
-                { module: "reimbursement_claims", screen: "My Reimbursement Claim" },
-                { module: "asset", screen: "My Asset List" },
-                { module: "asset", screen: "My Asset Requests" },
-                { module: "recruitment", screen: "Refer a Friend" },
-                { module: "reports", screen: "My Attendance Report" },
-                { module: "reports", screen: "My Daily Log Report" },
-                { module: "reports", screen: "My Timesheet Report" }
-            );
-        } else if (['CRM And Sales', 'Sales', 'CRM User'].includes(newRole)) {
-            modulesList.push(
-                { module: "dashboard", screen: "Dashboard" },
-                { module: "lead", screen: "Leads" },
-                { module: "contact", screen: "Clients" },
-                { module: "account", screen: "Company" },
-                { module: "proposal", screen: "Proposal" },
-                { module: "deal", screen: "Prospects" },
-                { module: "purchase", screen: "Purchases" },
-                { module: "expenses", screen: "Expense Tracker" },
-                { module: "events", screen: "Calendar" },
-                { module: "mail_automation", screen: "Email Templates" },
-                { module: "mail_automation", screen: "Email Campaigns" },
-                { module: "mail_automation", screen: "Email Automations" },
-                { module: "mail_automation", screen: "Email Settings" },
-                { module: "whatsapp_automation", screen: "WhatsApp Templates" },
-                { module: "whatsapp_automation", screen: "WhatsApp Campaigns" },
-                { module: "whatsapp_automation", screen: "WhatsApp Automation" },
-                { module: "whatsapp_automation", screen: "WhatsApp Settings" },
-                { module: "lead_integration", screen: "Meta Apps" },
-                { module: "lead_integration", screen: "Meta Pages" },
-                { module: "lead_integration", screen: "Meta Forms" },
-                { module: "lead_integration", screen: "Meta Leads" },
-                { module: "lead_integration", screen: "Webhook Logs" },
-                { module: "lead_integration", screen: "Meta Queue" },
-                { module: "masters", screen: "Lead From" },
-                { module: "masters", screen: "Service" },
-                { module: "masters", screen: "Item" },
-                { module: "masters", screen: "Payment Terms" },
-                { module: "masters", screen: "Payment Type" },
-                { module: "masters", screen: "Tax Types" },
-                { module: "masters", screen: "Company Bank Account" },
-                { module: "masters", screen: "Email Template Category" },
-                { module: "masters", screen: "WhatsApp Template Category" },
-                { module: "reports", screen: "Lead Report" },
-                { module: "reports", screen: "Clients Report" },
-                { module: "reports", screen: "Company Report" },
-                { module: "reports", screen: "Calls Report" },
-                { module: "reports", screen: "Meeting Report" },
-                { module: "reports", screen: "Proposal Report" },
-                { module: "reports", screen: "Prospects Report" },
-                { module: "reports", screen: "Estimation Report" },
-                { module: "reports", screen: "Invoice Report" },
-                { module: "reports", screen: "Purchase Report" },
-                { module: "reports", screen: "Invoice Collection Summary" },
-                { module: "reports", screen: "Purchase Settlement Report" }
-            );
+        if (!newRole) {
+            setPermissions([]);
+            return;
         }
 
-        const generated: PermissionAccess[] = modulesList.map((m) => ({
-            module_id: m.module,
-            screen_id: m.screen,
-            add_permission: 0,
-            edit_permission: 0,
-            view_permission: m.screen === 'Dashboard' || m.screen.includes('Dashboard') ? 1 : 0,
-            delete_permission: 0,
-            export_permission: 0,
-            import_permission: 0,
-        }));
-        setPermissions(generated);
+        try {
+            const populated = await getPopulatedPermissions(newRole);
+            setPermissions(populated);
+        } catch (err: any) {
+            console.error(err);
+            enqueueSnackbar(err.message || "Failed to fetch default permissions", { variant: 'error' });
+            setPermissions([]);
+        }
     };
 
     const togglePermission = (idx: number, field: keyof PermissionAccess) => {
@@ -475,16 +360,15 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                 <TableContainer sx={{ border: '1px solid rgba(224, 224, 224, 1)', borderRadius: 2 }}>
                     <Scrollbar>
                         <Table size="medium">
-                            <TableRow sx={{ bgcolor: '#08a3cd' }}>
-                                <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Menu Name</TableCell>
-                                <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Access Name</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>All</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Add</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Edit</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>View</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Delete</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Export</TableCell>
-                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)' }}>Import</TableCell>
+                            <TableRow sx={{ bgcolor: '#08a3cd', position: 'sticky', top: 0, zIndex: 1 }}>
+                                <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>All</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Edit</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>View</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Delete</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Export</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Import</TableCell>
                             </TableRow>
 
                             <TableBody>
@@ -493,20 +377,6 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                                         const span = getRowSpan(permissions, idx);
                                         return (
                                             <TableRow key={idx} hover sx={{ borderBottom: '1px solid rgba(224, 224, 224, 1)' }}>
-                                                {span > 0 && (
-                                                    <TableCell
-                                                        rowSpan={span}
-                                                        sx={{
-                                                            verticalAlign: 'middle',
-                                                            borderRight: '1px solid rgba(224, 224, 224, 1)',
-                                                            fontWeight: 'bold',
-                                                            color: 'text.primary',
-                                                            bgcolor: 'rgba(244, 246, 248, 0.4)'
-                                                        }}
-                                                    >
-                                                        {getFriendlyModuleName(row.module_id)}
-                                                    </TableCell>
-                                                )}
                                                 <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                     {row.screen_id}
                                                 </TableCell>
@@ -527,7 +397,7 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
+                                        <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
                                             <EmptyContent
                                                 title="Select Backend Master Role to load the fields."
                                                 icon="solar:video-library-bold-duotone"

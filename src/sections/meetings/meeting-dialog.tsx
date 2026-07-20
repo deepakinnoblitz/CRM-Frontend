@@ -63,6 +63,8 @@ type Props = {
     selectedMeeting?: Meeting | null;
     initialData?: Partial<Meeting>;
     onSuccess?: () => void;
+    canEdit?: boolean;
+    canDelete?: boolean;
 };
 
 const INITIAL_MEETING_STATE: Partial<Meeting> = {
@@ -84,7 +86,7 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
     participants: [],
 };
 
-export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess }: Props) {
+export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess, canEdit = true, canDelete = true }: Props) {
     const [meetingData, setMeetingData] = useState<Partial<Meeting>>(INITIAL_MEETING_STATE);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -588,7 +590,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
-                    {selectedMeeting && (
+                    {selectedMeeting && canDelete && (
                         <Button
                             color="error"
                             variant="contained"
@@ -599,17 +601,19 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                             Delete
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        color="info"
-                        onClick={handleSaveMeeting}
-                        disabled={isSubmitting}
-                        sx={{ borderRadius: 1, px: 3 }}
-                    >
-                        {isSubmitting 
-                            ? (selectedMeeting ? 'Saving...' : 'Creating...') 
-                            : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
-                    </Button>
+                    {((!selectedMeeting && canEdit) || (selectedMeeting && canEdit)) && (
+                        <Button
+                            variant="contained"
+                            color="info"
+                            onClick={handleSaveMeeting}
+                            disabled={isSubmitting}
+                            sx={{ borderRadius: 1, px: 3 }}
+                        >
+                            {isSubmitting 
+                                ? (selectedMeeting ? 'Saving...' : 'Creating...') 
+                                : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 

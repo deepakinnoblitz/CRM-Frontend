@@ -454,7 +454,7 @@ export const crmAndSalesNavData = [
     children: [
       { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
       { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
-      { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
+      { title: 'WhatsApp Automations', path: '/whatsapp-automation' },
       { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
     ],
   },
@@ -552,7 +552,7 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
         const checkKey = menuMapping[moduleKey] || moduleKey;
         
         const menus = user?.permissions?.menus || {};
-        if (menus[checkKey] === false) {
+        if (menus[moduleKey] === false || menus[checkKey] === false) {
           return;
         }
       }
@@ -579,7 +579,7 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
             const checkKey = menuMapping[childKey] || childKey;
 
             const menus = user?.permissions?.menus || {};
-            if (menus[checkKey] === false) {
+            if (menus[childKey] === false || menus[checkKey] === false) {
               return false;
             }
           }

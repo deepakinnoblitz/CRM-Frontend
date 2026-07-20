@@ -53,6 +53,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { DealTableRow } from '../deal-table-row';
 import { TableNoData } from '../../lead/table-no-data';
 import DealKanbanBoard from '../kanban/deal-kanban-board';
@@ -69,6 +71,17 @@ export function DealView() {
     const router = useRouter();
     const [searchParams, setSearchParams] = useSearchParams();
     const currentTab = searchParams.get('tab') || 'deals';
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+    
+    // Prospects/Deals
+    const displayCreate = hasCustomPerms && user?.permissions?.actions?.deal ? !!user?.permissions?.actions?.deal?.create : true;
+    const displayView = hasCustomPerms && user?.permissions?.actions?.deal ? !!user?.permissions?.actions?.deal?.view : true;
+
+    // Estimations & Invoices specific perms
+    const displayEstimationView = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.view : true;
+    const displayInvoiceView = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.view : true;
 
     const handleChangeTab = useCallback(
         (event: React.SyntheticEvent, newValue: string) => {
@@ -656,20 +669,24 @@ export function DealView() {
                                 iconPosition="start"
                             />
 
-                            <Tab
-                                key="estimations"
-                                value="estimations"
-                                label="Estimations"
-                                icon={<GrDocumentTime size={18} />}
-                                iconPosition="start"
-                            />
-                            <Tab
-                                key="invoices"
-                                value="invoices"
-                                label="Invoices"
-                                icon={<GrDocumentStore size={18} />}
-                                iconPosition="start"
-                            />
+                            {displayEstimationView && (
+                                <Tab
+                                    key="estimations"
+                                    value="estimations"
+                                    label="Estimations"
+                                    icon={<GrDocumentTime size={18} />}
+                                    iconPosition="start"
+                                />
+                            )}
+                            {displayInvoiceView && (
+                                <Tab
+                                    key="invoices"
+                                    value="invoices"
+                                    label="Invoices"
+                                    icon={<GrDocumentStore size={18} />}
+                                    iconPosition="start"
+                                />
+                            )}
                         </Tabs>
 
                         {currentTab === 'deals' && (
@@ -727,7 +744,7 @@ export function DealView() {
                                     </Button>
                                 </Box>
 
-                                {permissions.write && (
+                                {displayCreate && (
                                     <Button
                                         variant="contained"
                                         startIcon={<Iconify icon="mingcute:add-line" />}
@@ -878,7 +895,10 @@ export function DealView() {
                                     onEditDeal={(id) => handleEditRow(id)}
                                     onDeleteDeal={(id) => handleDeleteClick(id)}
                                     onAddDeal={(selectedStage) => handleOpenCreate(selectedStage)}
-                                    permissions={permissions}
+                                    permissions={{
+                                        write: hasCustomPerms ? !!user?.permissions?.actions?.deal?.edit : permissions.write,
+                                        delete: hasCustomPerms ? !!user?.permissions?.actions?.deal?.delete : permissions.delete,
+                                    }}
                                 />
                             )}
                         </>

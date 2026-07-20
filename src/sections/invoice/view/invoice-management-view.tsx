@@ -13,6 +13,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { InvoiceListView } from './invoice-list-view';
 import { InvoiceCollectionListView } from '../../invoice-collection/view/invoice-collection-list-view';
 
@@ -28,11 +30,15 @@ const TABS = [
 export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boolean }) {
     const router = useRouter();
     const pathname = usePathname();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+    const canViewCollections = hasCustomPerms && user?.permissions?.actions?.invoice_collection ? !!user?.permissions?.actions?.invoice_collection?.view : true;
+    const canCreateCollection = hasCustomPerms && user?.permissions?.actions?.invoice_collection ? !!user?.permissions?.actions?.invoice_collection?.create : true;
 
     const searchParams = new URLSearchParams(window.location.search);
     const subTabParam = searchParams.get('subtab');
 
-    const [currentTab, setCurrentTab] = useState(subTabParam === 'collections' ? 'collections' : 'invoices');
+    const [currentTab, setCurrentTab] = useState(subTabParam === 'collections' && canViewCollections ? 'collections' : 'invoices');
 
     const handleChangeTab = useCallback((event: React.SyntheticEvent, newValue: string) => {
         setCurrentTab(newValue);
@@ -56,14 +62,16 @@ export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boo
     const renderHeader = (
         <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
             <Typography variant="h4">Invoice Management</Typography>
-            <Button
-                variant="contained"
-                color="info"
-                startIcon={<Iconify icon="mingcute:add-line" />}
-                onClick={handleCreateNew}
-            >
-                {currentTab === 'invoices' ? 'New Invoice' : 'New Collection'}
-            </Button>
+            {((currentTab === 'invoices') || (currentTab === 'collections' && canCreateCollection)) && (
+                <Button
+                    variant="contained"
+                    color="info"
+                    startIcon={<Iconify icon="mingcute:add-line" />}
+                    onClick={handleCreateNew}
+                >
+                    {currentTab === 'invoices' ? 'New Invoice' : 'New Collection'}
+                </Button>
+            )}
         </Stack>
     );
 
@@ -80,7 +88,7 @@ export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boo
                 },
             }}
         >
-            {TABS.map((tab) => (
+            {TABS.filter(tab => tab.value !== 'collections' || canViewCollections).map((tab) => (
                 <Tab
                     key={tab.value}
                     label={tab.label}
@@ -110,7 +118,7 @@ export function InvoiceManagementView({ hideHeader = false }: { hideHeader?: boo
             {renderTabs}
 
             {currentTab === 'invoices' && <InvoiceListView hideHeader />}
-            {currentTab === 'collections' && <InvoiceCollectionListView hideHeader />}
+            {currentTab === 'collections' && canViewCollections && <InvoiceCollectionListView hideHeader />}
         </>
     );
 
