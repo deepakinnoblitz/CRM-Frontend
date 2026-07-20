@@ -61,6 +61,12 @@ export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
 export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
 export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
 
+export const RolePermissionListPage = lazy(() => import('src/pages/role-permissions/list'));
+export const RolePermissionCreatePage = lazy(() => import('src/pages/role-permissions/new'));
+export const RolePermissionEditPage = lazy(() => import('src/pages/role-permissions/edit'));
+export const RolePermissionDetailsPage = lazy(() => import('src/pages/role-permissions/details'));
+
+
 export const EmailTemplateListPage = lazy(() => import('src/pages/email-templates/list'));
 export const EmailTemplateCreatePage = lazy(() => import('src/pages/email-templates/new'));
 export const EmailTemplateEditPage = lazy(() => import('src/pages/email-templates/edit'));
@@ -291,6 +297,15 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <ProposalCreatePage /> },
           { path: ':id/edit', element: <ProposalEditPage /> },
           { path: ':id/view', element: <ProposalDetailsPage /> },
+        ],
+      },
+      {
+        path: 'role-permissions',
+        children: [
+          { index: true, element: <RolePermissionListPage /> },
+          { path: 'new', element: <RolePermissionCreatePage /> },
+          { path: ':id/edit', element: <RolePermissionEditPage /> },
+          { path: ':id/view', element: <RolePermissionDetailsPage /> },
         ],
       },
       {

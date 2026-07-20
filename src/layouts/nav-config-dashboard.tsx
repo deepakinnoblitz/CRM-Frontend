@@ -454,7 +454,7 @@ export const crmAndSalesNavData = [
     children: [
       { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
       { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
-      { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
+      { title: 'WhatsApp Automations', path: '/whatsapp-automation' },
       { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
     ],
   },
@@ -540,12 +540,24 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
+export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any) {
+  const roles: string[] = user?.roles || [];
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
+      // Check custom module permissions
+      if (user?.permissions?.custom_permissions_assigned) {
+        const moduleKey = item.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+        const menuMapping = user?.permissions?.menu_mapping || {};
+        const checkKey = menuMapping[moduleKey] || moduleKey;
+        
+        const menus = user?.permissions?.menus || {};
+        if (menus[moduleKey] === false || menus[checkKey] === false) {
+          return;
+        }
+      }
       // Clone the item to avoid mutating the original data
       const itemClone = {
         ...item,
@@ -561,10 +573,22 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
           if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
           if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return false;
           if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return false;
+
+          // Custom module/screen permission filtering
+          if (user?.permissions?.custom_permissions_assigned) {
+            const childKey = child.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+            const menuMapping = user?.permissions?.menu_mapping || {};
+            const checkKey = menuMapping[childKey] || childKey;
+
+            const menus = user?.permissions?.menus || {};
+            if (menus[childKey] === false || menus[checkKey] === false) {
+              return false;
+            }
+          }
           return true;
         });
-        // If a group item like 'Attendance Records' or 'Report' has no children left, hide it
-        if (['Attendance Records', 'Report'].includes(itemClone.title) && itemClone.children.length === 0) return;
+        // If a group item like 'Employee Records', 'Attendance Records', 'Leaves Records', or 'Report' has no children left, hide it
+        if (itemClone.children.length === 0) return;
       }
 
       // Handle top-level items (mostly for Employee View)

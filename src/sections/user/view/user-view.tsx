@@ -1,11 +1,10 @@
+import { useSnackbar } from 'notistack';
 import { useState, forwardRef, useImperativeHandle } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
-import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -81,13 +80,10 @@ export const UserView = forwardRef(
       send_welcome_email: 1 as 0 | 1,
       new_password: '',
       user_image: '',
+      custom_permissions: [] as { permission_manager: string; permission_name: string }[],
     });
 
-    const [snackbar, setSnackbar] = useState({
-      open: false,
-      message: '',
-      severity: 'success' as 'success' | 'error',
-    });
+    const { enqueueSnackbar } = useSnackbar();
 
     const [openDetails, setOpenDetails] = useState(false);
     const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
@@ -114,6 +110,7 @@ export const UserView = forwardRef(
         send_welcome_email: 1,
         new_password: '',
         user_image: '',
+        custom_permissions: [],
       });
       setOpenCreate(true);
     };
@@ -152,15 +149,12 @@ export const UserView = forwardRef(
           send_welcome_email: 0,
           new_password: '',
           user_image: fullUserData.user_image || '',
+          custom_permissions: fullUserData.custom_permissions || [],
         });
 
         setOpenCreate(true);
       } catch (error: any) {
-        setSnackbar({
-          open: true,
-          message: error.message || 'Failed to load user data',
-          severity: 'error',
-        });
+        enqueueSnackbar(error.message || 'Failed to load user data', { variant: 'error' });
       }
     };
 
@@ -182,6 +176,7 @@ export const UserView = forwardRef(
             roles: formData.roles,
             block_modules: formData.block_modules,
             user_image: formData.user_image,
+            custom_permissions: formData.custom_permissions,
           });
 
           // Trigger password change if provided during update
@@ -190,7 +185,7 @@ export const UserView = forwardRef(
             await changeUserPassword(selectedUser.email, formData.new_password);
           }
 
-          setSnackbar({ open: true, message: 'User updated successfully', severity: 'success' });
+          enqueueSnackbar('User updated successfully', { variant: 'success' });
         } else {
           await createUser({
             email: formData.email,
@@ -207,17 +202,14 @@ export const UserView = forwardRef(
             send_welcome_email: formData.send_welcome_email,
             new_password: formData.new_password,
             user_image: formData.user_image,
+            custom_permissions: formData.custom_permissions,
           });
-          setSnackbar({ open: true, message: 'User created successfully', severity: 'success' });
+          enqueueSnackbar('User created successfully', { variant: 'success' });
         }
         refetch();
         handleCloseCreate();
       } catch (error: any) {
-        setSnackbar({
-          open: true,
-          message: error.message || 'Operation failed',
-          severity: 'error',
-        });
+        enqueueSnackbar(error.message || 'Operation failed', { variant: 'error' });
       } finally {
         setIsSubmitting(false);
       }
@@ -233,12 +225,12 @@ export const UserView = forwardRef(
       setIsDeleting(true);
       try {
         await deleteUser(userToDelete);
-        setSnackbar({ open: true, message: 'User deleted successfully', severity: 'success' });
+        enqueueSnackbar('User deleted successfully', { variant: 'success' });
         refetch();
         setOpenDelete(false);
         setUserToDelete(null);
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Delete failed', severity: 'error' });
+        enqueueSnackbar(error.message || 'Delete failed', { variant: 'error' });
       } finally {
         setIsDeleting(false);
       }
@@ -418,18 +410,10 @@ export const UserView = forwardRef(
             const { changeUserPassword } = await import('src/api/users');
             try {
               await changeUserPassword(userId, newPassword);
-              setSnackbar({
-                open: true,
-                message: 'Password changed successfully',
-                severity: 'success',
-              });
+              enqueueSnackbar('Password changed successfully', { variant: 'success' });
               handleCloseCreate(); // Close the dialog
             } catch (error: any) {
-              setSnackbar({
-                open: true,
-                message: error.message || 'Failed to change password',
-                severity: 'error',
-              });
+              enqueueSnackbar(error.message || 'Failed to change password', { variant: 'error' });
             }
           }}
         />
@@ -455,16 +439,6 @@ export const UserView = forwardRef(
           }
         />
 
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={6000}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-        >
-          <Alert severity={snackbar.severity} sx={{ width: '100%' }}>
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
 
         <UserDetailsDialog
           open={openDetails}

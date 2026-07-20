@@ -26,6 +26,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ServiceDialog } from '../service-dialog';
 import { ServiceTableRow } from '../service-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -49,6 +51,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function ServiceView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.service;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.service ? !!user?.permissions?.actions?.service?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.service ? !!user?.permissions?.actions?.service?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.service ? !!user?.permissions?.actions?.service?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -141,14 +149,16 @@ export function ServiceView() {
         <Typography variant="h4" flexGrow={1}>
           Service
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Service
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Service
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -196,6 +206,8 @@ export function ServiceView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

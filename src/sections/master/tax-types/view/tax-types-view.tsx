@@ -25,6 +25,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TaxTypesDialog } from '../tax-types-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
 import { TaxTypesTableRow } from '../tax-types-table-row';
@@ -50,6 +52,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function TaxTypesView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.tax_types;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.tax_types ? !!user?.permissions?.actions?.tax_types?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.tax_types ? !!user?.permissions?.actions?.tax_types?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.tax_types ? !!user?.permissions?.actions?.tax_types?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -142,14 +150,16 @@ export function TaxTypesView() {
         <Typography variant="h4" flexGrow={1}>
           Tax Types
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Tax Type
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Tax Type
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -197,6 +207,8 @@ export function TaxTypesView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

@@ -23,7 +23,7 @@ import {
     FaMapMarkerAlt,
     FaMedal,
     FaUser,
-    FaWallet, 
+    FaWallet,
 } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
@@ -269,9 +269,9 @@ export function MyProfileView() {
                                         const dep = (employee.department || '').trim();
                                         const validDes = des && des !== '-';
                                         const validDep = dep && dep !== '-';
-                                        
+
                                         if (!validDes && !validDep) return null;
-                                        
+
                                         const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
                                         return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
                                     })()}

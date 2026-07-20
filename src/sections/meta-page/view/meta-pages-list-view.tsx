@@ -37,6 +37,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { MetaPagesFiltersDrawer, MetaPagesFilters } from '../meta-pages-filters-drawer';
 // ----------------------------------------------------------------------
 
@@ -62,6 +64,12 @@ const TABLE_HEAD = [
 
 export function MetaPagesListView() {
     const router = useRouter();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_pages;
+    const canCreate = hasCustomPerms && user?.permissions?.actions?.meta_pages ? !!user?.permissions?.actions?.meta_pages?.create : true;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_pages ? !!user?.permissions?.actions?.meta_pages?.edit : true;
+    const canDelete = hasCustomPerms && user?.permissions?.actions?.meta_pages ? !!user?.permissions?.actions?.meta_pages?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -167,14 +175,16 @@ export function MetaPagesListView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Meta Pages</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                        onClick={handleCreateNew}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Meta Page
-                    </Button>
+                    {canCreate && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Meta Page
+                        </Button>
+                    )}
                 </Box>
             </Stack>
 
@@ -436,20 +446,24 @@ export function MetaPagesListView() {
                                                         >
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton
-                                                            onClick={() => router.push(`/lead-integration/meta-pages/${row.name}/edit`)}
-                                                            sx={{ color: 'primary.main' }}
-                                                            title="Edit"
-                                                        >
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            onClick={() => setConfirmDelete({ open: true, id: row.name })}
-                                                            sx={{ color: 'error.main' }}
-                                                            title="Delete"
-                                                        >
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
+                                                        {canEdit && (
+                                                            <IconButton
+                                                                onClick={() => router.push(`/lead-integration/meta-pages/${row.name}/edit`)}
+                                                                sx={{ color: 'primary.main' }}
+                                                                title="Edit"
+                                                            >
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {canDelete && (
+                                                            <IconButton
+                                                                onClick={() => setConfirmDelete({ open: true, id: row.name })}
+                                                                sx={{ color: 'error.main' }}
+                                                                title="Delete"
+                                                            >
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

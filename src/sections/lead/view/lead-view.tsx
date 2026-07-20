@@ -50,6 +50,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../table-no-data';
 import { LeadTableRow } from '../lead-table-row';
 import { SalesPipeline } from '../sales-pipeline';
@@ -176,11 +178,28 @@ export function LeadView() {
   const [openConvertConfirm, setOpenConvertConfirm] = useState(false);
 
   // Permissions State
+  const { user } = useAuth();
   const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
     read: true,
     write: true,
     delete: true,
   });
+
+  const actualPermissions = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.lead
+    ? {
+        read: !!user.permissions.actions.lead.view,
+        write: !!user.permissions.actions.lead.edit,
+        create: !!user.permissions.actions.lead.create,
+        delete: !!user.permissions.actions.lead.delete,
+        import: !!user.permissions.actions.lead.import,
+      }
+    : {
+        read: permissions.read,
+        write: permissions.write,
+        create: permissions.write,
+        delete: permissions.delete,
+        import: permissions.write,
+      };
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -1465,25 +1484,25 @@ export function LeadView() {
               </Button>
             </Box>
 
-            {permissions.write && (
-              <>
-                <Button
-                  variant="contained"
-                  startIcon={<IoMdCloudDownload size={20} />}
-                  onClick={() => setOpenImport(true)}
-                  sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
-                >
-                  Import
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="mingcute:add-line" />}
-                  onClick={handleOpenCreate}
-                  sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                  New Lead
-                </Button>
-              </>
+            {actualPermissions.import && (
+              <Button
+                variant="contained"
+                startIcon={<IoMdCloudDownload size={20} />}
+                onClick={() => setOpenImport(true)}
+                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+              >
+                Import
+              </Button>
+            )}
+            {actualPermissions.create && (
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+                onClick={handleOpenCreate}
+                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+              >
+                New Lead
+              </Button>
             )}
           </Box>
         </Box>
@@ -1504,13 +1523,13 @@ export function LeadView() {
               onDelete={handleBulkDelete}
             />
 
-            <TableContainer 
+            <TableContainer
               ref={tableContainerRef}
               onMouseDown={handleMouseDown}
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
-              sx={{ 
+              sx={{
                 overflow: 'auto',
                 cursor: 'grab',
                 userSelect: 'none',
@@ -1592,8 +1611,9 @@ export function LeadView() {
                           onEdit={() => handleEditRow({ id: row.name })}
                           onDelete={() => onDeleteRow(row.name)}
                           onView={() => handleViewRow({ id: row.name })}
-                          canEdit={permissions.write}
-                          canDelete={permissions.delete}
+                          canEdit={actualPermissions.write}
+                          canDelete={actualPermissions.delete}
+                          canView={actualPermissions.read}
                         />
                       ))}
 
@@ -1646,7 +1666,7 @@ export function LeadView() {
             onEditLead={(id) => handleEditRow({ id })}
             onDeleteLead={(id) => handleDeleteClick(id)}
             onAddLead={(selectedState) => handleOpenCreate(selectedState)}
-            permissions={permissions}
+            permissions={actualPermissions}
           />
         )}
       </DashboardContent>
@@ -1676,11 +1696,11 @@ export function LeadView() {
         title="Confirm Delete"
         content="Are you sure you want to delete this lead?"
         action={
-          <LoadingButton 
-            loading={deleting} 
-            onClick={handleConfirmDelete} 
-            color="error" 
-            variant="contained" 
+          <LoadingButton
+            loading={deleting}
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
             sx={{ borderRadius: 1.5, minWidth: 100 }}
           >
             Delete

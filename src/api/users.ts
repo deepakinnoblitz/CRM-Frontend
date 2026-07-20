@@ -12,6 +12,7 @@ export interface User {
     last_login?: string;
     user_image?: string;
     has_permission?: boolean;
+    custom_permissions?: { permission_manager: string; permission_name: string }[];
 }
 
 export async function fetchUsers(params: {
@@ -101,26 +102,27 @@ export async function fetchUsers(params: {
         orderBy = `${field} ${direction}`;
     }
 
+    const fields = [
+        "name",
+        "email",
+        "full_name",
+        "username",
+        "enabled",
+        "user_type",
+        "role_profile_name",
+        "last_login",
+        "user_image",
+        "creation",
+        "modified"
+    ];
+
     const query = new URLSearchParams({
         doctype: "User",
-        fields: JSON.stringify([
-            "name",
-            "full_name",
-            "email",
-            "username",
-            "enabled",
-            "user_type",
-            "role_profile_name",
-            "last_login",
-            "user_image",
-            "creation",
-            "modified"
-        ]),
+        fields: JSON.stringify(fields),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
         limit_start: String((params.page - 1) * params.page_size),
         limit_page_length: String(params.page_size),
-        group_by: "name",
         order_by: orderBy
     });
 
@@ -134,11 +136,9 @@ export async function fetchUsers(params: {
     const data = await res.json();
     const countData = await countRes.json();
 
-    const users = data.message || [];
-
-    const dataWithPermissions = users.map((user: any) => ({
+    const dataWithPermissions = (data.message || []).map((user: any) => ({
         ...user,
-        has_permission: usersWithPermissions.includes(user.name) || usersWithPermissions.includes(user.email)
+        has_permission: usersWithPermissions.includes(user.name)
     }));
 
     return {
@@ -162,6 +162,7 @@ export async function createUser(data: {
     send_welcome_email?: 0 | 1;
     new_password?: string;
     user_image?: string;
+    custom_permissions?: { permission_manager: string; permission_name: string }[];
 }) {
     const payload: any = {
         doctype: 'User',
@@ -190,6 +191,10 @@ export async function createUser(data: {
         payload.block_modules = data.block_modules.map((module: string) => ({ module }));
     }
 
+    if (data.custom_permissions && data.custom_permissions.length > 0) {
+        payload.custom_permissions = data.custom_permissions;
+    }
+
     const res = await frappeRequest('/api/method/frappe.client.insert', {
         method: 'POST',
         headers: await getAuthHeaders(),
@@ -215,6 +220,7 @@ export async function updateUser(name: string, data: {
     roles?: string[];
     block_modules?: string[];
     user_image?: string;
+    custom_permissions?: { permission_manager: string; permission_name: string }[];
 }) {
     const userDoc = await getUser(name);
 
@@ -234,6 +240,10 @@ export async function updateUser(name: string, data: {
 
     if (data.block_modules !== undefined) {
         userDoc.block_modules = data.block_modules.map((module: string) => ({ module }));
+    }
+
+    if (data.custom_permissions !== undefined) {
+        userDoc.custom_permissions = data.custom_permissions;
     }
 
     // Strip metadata/private fields starting with _ or __ to prevent database escape issues

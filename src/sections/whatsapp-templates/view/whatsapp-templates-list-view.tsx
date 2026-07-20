@@ -32,6 +32,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { WhatsAppTemplateTableToolbar } from '../whatsapp-templates-table-toolbar';
 import { WhatsAppTemplateFiltersDrawer } from '../whatsapp-templates-filters-drawer';
 
@@ -87,6 +89,12 @@ export function WhatsAppTemplateListView() {
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const { enqueueSnackbar } = useSnackbar();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_templates;
+    const canCreateTemplete = hasCustomPerms && user?.permissions?.actions?.whatsapp_templates ? !!user?.permissions?.actions?.whatsapp_templates?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_templates?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_templates?.delete : true;
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -180,14 +188,16 @@ export function WhatsAppTemplateListView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">WhatsApp Templates</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                        onClick={handleCreateNew}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Template
-                    </Button>
+                    {canCreateTemplete &&(
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Template
+                        </Button>
+                    )}
                 </Box>
             </Stack>
 
@@ -312,12 +322,16 @@ export function WhatsAppTemplateListView() {
                                                         <IconButton onClick={() => router.push(`/whatsapp-templates/${row.name}/view`)} sx={{ color: 'info.main' }} title="View">
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton onClick={() => router.push(`/whatsapp-templates/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        {displayEdit && (
+                                                            <IconButton onClick={() => router.push(`/whatsapp-templates/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {displayDelete && (
                                                         <IconButton onClick={() => setConfirmDelete({ open: true, id: row.name })} sx={{ color: 'error.main' }} title="Delete">
                                                             <Iconify icon="solar:trash-bin-trash-bold" />
                                                         </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

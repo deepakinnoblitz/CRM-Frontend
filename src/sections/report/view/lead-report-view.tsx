@@ -43,8 +43,6 @@ import { generateLeadPdf } from 'src/components/export/pdf/lead-pdf-generator';
 
 import { useAuth } from 'src/auth/auth-context';
 
-
-
 // ----------------------------------------------------------------------
 
 export function LeadReportView() {
@@ -53,6 +51,9 @@ export function LeadReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.lead_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.lead_report ? !!user?.permissions?.actions?.lead_report?.export : true;
+
     const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [fromDate, setFromDate] = useState<dayjs.Dayjs | null>(null);
@@ -522,44 +523,48 @@ export function LeadReportView() {
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                            sx={{
-                                bgcolor: '#0ea5e9',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#0284c7' },
-                                height: 40,
-                                px: 3,
-                            }}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateLeadPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: [
-                                    { label: 'Total Leads', value: totalLeads },
-                                    { label: 'Incoming Leads', value: incomingLeads },
-                                    { label: 'Outgoing Leads', value: outgoingLeads }
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 40,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#0ea5e9',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#0284c7' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generateLeadPdf({
+                                    reportData: filteredData,
+                                    selected,
+                                    summary: [
+                                        { label: 'Total Leads', value: totalLeads },
+                                        { label: 'Incoming Leads', value: incomingLeads },
+                                        { label: 'Outgoing Leads', value: outgoingLeads }
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 40,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        )}
                     </Stack>
                 </Card>
 

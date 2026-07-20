@@ -33,6 +33,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { emptyRows } from '../utils';
 import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';
@@ -71,8 +73,12 @@ interface Props {
 }
 
 export function ProposalListView({ hideTitle, prospectId }: Props) {
+    const { user } = useAuth();
     const table = useProposalTable();
     const router = useRouter();
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.proposal;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.proposal?.create : true;
 
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
         open: false,
@@ -266,14 +272,16 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                                 Kanban View
                             </Button>
                         </Box>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={handleCreateNew}
-                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                        >
-                            New Proposal
-                        </Button>
+                        {displayCreate && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleCreateNew}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                New Proposal
+                            </Button>
+                        )}
                     </Box>
                 )}
             </Stack>
@@ -390,7 +398,10 @@ export function ProposalListView({ hideTitle, prospectId }: Props) {
                     onOpenProposal={handleViewRow}
                     onEditProposal={handleEditRow}
                     onDeleteProposal={handleDeleteRow}
-                    permissions={{ write: true, delete: true }}
+                    permissions={{
+                        write: hasCustomPerms ? !!user?.permissions?.actions?.proposal?.edit : true,
+                        delete: hasCustomPerms ? !!user?.permissions?.actions?.proposal?.delete : true,
+                    }}
                 />
             )}
 

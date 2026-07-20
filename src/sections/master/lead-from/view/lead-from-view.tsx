@@ -26,6 +26,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { LeadFromDialog } from '../lead-from-dialog';
 import { LeadFromTableRow } from '../lead-from-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -48,6 +50,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function LeadFromView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.lead_from;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.lead_from ? !!user?.permissions?.actions?.lead_from?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.lead_from ? !!user?.permissions?.actions?.lead_from?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.lead_from ? !!user?.permissions?.actions?.lead_from?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -140,14 +148,16 @@ export function LeadFromView() {
         <Typography variant="h4" flexGrow={1}>
           Lead From
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Lead From
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Lead From
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -195,6 +205,8 @@ export function LeadFromView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

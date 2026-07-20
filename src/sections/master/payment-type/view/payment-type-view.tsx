@@ -25,6 +25,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { PaymentTypeDialog } from '../payment-type-dialog';
 import { LeadTableHead } from '../../../lead/lead-table-head';
@@ -47,6 +49,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function PaymentTypesView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.payment_type;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.payment_type ? !!user?.permissions?.actions?.payment_type?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.payment_type ? !!user?.permissions?.actions?.payment_type?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.payment_type ? !!user?.permissions?.actions?.payment_type?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -139,14 +147,16 @@ export function PaymentTypesView() {
         <Typography variant="h4" flexGrow={1}>
           Payment Type
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Payment Type
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Payment Type
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -194,6 +204,8 @@ export function PaymentTypesView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 
