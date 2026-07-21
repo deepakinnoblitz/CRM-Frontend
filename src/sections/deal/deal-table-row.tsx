@@ -83,10 +83,10 @@ export function DealTableRow({
 }: Props) {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.deal;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.prospects;
 
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.deal?.edit : canEdit;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.deal?.delete : canDelete;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.delete : canDelete;
     
     // Quick-create actions driven by target doctype create permission
     const displayEstimationCreate = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.create : true;

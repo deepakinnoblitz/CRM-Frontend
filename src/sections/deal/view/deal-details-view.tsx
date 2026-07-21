@@ -71,7 +71,8 @@ export function DealDetailsView() {
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
     const canCreateEstimation = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.create : true;
     const canCreateInvoice = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.create : true;
-
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : true;
+    
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [currentTab, setCurrentTab] = useState('estimations');
@@ -447,25 +448,27 @@ export function DealDetailsView() {
                         });
                     })()}
                 </Box>
-                <Button
-                    variant="contained"
-                    disabled={!selectedStage || selectedStage === (STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In') || updatingStage}
-                    onClick={handleStageUpdateClick}
-                    sx={{
-                        height: 36,
-                        px: 3,
-                        borderRadius: 1.5,
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: '#2081C3',
-                        color: 'common.white',
-                        minWidth: 130,
-                        '&:hover': { bgcolor: '#1a699f' },
-                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
-                    }}
-                >
-                    {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Update Stage'}
-                </Button>
+                {displayEdit  &&(
+                    <Button
+                        variant="contained"
+                        disabled={!selectedStage || selectedStage === (STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In') || updatingStage}
+                        onClick={handleStageUpdateClick}
+                        sx={{
+                            height: 36,
+                            px: 3,
+                            borderRadius: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            bgcolor: '#2081C3',
+                            color: 'common.white',
+                            minWidth: 130,
+                            '&:hover': { bgcolor: '#1a699f' },
+                            '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                        }}
+                    >
+                        {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Update Stage'}
+                    </Button>
+                )}
             </Card>
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>

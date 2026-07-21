@@ -59,6 +59,8 @@ import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import LeadNoteDialog from '../lead-note-dialog';
 import { LeadConvertDialog } from '../lead-convert-dialog';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
@@ -69,7 +71,6 @@ import { EmailAutomationDialog } from '../email-automation-dialog';
 import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
-
 
 // ----------------------------------------------------------------------
 
@@ -84,9 +85,24 @@ const getClipPath = (index: number, total: number) => {
 };
 
 export function LeadDetailsView() {
+    const { user } = useAuth();
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+
+    const leadPerms = user?.permissions?.actions?.lead;
+    const hasCustomLead = !!user?.permissions?.custom_permissions_assigned && !!leadPerms;
+    const canEditLead = hasCustomLead ? !!leadPerms?.edit : true;
+
+    const eventsPerms = user?.permissions?.actions?.calendar;
+    const hasCustomEvents = !!user?.permissions?.custom_permissions_assigned && !!eventsPerms;
+    const canCreateFollowup = hasCustomEvents ? !!eventsPerms?.create : true;
+    const canViewFollowups = hasCustomEvents ? !!eventsPerms?.view : true;
+
+    const proposalPerms = user?.permissions?.actions?.proposal;
+    const hasCustomProposal = !!user?.permissions?.custom_permissions_assigned && !!proposalPerms;
+    const canCreateProposal = hasCustomProposal ? !!proposalPerms?.create : true;
+    const canViewProposals = hasCustomProposal ? !!proposalPerms?.view : true;
 
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
     const [automationData, setAutomationData] = useState<any>(null);
@@ -594,9 +610,9 @@ export function LeadDetailsView() {
     const TABS = [
         { value: 'general', label: 'General' },
         { value: 'convert', label: 'Convert Lead' },
-        { value: 'followups', label: 'Followups' },
+        ...(canViewFollowups ? [{ value: 'followups', label: 'Followups' }] : []),
         { value: 'pipeline', label: 'Stage History' },
-        { value: 'proposal', label: 'Proposals' },
+        ...(canViewProposals ? [{ value: 'proposal', label: 'Proposals' }] : []),
         { value: 'notes', label: 'Notes' },
     ];
 
@@ -656,38 +672,42 @@ export function LeadDetailsView() {
                         Go Back
                     </Button>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="solar:calendar-add-bold" />}
-                        onClick={() => setOpenTypeDialog(true)}
-                        sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: '#0e9f6e' }}
-                    >
-                        Create Follow-up
-                    </Button>
+                    {canCreateFollowup && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="solar:calendar-add-bold" />}
+                            onClick={() => setOpenTypeDialog(true)}
+                            sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: '#0e9f6e' }}
+                        >
+                            Create Follow-up
+                        </Button>
+                    )}
 
-                    <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => {
-                            router.push(`/proposals/new?lead=${lead.name}`);
-                        }}
-                        startIcon={
-                            <RiMailSendLine />
-                        }
-                        sx={{
-                            bgcolor: '#9625d3ff',
-                            color: '#fff',
-                            borderRadius: 1.5,
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            px: 2.5,
-                            '&:hover': {
+                    {canCreateProposal && (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            onClick={() => {
+                                router.push(`/proposals/new?lead=${lead.name}`);
+                            }}
+                            startIcon={
+                                <RiMailSendLine />
+                            }
+                            sx={{
                                 bgcolor: '#9625d3ff',
-                            },
-                        }}
-                    >
-                        Create Proposal
-                    </Button>
+                                color: '#fff',
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                px: 2.5,
+                                '&:hover': {
+                                    bgcolor: '#9625d3ff',
+                                },
+                            }}
+                        >
+                            Create Proposal
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         color="success"
@@ -717,88 +737,90 @@ export function LeadDetailsView() {
             </Stack>
 
             {/* Stage Tracker Bar */}
-            <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    overflowX: 'auto',
-                    flexGrow: 1,
-                    py: 0.5,
-                    px: 0.5,
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    '&::-webkit-scrollbar': {
-                        display: 'none',
-                    },
-                }}>
-                    {(() => {
-                        const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
-                        const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
-                        const currentActiveStage = selectedStage || effectiveLeadStage;
-                        const activeIndex = stages.findIndex(s => s === currentActiveStage);
+                <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        overflowX: 'auto',
+                        flexGrow: 1,
+                        py: 0.5,
+                        px: 0.5,
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        '&::-webkit-scrollbar': {
+                            display: 'none',
+                        },
+                    }}>
+                        {(() => {
+                            const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
+                            const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
+                            const currentActiveStage = selectedStage || effectiveLeadStage;
+                            const activeIndex = stages.findIndex(s => s === currentActiveStage);
 
-                        return stages.map((stage: string, index: number) => {
-                            const isCompletedOrActive = index <= activeIndex;
-                            const isActive = stage === currentActiveStage;
+                            return stages.map((stage: string, index: number) => {
+                                const isCompletedOrActive = index <= activeIndex;
+                                const isActive = stage === currentActiveStage;
 
-                            return (
-                                <Box
-                                    key={stage}
-                                    onClick={() => setSelectedStage(stage)}
-                                    sx={{
-                                        height: 46,
-                                        display: 'flex',
-                                        flex: '1 1 0',
-                                        minWidth: { xs: 100, md: 92 },
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        px: 1,
-                                        ml: index === 0 ? 0 : '-10px',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                        clipPath: getClipPath(index, stages.length),
-                                        bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
-                                        color: isCompletedOrActive ? 'common.white' : '#4c545a',
-                                        fontWeight: isActive ? 800 : 600,
-                                        fontSize: { xs: 11, md: 11.5 },
-                                        lineHeight: 1.15,
-                                        textAlign: 'center',
-                                        transition: 'all 0.2s',
-                                        whiteSpace: 'pre-line',
-                                        position: 'relative',
-                                        zIndex: stages.length - index,
-                                        '&:hover': {
-                                            opacity: 0.88,
-                                        }
-                                    }}
-                                >
-                                    <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
-                                        {stage}
-                                    </Typography>
-                                </Box>
-                            );
-                        });
-                    })()}
-                </Box>
-                <Button
-                    variant="contained"
-                    disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
-                    onClick={handleStageUpdateClick}
-                    sx={{
-                        height: 36,
-                        borderRadius: 1.5,
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: '#2081C3',
-                        color: 'common.white',
-                        minWidth: 130,
-                        '&:hover': { bgcolor: '#1a699f' },
-                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
-                    }}
-                >
-                    {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
-                </Button>
-            </Card>
+                                return (
+                                    <Box
+                                        key={stage}
+                                        onClick={() => setSelectedStage(stage)}
+                                        sx={{
+                                            height: 46,
+                                            display: 'flex',
+                                            flex: '1 1 0',
+                                            minWidth: { xs: 100, md: 92 },
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            px: 1,
+                                            ml: index === 0 ? 0 : '-10px',
+                                            cursor: 'pointer',
+                                            userSelect: 'none',
+                                            clipPath: getClipPath(index, stages.length),
+                                            bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
+                                            color: isCompletedOrActive ? 'common.white' : '#4c545a',
+                                            fontWeight: isActive ? 800 : 600,
+                                            fontSize: { xs: 11, md: 11.5 },
+                                            lineHeight: 1.15,
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s',
+                                            whiteSpace: 'pre-line',
+                                            position: 'relative',
+                                            zIndex: stages.length - index,
+                                            '&:hover': {
+                                                opacity: 0.88,
+                                            }
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
+                                            {stage}
+                                        </Typography>
+                                    </Box>
+                                );
+                            });
+                        })()}
+                    </Box>
+                    {canEditLead &&(
+                        <Button
+                            variant="contained"
+                            disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
+                            onClick={handleStageUpdateClick}
+                            sx={{
+                                height: 36,
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: '#2081C3',
+                                color: 'common.white',
+                                minWidth: 130,
+                                '&:hover': { bgcolor: '#1a699f' },
+                                '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                            }}
+                        >
+                            {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
+                        </Button>
+                    )}
+                </Card>
 
             {/* Premium Header Banner */}
             <Box
@@ -1129,7 +1151,7 @@ export function LeadDetailsView() {
                         </Box>
                     )}
 
-                    {currentTab === 'followups' && (
+                    {currentTab === 'followups' && canViewFollowups && (
                         <LeadFollowupDetails
                             title="Followup History"
                             list={followupHistory}
@@ -1137,7 +1159,7 @@ export function LeadDetailsView() {
                         />
                     )}
 
-                    {currentTab === 'proposal' && (
+                    {currentTab === 'proposal' && canViewProposals && (
                         <LeadProposalDetails
                             title="Proposal List"
                             list={proposalHistory}
@@ -1275,28 +1297,31 @@ export function LeadDetailsView() {
                             <Typography variant="h6" sx={{ fontWeight: 700 }}>
                                 Lead Notes
                             </Typography>
-                            <Button
-                                variant="contained"
-                                onClick={() => {
-                                    setSelectedNote(null);
-                                    setOpenNoteDialog(true);
-                                }}
-                                sx={{
-                                    borderRadius: 5.5,
-                                    fontWeight: 700,
-                                    textTransform: 'none',
-                                    px: 2.1,
-                                    height: 32,
-                                    bgcolor: '#2081C3',
-                                    color: '#fff',
-                                    fontSize: '0.8125rem',
-                                    letterSpacing: 0.2,
-                                    '&:hover': { bgcolor: '#1a699f' },
-                                    boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
-                                }}
-                            >
-                                + Add Note
-                            </Button>
+                            {canEditLead &&(
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        setSelectedNote(null);
+                                        setOpenNoteDialog(true);
+                                    }}
+                                    sx={{
+                                        borderRadius: 5.5,
+                                        fontWeight: 700,
+                                        textTransform: 'none',
+                                        px: 2.1,
+                                        height: 32,
+                                        bgcolor: '#2081C3',
+                                        color: '#fff',
+                                        fontSize: '0.8125rem',
+                                        letterSpacing: 0.2,
+                                        '&:hover': { bgcolor: '#1a699f' },
+                                        boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
+                                    }}
+                                >
+                                    Add Note
+                                </Button>
+                            )}
+
                         </Stack>
 
                         <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 800, pr: 0.5 }}>
