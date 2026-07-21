@@ -80,7 +80,13 @@ export function RolePermissionDetailsView({ name, onBack, onEdit }: RolePermissi
         if (module === 'deal') return 'Prospects';
         if (module === 'account') return 'Company';
         if (module === 'contact') return 'Clients';
+        if (module === 'purchase_collection') return 'Purchase Settlement';
         return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
+
+    const getFriendlyScreenName = (screen: string) => {
+        if (screen === 'Purchase Collections') return 'Purchase Settlements';
+        return screen;
     };
 
     const renderToggleIcon = (value: number) => (
