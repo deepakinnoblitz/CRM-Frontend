@@ -61,11 +61,22 @@ import { LeadTableHead as InterviewTableHead } from 'src/sections/lead/lead-tabl
 import { InterviewDetailsDialog } from 'src/sections/interviews/interview-details-dialog';
 import { LeadTableToolbar as InterviewTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { InterviewTableFiltersDrawer } from '../interview-table-filters-drawer';
 
 // ----------------------------------------------------------------------
 
+
 export function InterviewsView() {
+    const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.interview_list;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canCreateInterview = hasCustomPerms ? !!actionPerms?.create : true;
+    const canEditInterview = hasCustomPerms ? !!actionPerms?.edit : true;
+    const canDeleteInterview = hasCustomPerms ? !!actionPerms?.delete : true;
+
+    const [activeTab, setActiveTab] = useState<'my' | 'all'>('my');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -430,12 +441,11 @@ export function InterviewsView() {
 
     const notFound = !loading && !data.length && !!filterName;
     const empty = !loading && !data.length && !filterName && !canReset;
-
     return (
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Interviews</Typography>
-                {permissions.write && (
+                {permissions.write && canCreateInterview && (
                     <Button
                         variant="contained"
                         sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
@@ -468,19 +478,19 @@ export function InterviewsView() {
 
                 <Scrollbar>
                     <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+                        <Table sx={{ minWidth: 800 }}>
                             <InterviewTableHead
                                 order={order}
                                 orderBy={orderBy}
-                                rowCount={data.length}
+                                rowCount={total}
                                 numSelected={selected.length}
-                                onSort={handleSort}
                                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
-                                    { id: 'job_applicant', label: 'Applicant' },
-                                    { id: 'scheduled_on', label: 'Schedule' },
+                                    { id: 'job_applicant', label: 'Job Applicant' },
+                                    { id: 'job_applied', label: 'Job Opening' },
+                                    { id: 'scheduled_on', label: 'Interview Date & Time' },
                                     { id: 'overall_status', label: 'Status' },
                                     { id: '', label: '' },
                                 ]}
@@ -489,7 +499,7 @@ export function InterviewsView() {
                                 {loading ? (
                                     <TableRow>
                                         <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
-                                            <CircularProgress />
+                                            <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
                                 ) : (
@@ -513,8 +523,8 @@ export function InterviewsView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditInterview}
+                                                canDelete={permissions.delete && canDeleteInterview}
                                             />
                                         ))}
 

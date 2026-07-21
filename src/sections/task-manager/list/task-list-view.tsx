@@ -29,6 +29,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from './table-no-data';
 import { TaskTableToolbar } from './task-table-toolbar';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
@@ -181,6 +183,11 @@ export default function TaskListView({
 
     const isNotFound = !dataFiltered.length && (!!filterName || canReset);
     const isEmpty = !tasks.length && !loading;
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.task_manager;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.delete : true;
 
     return (
         <>
@@ -383,7 +390,7 @@ export default function TaskListView({
                                                         >
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        {permissions.create && (
+                                                        {displayEdit && (
                                                             <IconButton
                                                                 size="small"
                                                                 onClick={() => onEditTask(task)}
@@ -392,7 +399,7 @@ export default function TaskListView({
                                                                 <Iconify icon="solar:pen-bold" />
                                                             </IconButton>
                                                         )}
-                                                        {permissions.delete && (
+                                                        {displayDelete && (
                                                             <IconButton
                                                                 size="small"
                                                                 onClick={() => onDeleteTask(task)}

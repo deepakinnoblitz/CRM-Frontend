@@ -20,6 +20,7 @@ import { markAsRead } from 'src/api/unread-counts';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -99,6 +100,11 @@ export function WFHAttendanceTableRow({
             setActionPending(null);
         }
     };
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.wfh_attendance;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.wfh_attendance?.edit : true;
+
 
     return (
         <>
@@ -205,7 +211,7 @@ export function WFHAttendanceTableRow({
                                 <Iconify icon="solar:eye-bold" />
                             </Badge>
                         </IconButton>
-                        {canEdit &&
+                        {displayEdit &&
                             (isHR
                                 ? (row.workflowState !== 'Rejected')
                                 : (row.workflowState === 'Draft' || row.workflowState === 'Approved')

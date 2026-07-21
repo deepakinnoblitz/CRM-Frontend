@@ -28,6 +28,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import ExpenseTrackerDialog from '../expense-tracker-dialog';
@@ -36,7 +38,6 @@ import { ExpenseTrackerTableRow } from '../expense-tracker-table-row';
 import { LeadTableHead as ExpenseTrackerTableHead } from '../../lead/lead-table-head';
 import ExpenseTrackerTableFiltersDrawer from '../expense-tracker-table-filters-drawer';
 import { LeadTableToolbar as ExpenseTrackerTableToolbar } from '../../lead/lead-table-toolbar';
-
 // ----------------------------------------------------------------------
 
 const SORT_OPTIONS = [
@@ -49,6 +50,13 @@ const SORT_OPTIONS = [
 ];
 
 export default function ExpenseTrackerView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.expenses || user?.permissions?.actions?.crm_expenses);
+    const actionPerms = user?.permissions?.actions?.expenses || user?.permissions?.actions?.crm_expenses;
+    const canCreateExpense = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditExpense = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteExpense = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
     const { enqueueSnackbar } = useSnackbar();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -205,14 +213,16 @@ export default function ExpenseTrackerView() {
                     Company Expenses
                 </Typography>
 
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => handleOpenDialog()}
-                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                    Add Expense
-                </Button>
+                {canCreateExpense && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => handleOpenDialog()}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        Add Expense
+                    </Button>
+                )}
             </Box>
 
             <ExpenseTrackerStatsCards stats={stats} />
@@ -230,7 +240,7 @@ export default function ExpenseTrackerView() {
                     searchPlaceholder="Search by title..."
                     onDelete={() => { }}
                     sortBy={sortBy}
-                    onSortChange={(value: string) => { setSortBy(value); setPage(0); }}
+                    onSortChange={setSortBy}
                     sortOptions={SORT_OPTIONS}
                 />
 
@@ -238,9 +248,11 @@ export default function ExpenseTrackerView() {
                     <TableContainer sx={{ overflow: 'unset' }}>
                         <Table sx={{ minWidth: 800 }}>
                             <ExpenseTrackerTableHead
-                                rowCount={total}
+                                order={sortBy.endsWith('_asc') ? 'asc' : 'desc'}
+                                orderBy={sortBy.replace(/_(asc|desc)$/, '')}
+                                rowCount={data.length}
                                 numSelected={selected.length}
-                                onSelectAllRows={handleSelectAllRows}
+                                onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
                                 hideCheckbox
                                 showIndex
                                 headLabel={[
@@ -269,6 +281,8 @@ export default function ExpenseTrackerView() {
                                         onSelectRow={() => handleSelectRow(row.name)}
                                         onEdit={() => handleOpenDialog(row)}
                                         onDelete={() => setConfirmDelete({ open: true, id: row.name })}
+                                        canEdit={canEditExpense}
+                                        canDelete={canDeleteExpense}
                                         hideCheckbox
                                     />
                                 ))}

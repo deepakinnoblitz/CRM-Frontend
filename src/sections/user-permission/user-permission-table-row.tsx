@@ -6,6 +6,7 @@ import IconButton from '@mui/material/IconButton';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -25,6 +26,11 @@ export function UserPermissionTableRow({
     onDeleteRow,
     index,
 }: Props) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.users_list;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.delete : true;
+
     return (
         <TableRow
             hover
@@ -65,12 +71,17 @@ export function UserPermissionTableRow({
             <TableCell>{row.for_value}</TableCell>
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-                    <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
-                        <Iconify icon="solar:pen-bold" />
-                    </IconButton>
+                    
+                    {displayEdit &&(
+                        <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
+                            <Iconify icon="solar:pen-bold" />
+                        </IconButton>
+                    )}
+                    {displayDelete &&(
                     <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
                         <Iconify icon="solar:trash-bin-trash-bold" />
                     </IconButton>
+                    )}
                 </Box>
             </TableCell>
         </TableRow>

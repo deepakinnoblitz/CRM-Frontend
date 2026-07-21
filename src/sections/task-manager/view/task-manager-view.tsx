@@ -65,6 +65,10 @@ export default function TaskManagerView() {
         message: '',
         severity: 'success',
     });
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.task_manager;
+    const canCreateTask = hasCustomPerms && user?.permissions?.actions?.task_manager ? !!user?.permissions?.actions?.task_manager?.create : true;
+
     const [tasks, setTasks] = useState<TaskManager[]>([]);
     const [loading, setLoading] = useState(true);
     const [openForm, setOpenForm] = useState(false);
@@ -286,7 +290,7 @@ export default function TaskManagerView() {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {canSeeAll && (
+                        {canSeeAll && canCreateTask && (
                             <Button
                                 variant="contained"
                                 startIcon={<Iconify icon="mingcute:add-line" />}

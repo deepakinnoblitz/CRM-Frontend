@@ -206,6 +206,11 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
         }
     };
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.task_manager;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.delete : true;
+
+
     return (
         <>
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="lg" PaperProps={{ sx: { borderRadius: 2.5, overflow: 'hidden' } }}>
@@ -397,7 +402,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         <Box sx={{ px: 3, pb: 2.5, pt: 2, borderTop: '1px solid', borderColor: 'divider', bgcolor: 'background.neutral', borderRadius: 2, borderlefttopRadius: 0 }}>
                             <Stack direction="row" spacing={1.5} flexWrap="wrap" useFlexGap>
                                 {/* Accept — Open or Reopened */}
-                                {(task.status === 'Open' || task.status === 'Reopened') && (
+                                {(task.status === 'Open' || task.status === 'Reopened') && displayEdit && (
                                     <Button
                                         variant="contained"
                                         color="info"
@@ -412,7 +417,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                 )}
 
                                 {/* Close Task — In Progress or On Hold */}
-                                {(task.status === 'In Progress' || task.status === 'On Hold') && (
+                                {(task.status === 'In Progress' || task.status === 'On Hold') && displayEdit && (
                                     <Button
                                         variant="contained"
                                         color="success"
@@ -427,7 +432,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                 )}
 
                                 {/* On Hold — Open, In Progress, or Reopened */}
-                                {(task.status === 'Open' || task.status === 'In Progress' || task.status === 'Reopened') && (
+                                {(task.status === 'Open' || task.status === 'In Progress' || task.status === 'Reopened') && displayEdit && (
                                     <Button
                                         variant="contained"
                                         size="medium"
@@ -566,7 +571,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                         <Box sx={{ px: 2, pb: 2.5, display: 'flex', gap: 1 }}>
                             {(() => {
                                 const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
-                                return isTaskManager && permissions.write && (
+                                return isTaskManager && displayEdit && (
                                     <Button
                                         fullWidth
                                         variant="contained"
@@ -578,7 +583,7 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                     </Button>
                                 );
                             })()}
-                            {permissions.delete && (
+                            {displayDelete && (
                                 <Button
                                     variant="outlined"
                                     color="error"

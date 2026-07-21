@@ -63,6 +63,9 @@ import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-
 export function DailyLogReportView() {
     const theme = useTheme();
     const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.daily_log_report;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canExport = hasCustomPerms ? !!actionPerms?.export : true;
 
     // -----------------------------------------------------------------
     // Drag-to-scroll for Muster Roll table (ref-based, zero re-renders)
@@ -1240,39 +1243,41 @@ export function DailyLogReportView() {
                         />
 
                         <Box sx={{ flexGrow: 1 }} />
-                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
-                            <Button
-                                variant="contained"
-                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
-                                onClick={() => handleOpenExportDialog('excel')}
-                                disabled={reportData.length === 0 || exportingExcel}
-                                sx={{
-                                    bgcolor: '#0ea5e9',
-                                    color: 'common.white',
-                                    '&:hover': { bgcolor: '#0284c7' },
-                                    height: 40,
-                                    px: 3,
-                                }}
-                            >
-                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
-                            </Button>
+                        {canExport && (
+                            <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={() => handleOpenExportDialog('excel')}
+                                    disabled={reportData.length === 0 || exportingExcel}
+                                    sx={{
+                                        bgcolor: '#0ea5e9',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#0284c7' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                                </Button>
 
-                            <Button
-                                variant="contained"
-                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                                onClick={() => handleOpenExportDialog('pdf')}
-                                disabled={reportData.length === 0 || exportingPdf}
-                                sx={{
-                                    bgcolor: '#f43f5e',
-                                    color: 'common.white',
-                                    '&:hover': { bgcolor: '#e11d48' },
-                                    height: 40,
-                                    px: 3,
-                                }}
-                            >
-                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                            </Button>
-                        </Stack>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={() => handleOpenExportDialog('pdf')}
+                                    disabled={reportData.length === 0 || exportingPdf}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </Stack>
+                        )}
                     </Stack>
                 </Card>
 

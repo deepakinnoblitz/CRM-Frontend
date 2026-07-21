@@ -51,7 +51,16 @@ const defaultFilters = {
     status: 'all',
 };
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function EmployeeMonthlyAwardView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.employee_monthly_award;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateAward = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditAward = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteAward = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' }>({ open: false, message: '', severity: 'success' });
   const handleCloseSnackbar = () => setSnackbar(prev => ({ ...prev, open: false }));
   
@@ -150,7 +159,7 @@ export function EmployeeMonthlyAwardView() {
         ))}
       </Tabs>
 
-      {currentTab === 'awards' && (
+      {currentTab === 'awards' && canCreateAward && (
         <Stack direction="row" spacing={1}>
           <Button
             variant="contained"

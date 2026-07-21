@@ -30,6 +30,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../table-no-data';
 import { TableEmptyRows } from '../table-empty-rows';
 
@@ -160,6 +162,11 @@ export function RolePermissionListView({ onEdit, onView }: RolePermissionListVie
     const [openDelete, setOpenDelete] = useState(false);
     const [permissionToDelete, setPermissionToDelete] = useState<string | null>(null);
 
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.users_list;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.delete : true;
+
     const loadData = useCallback(async () => {
         setLoading(true);
         try {
@@ -276,12 +283,16 @@ export function RolePermissionListView({ onEdit, onView }: RolePermissionListVie
                                                         <IconButton onClick={() => onView?.(row.name) || router.push(`/role-permissions/${row.name}/view`)} sx={{ color: 'info.main' }}>
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton onClick={() => onEdit?.(row.name) || router.push(`/role-permissions/${row.name}/edit`)} sx={{ color: 'primary.main' }}>
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        {displayEdit &&(
+                                                            <IconButton onClick={() => onEdit?.(row.name) || router.push(`/role-permissions/${row.name}/edit`)} sx={{ color: 'primary.main' }}>
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {displayDelete &&(
                                                         <IconButton onClick={() => handleDeleteRow(row.name)} sx={{ color: 'error.main' }}>
                                                             <Iconify icon="solar:trash-bin-trash-bold" />
                                                         </IconButton>
+                                                        )}
                                                     </TableCell>
                                                 </TableRow>
                                             );
