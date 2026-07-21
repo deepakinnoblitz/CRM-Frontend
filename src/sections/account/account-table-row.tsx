@@ -51,11 +51,11 @@ export function AccountTableRow({
     index,
 }: AccountTableRowProps) {
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.account;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.company;
 
-    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.account?.view : canView;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.account?.edit : canEdit;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.account?.delete : canDelete;
+    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.company?.view : canView;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.company?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.company?.delete : canDelete;
     return (
         <TableRow
             hover
