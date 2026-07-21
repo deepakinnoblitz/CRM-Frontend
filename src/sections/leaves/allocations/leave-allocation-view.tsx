@@ -70,6 +70,9 @@ export function LeaveAllocationView() {
         ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
     );
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.leave_allocate;
+    const canCreateLeaveAllocation = hasCustomPerms && user?.permissions?.actions?.leave_allocate ? !!user?.permissions?.actions?.leave_allocate?.create : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -249,7 +252,7 @@ export function LeaveAllocationView() {
 
 
                 <Stack direction="row" spacing={2}>
-                    {permissions.write && (
+                    {permissions.write && canCreateLeaveAllocation &&(
                         <Button
                             variant="outlined"
                             startIcon={<Iconify icon="solar:calendar-add-bold" />}
@@ -266,7 +269,7 @@ export function LeaveAllocationView() {
                             Allocate Monthly Leave
                         </Button>
                     )}
-                    {permissions.write && (
+                    {permissions.write && canCreateLeaveAllocation &&(
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon="mingcute:add-line" />}

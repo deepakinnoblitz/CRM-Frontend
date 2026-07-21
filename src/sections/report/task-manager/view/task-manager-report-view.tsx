@@ -57,6 +57,9 @@ import TaskDetailsDialog from '../../../task-manager/kanban/task-details-dialog'
 export function TaskManagerReportView() {
     const theme = useTheme();
     const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.task_report;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canExport = hasCustomPerms ? !!actionPerms?.export : true;
 
     const [reportData, setReportData] = useState<TaskManager[]>([]);
     const [loading, setLoading] = useState(false);
@@ -847,39 +850,41 @@ export function TaskManagerReportView() {
                         />
 
                         <Box sx={{ flexGrow: 1 }} />
-                        <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
-                            <Button
-                                variant="contained"
-                                startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
-                                onClick={handleExport}
-                                disabled={reportData.length === 0 || exportingExcel}
-                                sx={{
-                                    bgcolor: '#0ea5e9',
-                                    color: 'common.white',
-                                    '&:hover': { bgcolor: '#0284c7' },
-                                    height: 40,
-                                    px: 3,
-                                }}
-                            >
-                                {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
-                            </Button>
+                        {canExport && (
+                            <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingExcel ? undefined : <Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={handleExport}
+                                    disabled={reportData.length === 0 || exportingExcel}
+                                    sx={{
+                                        bgcolor: '#0ea5e9',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#0284c7' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingExcel ? 'Exporting Excel...' : 'Export Excel'}
+                                </Button>
 
-                            <Button
-                                variant="contained"
-                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                                onClick={handleExportPdf}
-                                disabled={reportData.length === 0 || exportingPdf}
-                                sx={{
-                                    bgcolor: '#f43f5e',
-                                    color: 'common.white',
-                                    '&:hover': { bgcolor: '#e11d48' },
-                                    height: 40,
-                                    px: 3,
-                                }}
-                            >
-                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                            </Button>
-                        </Stack>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={handleExportPdf}
+                                    disabled={reportData.length === 0 || exportingPdf}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </Stack>
+                        )}
                     </Stack>
                 </Card>
 

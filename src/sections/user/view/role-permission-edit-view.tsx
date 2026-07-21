@@ -243,6 +243,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
 
     const getFriendlyModuleName = (module: string) => {
         if (module === 'deal') return 'Prospects';
+        if (module === 'account') return 'Company';
         return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
 
@@ -281,11 +282,6 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
             };
             await updateRolePermission(name, payload);
             enqueueSnackbar('Role permission updated successfully', { variant: 'success' });
-            if (onBack) {
-                onBack();
-            } else {
-                router.push('/users?subtab=role_permissions');
-            }
         } catch (err: any) {
             enqueueSnackbar(err.message || 'Failed to save configuration.', { variant: 'error' });
         } finally {

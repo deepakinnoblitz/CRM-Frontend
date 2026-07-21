@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -57,6 +58,11 @@ export function LeaveAllocationTableRow({
             default: return 'default';
         }
     };
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.leave_allocate;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.leave_allocate?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.leave_allocate?.delete : true;
 
     const handleClick = (event: React.MouseEvent<HTMLElement>, callback: VoidFunction) => {
         event.stopPropagation();
@@ -185,7 +191,7 @@ export function LeaveAllocationTableRow({
                         <Iconify icon="solar:eye-bold" width={20} />
                     </IconButton>
 
-                    {canEdit && (
+                    {displayEdit && (
                         <IconButton
                             size="small"
                             onClick={(e) => handleClick(e, onEdit)}
@@ -195,7 +201,7 @@ export function LeaveAllocationTableRow({
                         </IconButton>
                     )}
 
-                    {canDelete && (
+                    {displayDelete && (
                         <IconButton
                             size="small"
                             onClick={(e) => handleClick(e, onDelete)}

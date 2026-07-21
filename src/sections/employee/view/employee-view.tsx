@@ -57,12 +57,13 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { EmployeeTableRow } from '../employee-table-row';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DepartmentCreateDialog } from '../department-create-dialog';
 import EmployeeTableFiltersDrawer from '../employee-table-filters-drawer';
-
 // ----------------------------------------------------------------------
 
 const filter = createFilterOptions<any>();
@@ -174,6 +175,10 @@ export function EmployeeView() {
     const [order, setOrder] = useState<'asc' | 'desc'>('desc');
     const [orderBy, setOrderBy] = useState('modified');
     const [selected, setSelected] = useState<string[]>([]);
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.employee;
+    const canCreateEmployee = hasCustomPerms && user?.permissions?.actions?.employee ? !!user?.permissions?.actions?.employee?.create : true;
 
     // Department Create Dialog State
     const [openDepartmentCreate, setOpenDepartmentCreate] = useState(false);
@@ -1490,7 +1495,7 @@ export function EmployeeView() {
                     Employees
                 </Typography>
 
-                {permissions.write && (
+                {canCreateEmployee && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}

@@ -53,9 +53,18 @@ import { AssetDetailsDialog } from 'src/sections/report/assets/assets-details-di
 import { AssetsTableFiltersDrawer } from 'src/sections/assets/assets-table-filters-drawer';
 import { LeadTableToolbar as AssetTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function AssetsView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.asset || user?.permissions?.actions?.my_asset_list);
+    const actionPerms = user?.permissions?.actions?.asset || user?.permissions?.actions?.my_asset_list;
+    const canCreateAsset = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditAsset = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteAsset = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+    const canImportAsset = hasCustomPerms && actionPerms ? !!actionPerms?.import : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -412,23 +421,27 @@ export function AssetsView() {
                     Assets
                 </Typography>
 
-                {permissions.write && (
+                {(permissions.write && (canCreateAsset || canImportAsset)) && (
                     <Stack direction="row" spacing={1}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon="solar:import-bold-duotone" />}
-                            onClick={() => setOpenImport(true)}
-                        >
-                            Import
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={handleOpenCreate}
-                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                        >
-                            New Asset
-                        </Button>
+                        {canImportAsset && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                                onClick={() => setOpenImport(true)}
+                            >
+                                Import
+                            </Button>
+                        )}
+                        {canCreateAsset && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                New Asset
+                            </Button>
+                        )}
                     </Stack>
                 )}
             </Box>
@@ -503,8 +516,8 @@ export function AssetsView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditAsset}
+                                                canDelete={permissions.delete && canDeleteAsset}
                                             />
                                         ))}
 

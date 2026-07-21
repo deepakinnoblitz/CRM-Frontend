@@ -66,6 +66,9 @@ const LEAVE_SORT_OPTIONS = [
 export function LeavesView() {
     const { user } = useAuth();
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.leaves;
+    const canCreateUser = hasCustomPerms && user?.permissions?.actions?.leaves ? !!user?.permissions?.actions?.leaves?.create : true;
+
     const { socket } = useSocket(user?.email);
 
     const isHR = user?.roles?.some((role: string) =>
@@ -460,7 +463,7 @@ export function LeavesView() {
                     Leave Applications
                 </Typography>
 
-                {permissions.write && (
+                {permissions.write && canCreateUser &&(
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}

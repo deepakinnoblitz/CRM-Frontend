@@ -15,6 +15,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { UserView } from './user-view';
 import { RolePermissionView } from './role-permission-view';
 import { UserPermissionView } from '../../user-permission/view/user-permission-view';
@@ -56,6 +58,10 @@ export function UserManagementView({ hideHeader = false }: { hideHeader?: boolea
     subTabParam === 'permissions' ? 'permissions' : subTabParam === 'role_permissions' ? 'role_permissions' : 'users'
   );
 
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.users_list;
+  const canCreateUser = hasCustomPerms && user?.permissions?.actions?.users_list ? !!user?.permissions?.actions?.users_list?.create : true;
+  
   const handleChangeTab = useCallback(
     (event: React.SyntheticEvent, newValue: string) => {
       setCurrentTab(newValue);
@@ -131,7 +137,7 @@ export function UserManagementView({ hideHeader = false }: { hideHeader?: boolea
         ))}
       </Tabs>
 
-      {currentTab === 'users' && (
+      {currentTab === 'users' && canCreateUser &&(
         <Button
           variant="contained"
           startIcon={<Iconify icon="mingcute:add-line" />}
@@ -148,7 +154,7 @@ export function UserManagementView({ hideHeader = false }: { hideHeader?: boolea
           New User
         </Button>
       )}
-      {currentTab === 'role_permissions' && (
+      {currentTab === 'role_permissions' && canCreateUser &&(
         <Button
           variant="contained"
           startIcon={<Iconify icon="mingcute:add-line" />}

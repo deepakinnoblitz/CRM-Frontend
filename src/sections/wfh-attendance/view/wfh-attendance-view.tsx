@@ -60,6 +60,9 @@ export function WFHAttendanceView() {
         : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
     const isHR = userRole === "hr" || userRole === "admin";
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.wfh_attendance;
+    const canCreateWFHAttendance = hasCustomPerms && user?.permissions?.actions?.wfh_attendance ? !!user?.permissions?.actions?.wfh_attendance?.create : true;
+
     const { socket } = useSocket(user?.email);
     const theme = useTheme();
     const [page, setPage] = useState(0);
@@ -510,7 +513,7 @@ export function WFHAttendanceView() {
                     WFH Attendance
                 </Typography>
 
-                {permissions.write && (
+                {canCreateWFHAttendance && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}

@@ -1,14 +1,14 @@
-import type { WorkflowAction} from 'src/api/reimbursement-claims';
+import type { WorkflowAction } from 'src/api/reimbursement-claims';
 
 import dayjs from 'dayjs';
 import { useState, useEffect } from 'react';
-import { 
-    FaFileAlt, 
-    FaFilePdf, 
-    FaFileWord, 
-    FaFileImage, 
-    FaFileExcel, 
-    FaExternalLinkAlt 
+import {
+    FaFileAlt,
+    FaFilePdf,
+    FaFileWord,
+    FaFileImage,
+    FaFileExcel,
+    FaExternalLinkAlt
 } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
@@ -42,10 +42,11 @@ type Props = {
     open: boolean;
     onClose: () => void;
     claim: any;
+    canEdit?: boolean;
     onRefresh?: () => void;
 };
 
-export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefresh }: Props) {
+export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit = true, onRefresh }: Props) {
     const theme = useTheme();
     const { user } = useAuth();
     const [submitting, setSubmitting] = useState<boolean>(false);
@@ -408,11 +409,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                                     <Typography variant="body2">{dayjs(claim.creation).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5  }}>Last Modified</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Last Modified</Typography>
                                     <Typography variant="body2">{dayjs(claim.modified).format('DD/MM/YYYY HH:mm')}</Typography>
                                 </Box>
                                 <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5  }}>Record ID</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 0.5 }}>Record ID</Typography>
                                     <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>{claim.name}</Typography>
                                 </Box>
                             </Box>
@@ -421,13 +422,13 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
                 </Box>
             </DialogContent>
 
-            {actions.length > 0 && (
-                <DialogActions sx={{ p: 3, bgcolor: 'background.neutral', gap: 1.5 }}>
+            {actions.length > 0 && canEdit && (
+                <DialogActions sx={{ p: 3, gap: 1.5 }}>
                     {actions.map((action) => {
                         const isPendingThis = submitting && selectedAction?.action === action.action;
                         const isApprove = action.action.toLowerCase().includes('approve');
                         const isReject = action.action.toLowerCase().includes('reject');
-                        
+
                         let label = action.action;
                         if (isPendingThis) {
                             if (isApprove) label = 'Approving...';
@@ -549,7 +550,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, onRefres
 function getFileIcon(url: string) {
     const ext = url.split('.').pop()?.split('?')[0]?.toLowerCase();
     if (!ext) return <FaFileAlt size={20} />;
-    
+
     if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext)) {
         return <FaFileImage size={20} />;
     }

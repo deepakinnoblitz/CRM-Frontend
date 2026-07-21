@@ -76,8 +76,8 @@ export function DealView() {
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
     
     // Prospects/Deals
-    const displayCreate = hasCustomPerms && user?.permissions?.actions?.deal ? !!user?.permissions?.actions?.deal?.create : true;
-    const displayView = hasCustomPerms && user?.permissions?.actions?.deal ? !!user?.permissions?.actions?.deal?.view : true;
+    const displayCreate = hasCustomPerms && user?.permissions?.actions?.prospects ? !!user?.permissions?.actions?.prospects?.create : true;
+    const displayView = hasCustomPerms && user?.permissions?.actions?.prospects ? !!user?.permissions?.actions?.prospects?.view : true;
 
     // Estimations & Invoices specific perms
     const displayEstimationView = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.view : true;
@@ -896,8 +896,8 @@ export function DealView() {
                                     onDeleteDeal={(id) => handleDeleteClick(id)}
                                     onAddDeal={(selectedStage) => handleOpenCreate(selectedStage)}
                                     permissions={{
-                                        write: hasCustomPerms ? !!user?.permissions?.actions?.deal?.edit : permissions.write,
-                                        delete: hasCustomPerms ? !!user?.permissions?.actions?.deal?.delete : permissions.delete,
+                                        write: hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : permissions.write,
+                                        delete: hasCustomPerms ? !!user?.permissions?.actions?.prospects?.delete : permissions.delete,
                                     }}
                                 />
                             )}

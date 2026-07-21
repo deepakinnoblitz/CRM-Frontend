@@ -53,7 +53,16 @@ const TABS = [
   },
 ];
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function BadgesView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.badges;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateBadge = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditBadge = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteBadge = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [currentTab, setCurrentTab] = useState('badges');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -313,22 +322,24 @@ export function BadgesView() {
         ))}
       </Tabs>
 
-      <Button
-        variant="contained"
-        startIcon={<Iconify icon="mingcute:add-line" />}
-        sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-        onClick={() => {
-          if (currentTab === 'badges') {
-            setSelectedBadge(null);
-            setOpenBadgeForm(true);
-          } else {
-            setSelectedAssignment(null);
-            setOpenAssignmentForm(true);
-          }
-        }}
-      >
-        {currentTab === 'badges' ? 'New Badge' : 'Assign Badge'}
-      </Button>
+      {canCreateBadge && (
+        <Button
+          variant="contained"
+          startIcon={<Iconify icon="mingcute:add-line" />}
+          sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+          onClick={() => {
+            if (currentTab === 'badges') {
+              setSelectedBadge(null);
+              setOpenBadgeForm(true);
+            } else {
+              setSelectedAssignment(null);
+              setOpenAssignmentForm(true);
+            }
+          }}
+        >
+          {currentTab === 'badges' ? 'New Badge' : 'Assign Badge'}
+        </Button>
+      )}
     </Stack>
   );
 
@@ -426,6 +437,8 @@ export function BadgesView() {
                             setOpenBadgeForm(true);
                           }}
                           onDelete={() => handleDeleteBadge(row.name)}
+                          canEdit={canEditBadge}
+                          canDelete={canDeleteBadge}
                         />
                       ))}
 

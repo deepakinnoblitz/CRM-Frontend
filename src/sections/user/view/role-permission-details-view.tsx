@@ -76,8 +76,11 @@ export function RolePermissionDetailsView({ name, onBack, onEdit }: RolePermissi
         return span;
     };
 
-    const getFriendlyModuleName = (module: string) =>
-        module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const getFriendlyModuleName = (module: string) => {
+        if (module === 'deal') return 'Prospects';
+        if (module === 'account') return 'Company';
+        return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
 
     const renderToggleIcon = (value: number) => (
         <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
