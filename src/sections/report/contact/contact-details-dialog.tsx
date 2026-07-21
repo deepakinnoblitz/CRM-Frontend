@@ -31,6 +31,8 @@ import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ContactRelatedList } from './contact-related-list';
 import { WhatsappChatDialog } from '../../lead/view/whatsapp_chat_dialog';
 
@@ -46,9 +48,17 @@ type Props = {
 export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props) {
     const theme = useTheme();
     const router = useRouter();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+
+    const canViewProspects = hasCustomPerms && user?.permissions?.actions?.prospects ? !!user?.permissions?.actions?.prospects?.view : true;
+    const canViewEstimations = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.view : true;
+    const canViewInvoices = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.view : true;
+    const canViewPurchases = hasCustomPerms && user?.permissions?.actions?.purchase ? !!user?.permissions?.actions?.purchase?.view : true;
+    const canCreateCalendar = hasCustomPerms && user?.permissions?.actions?.calendar ? !!user?.permissions?.actions?.calendar?.create : true;
+
     const [contact, setContact] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [currentTab, setCurrentTab] = useState('deals');
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
     // Event scheduling states
@@ -77,11 +87,19 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
     }, [open, contactId]);
 
     const TABS = [
-        { value: 'deals', label: 'Prospects', icon: <HiOutlineCircleStack size={18} /> },
-        { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
-        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
-        { value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> },
+        ...(canViewProspects ? [{ value: 'deals', label: 'Prospects', icon: <HiOutlineCircleStack size={18} /> }] : []),
+        ...(canViewEstimations ? [{ value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> }] : []),
+        ...(canViewInvoices ? [{ value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> }] : []),
+        ...(canViewPurchases ? [{ value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> }] : []),
     ];
+
+    const [currentTab, setCurrentTab] = useState(TABS[0]?.value || 'deals');
+
+    useEffect(() => {
+        if (TABS.length > 0 && !TABS.some(t => t.value === currentTab)) {
+            setCurrentTab(TABS[0].value);
+        }
+    }, [canViewProspects, canViewEstimations, canViewInvoices, canViewPurchases]);
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth={false} PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, width: '1350px', maxWidth: '1350px' } }}>
@@ -317,25 +335,27 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                 </Tabs>
 
                                 <Stack direction="row" spacing={1.5} alignItems="center">
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        startIcon={<Iconify icon="solar:calendar-add-bold" />}
-                                        onClick={() => setOpenTypeDialog(true)}
-                                        sx={{
-                                            borderRadius: 1.5,
-                                            fontWeight: 700,
-                                            textTransform: 'none',
-                                            px: 2.5,
-                                            height: 36,
-                                            bgcolor: '#0e9f6e',
-                                            '&:hover': {
-                                                bgcolor: '#0c875d',
-                                            },
-                                        }}
-                                    >
-                                        Create Interaction
-                                    </Button>
+                                    {canCreateCalendar && (
+                                        <Button
+                                            variant="contained"
+                                            color="primary"
+                                            startIcon={<Iconify icon="solar:calendar-add-bold" />}
+                                            onClick={() => setOpenTypeDialog(true)}
+                                            sx={{
+                                                borderRadius: 1.5,
+                                                fontWeight: 700,
+                                                textTransform: 'none',
+                                                px: 2.5,
+                                                height: 36,
+                                                bgcolor: '#0e9f6e',
+                                                '&:hover': {
+                                                    bgcolor: '#0c875d',
+                                                },
+                                            }}
+                                        >
+                                            Create Interaction
+                                        </Button>
+                                    )}
 
                                     {contact?.phone && (
                                         <Button
@@ -362,8 +382,20 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit }: Props
                                 </Stack>
                             </Box>
 
-                            <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto' }}>
-                                <ContactRelatedList contactId={contactId || ''} type={currentTab as any} />
+                            <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                {TABS.length > 0 ? (
+                                    <ContactRelatedList contactId={contactId || ''} type={currentTab as any} />
+                                ) : (
+                                    <Box sx={{ flexGrow: 1, py: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                        <Iconify icon={"solar:shield-keyhole-bold-duotone" as any} width={84} sx={{ color: 'text.disabled', mb: 2, opacity: 0.3 }} />
+                                        <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.secondary', mb: 1 }}>
+                                            Permission Denied
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.disabled', maxWidth: 400 }}>
+                                            You do not have permission to view any related tabs for this client.
+                                        </Typography>
+                                    </Box>
+                                )}
                             </Box>
                         </Box>
                     </Box>
