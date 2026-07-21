@@ -184,8 +184,10 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
         return span;
     };
 
-    const getFriendlyModuleName = (module: string) =>
-        module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    const getFriendlyModuleName = (module: string) => {
+        if (module === 'deal') return 'Prospects';
+        return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
 
     const handleSave = async () => {
         let hasError = false;
@@ -361,7 +363,8 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                     <Scrollbar>
                         <Table size="medium">
                             <TableRow sx={{ bgcolor: '#08a3cd', position: 'sticky', top: 0, zIndex: 1 }}>
-                                <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
+                                <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Screens</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>All</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
                                 <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Edit</TableCell>
@@ -377,6 +380,23 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                                         const span = getRowSpan(permissions, idx);
                                         return (
                                             <TableRow key={idx} hover sx={{ borderBottom: '1px solid rgba(224, 224, 224, 1)' }}>
+                                                {span > 0 && (
+                                                    <TableCell
+                                                        rowSpan={span}
+                                                        align="center"
+                                                        sx={{
+                                                            fontWeight: 700,
+                                                            color: 'text.primary',
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.02),
+                                                            borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                                            borderBottom: '1px solid rgba(224, 224, 224, 1)',
+                                                            verticalAlign: 'middle',
+                                                            py: 2,
+                                                        }}
+                                                    >
+                                                        {getFriendlyModuleName(row.module_id)}
+                                                    </TableCell>
+                                                )}
                                                 <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                     {row.screen_id}
                                                 </TableCell>
@@ -397,7 +417,7 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
                                     })
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={8} align="center" sx={{ py: 6 }}>
+                                        <TableCell colSpan={9} align="center" sx={{ py: 6 }}>
                                             <EmptyContent
                                                 title="Select Backend Master Role to load the fields."
                                                 icon="solar:video-library-bold-duotone"
