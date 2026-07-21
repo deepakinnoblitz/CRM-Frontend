@@ -245,7 +245,13 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         if (module === 'deal') return 'Prospects';
         if (module === 'account') return 'Company';
         if (module === 'contact') return 'Clients';
+        if (module === 'purchase_collection') return 'Purchase Settlement';
         return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
+
+    const getFriendlyScreenName = (screen: string) => {
+        if (screen === 'Purchase Collections') return 'Purchase Settlements';
+        return screen;
     };
 
     const handleSave = async () => {
@@ -446,7 +452,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                         <Scrollbar>
                             <Table size="medium">
                                 <TableRow sx={{ bgcolor: '#08a3cd', position: 'sticky', top: 0, zIndex: 1 }}>
-                                    <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Modules</TableCell>
                                     <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Screens</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>All</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
@@ -481,7 +487,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                                         </TableCell>
                                                     )}
                                                     <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
-                                                        {row.screen_id}
+                                                        {getFriendlyScreenName(row.screen_id)}
                                                     </TableCell>
                                                     <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                         <Android12Switch
