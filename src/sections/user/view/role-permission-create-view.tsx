@@ -187,6 +187,7 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
     const getFriendlyModuleName = (module: string) => {
         if (module === 'deal') return 'Prospects';
         if (module === 'account') return 'Company';
+        if (module === 'contact') return 'Clients';
         return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
 

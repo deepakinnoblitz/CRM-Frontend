@@ -58,11 +58,11 @@ export function ContactTableRow({
     index,
 }: ContactTableRowProps) {
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.contact;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.clients;
 
-    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.contact?.view : canView;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.contact?.edit : canEdit;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.contact?.delete : canDelete;
+    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.clients?.view : canView;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.clients?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.clients?.delete : canDelete;
     return (
         <TableRow
             hover

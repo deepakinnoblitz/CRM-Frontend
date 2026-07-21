@@ -233,7 +233,6 @@ export function ProposalDetailsView() {
             </Stack>
 
             {/* Status Pipeline */}
-            {canEditProposal &&(
             <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
                 <Box sx={{
                     display: 'flex',
@@ -310,6 +309,7 @@ export function ProposalDetailsView() {
                         );
                     })}
                 </Box>
+                {canEditProposal &&(
                 <Button
                     variant="contained"
                     disabled={!selectedStatus || selectedStatus === proposal.status || updatingStatus}
@@ -329,9 +329,9 @@ export function ProposalDetailsView() {
                 >
                     {updatingStatus ? <CircularProgress size={20} color="inherit" /> : 'Update Status'}
                 </Button>
+                )}
             </Card>
-            )}
-            
+
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' } }}>
                     {/* Sidebar */}

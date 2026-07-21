@@ -104,6 +104,14 @@ export function LeadDetailsView() {
     const canCreateProposal = hasCustomProposal ? !!proposalPerms?.create : true;
     const canViewProposals = hasCustomProposal ? !!proposalPerms?.view : true;
 
+    const clientPerms = user?.permissions?.actions?.clients;
+    const hasCustomClient = !!user?.permissions?.custom_permissions_assigned && !!clientPerms;
+    const canCreateClient = hasCustomClient ? !!clientPerms?.create : true;
+
+    const companyPerms = user?.permissions?.actions?.company;
+    const hasCustomCompany = !!user?.permissions?.custom_permissions_assigned && !!companyPerms;
+    const canCreateCompany = hasCustomCompany ? !!clientPerms?.create : true;
+
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
     const [automationData, setAutomationData] = useState<any>(null);
     const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
@@ -1258,17 +1266,24 @@ export function LeadDetailsView() {
                                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, maxWidth: 400, mx: 'auto' }}>
                                         Convert this lead into a permanent Client and Company record in the CRM.
                                     </Typography>
-                                    <Button
-                                        variant="contained"
-                                        size="large"
-                                        color="primary"
-                                        startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
-                                        onClick={() => setOpenConvertDialog(true)}
-                                        disabled={converting}
-                                        sx={{ px: 4, height: 48, fontWeight: 800 }}
-                                    >
-                                        {converting ? 'Converting...' : 'Convert Lead Now'}
-                                    </Button>
+                                    {canCreateClient && canCreateCompany &&(
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            color="primary"
+                                            startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
+                                            onClick={() => setOpenConvertDialog(true)}
+                                            disabled={converting}
+                                            sx={{ px: 4, height: 48, fontWeight: 800 }}
+                                        >
+                                            {converting ? 'Converting...' : 'Convert Lead Now'}
+                                        </Button>
+                                    )}
+                                    {!canCreateClient && !canCreateCompany &&(
+                                        <Typography variant="body1" sx={{ color: '#ff0010', mb: 4, maxWidth: 400, mx: 'auto', fontWeight: 600 }}>
+                                            Permission denied. You cannot convert this lead.
+                                        </Typography>
+                                    )}
                                 </Box>
                             )}
                         </Box>

@@ -115,9 +115,9 @@ export function ContactView() {
         delete: true,
     });
 
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.contact;
-    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.contact?.create : permissions.write;
-    const displayImport = hasCustomPerms ? !!user?.permissions?.actions?.contact?.import : permissions.write;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.clients;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.clients?.create : permissions.write;
+    const displayImport = hasCustomPerms ? !!user?.permissions?.actions?.clients?.import : permissions.write;
 
     const { data, total, loading, refetch } = useContacts(
         page + 1,
