@@ -545,66 +545,65 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
+  const filterItem = (item: NavItem): NavItem | null => {
+    // Check permission for current item
+    if (user?.permissions?.custom_permissions_assigned) {
+      const moduleKey = item.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+      const menuMapping = user?.permissions?.menu_mapping || {};
+      const checkKey = menuMapping[moduleKey] || moduleKey;
+
+      const menus = user?.permissions?.menus || {};
+      if (menus[moduleKey] === false || menus[checkKey] === false) {
+        return null;
+      }
+    }
+
+    // Clone item
+    const itemClone: NavItem = {
+      ...item,
+      ...(item.children && {
+        children: item.children.map((child: any) => ({ ...child })),
+      }),
+    };
+
+    // Filter children recursively
+    if (itemClone.children) {
+      itemClone.children = itemClone.children
+        .map((child: any) => {
+          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return null;
+          if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return null;
+          if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return null;
+          if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return null;
+
+          return filterItem(child);
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+
+      if (itemClone.children.length === 0) return null;
+    }
+
+    // Top level settings check
+    if ((itemClone.title === 'Attendance List' || itemClone.title === 'My Attendance') && settings?.show_attendance_list === 0) return null;
+    if ((itemClone.title === 'Daily Log' || itemClone.title === 'My Daily Log' || itemClone.title === 'My Activity Log') && settings?.show_daily_log === 0) return null;
+    if ((itemClone.title === 'Attendance Report' || itemClone.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return null;
+    if ((itemClone.title === 'Daily Log Report' || itemClone.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return null;
+
+    return itemClone;
+  };
+
   const addItems = (data: NavItem[]) => {
     data.forEach((item) => {
-      // Check custom module permissions
-      if (user?.permissions?.custom_permissions_assigned) {
-        const moduleKey = item.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
-        const menuMapping = user?.permissions?.menu_mapping || {};
-        const checkKey = menuMapping[moduleKey] || moduleKey;
-        
-        const menus = user?.permissions?.menus || {};
-        if (menus[moduleKey] === false || menus[checkKey] === false) {
-          return;
-        }
-      }
-      // Clone the item to avoid mutating the original data
-      const itemClone = {
-        ...item,
-        ...(item.children && {
-          children: item.children.map((child) => ({ ...child })),
-        }),
-      };
+      const filtered = filterItem(item);
+      if (!filtered) return;
 
-      // Sidebar visibility filtering
-      if (itemClone.children) {
-        itemClone.children = itemClone.children.filter(child => {
-          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return false;
-          if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
-          if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return false;
-          if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return false;
-
-          // Custom module/screen permission filtering
-          if (user?.permissions?.custom_permissions_assigned) {
-            const childKey = child.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
-            const menuMapping = user?.permissions?.menu_mapping || {};
-            const checkKey = menuMapping[childKey] || childKey;
-
-            const menus = user?.permissions?.menus || {};
-            if (menus[childKey] === false || menus[checkKey] === false) {
-              return false;
-            }
-          }
-          return true;
-        });
-        // If a group item like 'Employee Records', 'Attendance Records', 'Leaves Records', or 'Report' has no children left, hide it
-        if (itemClone.children.length === 0) return;
-      }
-
-      // Handle top-level items (mostly for Employee View)
-      if ((itemClone.title === 'Attendance List' || itemClone.title === 'My Attendance') && settings?.show_attendance_list === 0) return;
-      if ((itemClone.title === 'Daily Log' || itemClone.title === 'My Daily Log' || itemClone.title === 'My Activity Log') && settings?.show_daily_log === 0) return;
-      if ((itemClone.title === 'Attendance Report' || itemClone.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return;
-      if ((itemClone.title === 'Daily Log Report' || itemClone.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return;
-
-      if (!seenPaths.has(itemClone.path)) {
-        mergedNav.push(itemClone);
-        seenPaths.add(itemClone.path);
+      if (!seenPaths.has(filtered.path)) {
+        mergedNav.push(filtered);
+        seenPaths.add(filtered.path);
       } else {
-        const existingItem = mergedNav.find((i) => i.path === itemClone.path);
-        if (existingItem && itemClone.children && existingItem.children) {
+        const existingItem = mergedNav.find((i) => i.path === filtered.path);
+        if (existingItem && filtered.children && existingItem.children) {
           const childPaths = new Set(existingItem.children.map((c) => c.path));
-          itemClone.children.forEach((child) => {
+          filtered.children.forEach((child) => {
             if (!childPaths.has(child.path)) {
               existingItem.children!.push({ ...child });
             }
