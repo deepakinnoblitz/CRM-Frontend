@@ -5,6 +5,7 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -17,6 +18,11 @@ import { type CallStatus, createCallStatus, renameCallStatus, updateCallStatus }
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const STATUS_OPTIONS = [
+  { value: 'Active', label: 'Active' },
+  { value: 'Inactive', label: 'Inactive' },
+];
 
 type Props = {
   open: boolean;
@@ -142,12 +148,14 @@ export function CallStatusDialog({ open, onClose, onSuccess, currentCallStatus }
             label="Status"
             value={status}
             onChange={(e) => setStatus(e.target.value as 'Active' | 'Inactive')}
-            SelectProps={{ native: true }}
             InputLabelProps={{ shrink: true }}
             disabled={loading}
           >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
+            {STATUS_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
           </TextField>
         </Box>
       </DialogContent>
