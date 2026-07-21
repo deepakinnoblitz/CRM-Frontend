@@ -83,7 +83,7 @@ export function DealTableRow({
 }: Props) {
     const navigate = useNavigate();
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.prospects;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned;
 
     const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : canEdit;
     const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.delete : canDelete;

@@ -69,13 +69,28 @@ export function DealDetailsView() {
 
     const { user } = useAuth();
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+    const canViewEstimations = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.view : true;
+    const canViewInvoices = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.view : true;
     const canCreateEstimation = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.create : true;
     const canCreateInvoice = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.create : true;
     const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : true;
     
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentTab, setCurrentTab] = useState('estimations');
+
+    const TABS = [
+        ...(canViewEstimations ? [{ value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> }] : []),
+        ...(canViewInvoices ? [{ value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> }] : []),
+        { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
+    ];
+
+    const [currentTab, setCurrentTab] = useState(TABS[0]?.value || 'stage_history');
+
+    useEffect(() => {
+        if (TABS.length > 0 && !TABS.some(t => t.value === currentTab)) {
+            setCurrentTab(TABS[0].value);
+        }
+    }, [canViewEstimations, canViewInvoices]);
     const [selectedStage, setSelectedStage] = useState<string | null>(null);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [confirmUpdate, setConfirmUpdate] = useState(false);
@@ -295,12 +310,6 @@ export function DealDetailsView() {
             router.push(`/invoices/new?deal_id=${deal.name}`);
         }
     }, [deal, router]);
-
-    const TABS = [
-        { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
-        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
-        { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
-    ];
 
     if (loading) {
         return (
