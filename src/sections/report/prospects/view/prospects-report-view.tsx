@@ -200,8 +200,8 @@ export function ProspectsReportView() {
     const location = useLocation();
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.prospect_report;
-    const canExport = hasCustomPerms && user?.permissions?.actions?.prospect_report ? !!user?.permissions?.actions?.prospect_report?.export : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.prospects_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.prospects_report ? !!user?.permissions?.actions?.prospects_report?.export : true;
 
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
