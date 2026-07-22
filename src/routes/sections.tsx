@@ -207,6 +207,7 @@ export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/perf
 export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const BloodGroupPage = lazy(() => import('src/pages/blood-group'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
 export const CallStatusPage = lazy(() => import('src/pages/call-status'));
 export const MeetingStatusPage = lazy(() => import('src/pages/meeting-status'));
@@ -456,6 +457,7 @@ export const routesSection: RouteObject[] = [
       { path: 'designation', element: <RolePermissionGuard actionKey="master_designation"><DesignationPage /></RolePermissionGuard> },
       { path: 'salary-structure-component', element: <RolePermissionGuard actionKey="master_salary_component"><SalaryStructureComponentPage /></RolePermissionGuard> },
       { path: 'leave-type', element: <RolePermissionGuard actionKey="master_leave_type"><LeaveTypePage /></RolePermissionGuard> },
+      { path: 'blood-group', element: <RolePermissionGuard actionKey="master_blood_group"><BloodGroupPage /></RolePermissionGuard> },
       { path: 'master/lead-from', element: <RolePermissionGuard actionKey="master_lead_from"><LeadFromPage /></RolePermissionGuard> },
       { path: 'master/call-status', element: <RolePermissionGuard actionKey="master_call_status"><CallStatusPage /></RolePermissionGuard> },
       { path: 'master/meeting-status', element: <RolePermissionGuard actionKey="master_meeting_status"><MeetingStatusPage /></RolePermissionGuard> },

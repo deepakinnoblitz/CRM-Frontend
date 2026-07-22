@@ -178,6 +178,7 @@ export const hrNavData = [
       { title: 'Asset Category', path: '/asset-category' },
       { title: 'Criteria Category', path: '/performance-criteria-category' },
       { title: 'Designation', path: '/designation' },
+      { title: 'Blood Group', path: '/blood-group' },
       { title: 'Salary Component', path: '/salary-structure-component' },
       { title: 'Leave Type', path: '/leave-type' },
     ],

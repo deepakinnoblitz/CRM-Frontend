@@ -57,6 +57,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { BloodGroupDialog } from 'src/sections/master/blood-group/blood-group-dialog';
+
 import { useAuth } from 'src/auth/auth-context';
 
 import { TableNoData } from '../../lead/table-no-data';
@@ -184,6 +186,10 @@ export function EmployeeView() {
     const [openDepartmentCreate, setOpenDepartmentCreate] = useState(false);
     const [departmentSearch, setDepartmentSearch] = useState('');
 
+    // Blood Group Create Dialog State
+    const [openBloodGroupCreate, setOpenBloodGroupCreate] = useState(false);
+    const [bloodGroupSearch, setBloodGroupSearch] = useState('');
+
     const [openCreate, setOpenCreate] = useState(false);
     const [creating, setCreating] = useState(false);
     const [currentEmployeeId, setCurrentEmployeeId] = useState<string | null>(null);
@@ -301,6 +307,13 @@ export function EmployeeView() {
             getDoctypeList('Bank Account', ['name', 'bank_account_name', 'account_number'])
                 .then((options) => {
                     setFieldOptions(prev => ({ ...prev, 'bank_account': options }));
+                })
+                .catch(console.error);
+
+            // Explicitly fetch options for blood_group
+            getDoctypeList('Blood Group', ['name', 'blood_group'])
+                .then((options) => {
+                    setFieldOptions(prev => ({ ...prev, 'blood_group': options }));
                 })
                 .catch(console.error);
 
@@ -1119,6 +1132,97 @@ export function EmployeeView() {
             );
         }
 
+        if (fieldname === 'blood_group') {
+            return (
+                <Autocomplete
+                    fullWidth
+                    options={options}
+                    value={formData[fieldname] || ''}
+                    onChange={(event, newValue: any) => {
+                        if (newValue?.isNew || newValue === 'Create Blood Group' || newValue?.name === 'Create Blood Group' || newValue?.blood_group === 'Create Blood Group') {
+                            setOpenBloodGroupCreate(true);
+                            setBloodGroupSearch(newValue?.inputValue || '');
+                        } else {
+                            const value = typeof newValue === 'object' ? (newValue.blood_group || newValue.name) : newValue;
+                            handleInputChange(fieldname, value || '');
+                        }
+                    }}
+                    filterOptions={(currentOptions, params) => {
+                        const filtered = filter(currentOptions, params);
+                        const { inputValue } = params;
+                        const hasCreateOption = filtered.some((option: any) =>
+                            (typeof option === 'string' ? option : (option.blood_group || option.name)) === 'Create Blood Group' || option.isNew
+                        );
+                        if (!hasCreateOption) {
+                            filtered.push({
+                                inputValue: inputValue || '',
+                                name: 'Create Blood Group',
+                                blood_group: 'Create Blood Group',
+                                isNew: true,
+                            });
+                        }
+                        return filtered;
+                    }}
+                    renderOption={(props, option: any) => (
+                        <Box component="li" {...props} sx={{
+                            typography: 'body2',
+                            ...(option.isNew && {
+                                color: 'primary.main',
+                                fontWeight: 600,
+                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                mt: 0.5,
+                                py: 3, minHeight: '56px',
+                                '&:hover': {
+                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                }
+                            })
+                        }}>
+                            {option.isNew ? (
+                                <Stack direction="row" alignItems="center" spacing={1.5}>
+                                    <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                    <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Create Blood Group</Typography>
+                                </Stack>
+                            ) : (
+                                typeof option === 'string' ? option : (option.blood_group || option.name)
+                            )}
+                        </Box>
+                    )}
+                    getOptionLabel={(option: any) => {
+                        if (typeof option === 'string') return option;
+                        if (option?.blood_group) return option.blood_group;
+                        if (option?.name) return option.name;
+                        return '';
+                    }}
+                    isOptionEqualToValue={(option: any, value: any) => {
+                        const optionValue = typeof option === 'string' ? option : (option.blood_group || option.name);
+                        return optionValue === value || option?.name === value;
+                    }}
+                    renderInput={(params) => (
+                        <TextField
+                            {...params}
+                            label={label}
+                            placeholder={`Select ${label}`}
+                            required={required}
+                            error={!!formErrors[fieldname]}
+                            helperText={formErrors[fieldname]}
+                            InputLabelProps={{ shrink: true }}
+                            sx={{
+                                '& .MuiFormLabel-asterisk': {
+                                    color: 'red',
+                                },
+                                ...extraProps.sx
+                            }}
+                        />
+                    )}
+                    freeSolo
+                    selectOnFocus
+                    clearOnBlur
+                    handleHomeEndKeys
+                />
+            );
+        }
+
         if (type === 'select' || type === 'link') {
             return (
                 <TextField {...commonProps} select>
@@ -1686,6 +1790,8 @@ export function EmployeeView() {
                                             {renderField('phone', 'Personal Phone Number', 'phone')}
                                             {renderField('office_phone_number', 'Office Phone', 'phone')}
                                             {renderField('dob', 'Date of Birth', 'date')}
+                                            {renderField('blood_group', 'Blood Group', 'link', fieldOptions['blood_group'] || [])}
+                                            {renderField('sex', 'Sex', 'select', ['Male', 'Female', 'Other'])}
                                             {renderField('country', 'Country', 'autocomplete', fieldOptions['country'] || [])}
                                             {renderField('state', 'State', 'autocomplete', stateOptions)}
                                             {renderField('city', 'City', 'autocomplete', cityOptions)}
@@ -1893,6 +1999,21 @@ export function EmployeeView() {
                     handleInputChange('department', newDepartment);
 
                     setSnackbar({ open: true, message: 'Department created successfully', severity: 'success' });
+                }}
+            />
+
+            <BloodGroupDialog
+                open={openBloodGroupCreate}
+                onClose={() => setOpenBloodGroupCreate(false)}
+                onSuccess={() => {
+                    if (bloodGroupSearch) {
+                        setFieldOptions(prev => ({
+                            ...prev,
+                            blood_group: [...(prev['blood_group'] || []), { name: bloodGroupSearch }]
+                        }));
+                        handleInputChange('blood_group', bloodGroupSearch);
+                    }
+                    setSnackbar({ open: true, message: 'Blood Group created successfully', severity: 'success' });
                 }}
             />
         </DashboardContent>

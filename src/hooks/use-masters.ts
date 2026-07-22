@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-import { fetchItems, fetchProjects, fetchServices, fetchLeadFroms, fetchClaimTypes, fetchLeaveTypes, fetchDepartments, fetchBankAccounts, fetchDesignations, fetchPaymentTerms, fetchCallStatuses, fetchActivityTypes, fetchTaxTypesCustom, fetchMeetingStatuses, fetchAssetCategories, fetchPaymentTypesCustom, fetchCompanyBankAccounts, fetchEvaluationTraitCategories, fetchSalaryStructureComponents, fetchCrmEmailTemplateCategories, fetchCrmWhatsAppTemplateCategories } from 'src/api/masters';
+import { fetchItems, fetchProjects, fetchServices, fetchLeadFroms, fetchClaimTypes, fetchLeaveTypes, fetchDepartments, fetchBankAccounts, fetchDesignations, fetchPaymentTerms, fetchCallStatuses, fetchActivityTypes, fetchTaxTypesCustom, fetchMeetingStatuses, fetchAssetCategories, fetchPaymentTypesCustom, fetchCompanyBankAccounts, fetchEvaluationTraitCategories, fetchSalaryStructureComponents, fetchCrmEmailTemplateCategories, fetchCrmWhatsAppTemplateCategories, fetchBloodGroups } from 'src/api/masters';
 
 export function useDepartments(
   page: number = 1,
@@ -862,3 +862,44 @@ export function useMeetingStatuses(
 
   return { data, total, loading, error, refetch };
 }
+
+export function useBloodGroups(
+  page: number = 1,
+  pageSize: number = 10,
+  search: string = '',
+  orderBy: string = 'creation',
+  order: 'asc' | 'desc' = 'desc'
+) {
+  const [data, setData] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const refetch = useCallback(async (overrides?: { page?: number; pageSize?: number; search?: string; orderBy?: string; order?: 'asc' | 'desc' }) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await fetchBloodGroups({
+        page: overrides?.page ?? page,
+        page_size: overrides?.pageSize ?? pageSize,
+        search: overrides?.search ?? search,
+        orderBy: overrides?.orderBy ?? orderBy,
+        order: overrides?.order ?? order
+      });
+      setData(result.data || []);
+      setTotal(result.total || 0);
+    } catch (err: any) {
+      console.error('Failed to fetch Blood Groups:', err);
+      setError(err.message || 'Failed to fetch Blood Groups');
+    } finally {
+      setLoading(false);
+    }
+  }, [page, pageSize, search, orderBy, order]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
+
+  return { data, total, loading, error, refetch };
+}
+

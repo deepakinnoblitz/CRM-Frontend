@@ -52,6 +52,13 @@ export interface ClaimType {
     modified?: string;
 }
 
+export interface BloodGroup {
+    name: string;
+    blood_group: string;
+    creation?: string;
+    modified?: string;
+}
+
 export interface AssetCategory {
     name: string;
     category_name: string;
@@ -1843,4 +1850,63 @@ export async function deleteMeetingStatus(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete Meeting Status"));
     return true;
 }
+
+export async function createBloodGroup(data: Partial<BloodGroup>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Blood Group", ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create blood group"));
+    return json.message;
+}
+
+export const fetchBloodGroups = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["Blood Group", "blood_group", "like", `%${search}%`],
+        ["Blood Group", "name", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("Blood Group", {
+        ...restParams,
+        search: undefined,
+        or_filters
+    });
+};
+
+export async function updateBloodGroup(name: string, data: Partial<BloodGroup>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Blood Group", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update blood group"));
+    return json.message;
+}
+
+export async function deleteBloodGroup(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "Blood Group", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete blood group"));
+    return true;
+}
+
+export async function getBloodGroup(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Blood Group&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch blood group details");
+    return (await res.json()).message;
+}
+
+
 
