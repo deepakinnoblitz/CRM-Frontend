@@ -14,6 +14,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -25,6 +26,12 @@ type Props = {
 
 export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) {
     const theme =useTheme();
+
+    const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.employee_referral_list;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canCreateReferral = hasCustomPerms ? !!actionPerms?.create : true;
+
 
     if (!job) return null;
     
@@ -176,7 +183,7 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
                 {renderDescription}
             </DialogContent>
 
-            {onRefer && (
+            {onRefer && canCreateReferral&& (
                 <DialogActions sx={{ p: 1.5 }}>
                     <Button
                         fullWidth

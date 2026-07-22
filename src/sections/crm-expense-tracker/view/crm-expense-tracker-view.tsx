@@ -81,7 +81,7 @@ export default function CRMExpenseTrackerView() {
     const canCreateExpense = hasCustomPerms && user?.permissions?.actions?.crm_expenses ? !!user?.permissions?.actions?.crm_expenses?.create : true;
     const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.edit : true;
     const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.delete : true;
-    const showActions = displayEdit || displayDelete;    
+    const showActions = displayEdit || displayDelete;
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
@@ -208,7 +208,7 @@ export default function CRMExpenseTrackerView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Expense Tracker
@@ -261,8 +261,8 @@ export default function CRMExpenseTrackerView() {
                                     { id: 'date_time', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
                                     ...(showActions
-                                    ? [{ id: 'actions', label: 'Actions', align: 'right' as const }]
-                                    : []),
+                                        ? [{ id: 'actions', label: 'Actions', align: 'right' as const }]
+                                        : []),
                                 ]}
                             />
                             <TableBody>

@@ -58,12 +58,15 @@ import { useAuth } from 'src/auth/auth-context';
 
 export function AssetsView() {
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.asset || user?.permissions?.actions?.my_asset_list);
-    const actionPerms = user?.permissions?.actions?.asset || user?.permissions?.actions?.my_asset_list;
-    const canCreateAsset = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
-    const canEditAsset = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
-    const canDeleteAsset = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
-    const canImportAsset = hasCustomPerms && actionPerms ? !!actionPerms?.import : true;
+    // Permissions
+    const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && !!user?.permissions?.actions?.asset_list;
+    const actionPerms = user?.permissions?.actions?.asset_list;
+    const canCreateAsset = hasCustomPerms && actionPerms ? !!actionPerms?.create : permissions.write;
+    const canEditAsset = hasCustomPerms && actionPerms ? !!actionPerms?.edit : permissions.write;
+    const canDeleteAsset = hasCustomPerms && actionPerms ? !!actionPerms?.delete : permissions.delete;
+    const canImportAsset = hasCustomPerms && actionPerms ? !!actionPerms?.import : permissions.write;
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -114,9 +117,6 @@ export function AssetsView() {
     const [pendingFile, setPendingFile] = useState<File | null>(null);
     const [uploading, setUploading] = useState(false);
     const [attachmentError, setAttachmentError] = useState('');
-
-    // Permissions
-    const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
 
     // Snackbar
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -317,7 +317,7 @@ export function AssetsView() {
                     body: formDataUpload,
                 });
                 const result = await response.json();
-                
+
                 const fileUrl = result.message?.file_url || result.file_url;
                 if (fileUrl) {
                     finalAttachmentUrl = fileUrl;
@@ -364,7 +364,7 @@ export function AssetsView() {
         if (!file) return;
 
         setAttachmentError('');
-        
+
         const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB limit
         if (file.size > MAX_FILE_SIZE) {
             setAttachmentError('File size is too large. Maximum allowed size is 5MB.');
@@ -415,13 +415,13 @@ export function AssetsView() {
     const empty = !loading && !data.length && !filterName;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Assets
                 </Typography>
 
-                {(permissions.write && (canCreateAsset || canImportAsset)) && (
+                {(canCreateAsset || canImportAsset) && (
                     <Stack direction="row" spacing={1}>
                         {canImportAsset && (
                             <Button
@@ -644,10 +644,10 @@ export function AssetsView() {
             </Dialog>
 
             {/* Create/Edit Dialog */}
-            <Dialog 
-                open={openCreate} 
-                onClose={handleCloseCreate} 
-                fullWidth 
+            <Dialog
+                open={openCreate}
+                onClose={handleCloseCreate}
+                fullWidth
                 maxWidth="md"
                 PaperProps={{
                     sx: {
@@ -947,7 +947,7 @@ export function AssetsView() {
                         </Box>
                     </DialogContent>
 
-                    <DialogActions sx={{p:1.5}}>
+                    <DialogActions sx={{ p: 1.5 }}>
                         <LoadingButton type="submit" variant="contained" loading={uploading}>
                             {isEdit ? 'Update' : 'Create'}
                         </LoadingButton>

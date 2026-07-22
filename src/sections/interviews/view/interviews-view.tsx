@@ -507,7 +507,6 @@ export function InterviewsView() {
                                 showIndex
                                 headLabel={[
                                     { id: 'job_applicant', label: 'Job Applicant' },
-                                    { id: 'job_applied', label: 'Job Opening' },
                                     { id: 'scheduled_on', label: 'Interview Date & Time' },
                                     { id: 'overall_status', label: 'Status' },
                                     { id: '', label: '' },

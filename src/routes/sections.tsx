@@ -219,6 +219,7 @@ export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
 export const TaxTypesPage = lazy(() => import('src/pages/tax-types'));
 export const CompanyBankAccountPage = lazy(() => import('src/pages/company-bank-account'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
+export const SalesTargetEntryPage = lazy(() => import('src/pages/sales-target-entry'));
 
 
 const renderFallback = () => (
@@ -260,6 +261,7 @@ export const routesSection: RouteObject[] = [
 
       { path: 'contacts', element: <RolePermissionGuard actionKey="clients"><ContactPage /></RolePermissionGuard> },
       { path: 'accounts', element: <RolePermissionGuard actionKey="company"><AccountsPage /></RolePermissionGuard> },
+      { path: 'sales-target-entry', element: <RolePermissionGuard actionKey="sales_target_entry"><SalesTargetEntryPage /></RolePermissionGuard> },
       {
         path: 'deals',
         children: [
@@ -521,30 +523,30 @@ export const routesSection: RouteObject[] = [
       {
         path: 'reports',
         children: [
-          { path: 'lead', element: <RolePermissionGuard actionKey="reports"><LeadReportPage /></RolePermissionGuard> },
-          { path: 'contact', element: <RolePermissionGuard actionKey="reports"><ContactReportPage /></RolePermissionGuard> },
-          { path: 'account', element: <RolePermissionGuard actionKey="reports"><AccountReportPage /></RolePermissionGuard> },
-          { path: 'calls', element: <RolePermissionGuard actionKey="reports"><CallsReportPage /></RolePermissionGuard> },
-          { path: 'meeting', element: <RolePermissionGuard actionKey="reports"><MeetingReportPage /></RolePermissionGuard> },
-          { path: 'purchase', element: <RolePermissionGuard actionKey="reports"><PurchaseReportPage /></RolePermissionGuard> },
-          { path: 'expense', element: <RolePermissionGuard actionKey="reports"><ExpenseReportPage /></RolePermissionGuard> },
-          { path: 'estimation', element: <RolePermissionGuard actionKey="reports"><EstimationReportPage /></RolePermissionGuard> },
-          { path: 'invoice', element: <RolePermissionGuard actionKey="reports"><InvoiceReportPage /></RolePermissionGuard> },
-          { path: 'invoice-collection', element: <RolePermissionGuard actionKey="reports"><InvoiceCollectionReportPage /></RolePermissionGuard> },
-          { path: 'purchase-settlement', element: <RolePermissionGuard actionKey="reports"><PurchaseCollectionReportPage /></RolePermissionGuard> },
-          { path: 'timesheet', element: <RolePermissionGuard actionKey="reports"><TimesheetReportPage /></RolePermissionGuard> },
-          { path: 'attendance', element: <RolePermissionGuard actionKey="reports"><AttendanceReportPage /></RolePermissionGuard> },
-          { path: 'leave-allocation', element: <RolePermissionGuard actionKey="reports"><LeaveAllocationReportPage /></RolePermissionGuard> },
-          { path: 'daily-log', element: <RolePermissionGuard actionKey="reports"><DailyLogReportPage /></RolePermissionGuard> },
-          { path: 'task-manager', element: <RolePermissionGuard actionKey="reports"><TaskReportPage /></RolePermissionGuard> },
-          { path: 'salary-slip', element: <RolePermissionGuard actionKey="reports"><SalarySlipReportPage /></RolePermissionGuard> },
-          { path: 'proposal', element: <RolePermissionGuard actionKey="reports"><ProposalReportPage /></RolePermissionGuard> },
-          { path: 'prospects', element: <RolePermissionGuard actionKey="reports"><ProspectsReportPage /></RolePermissionGuard> },
+          { path: 'lead', element: <RolePermissionGuard actionKey="report_lead"><LeadReportPage /></RolePermissionGuard> },
+          { path: 'contact', element: <RolePermissionGuard actionKey="report_clients"><ContactReportPage /></RolePermissionGuard> },
+          { path: 'account', element: <RolePermissionGuard actionKey="report_company"><AccountReportPage /></RolePermissionGuard> },
+          { path: 'calls', element: <RolePermissionGuard actionKey="report_calls"><CallsReportPage /></RolePermissionGuard> },
+          { path: 'meeting', element: <RolePermissionGuard actionKey="report_meeting"><MeetingReportPage /></RolePermissionGuard> },
+          { path: 'purchase', element: <RolePermissionGuard actionKey="report_purchase"><PurchaseReportPage /></RolePermissionGuard> },
+          { path: 'expense', element: <RolePermissionGuard actionKey="report_expense"><ExpenseReportPage /></RolePermissionGuard> },
+          { path: 'estimation', element: <RolePermissionGuard actionKey="report_estimation"><EstimationReportPage /></RolePermissionGuard> },
+          { path: 'invoice', element: <RolePermissionGuard actionKey="report_invoice"><InvoiceReportPage /></RolePermissionGuard> },
+          { path: 'invoice-collection', element: <RolePermissionGuard actionKey="report_invoice_collection"><InvoiceCollectionReportPage /></RolePermissionGuard> },
+          { path: 'purchase-settlement', element: <RolePermissionGuard actionKey="report_purchase_settlement"><PurchaseCollectionReportPage /></RolePermissionGuard> },
+          { path: 'timesheet', element: <RolePermissionGuard actionKey="report_timesheet"><TimesheetReportPage /></RolePermissionGuard> },
+          { path: 'attendance', element: <RolePermissionGuard actionKey="report_attendance"><AttendanceReportPage /></RolePermissionGuard> },
+          { path: 'leave-allocation', element: <RolePermissionGuard actionKey="report_leave_allocation"><LeaveAllocationReportPage /></RolePermissionGuard> },
+          { path: 'daily-log', element: <RolePermissionGuard actionKey="report_daily_log"><DailyLogReportPage /></RolePermissionGuard> },
+          { path: 'task-manager', element: <RolePermissionGuard actionKey="report_task"><TaskReportPage /></RolePermissionGuard> },
+          { path: 'salary-slip', element: <RolePermissionGuard actionKey="report_salary_slip"><SalarySlipReportPage /></RolePermissionGuard> },
+          { path: 'proposal', element: <RolePermissionGuard actionKey="report_proposal"><ProposalReportPage /></RolePermissionGuard> },
+          { path: 'prospects', element: <RolePermissionGuard actionKey="report_prospects"><ProspectsReportPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'employee-evaluation', element: <RolePermissionGuard actionKey="employee_performance"><EmployeeEvaluationPage /></RolePermissionGuard> },
-      { path: 'badges', element: <RolePermissionGuard actionKey="employee_performance"><BadgesPage /></RolePermissionGuard> },
-      { path: 'employee-monthly-award', element: <RolePermissionGuard actionKey="employee_performance"><EmployeeMonthlyAwardPage /></RolePermissionGuard> },
+      { path: 'employee-evaluation', element: <RolePermissionGuard actionKey="employee_evaluation"><EmployeeEvaluationPage /></RolePermissionGuard> },
+      { path: 'badges', element: <RolePermissionGuard actionKey="badges"><BadgesPage /></RolePermissionGuard> },
+      { path: 'employee-monthly-award', element: <RolePermissionGuard actionKey="employee_monthly_award"><EmployeeMonthlyAwardPage /></RolePermissionGuard> },
       { path: 'reminders', element: <RolePermissionGuard actionKey="reminders"><RemindersPage /></RolePermissionGuard> },
       { path: 'settings', element: <SettingsPage /> },
     ],

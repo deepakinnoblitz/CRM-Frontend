@@ -49,9 +49,9 @@ import { useAuth } from 'src/auth/auth-context';
 
 export function ExpensesView() {
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.expenses || user?.permissions?.actions?.reimbursement_claims);
-    const actionPerms = user?.permissions?.actions?.expenses || user?.permissions?.actions?.reimbursement_claims;
-    const canCreateExpenseClaim = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.expense_tracker || user?.permissions?.actions?.expense_tracker);
+    const actionPerms = user?.permissions?.actions?.expense_tracker || user?.permissions?.actions?.expense_tracker;
+    const canCreateExpense = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
     const canEditExpenseClaim = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
     const canDeleteExpenseClaim = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
 
@@ -235,7 +235,7 @@ export function ExpensesView() {
                     Company Expenses
                 </Typography>
 
-                {permissions.write && canCreateExpenseClaim && (
+                {permissions.write && canCreateExpense && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}
