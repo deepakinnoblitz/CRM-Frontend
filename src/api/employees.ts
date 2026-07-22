@@ -15,6 +15,8 @@ export interface Employee {
     date_of_joining?: string;
     personal_email?: string;
     dob?: string;
+    blood_group?: string;
+    sex?: string;
 }
 
 // Employee APIs

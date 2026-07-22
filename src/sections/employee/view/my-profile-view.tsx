@@ -321,6 +321,8 @@ export function MyProfileView() {
                                     <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
                                     <DetailItem label="Status" value={employee.status} icon={FaInfoCircle} />
                                     <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
+                                    <DetailItem label="Blood Group" value={employee.blood_group} icon={FaHeartbeat} />
+                                    <DetailItem label="Sex" value={employee.sex} icon={FaUser} />
                                 </Box>
                             </Box>
 
