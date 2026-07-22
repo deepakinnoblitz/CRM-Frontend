@@ -57,10 +57,10 @@ export function EmailCampaignsListView() {
     const [deleting, setDeleting] = useState(false);
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.mail_automation;
-    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.mail_automation ? !!user?.permissions?.actions?.mail_automation?.create : true;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.mail_automation?.edit : true;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.mail_automation?.delete : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_campaigns;
+    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.email_campaigns ? !!user?.permissions?.actions?.email_campaigns?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.delete : true;
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,

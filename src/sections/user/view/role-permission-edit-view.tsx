@@ -226,13 +226,13 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
     };
 
     const getRowSpan = (rows: PermissionAccess[], index: number) => {
-        const currentModule = rows[index].module_id;
-        if (index > 0 && rows[index - 1].module_id === currentModule) {
+        const currentFriendly = getFriendlyModuleName(rows[index].module_id);
+        if (index > 0 && getFriendlyModuleName(rows[index - 1].module_id) === currentFriendly) {
             return 0;
         }
         let span = 1;
         for (let i = index + 1; i < rows.length; i++) {
-            if (rows[i].module_id === currentModule) {
+            if (getFriendlyModuleName(rows[i].module_id) === currentFriendly) {
                 span++;
             } else {
                 break;
@@ -246,6 +246,17 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         if (module === 'account') return 'Company';
         if (module === 'contact') return 'Clients';
         if (module === 'purchase_collection') return 'Purchase Settlement';
+        if (module.startsWith('email_') || module.startsWith('whatsapp_')) {
+            return module.startsWith('email_') ? 'Mail Automation' : 'WhatsApp Automation';
+        }
+        if (module.startsWith('asset_')) return 'Asset';
+        if (module === 'expense_tracker' || module === 'reimbursement_claims') return 'Expenses';
+        if (module === 'employee_evaluation' || module === 'badges' || module === 'employee_monthly_award') return 'Employee Performance';
+        if (module === 'job_openings' || module === 'job_applicants' || module === 'interviews' || module === 'employee_referrals') return 'Recruitment';
+        if (module === 'attendance_list' || module === 'daily_log' || module === 'wfh_attendance') return 'Attendance';
+        if (module.startsWith('meta_') || module === 'webhook_logs') return 'Lead Integration';
+        if (module.startsWith('master_')) return 'Masters';
+        if (module.startsWith('report_')) return 'Reports';
         return module.split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
     };
 
