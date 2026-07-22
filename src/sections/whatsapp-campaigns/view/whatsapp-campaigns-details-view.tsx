@@ -64,8 +64,8 @@ export function WhatsAppCampaignsDetailsView() {
     const [recipientsSearch, setRecipientsSearch] = useState('');
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_automation;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automation?.edit : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_campaigns;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.edit : true;
 
     useEffect(() => {
         if (id) {

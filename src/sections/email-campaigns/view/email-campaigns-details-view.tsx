@@ -42,8 +42,8 @@ export function EmailCampaignsDetailsView() {
     const navigate = useNavigate();
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.mail_automation;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.mail_automation?.edit : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_campaigns;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.edit : true;
 
     const [campaign, setCampaign] = useState<any>(null);
     const [emailQueue, setEmailQueue] = useState<EmailQueueItem[]>([]);
