@@ -221,7 +221,7 @@ export function WFHAttendanceTableRow({
                                 </IconButton>
                             )}
 
-                        {isHR && row.workflowState === 'Pending' && (
+                        {isHR && displayEdit && row.workflowState === 'Pending' && (
                             <IconButton size="small" onClick={handleOpenMenu} sx={{ color: 'warning.main' }}>
                                 <Iconify icon="eva:more-vertical-fill" />
                             </IconButton>
