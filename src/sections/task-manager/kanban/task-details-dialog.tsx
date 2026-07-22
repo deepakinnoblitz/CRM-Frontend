@@ -475,7 +475,11 @@ export default function TaskDetailsDialog({ task: initialTask, open, onClose, on
                                 {/* Reopen — visible to Task Manager role only */}
                                 {(() => {
                                     const isTaskManager = user?.roles?.includes('Task Manager') || user?.roles?.includes('HR') || user?.roles?.includes('Administrator');
-                                    return task.status === 'Completed' && isTaskManager && (
+                                    
+                                    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.task_manager;
+                                    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.edit : true;
+                                    
+                                    return task.status === 'Completed' && isTaskManager && displayEdit && (
                                         <Button
                                             variant="contained"
                                             color="error"
