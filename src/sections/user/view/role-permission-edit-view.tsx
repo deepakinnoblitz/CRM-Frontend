@@ -251,6 +251,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         }
         if (module.startsWith('asset_')) return 'Asset';
         if (module === 'expense_tracker' || module === 'reimbursement_claims') return 'Expenses';
+        if (module === 'crm_expenses') return 'CRM Expense Tracker';
         if (module === 'employee_evaluation' || module === 'badges' || module === 'employee_monthly_award') return 'Employee Performance';
         if (module === 'job_openings' || module === 'job_applicants' || module === 'interviews' || module === 'employee_referrals') return 'Recruitment';
         if (module === 'attendance_list' || module === 'daily_log' || module === 'wfh_attendance') return 'Attendance';

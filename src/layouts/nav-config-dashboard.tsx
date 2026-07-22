@@ -311,7 +311,7 @@ export const crmAndSalesNavData = [
     icon: <BiPurchaseTag size={22} />,
   },
   {
-    title: 'Expense Tracker',
+    title: 'CRM Expense Tracker',
     path: '/crm-expense-tracker',
     icon: <HiOutlineCreditCard size={22} />,
   },
@@ -436,6 +436,8 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
       const getFormattedKey = (title: string) => {
         const lower = title.trim().toLowerCase();
         if (lower === 'company expenses') return 'expense_tracker';
+        if (lower === 'expense tracker') return 'crm_expenses';
+        if (lower === 'expenses') return 'expense_tracker'; // HR parent fallback
         if (lower === 'asset list') return 'asset_list';
         if (lower === 'asset assignments') return 'asset_assignments';
         if (lower === 'asset requests') return 'asset_requests';
@@ -458,8 +460,18 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
       const checkKey = menuMapping[moduleKey] || moduleKey;
 
       const menus = user?.permissions?.menus || {};
+      
+      // If we explicitly set this menu to false, block it
       if (menus[moduleKey] === false || menus[checkKey] === false) {
         return null;
+      }
+      
+      // If custom permissions assigned but we have no true permission entry for this key, block it
+      if (menus[moduleKey] === undefined && menus[checkKey] === undefined) {
+        // Only block if it is a child item. If it's a parent menu, it will be validated by checking its filtered children.
+        if (!item.children) {
+          return null;
+        }
       }
     }
 
