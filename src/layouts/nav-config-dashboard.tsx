@@ -6,15 +6,15 @@ import { PiMoneyWavy } from "react-icons/pi";
 import { BiPurchaseTag } from "react-icons/bi";
 import { IoHomeOutline } from "react-icons/io5";
 import { IoMdFolderOpen } from "react-icons/io";
-import { FiList , FiUserPlus } from "react-icons/fi";
+import { FiList, FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
 import { FaMeta, FaLink, FaBuildingUser } from "react-icons/fa6";
-import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
-import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
-import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
-import { RiAppsLine ,  RiUserAddLine , RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
-import { LuUsersRound , LuCalendarCheck2 , LuFileSpreadsheet , LuUserRoundSearch } from "react-icons/lu";
+import { BsFillBellFill, BsCalendar4Range } from "react-icons/bs";
+import { FaTasks, FaWhatsapp, FaHandshake } from "react-icons/fa";
+import { MdContacts, MdOutlineLaptopWindows } from "react-icons/md";
+import { RiAppsLine, RiUserAddLine, RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
+import { LuUsersRound, LuCalendarCheck2, LuFileSpreadsheet, LuUserRoundSearch } from "react-icons/lu";
 
 import { Iconify } from 'src/components/iconify';
 
@@ -273,121 +273,6 @@ export const employeeNavData = [
   },
 ];
 
-// ----------------------  Sales NavBar ---------------------------------------------------
-export const salesNavData = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
-  },
-  {
-    title: 'Purchases',
-    path: '/purchase',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
-  },
-  {
-    title: 'Purchase Settlements',
-    path: '/purchase-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Expense Tracker',
-    path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
-    children: [
-      { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Estimation Report', path: '/reports/estimation' },
-      { title: 'Invoice Report', path: '/reports/invoice' },
-      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
-    ]
-  }
-];
-
-
-// ----------------------  CRM NavBar ---------------------------------------------------
-export const crmNavData = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
-  },
-  {
-    title: 'Expense Tracker',
-    path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Leads',
-    path: '/leads',
-    icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
-  },
-  {
-    title: 'Contacts',
-    path: '/contacts',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'Accounts',
-    path: '/accounts',
-    icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
-  },
-  {
-    title: 'Proposal',
-    path: '/proposals',
-    icon: <RiMailSendLine size={22} />,
-  },
-  {
-    title: 'Deals',
-    path: '/deals',
-    icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Events',
-    path: '/events',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
-  },
-  {
-    title: 'Calls',
-    path: '/calls',
-    icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'ToDo',
-    path: '/todo',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
-  },
-  {
-    title: 'Meetings',
-    path: '/meetings',
-    icon: <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />,
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
-    children: [
-      { title: 'Lead Report', path: '/reports/lead' },
-      { title: 'Clients Report', path: '/reports/contact' },
-      { title: 'Company Report', path: '/reports/account' },
-      { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Proposal Report', path: '/reports/proposal' },
-      { title: 'Prospects Report', path: '/reports/prospects' }
-    ]
-  },
-  {
-    title: 'Chat',
-    path: '/chat',
-    icon: <Iconify icon={"solar:chat-round-dots-bold-duotone" as any} />,
-  },
-];
-
 // ----------------------  CRM and Sales NavBar ---------------------------------------------------
 export const crmAndSalesNavData = [
   {
@@ -463,8 +348,8 @@ export const crmAndSalesNavData = [
     path: '/lead-integration/meta-apps',
     icon: <FaLink size={22} />,
     children: [
-      { 
-        title: 'Meta Integration', 
+      {
+        title: 'Meta Integration',
         path: '/lead-integration/meta-apps',
         icon: <FaMeta size={18} />,
         children: [
@@ -548,7 +433,27 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
   const filterItem = (item: NavItem): NavItem | null => {
     // Check permission for current item
     if (user?.permissions?.custom_permissions_assigned) {
-      const moduleKey = item.title?.toLowerCase()?.replace(/\s+/g, '_') || '';
+      const getFormattedKey = (title: string) => {
+        const lower = title.trim().toLowerCase();
+        if (lower === 'company expenses') return 'expense_tracker';
+        if (lower === 'asset list') return 'asset_list';
+        if (lower === 'asset assignments') return 'asset_assignments';
+        if (lower === 'asset requests') return 'asset_requests';
+        if (lower === 'reimbursement claim list') return 'reimbursement_claims';
+        if (lower === 'employee evaluation') return 'employee_evaluation';
+        if (lower === 'badges') return 'badges';
+        if (lower === 'employee monthly award') return 'employee_monthly_award';
+        if (lower === 'job opening list') return 'job_openings';
+        if (lower === 'job applicant list') return 'job_applicants';
+        if (lower === 'interview list') return 'interviews';
+        if (lower === 'employee referral list') return 'employee_referrals';
+        if (lower === 'attendance list') return 'attendance_list';
+        if (lower === 'daily log') return 'daily_log';
+        if (lower === 'wfh attendance') return 'wfh_attendance';
+        return lower.replace(/\s+/g, '_');
+      };
+
+      const moduleKey = getFormattedKey(item.title || '');
       const menuMapping = user?.permissions?.menu_mapping || {};
       const checkKey = menuMapping[moduleKey] || moduleKey;
 
@@ -677,16 +582,6 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
         }
       }
       addItems(processedEmployeeNav);
-      hasCustomRole = true;
-    }
-
-    if (hasRole('Sales')) {
-      addItems(salesNavData);
-      hasCustomRole = true;
-    }
-
-    if (hasRole('CRM User')) {
-      addItems(crmNavData);
       hasCustomRole = true;
     }
 
