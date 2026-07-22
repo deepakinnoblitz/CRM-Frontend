@@ -31,6 +31,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ReferralModal } from '../referral-modal';
 import { ReferralTableToolbar } from '../referral-table-toolbar';
 import { ReferralTableFiltersDrawer } from '../referral-table-filters-drawer';
@@ -42,8 +44,6 @@ const TABS = [
   { value: 'jobs', label: 'Job Openings', icon: <CgWorkAlt size={22} /> },
   { value: 'my-referrals', label: 'My Referrals', icon: <MdOutlineRoomPreferences size={22} /> },
 ];
-
-import { useAuth } from 'src/auth/auth-context';
 
 export function EmployeeReferralsView() {
   const { user } = useAuth();

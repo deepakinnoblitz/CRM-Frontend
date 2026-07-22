@@ -1,5 +1,4 @@
 import { CgNotes } from "react-icons/cg";
-import { TbReport } from "react-icons/tb";
 import { GoTasklist } from "react-icons/go";
 import { RxCalendar } from "react-icons/rx";
 import { PiMoneyWavy } from "react-icons/pi";
@@ -9,11 +8,12 @@ import { IoMdFolderOpen } from "react-icons/io";
 import { FiList, FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
+import { TbReport, TbTargetArrow } from "react-icons/tb";
 import { FaMeta, FaLink, FaBuildingUser } from "react-icons/fa6";
 import { BsFillBellFill, BsCalendar4Range } from "react-icons/bs";
 import { FaTasks, FaWhatsapp, FaHandshake } from "react-icons/fa";
 import { MdContacts, MdOutlineLaptopWindows } from "react-icons/md";
-import { RiAppsLine, RiUserAddLine, RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
+import { RiAppsLine, RiUserAddLine, RiMailSendLine, RiCalendarScheduleLine  } from "react-icons/ri";
 import { LuUsersRound, LuCalendarCheck2, LuFileSpreadsheet, LuUserRoundSearch } from "react-icons/lu";
 
 import { Iconify } from 'src/components/iconify';
@@ -311,6 +311,11 @@ export const crmAndSalesNavData = [
     icon: <BiPurchaseTag size={22} />,
   },
   {
+    title: 'Sales Target Entry',
+    path: '/sales-target-entry',
+    icon: <TbTargetArrow size={22} />,
+  },
+  {
     title: 'CRM Expense Tracker',
     path: '/crm-expense-tracker',
     icon: <HiOutlineCreditCard size={22} />,
@@ -452,6 +457,7 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
         if (lower === 'attendance list') return 'attendance_list';
         if (lower === 'daily log') return 'daily_log';
         if (lower === 'wfh attendance') return 'wfh_attendance';
+        if (lower === 'sales target entry') return 'sales_target_entry';
         return lower.replace(/\s+/g, '_');
       };
 
