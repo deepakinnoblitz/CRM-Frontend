@@ -13,6 +13,7 @@ import Dialog from '@mui/material/Dialog';
 import Rating from '@mui/material/Rating';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TableRow from '@mui/material/TableRow';
@@ -24,7 +25,6 @@ import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
-import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
@@ -33,6 +33,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import CircularProgress from '@mui/material/CircularProgress';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { useInterviews } from 'src/hooks/useInterviews';
@@ -47,6 +48,7 @@ import {
     deleteInterview,
     updateInterview,
     getInterviewPermissions,
+    createInterviewType,
 } from 'src/api/interviews';
 
 import { Iconify } from 'src/components/iconify';
@@ -59,6 +61,7 @@ import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
 import { InterviewTableRow } from 'src/sections/interviews/interview-table-row';
 import { LeadTableHead as InterviewTableHead } from 'src/sections/lead/lead-table-head';
 import { InterviewDetailsDialog } from 'src/sections/interviews/interview-details-dialog';
+import { InterviewTypeCreateDialog } from 'src/sections/interviews/interview-type-create-dialog';
 import { LeadTableToolbar as InterviewTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -66,6 +69,9 @@ import { useAuth } from 'src/auth/auth-context';
 import { InterviewTableFiltersDrawer } from '../interview-table-filters-drawer';
 
 // ----------------------------------------------------------------------
+
+const filterInterviewType = createFilterOptions<any>();
+
 
 
 export function InterviewsView() {
@@ -117,6 +123,11 @@ export function InterviewsView() {
     const [dialogTab, setDialogTab] = useState(0);
     const [viewInterview, setViewInterview] = useState<any>(null);
     const [editInterview, setEditInterview] = useState<any>(null);
+
+    // Interview Type Create Dialog state
+    const [openInterviewTypeCreate, setOpenInterviewTypeCreate] = useState(false);
+    const [interviewTypeSearch, setInterviewTypeSearch] = useState('');
+    const [activeFeedbackIndex, setActiveFeedbackIndex] = useState<number | null>(null);
 
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
@@ -281,7 +292,10 @@ export function InterviewsView() {
                 interview_summary: fullData.interview_summary || '',
                 overall_status: fullData.overall_status,
                 overall_performance: fullData.overall_performance,
-                feedbacks: fullData.feedbacks || [],
+                feedbacks: (fullData.feedbacks || []).map((fb: any) => ({
+                    ...fb,
+                    rating: fb.rating != null ? (Number(fb.rating) <= 1 && Number(fb.rating) > 0 ? Math.round(Number(fb.rating) * 5) : Number(fb.rating)) : 0,
+                })),
             });
             setOpenCreate(true);
         } catch (error: any) {
@@ -353,6 +367,10 @@ export function InterviewsView() {
             const payload = {
                 ...formData,
                 scheduled_on: formData.scheduled_on ? dayjs(formData.scheduled_on).format('YYYY-MM-DD') : null,
+                feedbacks: (formData.feedbacks || []).map((fb: any) => ({
+                    ...fb,
+                    rating: fb.rating ? (Number(fb.rating) > 1 ? Number(fb.rating) / 5 : Number(fb.rating)) : 0,
+                })),
             };
 
             if (editInterview) {
@@ -1057,9 +1075,74 @@ export function InterviewsView() {
                                     <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, p: 2 }}>
                                         <Autocomplete
                                             fullWidth
-                                            options={interviewTypes.map((t) => t.name)}
-                                            value={fb.interview_type || null}
-                                            onChange={(_, val) => handleFeedbackChange(index, 'interview_type', val || '')}
+                                            options={interviewTypes}
+                                            value={fb.interview_type || ''}
+                                            onChange={(event, newValue: any) => {
+                                                if (newValue?.isNew || newValue === 'Create Interview Type' || newValue?.name === 'Create Interview Type') {
+                                                    setActiveFeedbackIndex(index);
+                                                    setInterviewTypeSearch(newValue?.inputValue || '');
+                                                    setOpenInterviewTypeCreate(true);
+                                                } else {
+                                                    const value = typeof newValue === 'object' && newValue?.name ? newValue.name : newValue;
+                                                    handleFeedbackChange(index, 'interview_type', value || '');
+                                                }
+                                            }}
+                                            filterOptions={(currentOptions, params) => {
+                                                const filtered = filterInterviewType(currentOptions, params);
+                                                const { inputValue } = params;
+                                                const hasCreateOption = filtered.some((option: any) =>
+                                                    (typeof option === 'string' ? option : option.name) === 'Create Interview Type' || option.isNew
+                                                );
+                                                if (!hasCreateOption) {
+                                                    filtered.push({
+                                                        inputValue: inputValue || '',
+                                                        name: 'Create Interview Type',
+                                                        isNew: true,
+                                                    });
+                                                }
+                                                return filtered;
+                                            }}
+                                            renderOption={(props, option: any) => (
+                                                <Box
+                                                    component="li"
+                                                    {...props}
+                                                    key={typeof option === 'string' ? option : option.name}
+                                                    sx={{
+                                                        typography: 'body2',
+                                                        ...(option.isNew && {
+                                                            color: 'primary.main',
+                                                            fontWeight: 600,
+                                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                            mt: 0.5,
+                                                            py: 1.5,
+                                                            minHeight: '48px',
+                                                            '&:hover': {
+                                                                bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                            }
+                                                        })
+                                                    }}
+                                                >
+                                                    {option.isNew ? (
+                                                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                                                            <Iconify icon={"solar:add-circle-bold" as any} width={24} />
+                                                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Create Interview Type</Typography>
+                                                        </Stack>
+                                                    ) : (
+                                                        typeof option === 'string' ? option : option.name
+                                                    )}
+                                                </Box>
+                                            )}
+                                            getOptionLabel={(option: any) => {
+                                                if (typeof option === 'string') return option;
+                                                if (option?.name) return option.name;
+                                                return '';
+                                            }}
+                                            isOptionEqualToValue={(option: any, value: any) => {
+                                                const optionValue = typeof option === 'string' ? option : option?.name;
+                                                const compareValue = typeof value === 'string' ? value : value?.name;
+                                                return optionValue === compareValue;
+                                            }}
                                             renderInput={(params) => (
                                                 <TextField
                                                     {...params}
@@ -1177,6 +1260,19 @@ export function InterviewsView() {
                         Delete
                     </Button>
                 }
+            />
+
+            <InterviewTypeCreateDialog
+                open={openInterviewTypeCreate}
+                onClose={() => setOpenInterviewTypeCreate(false)}
+                currentTypeName={interviewTypeSearch}
+                onCreate={(newType: string) => {
+                    setInterviewTypes((prev) => [...prev, { name: newType }]);
+                    if (activeFeedbackIndex !== null) {
+                        handleFeedbackChange(activeFeedbackIndex, 'interview_type', newType);
+                    }
+                    setSnackbar({ open: true, message: 'Interview Type created successfully', severity: 'success' });
+                }}
             />
 
             <InterviewTableFiltersDrawer

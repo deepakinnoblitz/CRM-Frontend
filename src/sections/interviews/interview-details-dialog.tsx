@@ -290,7 +290,7 @@ export function InterviewDetailsDialog({ open, onClose, interview }: Props) {
                             <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
                                 Feedback #{index + 1}
                             </Typography>
-                            <Rating value={Number(fb.rating)} readOnly size="small" />
+                            <Rating value={fb.rating != null ? (Number(fb.rating) <= 1 && Number(fb.rating) > 0 ? Math.round(Number(fb.rating) * 5) : Number(fb.rating)) : 0} readOnly size="small" />
                         </Stack>
 
                         {/* Card body */}
