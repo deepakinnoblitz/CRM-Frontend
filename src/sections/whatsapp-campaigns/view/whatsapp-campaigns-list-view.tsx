@@ -65,10 +65,10 @@ export function WhatsAppCampaignsListView() {
     });
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_campaigns;
-    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.whatsapp_campaigns ? !!user?.permissions?.actions?.whatsapp_campaigns?.create : true;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.edit : true;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.delete : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_automation;
+    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.whatsapp_automation ? !!user?.permissions?.actions?.whatsapp_automation?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automation?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automation?.delete : true;
 
     const [openFilters, setOpenFilters] = useState(false);
 

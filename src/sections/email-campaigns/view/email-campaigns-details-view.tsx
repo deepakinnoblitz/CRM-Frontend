@@ -42,8 +42,8 @@ export function EmailCampaignsDetailsView() {
     const navigate = useNavigate();
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_campaigns;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.edit : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.mail_automation;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.mail_automation?.edit : true;
 
     const [campaign, setCampaign] = useState<any>(null);
     const [emailQueue, setEmailQueue] = useState<EmailQueueItem[]>([]);
@@ -250,7 +250,7 @@ export function EmailCampaignsDetailsView() {
                     >
                         Refresh
                     </Button>
-                    {!['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
+                    {displayEdit && !['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStart />}
@@ -267,7 +267,7 @@ export function EmailCampaignsDetailsView() {
                             Start Campaign
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugPause />}
@@ -284,7 +284,7 @@ export function EmailCampaignsDetailsView() {
                             Pause
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStop />}

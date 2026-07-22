@@ -64,8 +64,8 @@ export function WhatsAppCampaignsDetailsView() {
     const [recipientsSearch, setRecipientsSearch] = useState('');
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_campaigns;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.edit : true;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_automation;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automation?.edit : true;
 
     useEffect(() => {
         if (id) {
@@ -256,7 +256,7 @@ export function WhatsAppCampaignsDetailsView() {
                     >
                         Refresh
                     </Button>
-                    {!['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
+                    {displayEdit && campaign.status !== 'Running' && campaign.status !== 'Completed' && campaign.status !== 'Cancelled' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStart />}
@@ -273,7 +273,7 @@ export function WhatsAppCampaignsDetailsView() {
                             Start Campaign
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugPause />}
@@ -290,7 +290,7 @@ export function WhatsAppCampaignsDetailsView() {
                             Pause
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStop />}
@@ -324,21 +324,6 @@ export function WhatsAppCampaignsDetailsView() {
                             Edit
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        onClick={handleEdit}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
                 </Stack>
             </Stack>
 
