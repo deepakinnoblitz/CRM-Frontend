@@ -11,10 +11,28 @@ import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+  const formatted = fCurrency(amount);
+  if (!formatted) return '—';
+  const index = formatted.indexOf('₹');
+  if (index !== -1) {
+    return (
+      <>
+        {formatted.substring(0, index)}
+        <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+        {formatted.substring(index + 1)}
+      </>
+    );
+  }
+  return formatted;
+};
 
 type Props = {
     open: boolean;
@@ -38,7 +56,7 @@ export function SalesTargetEntryDetailsDialog({ open, onClose, entry }: Props) {
     };
 
     const fmt = (val: any) => (val != null && val !== '') ? String(val) : '—';
-    const fmtCurrency = (val: any) => (val != null && val !== '') ? new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(Number(val)) : '—';
+    const fmtCurrency = (val: any) => (val != null && val !== '') ? renderCurrency(val) : '—';
 
     const readField = (
         label: string,
