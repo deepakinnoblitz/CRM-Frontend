@@ -472,14 +472,6 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
       if (menus[moduleKey] === false || menus[checkKey] === false) {
         return null;
       }
-      
-      // If custom permissions assigned but we have no true permission entry for this key, block it
-      if (menus[moduleKey] === undefined && menus[checkKey] === undefined) {
-        // Only block if it is a child item. If it's a parent menu, it will be validated by checking its filtered children.
-        if (!item.children) {
-          return null;
-        }
-      }
     }
 
     // Clone item

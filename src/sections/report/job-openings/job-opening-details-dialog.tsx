@@ -25,7 +25,7 @@ type Props = {
 };
 
 export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) {
-    const theme =useTheme();
+    const theme = useTheme();
 
     const { user } = useAuth();
     const actionPerms = user?.permissions?.actions?.employee_referral_list;
@@ -34,14 +34,14 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
 
 
     if (!job) return null;
-    
+
     const formatDate = (date: string) => {
         if (!date) return '-';
         return new Date(date).toLocaleDateString();
     };
 
     const renderHeader = (
-        
+
         <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, my: 3 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -183,7 +183,7 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
                 {renderDescription}
             </DialogContent>
 
-            {onRefer && canCreateReferral&& (
+            {onRefer && canCreateReferral && (
                 <DialogActions sx={{ p: 1.5 }}>
                     <Button
                         fullWidth

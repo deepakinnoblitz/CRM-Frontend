@@ -15,7 +15,7 @@ export function RolePermissionGuard({ children, actionKey }: RolePermissionGuard
 
     if (hasCustomPerms) {
         const actionPerms = user?.permissions?.actions?.[actionKey];
-        if (!actionPerms || !actionPerms.view) {
+        if (actionPerms !== undefined && !actionPerms.view) {
             return <Navigate to="/access-denied" replace />;
         }
     }
