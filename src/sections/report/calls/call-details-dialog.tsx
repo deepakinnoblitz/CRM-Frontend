@@ -195,8 +195,9 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     <Box
                                         sx={{
                                             p: 3,
-                                            bgcolor: 'background.neutral',
                                             borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
                                             position: 'relative',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -231,8 +232,9 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     <Box
                                         sx={{
                                             p: 3,
-                                            bgcolor: 'background.neutral',
                                             borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
                                             position: 'relative',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -267,8 +269,9 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     <Box
                                         sx={{
                                             p: 3,
-                                            bgcolor: 'background.neutral',
                                             borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
                                             position: 'relative',
                                             display: 'flex',
                                             flexDirection: 'column',
@@ -307,7 +310,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 }}
                             >
-                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, gridColumn: '1 / -1' }}>
+                                <Box sx={{ p: 3, bgcolor: 'rgb(222 242 255 / 20%)', border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 2, gridColumn: '1 / -1', mb: 2 }}>
                                     <DetailItem label="Subject" value={call.title} fullWidth />
                                 </Box>
                                 <DetailItem label="Call For" value={call.call_for === 'Contact' ? 'Client' : call.call_for === 'Accounts' ? 'Company' : call.call_for} icon="solar:user-bold" />
@@ -435,11 +438,10 @@ function DetailItem({
                     variant="caption"
                     sx={{
                         color: 'text.secondary',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: 0.5,
                         display: 'block',
-                        mb: 0.25,
+                        mb: 0.5,
                     }}
                 >
                     {label}
