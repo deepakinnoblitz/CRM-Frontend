@@ -6,11 +6,12 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
+import { SalesTargetEntry } from 'src/api/sales-target-entry';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
-import { SalesTargetEntry } from 'src/api/sales-target-entry';
 
 // ----------------------------------------------------------------------
 

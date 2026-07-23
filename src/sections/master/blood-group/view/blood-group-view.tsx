@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSnackbar } from 'notistack';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -6,10 +7,10 @@ import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import TableRow from '@mui/material/TableRow';
-import Snackbar from '@mui/material/Snackbar';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -65,16 +66,13 @@ export function BloodGroupView() {
   const [openForm, setOpenForm] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const [deleting, setDeleting] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<{ open: boolean; id: string | null }>({
     open: false,
     id: null,
   });
 
-  const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
-    open: false,
-    message: '',
-    severity: 'success',
-  });
+  const { enqueueSnackbar } = useSnackbar();
 
   const { data, total, loading, refetch } = useBloodGroups(
     page + 1,
@@ -109,13 +107,15 @@ export function BloodGroupView() {
 
   const handleConfirmDelete = async () => {
     if (confirmDelete.id) {
+      setDeleting(true);
       try {
         await deleteBloodGroup(confirmDelete.id);
-        setSnackbar({ open: true, message: 'Blood group deleted successfully', severity: 'success' });
+        enqueueSnackbar('Blood group deleted successfully', { variant: 'success' });
         refetch();
       } catch (error: any) {
-        setSnackbar({ open: true, message: error.message || 'Failed to delete blood group', severity: 'error' });
+        enqueueSnackbar(error.message || 'Failed to delete blood group', { variant: 'error' });
       } finally {
+        setDeleting(false);
         setConfirmDelete({ open: false, id: null });
       }
     }
@@ -234,11 +234,10 @@ export function BloodGroupView() {
         }}
         onSuccess={() => {
           refetch();
-          setSnackbar({
-            open: true,
-            message: selectedId ? 'Blood Group updated successfully' : 'Blood Group created successfully',
-            severity: 'success',
-          });
+          enqueueSnackbar(
+            selectedId ? 'Blood Group updated successfully' : 'Blood Group created successfully',
+            { variant: 'success' }
+          );
         }}
       />
 
@@ -248,20 +247,11 @@ export function BloodGroupView() {
         title="Delete Blood Group"
         content="Are you sure you want to delete this blood group? This action cannot be undone."
         action={
-          <Button variant="contained" color="error" onClick={handleConfirmDelete}>
+          <LoadingButton variant="contained" color="error" loading={deleting} onClick={handleConfirmDelete}>
             Delete
-          </Button>
+          </LoadingButton>
         }
       />
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      >
-        <Box sx={{ width: '100%' }}>{snackbar.message}</Box>
-      </Snackbar>
     </DashboardContent>
   );
 }
