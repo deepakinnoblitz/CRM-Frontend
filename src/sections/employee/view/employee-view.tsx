@@ -57,14 +57,13 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
-import { BloodGroupDialog } from 'src/sections/master/blood-group/blood-group-dialog';
-
 import { useAuth } from 'src/auth/auth-context';
 
 import { TableNoData } from '../../lead/table-no-data';
 import { EmployeeTableRow } from '../employee-table-row';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import { DepartmentCreateDialog } from '../department-create-dialog';
+import { BloodGroupCreateDialog } from '../blood-group-create-dialog';
 import EmployeeTableFiltersDrawer from '../employee-table-filters-drawer';
 // ----------------------------------------------------------------------
 
@@ -2002,17 +2001,36 @@ export function EmployeeView() {
                 }}
             />
 
-            <BloodGroupDialog
+            <BloodGroupCreateDialog
                 open={openBloodGroupCreate}
                 onClose={() => setOpenBloodGroupCreate(false)}
-                onSuccess={() => {
-                    if (bloodGroupSearch) {
+                currentBloodGroupName={bloodGroupSearch}
+                onCreate={async (newBloodGroup) => {
+                    // Optimistically add to options and set value
+                    setFieldOptions(prev => {
+                        const existing = prev['blood_group'] || [];
+                        const exists = existing.some((opt: any) => (typeof opt === 'string' ? opt : (opt.blood_group || opt.name)) === newBloodGroup);
+                        if (exists) return prev;
+                        return {
+                            ...prev,
+                            blood_group: [...existing, { name: newBloodGroup, blood_group: newBloodGroup }]
+                        };
+                    });
+
+                    // Update form data with newly created blood group
+                    handleInputChange('blood_group', newBloodGroup);
+
+                    // Re-fetch Blood Group options from backend
+                    try {
+                        const freshOptions = await getDoctypeList('Blood Group', ['name', 'blood_group']);
                         setFieldOptions(prev => ({
                             ...prev,
-                            blood_group: [...(prev['blood_group'] || []), { name: bloodGroupSearch }]
+                            blood_group: freshOptions
                         }));
-                        handleInputChange('blood_group', bloodGroupSearch);
+                    } catch (err) {
+                        console.error('Failed to re-fetch blood group options:', err);
                     }
+
                     setSnackbar({ open: true, message: 'Blood Group created successfully', severity: 'success' });
                 }}
             />
