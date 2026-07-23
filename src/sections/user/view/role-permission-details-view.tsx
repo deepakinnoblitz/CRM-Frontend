@@ -25,6 +25,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { isActionAllowed } from './role-permission-create-view';
 
 interface RolePermissionDetailsViewProps {
     name: string;
@@ -101,15 +102,26 @@ export function RolePermissionDetailsView({ name, onBack, onEdit }: RolePermissi
         return screen;
     };
 
-    const renderToggleIcon = (value: number) => (
-        <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
-            {value ? (
-                <Iconify icon="solar:check-circle-bold" sx={{ color: '#00a76f' }} width={24} />
-            ) : (
-                <Iconify icon="solar:close-circle-bold" sx={{ color: '#919eab' }} width={24} />
-            )}
-        </TableCell>
-    );
+    const renderToggleIcon = (row: PermissionAccess, key: keyof PermissionAccess) => {
+        const allowed = isActionAllowed(row.module_id, row.screen_id, key);
+        if (!allowed) {
+            return (
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)', color: 'text.disabled' }}>
+                    -
+                </TableCell>
+            );
+        }
+        const value = row[key];
+        return (
+            <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+                {value ? (
+                    <Iconify icon="solar:check-circle-bold" sx={{ color: '#00a76f' }} width={24} />
+                ) : (
+                    <Iconify icon="solar:close-circle-bold" sx={{ color: '#919eab' }} width={24} />
+                )}
+            </TableCell>
+        );
+    };
 
     const handleGoBack = () => {
         if (onBack) {
@@ -233,12 +245,12 @@ export function RolePermissionDetailsView({ name, onBack, onEdit }: RolePermissi
                                                     <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                         {row.screen_id}
                                                     </TableCell>
-                                                    {renderToggleIcon(row.add_permission)}
-                                                    {renderToggleIcon(row.edit_permission)}
-                                                    {renderToggleIcon(row.view_permission)}
-                                                    {renderToggleIcon(row.delete_permission)}
-                                                    {renderToggleIcon(row.export_permission)}
-                                                    {renderToggleIcon(row.import_permission)}
+                                                    {renderToggleIcon(row, 'add_permission')}
+                                                    {renderToggleIcon(row, 'edit_permission')}
+                                                    {renderToggleIcon(row, 'view_permission')}
+                                                    {renderToggleIcon(row, 'delete_permission')}
+                                                    {renderToggleIcon(row, 'export_permission')}
+                                                    {renderToggleIcon(row, 'import_permission')}
                                                 </TableRow>
                                             );
                                         })}

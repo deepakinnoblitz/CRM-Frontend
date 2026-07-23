@@ -28,6 +28,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
+import { isActionAllowed } from './role-permission-create-view';
+
 // Android 12 Switch Style
 const Android12Switch = styled(Switch)(({ theme }) => ({
     width: 40,
@@ -174,6 +176,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
     };
 
     const togglePermission = (idx: number, field: keyof PermissionAccess) => {
+        if (!isActionAllowed(permissions[idx].module_id, permissions[idx].screen_id, field)) return;
         const updated = [...permissions];
         const val = updated[idx][field] as number;
         const newVal = val ? 0 : 1;
@@ -189,37 +192,51 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         setPermissions(updated);
     };
 
-    const allSelected = permissions.length > 0 && permissions.every(
-        (p) => p.add_permission && p.edit_permission && p.view_permission && p.delete_permission && p.export_permission && p.import_permission
-    );
+    const isRowAllChecked = (row: PermissionAccess) => {
+        const fields: (keyof PermissionAccess)[] = [
+            'add_permission',
+            'edit_permission',
+            'view_permission',
+            'delete_permission',
+            'export_permission',
+            'import_permission'
+        ];
+        return fields.every((f) => {
+            if (!isActionAllowed(row.module_id, row.screen_id, f)) return true;
+            return !!row[f];
+        });
+    };
+
+    const allSelected = permissions.length > 0 && permissions.every(isRowAllChecked);
 
     const handleSelectAll = () => {
         const targetVal = allSelected ? 0 : 1;
         const updated = permissions.map((p) => ({
             ...p,
-            add_permission: targetVal,
-            edit_permission: targetVal,
-            view_permission: targetVal,
-            delete_permission: targetVal,
-            export_permission: targetVal,
-            import_permission: targetVal,
+            add_permission: isActionAllowed(p.module_id, p.screen_id, 'add_permission') ? targetVal : 0,
+            edit_permission: isActionAllowed(p.module_id, p.screen_id, 'edit_permission') ? targetVal : 0,
+            view_permission: isActionAllowed(p.module_id, p.screen_id, 'view_permission') ? targetVal : 0,
+            delete_permission: isActionAllowed(p.module_id, p.screen_id, 'delete_permission') ? targetVal : 0,
+            export_permission: isActionAllowed(p.module_id, p.screen_id, 'export_permission') ? targetVal : 0,
+            import_permission: isActionAllowed(p.module_id, p.screen_id, 'import_permission') ? targetVal : 0,
         }));
         setPermissions(updated);
     };
+
     const toggleAllRowPermissions = (idx: number) => {
         const updated = [...permissions];
         const row = updated[idx];
-        const allChecked = !!(row.add_permission && row.edit_permission && row.view_permission && row.delete_permission && row.export_permission && row.import_permission);
+        const allChecked = isRowAllChecked(row);
         const targetVal = allChecked ? 0 : 1;
 
         updated[idx] = {
             ...row,
-            add_permission: targetVal,
-            edit_permission: targetVal,
-            view_permission: targetVal,
-            delete_permission: targetVal,
-            export_permission: targetVal,
-            import_permission: targetVal,
+            add_permission: isActionAllowed(row.module_id, row.screen_id, 'add_permission') ? targetVal : 0,
+            edit_permission: isActionAllowed(row.module_id, row.screen_id, 'edit_permission') ? targetVal : 0,
+            view_permission: isActionAllowed(row.module_id, row.screen_id, 'view_permission') ? targetVal : 0,
+            delete_permission: isActionAllowed(row.module_id, row.screen_id, 'delete_permission') ? targetVal : 0,
+            export_permission: isActionAllowed(row.module_id, row.screen_id, 'export_permission') ? targetVal : 0,
+            import_permission: isActionAllowed(row.module_id, row.screen_id, 'import_permission') ? targetVal : 0,
         };
 
         setPermissions(updated);
@@ -285,19 +302,19 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         try {
             const cleanedPermissions = permissions.map((p) => ({
                 ...p,
-                add_permission: p.add_permission ? 1 : 0,
-                edit_permission: p.edit_permission ? 1 : 0,
-                view_permission: p.view_permission ? 1 : 0,
-                delete_permission: p.delete_permission ? 1 : 0,
-                export_permission: p.export_permission ? 1 : 0,
-                import_permission: p.import_permission ? 1 : 0,
+                add_permission: (isActionAllowed(p.module_id, p.screen_id, 'add_permission') && p.add_permission) ? 1 : 0,
+                edit_permission: (isActionAllowed(p.module_id, p.screen_id, 'edit_permission') && p.edit_permission) ? 1 : 0,
+                view_permission: (isActionAllowed(p.module_id, p.screen_id, 'view_permission') && p.view_permission) ? 1 : 0,
+                delete_permission: (isActionAllowed(p.module_id, p.screen_id, 'delete_permission') && p.delete_permission) ? 1 : 0,
+                export_permission: (isActionAllowed(p.module_id, p.screen_id, 'export_permission') && p.export_permission) ? 1 : 0,
+                import_permission: (isActionAllowed(p.module_id, p.screen_id, 'import_permission') && p.import_permission) ? 1 : 0,
             }));
 
             const payload = {
                 frontend_role_name: frontendRoleName,
                 backend_master_role: backendMasterRole,
                 status,
-                permissions,
+                permissions: cleanedPermissions,
             };
             await updateRolePermission(name, payload);
             enqueueSnackbar('Role permission updated successfully', { variant: 'success' });
@@ -317,6 +334,14 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
     };
 
     const renderToggleCell = (row: PermissionAccess, idx: number, key: keyof PermissionAccess) => {
+        const allowed = isActionAllowed(row.module_id, row.screen_id, key);
+        if (!allowed) {
+            return (
+                <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)', color: 'text.disabled' }}>
+                    -
+                </TableCell>
+            );
+        }
         const value = row[key];
         return (
             <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
@@ -503,7 +528,7 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
                                                     </TableCell>
                                                     <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
                                                         <Android12Switch
-                                                            checked={!!(row.add_permission && row.edit_permission && row.view_permission && row.delete_permission && row.export_permission && row.import_permission)}
+                                                            checked={isRowAllChecked(row)}
                                                             onChange={() => toggleAllRowPermissions(idx)}
                                                         />
                                                     </TableCell>
@@ -536,3 +561,5 @@ export function RolePermissionEditView({ name, onBack }: RolePermissionEditViewP
         </DashboardContent>
     );
 }
+
+
