@@ -402,6 +402,7 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Sales Target Entry Report', path: '/reports/sales-target-entry' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
