@@ -40,9 +40,10 @@ type Props = {
     onClose: () => void;
     accountId: string | null;
     onEdit?: (accountId: string) => void;
+    initialTab?: string;
 };
 
-export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props) {
+export function AccountDetailsDialog({ open, onClose, accountId, onEdit, initialTab }: Props) {
     const theme = useTheme();
     const { user } = useAuth();
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
@@ -91,7 +92,13 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit }: Props
         ...(canViewPurchases ? [{ value: 'purchases', label: 'Purchases', icon: <HiOutlineShoppingBag size={18} /> }] : []),
     ];
 
-    const [currentTab, setCurrentTab] = useState(TABS[0]?.value || 'contacts');
+    const [currentTab, setCurrentTab] = useState(initialTab || TABS[0]?.value || 'contacts');
+
+    useEffect(() => {
+        if (open && initialTab) {
+            setCurrentTab(initialTab);
+        }
+    }, [open, initialTab]);
 
     useEffect(() => {
         if (TABS.length > 0 && !TABS.some(t => t.value === currentTab)) {

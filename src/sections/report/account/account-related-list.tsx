@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -54,6 +55,7 @@ type Props = {
 export function AccountRelatedList({ accountId, type }: Props) {
     const theme = useTheme();
     const router = useRouter();
+    const location = useLocation();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -259,7 +261,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`)}
+                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openAccountId: accountId, activeTab: 'invoices' })}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -299,7 +301,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/deals/${encodeURIComponent(row.name)}/view`)}
+                            onClick={() => router.push(`/deals/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openAccountId: accountId, activeTab: 'deals' })}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -317,7 +319,7 @@ export function AccountRelatedList({ accountId, type }: Props) {
                 <TableCell align="right">
                     <IconButton
                         color="primary"
-                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`)}
+                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openAccountId: accountId, activeTab: 'estimations' })}
                         size="small"
                     >
                         <Iconify icon="solar:eye-bold" />

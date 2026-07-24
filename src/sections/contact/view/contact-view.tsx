@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -74,6 +75,15 @@ export function ContactView() {
     const [currentContactId, setCurrentContactId] = useState<string | null>(null);
     const [openView, setOpenView] = useState(false);
     const [openImport, setOpenImport] = useState(false);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openContactId) {
+            setCurrentContactId(location.state.openContactId);
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
     const [stateOptions, setStateOptions] = useState<string[]>([]);
@@ -630,6 +640,7 @@ export function ContactView() {
                 }}
                 contactId={currentContactId}
                 onEdit={handleEditRow}
+                initialTab={location.state?.activeTab}
             />
         </DashboardContent>
     );

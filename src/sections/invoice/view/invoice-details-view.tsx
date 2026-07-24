@@ -245,7 +245,13 @@ export function InvoiceDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            if (location.state?.from) {
+                                navigate(location.state.from, { state: location.state });
+                            } else {
+                                navigate(-1);
+                            }
+                        }}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

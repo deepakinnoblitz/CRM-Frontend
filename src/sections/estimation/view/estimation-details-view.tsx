@@ -158,7 +158,7 @@ export function EstimationDetailsView() {
         return (
             <DashboardContent maxWidth={false}>
                 <Typography variant="h4">Estimation not found</Typography>
-                <Button onClick={() => navigate(backUrl)} sx={{ mt: 3 }}>
+                <Button onClick={() => navigate(backUrl, { state: location.state })} sx={{ mt: 3 }}>
                     Go back to list
                 </Button>
             </DashboardContent>
@@ -254,7 +254,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(backUrl)}
+                        onClick={() => navigate(backUrl, { state: location.state })}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
