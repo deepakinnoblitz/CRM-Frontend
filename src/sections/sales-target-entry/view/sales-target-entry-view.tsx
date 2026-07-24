@@ -8,6 +8,7 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
+import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
@@ -88,6 +89,7 @@ export function SalesTargetEntryView() {
     const [openView, setOpenView] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [creating, setCreating] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const filter = createFilterOptions<any>();
 
@@ -278,6 +280,8 @@ export function SalesTargetEntryView() {
         if (!salesPerson) errors.salesPerson = true;
         if (!month) errors.month = true;
         if (!status) errors.status = true;
+        if (!contactName) errors.contactName = true;
+        if (!contactNumber || !contactNumber.trim()) errors.contactNumber = true;
         setValidationErrors(errors);
         return Object.keys(errors).length === 0;
     };
@@ -361,14 +365,16 @@ export function SalesTargetEntryView() {
 
     const handleDeleteEntry = async () => {
         if (!confirmDelete.id) return;
+        setDeleting(true);
         try {
             await deleteSalesTargetEntry(confirmDelete.id);
             enqueueSnackbar('Entry deleted successfully!', { variant: 'success' });
             loadEntries();
+            setConfirmDelete({ open: false, id: null });
         } catch (error: any) {
             enqueueSnackbar(getFriendlyErrorMessage(error), { variant: 'error' });
         } finally {
-            setConfirmDelete({ open: false, id: null });
+            setDeleting(false);
         }
     };
 
@@ -553,30 +559,30 @@ export function SalesTargetEntryView() {
                     </DialogTitle>
                     <DialogContent dividers sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, py: 4, px: 5 }}>
                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <TextField
-                            fullWidth
-                            label="Sales Entry ID"
-                            value={salesEntryId}
-                            InputProps={{
-                                readOnly: true,
-                            }}
-                            helperText={!isEdit && "Generated reference ID preview"}
-                        />
+                            <TextField
+                                fullWidth
+                                label="Sales Entry ID"
+                                value={salesEntryId}
+                                InputProps={{
+                                    readOnly: true,
+                                }}
+                                helperText={!isEdit && "Generated reference ID preview"}
+                            />
 
-                        <Autocomplete
-                            fullWidth
-                            options={STATUS_OPTIONS}
-                            value={status}
-                            onChange={(e, nv) => setStatus(nv as any || '')}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    label="Status"
-                                    required
-                                    error={validationErrors.status}
-                                />
-                            )}
-                        />
+                            <Autocomplete
+                                fullWidth
+                                options={STATUS_OPTIONS}
+                                value={status}
+                                onChange={(e, nv) => setStatus(nv as any || '')}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        label="Status"
+                                        required
+                                        error={validationErrors.status}
+                                    />
+                                )}
+                            />
                         </Box>
 
                         <Autocomplete
@@ -626,13 +632,19 @@ export function SalesTargetEntryView() {
                                 fullWidth
                                 options={MONTH_OPTIONS}
                                 value={month}
-                                onChange={(e, nv) => setMonth(nv || '')}
+                                onChange={(e, nv) => {
+                                    setMonth(nv || '');
+                                    if (nv && validationErrors.month) {
+                                        setValidationErrors((prev) => ({ ...prev, month: false }));
+                                    }
+                                }}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
                                         label="Month"
                                         required
                                         error={validationErrors.month}
+                                        helperText={validationErrors.month ? "Month is required" : ""}
                                     />
                                 )}
                             />
@@ -653,7 +665,14 @@ export function SalesTargetEntryView() {
                                 value={contactsOptions.find((c) => c.name === contactName) || null}
                                 onChange={(e, nv) => {
                                     setContactName(nv ? nv.name : '');
-                                    setContactNumber(nv ? nv.phone || '' : '');
+                                    const newPhone = nv ? nv.phone || '' : '';
+                                    setContactNumber(newPhone);
+                                    if (validationErrors.contactName) {
+                                        setValidationErrors((prev) => ({ ...prev, contactName: false }));
+                                    }
+                                    if (newPhone && validationErrors.contactNumber) {
+                                        setValidationErrors((prev) => ({ ...prev, contactNumber: false }));
+                                    }
                                 }}
                                 renderOption={(props, option) => {
                                     const { key, ...optionProps } = props as any;
@@ -667,15 +686,29 @@ export function SalesTargetEntryView() {
                                     );
                                 }}
                                 renderInput={(params) => (
-                                    <TextField {...params} label="Client Name" />
+                                    <TextField
+                                        {...params}
+                                        label="Client Name"
+                                        required
+                                        error={validationErrors.contactName}
+                                        helperText={validationErrors.contactName ? "Client Name is required" : ""}
+                                    />
                                 )}
                             />
                             <MuiTelInput
                                 fullWidth
                                 defaultCountry="IN"
                                 label="Contact Number"
+                                required
+                                error={validationErrors.contactNumber}
+                                helperText={validationErrors.contactNumber ? "Contact Number is required" : ""}
                                 value={contactNumber}
-                                onChange={(newValue: string) => setContactNumber(newValue)}
+                                onChange={(newValue: string) => {
+                                    setContactNumber(newValue);
+                                    if (validationErrors.contactNumber) {
+                                        setValidationErrors((prev) => ({ ...prev, contactNumber: false }));
+                                    }
+                                }}
                             />
                         </Box>
 
@@ -914,13 +947,23 @@ export function SalesTargetEntryView() {
                 {/* Delete Confirmation */}
                 <ConfirmDialog
                     open={confirmDelete.open}
-                    onClose={() => setConfirmDelete({ open: false, id: null })}
+                    onClose={() => {
+                        if (!deleting) {
+                            setConfirmDelete({ open: false, id: null });
+                        }
+                    }}
+                    isLoading={deleting}
                     title="Delete Entry"
                     content="Are you sure you want to delete this sales target entry?"
                     action={
-                        <Button variant="contained" color="error" onClick={handleDeleteEntry}>
+                        <LoadingButton
+                            variant="contained"
+                            color="error"
+                            loading={deleting}
+                            onClick={handleDeleteEntry}
+                        >
                             Delete
-                        </Button>
+                        </LoadingButton>
                     }
                 />
 

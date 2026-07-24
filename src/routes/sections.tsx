@@ -126,6 +126,7 @@ export const WhatsAppSettingsPage = lazy(() => import('src/pages/whatsapp-settin
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
+export const SalesTargetEntryReportPage = lazy(() => import('src/pages/reports/sales-target-entry'));
 export const ContactReportPage = lazy(() => import('src/pages/reports/contact'));
 export const AccountReportPage = lazy(() => import('src/pages/reports/account'));
 export const CallsReportPage = lazy(() => import('src/pages/reports/calls'));
@@ -526,6 +527,7 @@ export const routesSection: RouteObject[] = [
         path: 'reports',
         children: [
           { path: 'lead', element: <RolePermissionGuard actionKey="report_lead"><LeadReportPage /></RolePermissionGuard> },
+          { path: 'sales-target-entry', element: <RolePermissionGuard actionKey="report_sales_target_entry"><SalesTargetEntryReportPage /></RolePermissionGuard> },
           { path: 'contact', element: <RolePermissionGuard actionKey="report_clients"><ContactReportPage /></RolePermissionGuard> },
           { path: 'account', element: <RolePermissionGuard actionKey="report_company"><AccountReportPage /></RolePermissionGuard> },
           { path: 'calls', element: <RolePermissionGuard actionKey="report_calls"><CallsReportPage /></RolePermissionGuard> },
