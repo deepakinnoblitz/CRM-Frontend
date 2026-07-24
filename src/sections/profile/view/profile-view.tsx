@@ -218,8 +218,8 @@ export function ProfileView() {
                                         alt={user.full_name}
                                         src={user.user_image}
                                         sx={{
-                                            width: { xs: 100, md: 120 },
-                                            height: { xs: 100, md: 120 },
+                                            width: { xs: 80, md: 100 },
+                                            height: { xs: 80, md: 100 },
                                             border: (theme) => `solid 4px ${theme.palette.background.paper}`,
                                             boxShadow: (theme) => theme.customShadows.z12,
                                             bgcolor: (theme) => {
@@ -233,7 +233,8 @@ export function ProfileView() {
                                         }}
                                     >
                                         {!user.user_image && (
-                                            <Typography variant={{ xs: 'h4', md: 'h3' } as any} sx={{
+                                            <Typography sx={{
+                                                fontSize: { xs: 20, md: 28 },
                                                 fontWeight: 800,
                                                 color: (theme) => {
                                                     const name = user.full_name || '';

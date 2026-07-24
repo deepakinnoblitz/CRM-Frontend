@@ -106,7 +106,16 @@ interface Holiday {
     is_working_day: number;
 }
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function HolidaysView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.holidays_list;
+    const actionPerms = user?.permissions?.actions?.holidays_list;
+    const canCreateHolidayList = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditHolidayList = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteHolidayList = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -401,7 +410,7 @@ export function HolidaysView() {
                     Holidays
                 </Typography>
 
-                {permissions.write && (
+                {permissions.write && canCreateHolidayList && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}
@@ -428,8 +437,8 @@ export function HolidaysView() {
                 />
 
                 <Scrollbar>
-                    <TableContainer sx={{ overflow: 'unset' }}>
-                        <Table sx={{ minWidth: 800 }}>
+                    <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                        <Table size="medium">
                             <HolidayTableHead
                                 order={order}
                                 orderBy={orderBy}
@@ -472,8 +481,8 @@ export function HolidaysView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditHolidayList}
+                                                canDelete={permissions.delete && canDeleteHolidayList}
                                             />
                                         ))}
 

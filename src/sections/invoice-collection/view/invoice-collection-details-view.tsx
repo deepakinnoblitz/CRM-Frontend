@@ -46,6 +46,8 @@ import { getInvoiceCollection, deleteInvoiceCollection, fetchInvoiceCollections 
 
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export function InvoiceCollectionDetailsView() {
@@ -63,6 +65,10 @@ export function InvoiceCollectionDetailsView() {
     };
 
     const [collection, setCollection] = useState<any>(null);
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice_collection;
+    const canEditCollection = hasCustomPerms ? !!user?.permissions?.actions?.invoice_collection?.edit : true;
+    const canDeleteCollection = hasCustomPerms ? !!user?.permissions?.actions?.invoice_collection?.delete : true;
     const [fetching, setFetching] = useState(true);
     const [deleting, setDeleting] = useState(false);
     const [isLatest, setIsLatest] = useState(false);
@@ -169,7 +175,7 @@ export function InvoiceCollectionDetailsView() {
                     >
                         Go Back
                     </Button>
-                    {isLatest && (
+                    {isLatest && canDeleteCollection && (
                         <Button
                             variant="contained"
                             color="error"
@@ -180,7 +186,7 @@ export function InvoiceCollectionDetailsView() {
                             Delete
                         </Button>
                     )}
-                    {isLatest && (
+                    {isLatest && canEditCollection && (
                         <Button
                             variant="contained"
                             color="primary"

@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -6,6 +6,13 @@ import Stack from '@mui/material/Stack';
 import LeadKanbanColumn from './lead-kanban-column';
 
 type Props = {
+  columnsData?: Record<string, {
+    leads: any[];
+    hasMore: boolean;
+    loading: boolean;
+    loadMore: VoidFunction;
+    total?: number;
+  }>;
   leads: any[];
   workflowStates: string[];
   onOpenLead: (leadId: string) => void;
@@ -16,6 +23,9 @@ type Props = {
     write: boolean;
     delete: boolean;
   };
+  hasMore?: boolean;
+  onLoadMore?: VoidFunction;
+  loadingMore?: boolean;
 };
 
 const COLUMN_COLORS = [
@@ -30,6 +40,7 @@ const COLUMN_COLORS = [
 ];
 
 export default function LeadKanbanBoard({
+  columnsData,
   leads,
   workflowStates,
   onOpenLead,
@@ -37,6 +48,9 @@ export default function LeadKanbanBoard({
   onDeleteLead,
   onAddLead,
   permissions,
+  hasMore,
+  onLoadMore,
+  loadingMore,
 }: Props) {
   const columns = useMemo(() => {
     const states =
@@ -58,9 +72,10 @@ export default function LeadKanbanBoard({
         name: state,
         color: COLUMN_COLORS[index % COLUMN_COLORS.length],
         leadIds: stateLeads.map((lead) => lead.name),
+        total: columnsData?.[state]?.total,
       };
     });
-  }, [leads, workflowStates]);
+  }, [leads, workflowStates, columnsData]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -145,18 +160,28 @@ export default function LeadKanbanBoard({
             p: 1,
           }}
         >
-          {columns.map((column) => (
-            <LeadKanbanColumn
-              key={column.id}
-              column={column}
-              leads={leads}
-              onOpenLead={onOpenLead}
-              onEditLead={onEditLead}
-              onDeleteLead={onDeleteLead}
-              onAddLead={onAddLead}
-              permissions={permissions}
-            />
-          ))}
+          {columns.map((column) => {
+            const colData = columnsData?.[column.id];
+            const hasMoreServer = colData ? colData.hasMore : hasMore;
+            const onLoadMoreServer = colData ? colData.loadMore : onLoadMore;
+            const loadingMoreServer = colData ? colData.loading : loadingMore;
+
+            return (
+              <LeadKanbanColumn
+                key={column.id}
+                column={column}
+                leads={leads}
+                onOpenLead={onOpenLead}
+                onEditLead={onEditLead}
+                onDeleteLead={onDeleteLead}
+                onAddLead={onAddLead}
+                permissions={permissions}
+                hasMoreServer={hasMoreServer}
+                onLoadMoreServer={onLoadMoreServer}
+                loadingMoreServer={loadingMoreServer}
+              />
+            );
+          })}
         </Stack>
       </Box>
     </Box>

@@ -44,9 +44,17 @@ import { LeadTableHead as ExpenseTableHead } from 'src/sections/lead/lead-table-
 import { ExpenseDetailsDialog } from 'src/sections/report/expenses/expenses-details-dialog';
 import { LeadTableToolbar as ExpenseTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function ExpensesView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.expense_tracker || user?.permissions?.actions?.expense_tracker);
+    const actionPerms = user?.permissions?.actions?.expense_tracker || user?.permissions?.actions?.expense_tracker;
+    const canCreateExpense = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditExpenseClaim = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteExpenseClaim = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -227,7 +235,7 @@ export function ExpensesView() {
                     Company Expenses
                 </Typography>
 
-                {permissions.write && (
+                {permissions.write && canCreateExpense && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}
@@ -288,8 +296,8 @@ export function ExpensesView() {
                                         onView={() => handleViewRow(row)}
                                         onEdit={() => handleEditRow(row)}
                                         onDelete={() => handleDeleteRow(row.name)}
-                                        canEdit={permissions.write}
-                                        canDelete={permissions.delete}
+                                        canEdit={permissions.write && canEditExpenseClaim}
+                                        canDelete={permissions.delete && canDeleteExpenseClaim}
                                     />
                                 ))}
 

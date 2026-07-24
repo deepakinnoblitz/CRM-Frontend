@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
@@ -10,9 +11,15 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
 import { getCall } from 'src/api/calls';
+import { getLead } from 'src/api/leads';
+import { getContact } from 'src/api/contacts';
+import { getAccount } from 'src/api/accounts';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { ContactDetailsDialog } from 'src/sections/report/contact/contact-details-dialog';
+import { AccountDetailsDialog } from 'src/sections/report/account/account-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -23,15 +30,56 @@ type Props = {
 };
 
 export function CallDetailsDialog({ open, onClose, callId }: Props) {
+    const navigate = useNavigate();
     const [call, setCall] = useState<any>(null);
+    const [leadData, setLeadData] = useState<any>(null);
+    const [clientData, setClientData] = useState<any>(null);
+    const [companyData, setCompanyData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [openClientDetails, setOpenClientDetails] = useState(false);
+    const [openCompanyDetails, setOpenCompanyDetails] = useState(false);
 
     useEffect(() => {
         if (open && callId) {
             setLoading(true);
             getCall(callId)
-                .then((data) => {
+                .then(async (data) => {
                     setCall(data);
+                    
+                    // Fetch reference details based on call_for field
+                    if (data.call_for === 'Lead' && data.lead_name) {
+                        try {
+                            const lead = await getLead(data.lead_name);
+                            setLeadData(lead);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setLeadData(null);
+                    }
+
+                    if (data.call_for === 'Contact' && data.contact_name) {
+                        try {
+                            const contact = await getContact(data.contact_name);
+                            setClientData(contact);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setClientData(null);
+                    }
+
+                    if (data.call_for === 'Accounts' && data.account_name) {
+                        try {
+                            const account = await getAccount(data.account_name);
+                            setCompanyData(account);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setCompanyData(null);
+                    }
+
                     setLoading(false);
                 })
                 .catch((err) => {
@@ -128,7 +176,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     {call.title}
                                 </Typography>
                                 <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {call.call_for} with {call.lead_name}
+                                    {(call.call_for === 'Contact' ? 'Client' : call.call_for === 'Accounts' ? 'Company' : call.call_for)} with {call.lead_name}
                                 </Typography>
                             </Box>
                             <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
@@ -139,7 +187,118 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                             </Box>
                         </Box>
 
-                        <Divider sx={{ borderStyle: 'dashed' }} />
+                        {/* Lead Information */}
+                        {leadData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Lead" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {leadData.lead_name}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => navigate(`/leads/${leadData.name}/view`)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {leadData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
+
+                        {/* Client Information */}
+                        {clientData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Client" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {clientData.first_name} {clientData.last_name || ''}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setOpenClientDetails(true)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {clientData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
+
+                        {/* Company Information */}
+                        {companyData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Company" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            borderRadius: 2,
+                                            bgcolor: 'rgb(222 242 255 / 20%)',
+                                            border: (t) => `1px solid ${t.palette.divider}`,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {companyData.account_name}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setOpenCompanyDetails(true)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {companyData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
+
+                      
 
                         {/* General Information */}
                         <Box>
@@ -151,8 +310,10 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 }}
                             >
-                                <DetailItem label="Subject" value={call.title} fullWidth />
-                                <DetailItem label="Call For" value={call.call_for} icon="solar:user-bold" />
+                                <Box sx={{ p: 3, bgcolor: 'rgb(222 242 255 / 20%)', border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 2, gridColumn: '1 / -1', mb: 2 }}>
+                                    <DetailItem label="Subject" value={call.title} fullWidth />
+                                </Box>
+                                <DetailItem label="Call For" value={call.call_for === 'Contact' ? 'Client' : call.call_for === 'Accounts' ? 'Company' : call.call_for} icon="solar:user-bold" />
                                 <DetailItem label="Reference" value={call.lead_name} icon="solar:link-bold" />
                                 <DetailItem label="Start Time" value={call.call_start_time ? new Date(call.call_start_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
                                 <DetailItem label="End Time" value={call.call_end_time ? new Date(call.call_end_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
@@ -160,8 +321,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                             </Box>
                         </Box>
 
-                        <Divider sx={{ borderStyle: 'dashed' }} />
-
+                        
                         {/* Discussion */}
                         <Box>
                             <SectionHeader title="Call Discussion" />
@@ -193,6 +353,27 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                     </Box>
                 )}
             </DialogContent>
+            {clientData && (
+                <ContactDetailsDialog
+                    open={openClientDetails}
+                    onClose={() => {
+                        setOpenClientDetails(false);
+                        onClose();
+                    }}
+                    contactId={clientData.name}
+                />
+            )}
+
+            {companyData && (
+                <AccountDetailsDialog
+                    open={openCompanyDetails}
+                    onClose={() => {
+                        setOpenCompanyDetails(false);
+                        onClose();
+                    }}
+                    accountId={companyData.name}
+                />
+            )}
         </Dialog>
     );
 }
@@ -257,11 +438,10 @@ function DetailItem({
                     variant="caption"
                     sx={{
                         color: 'text.secondary',
-                        fontWeight: 800,
+                        fontWeight: 700,
                         textTransform: 'uppercase',
-                        letterSpacing: 0.5,
                         display: 'block',
-                        mb: 0.25,
+                        mb: 0.5,
                     }}
                 >
                     {label}

@@ -19,6 +19,8 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 function DetailRow({ label, value, mono = false }: { label: string; value?: any; mono?: boolean }) {
@@ -48,6 +50,10 @@ export function MetaAppsDetailsView() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+    
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_apps;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_apps ? !!user?.permissions?.actions?.meta_apps?.edit : true;
 
     const [app, setApp] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -121,14 +127,16 @@ export function MetaAppsDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/lead-integration/meta-apps/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        Edit
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/lead-integration/meta-apps/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

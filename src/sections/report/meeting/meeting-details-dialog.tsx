@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Dialog from '@mui/material/Dialog';
@@ -9,10 +10,16 @@ import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getLead } from 'src/api/leads';
 import { getMeeting } from 'src/api/meetings';
+import { getContact } from 'src/api/contacts';
+import { getAccount } from 'src/api/accounts';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { ContactDetailsDialog } from 'src/sections/report/contact/contact-details-dialog';
+import { AccountDetailsDialog } from 'src/sections/report/account/account-details-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -23,15 +30,56 @@ type Props = {
 };
 
 export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
+    const navigate = useNavigate();
     const [meeting, setMeeting] = useState<any>(null);
+    const [leadData, setLeadData] = useState<any>(null);
+    const [clientData, setClientData] = useState<any>(null);
+    const [companyData, setCompanyData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
+    const [openClientDetails, setOpenClientDetails] = useState(false);
+    const [openCompanyDetails, setOpenCompanyDetails] = useState(false);
 
     useEffect(() => {
         if (open && meetingId) {
             setLoading(true);
             getMeeting(meetingId)
-                .then((data) => {
+                .then(async (data) => {
                     setMeeting(data);
+                    
+                    // Fetch reference details based on meet_for field
+                    if (data.meet_for === 'Lead' && data.lead_name) {
+                        try {
+                            const lead = await getLead(data.lead_name);
+                            setLeadData(lead);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setLeadData(null);
+                    }
+
+                    if (data.meet_for === 'Contact' && data.contact_name) {
+                        try {
+                            const contact = await getContact(data.contact_name);
+                            setClientData(contact);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setClientData(null);
+                    }
+
+                    if (data.meet_for === 'Accounts' && data.accounts_name) {
+                        try {
+                            const account = await getAccount(data.accounts_name);
+                            setCompanyData(account);
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    } else {
+                        setCompanyData(null);
+                    }
+
                     setLoading(false);
                 })
                 .catch((err) => {
@@ -99,7 +147,113 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                             </Box>
                         </Box>
 
-                        <Divider sx={{ borderStyle: 'dashed' }} />
+                        {/* Lead Information */}
+                        {leadData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Lead" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: 'background.neutral',
+                                            borderRadius: 2,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {leadData.lead_name}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => navigate(`/leads/${leadData.name}/view`)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {leadData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
+
+                        {/* Client Information */}
+                        {clientData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Client" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: 'background.neutral',
+                                            borderRadius: 2,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {clientData.first_name} {clientData.last_name || ''}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setOpenClientDetails(true)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {clientData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
+
+                        {/* Company Information */}
+                        {companyData && (
+                            <>
+                                <Box>
+                                    <SectionHeader title="Company" />
+                                    <Box
+                                        sx={{
+                                            p: 3,
+                                            bgcolor: 'background.neutral',
+                                            borderRadius: 2,
+                                            position: 'relative',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                                                {companyData.account_name}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => setOpenCompanyDetails(true)}
+                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                            >
+                                                <Iconify icon="solar:eye-bold" width={20} />
+                                            </IconButton>
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            ID: {companyData.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </>
+                        )}
 
                         {/* General Information */}
                         <Box>
@@ -111,7 +265,9 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                     gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                 }}
                             >
-                                <DetailItem label="Subject" value={meeting.title} fullWidth />
+                                <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2, gridColumn: '1 / -1' }}>
+                                    <DetailItem label="Subject" value={meeting.title} fullWidth />
+                                </Box>
                                 <DetailItem label="Enter ID" value={meeting.enter_id} icon="solar:hashtag-bold" />
                                 <DetailItem label="Meet For" value={meeting.meet_for} icon="solar:user-bold" />
                                 <DetailItem label="Reference" value={meeting.meet_for === 'Lead' ? meeting.lead_name : meeting.meet_for === 'Contact' ? meeting.contact_name : meeting.accounts_name || '-'} icon="solar:link-bold" />
@@ -125,8 +281,6 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                 <DetailItem label="Owner" value={meeting.owner} icon="solar:user-rounded-bold" />
                             </Box>
                         </Box>
-
-                        <Divider sx={{ borderStyle: 'dashed' }} />
 
                         {/* Notes */}
                         <Box>
@@ -154,6 +308,27 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                     </Box>
                 )}
             </DialogContent>
+            {clientData && (
+                <ContactDetailsDialog
+                    open={openClientDetails}
+                    onClose={() => {
+                        setOpenClientDetails(false);
+                        onClose();
+                    }}
+                    contactId={clientData.name}
+                />
+            )}
+
+            {companyData && (
+                <AccountDetailsDialog
+                    open={openCompanyDetails}
+                    onClose={() => {
+                        setOpenCompanyDetails(false);
+                        onClose();
+                    }}
+                    accountId={companyData.name}
+                />
+            )}
         </Dialog>
     );
 }

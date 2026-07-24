@@ -27,6 +27,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
@@ -49,6 +51,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function EmailTemplateCategoryView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_template_category;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.email_template_category ? !!user?.permissions?.actions?.email_template_category?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.email_template_category ? !!user?.permissions?.actions?.email_template_category?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.email_template_category ? !!user?.permissions?.actions?.email_template_category?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -197,14 +205,16 @@ export function EmailTemplateCategoryView() {
         <Typography variant="h4" flexGrow={1}>
           Email Template Category
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Email Template Category
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Email Template Category
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -252,6 +262,8 @@ export function EmailTemplateCategoryView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

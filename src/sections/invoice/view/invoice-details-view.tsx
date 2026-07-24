@@ -54,6 +54,8 @@ import { getInvoice, deleteInvoice, getInvoicePrintUrl } from 'src/api/invoice';
 
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export function InvoiceDetailsView() {
@@ -63,6 +65,11 @@ export function InvoiceDetailsView() {
     const navigate = useNavigate();
 
     const [invoice, setInvoice] = useState<any>(null);
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice;
+    const canEditInvoice = hasCustomPerms ? !!user?.permissions?.actions?.invoice?.edit : true;
+    const canDeleteInvoice = hasCustomPerms ? !!user?.permissions?.actions?.invoice?.delete : true;
+    const canCreateCollection = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice_collection ? !!user?.permissions?.actions?.invoice_collection?.create : true;
     const [itemNames, setItemNames] = useState<Record<string, string>>({});
     const [accountName, setAccountName] = useState<string>('');
     const [bankAccountDetails, setBankAccountDetails] = useState<any>(null);
@@ -268,7 +275,7 @@ export function InvoiceDetailsView() {
                     >
                         Print
                     </Button>
-                    {received_amount === 0 && (
+                    {received_amount === 0 && canDeleteInvoice && (
                         <Button
                             variant="contained"
                             color="error"
@@ -279,7 +286,7 @@ export function InvoiceDetailsView() {
                             Delete
                         </Button>
                     )}
-                    {received_amount === 0 && (
+                    {received_amount === 0 && canEditInvoice && (
                         <Button
                             variant="contained"
                             onClick={() => router.push(`/invoices/${encodeURIComponent(id || '')}/edit`)}
@@ -296,7 +303,7 @@ export function InvoiceDetailsView() {
                             Edit Invoice
                         </Button>
                     )}
-                    {(balance_amount || 0) > 0 && (
+                    {(balance_amount || 0) > 0 && canCreateCollection && (
                         <Button
                             variant="contained"
                             onClick={() => router.push(`/invoice-collections/new?invoice=${encodeURIComponent(id || '')}`)}

@@ -26,6 +26,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ProjectDialog } from '../project-dialog';
 import { ProjectTableRow } from '../project-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -49,7 +51,15 @@ const SORT_OPTIONS = [
 
 // ----------------------------------------------------------------------
 
+
 export function ProjectView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.project;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateProject = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditProject = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteProject = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -132,14 +142,16 @@ export function ProjectView() {
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Project List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Project
-        </Button>
+        {canCreateProject && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Project
+          </Button>
+        )}
       </Stack>
 
       <Card>
@@ -190,6 +202,8 @@ export function ProjectView() {
                         onViewRow={() => handleViewRow(row.name)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
                         onSelectRow={() => {}}
+                        canEdit={canEditProject}
+                        canDelete={canDeleteProject}
                       />
                     ))}
 

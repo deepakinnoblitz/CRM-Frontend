@@ -13,6 +13,7 @@ import { fDate } from 'src/utils/format-time';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 const getStatusStyle = (status: string) => {
@@ -71,10 +72,11 @@ type ProposalTableRowProps = {
     onView: () => void;
     onEdit: () => void;
     onDelete: () => void;
-    onPrint: () => void;
-    onPreview: () => void;
+    onPrint?: (id: string) => void;
+    onPreview?: (id: string) => void;
     canEdit?: boolean;
     canDelete?: boolean;
+    canView?: boolean;
     hideCheckbox?: boolean;
     index?: number;
 };
@@ -90,9 +92,16 @@ export function ProposalTableRow({
     onPreview,
     canEdit = true,
     canDelete = true,
+    canView = true,
     hideCheckbox = false,
     index,
 }: ProposalTableRowProps) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.proposal;
+
+    const displayView = hasCustomPerms ? !!user?.permissions?.actions?.proposal?.view : canView;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.proposal?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.proposal?.delete : canDelete;
     const { id } = row;
 
     return (
@@ -219,15 +228,17 @@ export function ProposalTableRow({
             {/* Actions */}
             <TableCell align="right">
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <IconButton onClick={onView} sx={{ color: 'info.main' }} title="View">
-                        <Iconify icon={'solar:eye-bold' as any} />
-                    </IconButton>
-                    {canEdit && (
+                    {displayView && (
+                        <IconButton onClick={onView} sx={{ color: 'info.main' }} title="View">
+                            <Iconify icon={'solar:eye-bold' as any} />
+                        </IconButton>
+                    )}
+                    {displayEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }} title="Edit">
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {displayDelete && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }} title="Delete">
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

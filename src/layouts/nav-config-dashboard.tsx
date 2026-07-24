@@ -1,20 +1,20 @@
 import { CgNotes } from "react-icons/cg";
-import { TbReport } from "react-icons/tb";
 import { GoTasklist } from "react-icons/go";
 import { RxCalendar } from "react-icons/rx";
 import { PiMoneyWavy } from "react-icons/pi";
 import { BiPurchaseTag } from "react-icons/bi";
 import { IoHomeOutline } from "react-icons/io5";
 import { IoMdFolderOpen } from "react-icons/io";
-import { FiList , FiUserPlus } from "react-icons/fi";
+import { FiList, FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
 import { HiOutlineSpeakerphone } from "react-icons/hi";
-import { FaMeta, FaBuildingUser, FaLink } from "react-icons/fa6";
-import { BsFillBellFill , BsCalendar4Range } from "react-icons/bs";
-import { FaTasks , FaWhatsapp ,  FaHandshake } from "react-icons/fa";
-import { MdContacts ,  MdOutlineLaptopWindows } from "react-icons/md";
-import { RiAppsLine ,  RiUserAddLine , RiMailSendLine, RiCalendarScheduleLine } from "react-icons/ri";
-import { LuUsersRound , LuCalendarCheck2 , LuFileSpreadsheet , LuUserRoundSearch } from "react-icons/lu";
+import { TbReport, TbTargetArrow } from "react-icons/tb";
+import { FaMeta, FaLink, FaBuildingUser } from "react-icons/fa6";
+import { BsFillBellFill, BsCalendar4Range } from "react-icons/bs";
+import { FaTasks, FaWhatsapp, FaHandshake } from "react-icons/fa";
+import { MdContacts, MdOutlineLaptopWindows } from "react-icons/md";
+import { RiAppsLine, RiUserAddLine, RiMailSendLine, RiCalendarScheduleLine  } from "react-icons/ri";
+import { LuUsersRound, LuCalendarCheck2, LuFileSpreadsheet, LuUserRoundSearch } from "react-icons/lu";
 
 import { Iconify } from 'src/components/iconify';
 
@@ -178,6 +178,7 @@ export const hrNavData = [
       { title: 'Asset Category', path: '/asset-category' },
       { title: 'Criteria Category', path: '/performance-criteria-category' },
       { title: 'Designation', path: '/designation' },
+      { title: 'Blood Group', path: '/blood-group' },
       { title: 'Salary Component', path: '/salary-structure-component' },
       { title: 'Leave Type', path: '/leave-type' },
     ],
@@ -273,121 +274,6 @@ export const employeeNavData = [
   },
 ];
 
-// ----------------------  Sales NavBar ---------------------------------------------------
-export const salesNavData = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
-  },
-  {
-    title: 'Purchases',
-    path: '/purchase',
-    icon: <Iconify icon={"solar:bag-bold-duotone" as any} />,
-  },
-  {
-    title: 'Purchase Settlements',
-    path: '/purchase-collections',
-    icon: <Iconify icon={"solar:wad-of-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Expense Tracker',
-    path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
-    children: [
-      { title: 'Purchase Report', path: '/reports/purchase' },
-      { title: 'Estimation Report', path: '/reports/estimation' },
-      { title: 'Invoice Report', path: '/reports/invoice' },
-      { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
-      { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
-    ]
-  }
-];
-
-
-// ----------------------  CRM NavBar ---------------------------------------------------
-export const crmNavData = [
-  {
-    title: 'Dashboard',
-    path: '/',
-    icon: <Iconify icon={"solar:widget-5-bold-duotone" as any} />,
-  },
-  {
-    title: 'Expense Tracker',
-    path: '/crm-expense-tracker',
-    icon: <Iconify icon={"solar:wallet-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Leads',
-    path: '/leads',
-    icon: <Iconify icon={"solar:target-bold-duotone" as any} />,
-  },
-  {
-    title: 'Contacts',
-    path: '/contacts',
-    icon: <Iconify icon={"solar:users-group-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'Accounts',
-    path: '/accounts',
-    icon: <Iconify icon={"solar:buildings-2-bold-duotone" as any} />,
-  },
-  {
-    title: 'Proposal',
-    path: '/proposals',
-    icon: <RiMailSendLine size={22} />,
-  },
-  {
-    title: 'Deals',
-    path: '/deals',
-    icon: <Iconify icon={"solar:hand-money-bold-duotone" as any} />,
-  },
-  {
-    title: 'Events',
-    path: '/events',
-    icon: <Iconify icon={"solar:calendar-mark-bold-duotone" as any} />,
-  },
-  {
-    title: 'Calls',
-    path: '/calls',
-    icon: <Iconify icon={"solar:phone-calling-rounded-bold-duotone" as any} />,
-  },
-  {
-    title: 'ToDo',
-    path: '/todo',
-    icon: <Iconify icon={"solar:list-bold-duotone" as any} />,
-  },
-  {
-    title: 'Meetings',
-    path: '/meetings',
-    icon: <Iconify icon={"solar:videocamera-record-bold-duotone" as any} />,
-  },
-  {
-    title: 'Reports',
-    path: '/reports',
-    icon: <Iconify icon={"solar:chart-square-bold-duotone" as any} />,
-    children: [
-      { title: 'Lead Report', path: '/reports/lead' },
-      { title: 'Clients Report', path: '/reports/contact' },
-      { title: 'Company Report', path: '/reports/account' },
-      { title: 'Calls Report', path: '/reports/calls' },
-      { title: 'Meeting Report', path: '/reports/meeting' },
-      { title: 'Proposal Report', path: '/reports/proposal' },
-      { title: 'Prospects Report', path: '/reports/prospects' }
-    ]
-  },
-  {
-    title: 'Chat',
-    path: '/chat',
-    icon: <Iconify icon={"solar:chat-round-dots-bold-duotone" as any} />,
-  },
-];
-
 // ----------------------  CRM and Sales NavBar ---------------------------------------------------
 export const crmAndSalesNavData = [
   {
@@ -426,7 +312,12 @@ export const crmAndSalesNavData = [
     icon: <BiPurchaseTag size={22} />,
   },
   {
-    title: 'Expense Tracker',
+    title: 'Sales Target Entry',
+    path: '/sales-target-entry',
+    icon: <TbTargetArrow size={22} />,
+  },
+  {
+    title: 'CRM Expense Tracker',
     path: '/crm-expense-tracker',
     icon: <HiOutlineCreditCard size={22} />,
   },
@@ -454,7 +345,7 @@ export const crmAndSalesNavData = [
     children: [
       { title: 'WhatsApp Templates', path: '/whatsapp-templates' },
       { title: 'WhatsApp Campaigns', path: '/whatsapp-campaigns' },
-      { title: 'WhatsApp Automation', path: '/whatsapp-automation' },
+      { title: 'WhatsApp Automations', path: '/whatsapp-automation' },
       { title: 'WhatsApp Settings', path: '/whatsapp-settings' },
     ],
   },
@@ -463,8 +354,8 @@ export const crmAndSalesNavData = [
     path: '/lead-integration/meta-apps',
     icon: <FaLink size={22} />,
     children: [
-      { 
-        title: 'Meta Integration', 
+      {
+        title: 'Meta Integration',
         path: '/lead-integration/meta-apps',
         icon: <FaMeta size={18} />,
         children: [
@@ -484,6 +375,8 @@ export const crmAndSalesNavData = [
     icon: <IoMdFolderOpen size={22} />,
     children: [
       { title: 'Lead From', path: '/master/lead-from' },
+      { title: 'Call Status', path: '/master/call-status' },
+      { title: 'Meeting Status', path: '/master/meeting-status' },
       { title: 'Service', path: '/master/service' },
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
@@ -509,6 +402,7 @@ export const crmAndSalesNavData = [
       { title: 'Estimation Report', path: '/reports/estimation' },
       { title: 'Invoice Report', path: '/reports/invoice' },
       { title: 'Purchase Report', path: '/reports/purchase' },
+      { title: 'Sales Target Entry Report', path: '/reports/sales-target-entry' },
       { title: 'Invoice Collection Summary', path: '/reports/invoice-collection' },
       { title: 'Purchase Settlement Report', path: '/reports/purchase-settlement' }
     ]
@@ -538,47 +432,95 @@ export function hasValidRole(roles: string[] = []): boolean {
   return hasValid;
 }
 
-export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?: any) {
+export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any) {
+  const roles: string[] = user?.roles || [];
   const mergedNav: NavItem[] = [];
   const seenPaths = new Set<string>();
 
-  const addItems = (data: NavItem[]) => {
-    data.forEach((item) => {
-      // Clone the item to avoid mutating the original data
-      const itemClone = {
-        ...item,
-        ...(item.children && {
-          children: item.children.map((child) => ({ ...child })),
-        }),
+  const filterItem = (item: NavItem): NavItem | null => {
+    // Check permission for current item
+    if (user?.permissions?.custom_permissions_assigned) {
+      const getFormattedKey = (title: string) => {
+        const lower = title.trim().toLowerCase();
+        if (lower === 'company expenses') return 'expense_tracker';
+        if (lower === 'expense tracker') return 'crm_expenses';
+        if (lower === 'expenses') return 'expense_tracker'; // HR parent fallback
+        if (lower === 'asset list') return 'asset_list';
+        if (lower === 'asset assignments') return 'asset_assignments';
+        if (lower === 'asset requests') return 'asset_requests';
+        if (lower === 'reimbursement claim list') return 'reimbursement_claims';
+        if (lower === 'employee evaluation') return 'employee_evaluation';
+        if (lower === 'badges') return 'badges';
+        if (lower === 'employee monthly award') return 'employee_monthly_award';
+        if (lower === 'job opening list') return 'job_openings';
+        if (lower === 'job applicant list') return 'job_applicants';
+        if (lower === 'interview list') return 'interviews';
+        if (lower === 'employee referral list') return 'employee_referrals';
+        if (lower === 'attendance list') return 'attendance_list';
+        if (lower === 'daily log') return 'daily_log';
+        if (lower === 'wfh attendance') return 'wfh_attendance';
+        if (lower === 'sales target entry') return 'sales_target_entry';
+        return lower.replace(/\s+/g, '_');
       };
 
-      // Sidebar visibility filtering
-      if (itemClone.children) {
-        itemClone.children = itemClone.children.filter(child => {
-          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return false;
-          if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return false;
-          if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return false;
-          if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return false;
-          return true;
-        });
-        // If a group item like 'Attendance Records' or 'Report' has no children left, hide it
-        if (['Attendance Records', 'Report'].includes(itemClone.title) && itemClone.children.length === 0) return;
+      const moduleKey = getFormattedKey(item.title || '');
+      const menuMapping = user?.permissions?.menu_mapping || {};
+      const checkKey = menuMapping[moduleKey] || moduleKey;
+
+      const menus = user?.permissions?.menus || {};
+      
+      // If we explicitly set this menu to false, block it
+      if (menus[moduleKey] === false || menus[checkKey] === false) {
+        return null;
       }
+    }
 
-      // Handle top-level items (mostly for Employee View)
-      if ((itemClone.title === 'Attendance List' || itemClone.title === 'My Attendance') && settings?.show_attendance_list === 0) return;
-      if ((itemClone.title === 'Daily Log' || itemClone.title === 'My Daily Log' || itemClone.title === 'My Activity Log') && settings?.show_daily_log === 0) return;
-      if ((itemClone.title === 'Attendance Report' || itemClone.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return;
-      if ((itemClone.title === 'Daily Log Report' || itemClone.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return;
+    // Clone item
+    const itemClone: NavItem = {
+      ...item,
+      ...(item.children && {
+        children: item.children.map((child: any) => ({ ...child })),
+      }),
+    };
 
-      if (!seenPaths.has(itemClone.path)) {
-        mergedNav.push(itemClone);
-        seenPaths.add(itemClone.path);
+    // Filter children recursively
+    if (itemClone.children) {
+      itemClone.children = itemClone.children
+        .map((child: any) => {
+          if ((child.title === 'Attendance List' || child.title === 'My Attendance') && settings?.show_attendance_list === 0) return null;
+          if ((child.title === 'Daily Log' || child.title === 'My Daily Log' || child.title === 'My Activity Log') && settings?.show_daily_log === 0) return null;
+          if ((child.title === 'Attendance Report' || child.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return null;
+          if ((child.title === 'Daily Log Report' || child.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return null;
+
+          return filterItem(child);
+        })
+        .filter((c): c is NonNullable<typeof c> => c !== null);
+
+      if (itemClone.children.length === 0) return null;
+    }
+
+    // Top level settings check
+    if ((itemClone.title === 'Attendance List' || itemClone.title === 'My Attendance') && settings?.show_attendance_list === 0) return null;
+    if ((itemClone.title === 'Daily Log' || itemClone.title === 'My Daily Log' || itemClone.title === 'My Activity Log') && settings?.show_daily_log === 0) return null;
+    if ((itemClone.title === 'Attendance Report' || itemClone.title === 'My Attendance Report') && settings?.show_attendance_report === 0) return null;
+    if ((itemClone.title === 'Daily Log Report' || itemClone.title === 'My Daily Log Report') && settings?.show_daily_log_report === 0) return null;
+
+    return itemClone;
+  };
+
+  const addItems = (data: NavItem[]) => {
+    data.forEach((item) => {
+      const filtered = filterItem(item);
+      if (!filtered) return;
+
+      if (!seenPaths.has(filtered.path)) {
+        mergedNav.push(filtered);
+        seenPaths.add(filtered.path);
       } else {
-        const existingItem = mergedNav.find((i) => i.path === itemClone.path);
-        if (existingItem && itemClone.children && existingItem.children) {
+        const existingItem = mergedNav.find((i) => i.path === filtered.path);
+        if (existingItem && filtered.children && existingItem.children) {
           const childPaths = new Set(existingItem.children.map((c) => c.path));
-          itemClone.children.forEach((child) => {
+          filtered.children.forEach((child) => {
             if (!childPaths.has(child.path)) {
               existingItem.children!.push({ ...child });
             }
@@ -652,16 +594,6 @@ export function getNavData(roles: string[] = [], view?: 'HR' | 'CRM', settings?:
         }
       }
       addItems(processedEmployeeNav);
-      hasCustomRole = true;
-    }
-
-    if (hasRole('Sales')) {
-      addItems(salesNavData);
-      hasCustomRole = true;
-    }
-
-    if (hasRole('CRM User')) {
-      addItems(crmNavData);
       hasCustomRole = true;
     }
 

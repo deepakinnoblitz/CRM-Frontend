@@ -76,7 +76,7 @@ export function DashboardLayout({
   const { view } = useDashboardView();
 
   const { navData } = useMemo(() => {
-    const result = getNavData(user?.roles, view, settings);
+    const result = getNavData(user, view, settings);
     const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr'].includes(r.toLowerCase()))
         ? 'hr'
         : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');

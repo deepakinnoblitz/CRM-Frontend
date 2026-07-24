@@ -84,6 +84,11 @@ const TABS = [
 
 export function EmployeeEvaluationView() {
   const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.employee_evaluation;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateEvaluation = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditEvaluation = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteEvaluation = hasCustomPerms ? !!actionPerms?.delete : true;
 
   const isAdminOrManager = user?.roles.some(role =>
     ['Administrator', 'HR', 'System Manager'].includes(role)
@@ -260,7 +265,7 @@ export function EmployeeEvaluationView() {
         ))}
       </Tabs>
 
-      {!hideTabs && currentTab !== 'logs' && (
+      {!hideTabs && currentTab !== 'logs' && canCreateEvaluation && (
         <Stack direction="row" spacing={1}>
           {currentTab !== 'automation' && (
             <Button

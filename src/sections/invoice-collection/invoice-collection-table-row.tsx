@@ -10,6 +10,8 @@ import IconButton from '@mui/material/IconButton';
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+import { useAuth } from 'src/auth/auth-context';
+
 const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
   const formatted = fCurrency(amount);
   if (!formatted) return '—';
@@ -53,6 +55,10 @@ export function InvoiceCollectionTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice_collection;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.invoice_collection?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.invoice_collection?.delete : true;
     return (
         <TableRow
             hover
@@ -122,12 +128,12 @@ export function InvoiceCollectionTableRow({
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-                    {isLatest && (
+                    {isLatest && displayEdit && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {isLatest && (
+                    {isLatest && displayDelete && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

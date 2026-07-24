@@ -50,6 +50,8 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export function EstimationDetailsView() {
@@ -59,6 +61,13 @@ export function EstimationDetailsView() {
     const location = useLocation();
 
     const backUrl = location.state?.from || '/reports/estimation';
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.estimation;
+    const canEdit = hasCustomPerms ? !!user?.permissions?.actions?.estimation?.edit : true;
+    const canDelete = hasCustomPerms ? !!user?.permissions?.actions?.estimation?.delete : true;
+    
+    const canCreateInvoice = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.create : true;
 
     const [estimation, setEstimation] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -275,46 +284,52 @@ export function EstimationDetailsView() {
                     >
                         Print
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => setConfirmOpen(true)}
-                        startIcon={<IoMdSwap size={20} />}
-                        disabled={converting}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#02c281',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#007850' }
-                        }}
-                    >
-                        {converting ? 'Converting...' : 'Convert to Invoice'}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={() => setConfirmDeleteOpen(true)}
-                        startIcon={<IoMdTrash size={20} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
-                    >
-                        Delete
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => router.push(`/estimations/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {canCreateInvoice &&(
+                        <Button
+                            variant="contained"
+                            onClick={() => setConfirmOpen(true)}
+                            startIcon={<IoMdSwap size={20} />}
+                            disabled={converting}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#02c281',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#007850' }
+                            }}
+                        >
+                            {converting ? 'Converting...' : 'Convert to Invoice'}
+                        </Button>
+                    )}
+                    {canDelete && (
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => setConfirmDeleteOpen(true)}
+                            startIcon={<IoMdTrash size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none' }}
+                        >
+                            Delete
+                        </Button>
+                    )}
+                    {canEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/estimations/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

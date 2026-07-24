@@ -34,6 +34,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { AccountTableRow } from '../account-table-row';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
@@ -46,6 +48,7 @@ import { LeadTableToolbar as AccountTableToolbar } from '../../lead/lead-table-t
 // ----------------------------------------------------------------------
 
 export function AccountView() {
+    const { user } = useAuth();
     const [accounts, setAccounts] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(0);
@@ -87,6 +90,10 @@ export function AccountView() {
 
     // Permissions
     const [permissions, setPermissions] = useState({ read: false, write: false, delete: false });
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.company;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.company?.create : permissions.write;
+    const displayImport = hasCustomPerms ? !!user?.permissions?.actions?.company?.import : permissions.write;
 
     // Snackbar state
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -457,7 +464,7 @@ export function AccountView() {
                     Company
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1 }}>
-                    {permissions.write && (
+                    {displayImport && (
                         <Button
                             variant="contained"
                             startIcon={<IoMdCloudDownload size={20} />}
@@ -467,7 +474,7 @@ export function AccountView() {
                             Import
                         </Button>
                     )}
-                    {permissions.write && (
+                    {displayCreate && (
                         <Button
                             variant="contained"
                             startIcon={<Iconify icon="mingcute:add-line" />}
@@ -564,7 +571,7 @@ export function AccountView() {
                                                 <TableCell colSpan={8} sx={{py:10}}>
                                                     <EmptyContent
                                                         title="No Company found"
-                                                        description="Create a new account to manage your business relationships."
+                                                        description="Create a new company to manage your business relationships."
                                                         icon="solar:buildings-bold-duotone"
                                                     />
                                                 </TableCell>
@@ -776,7 +783,7 @@ export function AccountView() {
                 open={confirmDelete.open}
                 onClose={() => setConfirmDelete({ open: false, id: null })}
                 title="Confirm Delete"
-                content="Are you sure you want to delete this account?"
+                content="Are you sure you want to delete this company?"
                 action={
                     <Button
                         variant="contained"

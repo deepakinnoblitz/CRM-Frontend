@@ -48,7 +48,16 @@ const SORT_OPTIONS = [
 
 // ----------------------------------------------------------------------
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function ClaimTypeView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.claim_type;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreate = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEdit = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDelete = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -118,14 +127,16 @@ export function ClaimTypeView() {
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Claim Type List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Claim Type
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Claim Type
+          </Button>
+        )}
       </Stack>
 
       <Card>
@@ -174,6 +185,8 @@ export function ClaimTypeView() {
                         onEditRow={() => handleEditRow(row.name)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
                         onSelectRow={() => {}}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

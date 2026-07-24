@@ -13,6 +13,8 @@ import Tooltip, { tooltipClasses, TooltipProps } from '@mui/material/Tooltip';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 const StyledTooltip = styled(({ className, ...props }: TooltipProps) => (
@@ -80,6 +82,15 @@ export function DealTableRow({
     index,
 }: Props) {
     const navigate = useNavigate();
+    const { user } = useAuth();
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned;
+
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.delete : canDelete;
+    
+    // Quick-create actions driven by target doctype create permission
+    const displayEstimationCreate = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.create : true;
+    const displayInvoiceCreate = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.create : true;
 
     const getStageColor = (stage: string) => {
         switch (stage) {
@@ -213,33 +224,37 @@ export function DealTableRow({
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
 
-                    <StyledTooltip title="Create Estimation" placement="top" arrow>
-                        <IconButton
-                            onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
-                            sx={{
-                                color: '#10B981',
-                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
-                            }}
-                        >
-                            <GrDocumentTime size={20} />
-                        </IconButton>
-                    </StyledTooltip>
+                    {displayEstimationCreate && (
+                        <StyledTooltip title="Create Estimation" placement="top" arrow>
+                            <IconButton
+                                onClick={() => navigate(`/estimations/new?deal_id=${encodeURIComponent(row.id)}`)}
+                                sx={{
+                                    color: '#10B981',
+                                    transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                    '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#10B981', 0.08) }
+                                }}
+                            >
+                                <GrDocumentTime size={20} />
+                            </IconButton>
+                        </StyledTooltip>
+                    )}
 
-                    <StyledTooltip title="Create Invoice" placement="top" arrow>
-                        <IconButton
-                            onClick={() => navigate(`/invoices/new?deal_id=${encodeURIComponent(row.id)}`)}
-                            sx={{
-                                color: '#D97706',
-                                transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
-                                '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
-                            }}
-                        >
-                            <GrDocumentVerified size={20} />
-                        </IconButton>
-                    </StyledTooltip>
+                    {displayInvoiceCreate && (
+                        <StyledTooltip title="Create Invoice" placement="top" arrow>
+                            <IconButton
+                                onClick={() => navigate(`/invoices/new?deal_id=${encodeURIComponent(row.id)}`)}
+                                sx={{
+                                    color: '#D97706',
+                                    transition: (theme) => theme.transitions.create(['transform'], { duration: theme.transitions.duration.shorter }),
+                                    '&:hover': { transform: 'scale(1.2)', bgcolor: (theme) => alpha('#D97706', 0.08) }
+                                }}
+                            >
+                                <GrDocumentVerified size={20} />
+                            </IconButton>
+                        </StyledTooltip>
+                    )}
 
-                    {canEdit && (
+                    {displayEdit && (
                         <IconButton
                             onClick={onEdit}
                             sx={{
@@ -250,7 +265,7 @@ export function DealTableRow({
                         </IconButton>
                     )}
 
-                    {canDelete && (
+                    {displayDelete && (
                         <IconButton
                             onClick={onDelete}
                             sx={{

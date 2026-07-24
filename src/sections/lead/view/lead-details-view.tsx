@@ -24,12 +24,14 @@ import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Grid from '@mui/material/Grid';
+import Menu from '@mui/material/Menu';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
@@ -40,6 +42,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
 import { handleFrappeError } from 'src/utils/api-error-handler';
 
 import { getToDo } from 'src/api/todo';
@@ -47,7 +50,7 @@ import { getCall } from 'src/api/calls';
 import { CONFIG } from 'src/config-global';
 import { getMeeting } from 'src/api/meetings';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
+import { getDoc, getLead, saveLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -56,6 +59,9 @@ import TodoDialog from 'src/sections/todo/todo-dialog';
 import CallDialog from 'src/sections/calls/call-dialog';
 import MeetingDialog from 'src/sections/meetings/meeting-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
+import LeadNoteDialog from '../lead-note-dialog';
 import { LeadConvertDialog } from '../lead-convert-dialog';
 import { WhatsappChatDialog } from './whatsapp_chat_dialog';
 import { LeadFollowupDetails } from '../lead-followup-details';
@@ -65,7 +71,6 @@ import { EmailAutomationDialog } from '../email-automation-dialog';
 import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
-
 
 // ----------------------------------------------------------------------
 
@@ -80,9 +85,32 @@ const getClipPath = (index: number, total: number) => {
 };
 
 export function LeadDetailsView() {
+    const { user } = useAuth();
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+
+    const leadPerms = user?.permissions?.actions?.lead;
+    const hasCustomLead = !!user?.permissions?.custom_permissions_assigned && !!leadPerms;
+    const canEditLead = hasCustomLead ? !!leadPerms?.edit : true;
+
+    const eventsPerms = user?.permissions?.actions?.calendar;
+    const hasCustomEvents = !!user?.permissions?.custom_permissions_assigned && !!eventsPerms;
+    const canCreateFollowup = hasCustomEvents ? !!eventsPerms?.create : true;
+    const canViewFollowups = hasCustomEvents ? !!eventsPerms?.view : true;
+
+    const proposalPerms = user?.permissions?.actions?.proposal;
+    const hasCustomProposal = !!user?.permissions?.custom_permissions_assigned && !!proposalPerms;
+    const canCreateProposal = hasCustomProposal ? !!proposalPerms?.create : true;
+    const canViewProposals = hasCustomProposal ? !!proposalPerms?.view : true;
+
+    const clientPerms = user?.permissions?.actions?.clients;
+    const hasCustomClient = !!user?.permissions?.custom_permissions_assigned && !!clientPerms;
+    const canCreateClient = hasCustomClient ? !!clientPerms?.create : true;
+
+    const companyPerms = user?.permissions?.actions?.company;
+    const hasCustomCompany = !!user?.permissions?.custom_permissions_assigned && !!companyPerms;
+    const canCreateCompany = hasCustomCompany ? !!clientPerms?.create : true;
 
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
     const [automationData, setAutomationData] = useState<any>(null);
@@ -124,6 +152,86 @@ export function LeadDetailsView() {
     const [followupLoading, setFollowupLoading] = useState(false);
 
     const [proposalHistory, setProposalHistory] = useState([]);
+
+    // Lead Notes States
+    const [openNoteDialog, setOpenNoteDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<any>(null);
+    const [openNoteDeleteConfirm, setOpenNoteDeleteConfirm] = useState(false);
+    const [noteToDelete, setNoteToDelete] = useState<any>(null);
+    const [noteMenuAnchorEl, setNoteMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [activeMenuNote, setActiveMenuNote] = useState<any>(null);
+    const [showNotes, setShowNotes] = useState(false);
+
+    const handleOpenNoteMenu = useCallback((event: React.MouseEvent<HTMLElement>, note: any) => {
+        setNoteMenuAnchorEl(event.currentTarget);
+        setActiveMenuNote(note);
+    }, []);
+
+    const handleCloseNoteMenu = useCallback(() => {
+        setNoteMenuAnchorEl(null);
+        setActiveMenuNote(null);
+    }, []);
+
+    const handleSaveNote = useCallback(async (title: string, description: string) => {
+        if (!lead) return;
+        
+        let updatedNotes = [];
+        if (selectedNote && selectedNote.name) {
+            // Edit mode
+            updatedNotes = (lead.lead_notes || []).map((n: any) => 
+                n.name === selectedNote.name ? { ...n, title, description } : n
+            );
+        } else {
+            // Create mode
+            updatedNotes = [...(lead.lead_notes || []), { title, description }];
+        }
+        
+        await saveLead({ ...lead, lead_notes: updatedNotes });
+        
+        setSnackbar({
+            open: true,
+            message: selectedNote ? 'Note updated successfully' : 'Note added successfully',
+            severity: 'success'
+        });
+        
+        // Refresh lead details
+        const refreshedLead = await getLead(lead.name);
+        setLead(refreshedLead);
+    }, [lead, selectedNote]);
+
+    const handleDeleteNoteClick = useCallback((note: any) => {
+        setNoteToDelete(note);
+        setOpenNoteDeleteConfirm(true);
+        handleCloseNoteMenu();
+    }, [handleCloseNoteMenu]);
+
+    const handleConfirmDeleteNote = useCallback(async () => {
+        if (!lead || !noteToDelete) return;
+        
+        setOpenNoteDeleteConfirm(false);
+        try {
+            const updatedNotes = (lead.lead_notes || []).filter((n: any) => n.name !== noteToDelete.name);
+            await saveLead({ ...lead, lead_notes: updatedNotes });
+            
+            setSnackbar({
+                open: true,
+                message: 'Note deleted successfully',
+                severity: 'success'
+            });
+            
+            const refreshedLead = await getLead(lead.name);
+            setLead(refreshedLead);
+        } catch (err: any) {
+            console.error('Failed to delete note:', err);
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to delete note',
+                severity: 'error'
+            });
+        } finally {
+            setNoteToDelete(null);
+        }
+    }, [lead, noteToDelete]);
 
     // Follow-up creation states
     const theme = useTheme();
@@ -510,9 +618,10 @@ export function LeadDetailsView() {
     const TABS = [
         { value: 'general', label: 'General' },
         { value: 'convert', label: 'Convert Lead' },
-        { value: 'followups', label: 'Followups' },
+        ...(canViewFollowups ? [{ value: 'followups', label: 'Followups' }] : []),
         { value: 'pipeline', label: 'Stage History' },
-        { value: 'proposal', label: 'Proposals' },
+        ...(canViewProposals ? [{ value: 'proposal', label: 'Proposals' }] : []),
+        { value: 'notes', label: 'Notes' },
     ];
 
     if (loading) {
@@ -571,38 +680,42 @@ export function LeadDetailsView() {
                         Go Back
                     </Button>
 
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon="solar:calendar-add-bold" />}
-                        onClick={() => setOpenTypeDialog(true)}
-                        sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: '#0e9f6e' }}
-                    >
-                        Create Follow-up
-                    </Button>
+                    {canCreateFollowup && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon="solar:calendar-add-bold" />}
+                            onClick={() => setOpenTypeDialog(true)}
+                            sx={{ borderRadius: 1.5, fontWeight: 700, bgcolor: '#0e9f6e' }}
+                        >
+                            Create Follow-up
+                        </Button>
+                    )}
 
-                    <Button
-                        variant="contained"
-                        color="success"
-                        onClick={() => {
-                            router.push(`/proposals/new?lead=${lead.name}`);
-                        }}
-                        startIcon={
-                            <RiMailSendLine />
-                        }
-                        sx={{
-                            bgcolor: '#9625d3ff',
-                            color: '#fff',
-                            borderRadius: 1.5,
-                            fontWeight: 700,
-                            textTransform: 'none',
-                            px: 2.5,
-                            '&:hover': {
+                    {canCreateProposal && (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            onClick={() => {
+                                router.push(`/proposals/new?lead=${lead.name}`);
+                            }}
+                            startIcon={
+                                <RiMailSendLine />
+                            }
+                            sx={{
                                 bgcolor: '#9625d3ff',
-                            },
-                        }}
-                    >
-                        Create Proposal
-                    </Button>
+                                color: '#fff',
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                px: 2.5,
+                                '&:hover': {
+                                    bgcolor: '#9625d3ff',
+                                },
+                            }}
+                        >
+                            Create Proposal
+                        </Button>
+                    )}
                     <Button
                         variant="contained"
                         color="success"
@@ -632,88 +745,90 @@ export function LeadDetailsView() {
             </Stack>
 
             {/* Stage Tracker Bar */}
-            <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
-                <Box sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    overflowX: 'auto',
-                    flexGrow: 1,
-                    py: 0.5,
-                    px: 0.5,
-                    scrollbarWidth: 'none',
-                    msOverflowStyle: 'none',
-                    '&::-webkit-scrollbar': {
-                        display: 'none',
-                    },
-                }}>
-                    {(() => {
-                        const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
-                        const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
-                        const currentActiveStage = selectedStage || effectiveLeadStage;
-                        const activeIndex = stages.findIndex(s => s === currentActiveStage);
+                <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
+                    <Box sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        overflowX: 'auto',
+                        flexGrow: 1,
+                        py: 0.5,
+                        px: 0.5,
+                        scrollbarWidth: 'none',
+                        msOverflowStyle: 'none',
+                        '&::-webkit-scrollbar': {
+                            display: 'none',
+                        },
+                    }}>
+                        {(() => {
+                            const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
+                            const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
+                            const currentActiveStage = selectedStage || effectiveLeadStage;
+                            const activeIndex = stages.findIndex(s => s === currentActiveStage);
 
-                        return stages.map((stage: string, index: number) => {
-                            const isCompletedOrActive = index <= activeIndex;
-                            const isActive = stage === currentActiveStage;
+                            return stages.map((stage: string, index: number) => {
+                                const isCompletedOrActive = index <= activeIndex;
+                                const isActive = stage === currentActiveStage;
 
-                            return (
-                                <Box
-                                    key={stage}
-                                    onClick={() => setSelectedStage(stage)}
-                                    sx={{
-                                        height: 46,
-                                        display: 'flex',
-                                        flex: '1 1 0',
-                                        minWidth: { xs: 100, md: 92 },
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        px: 1,
-                                        ml: index === 0 ? 0 : '-10px',
-                                        cursor: 'pointer',
-                                        userSelect: 'none',
-                                        clipPath: getClipPath(index, stages.length),
-                                        bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
-                                        color: isCompletedOrActive ? 'common.white' : '#4c545a',
-                                        fontWeight: isActive ? 800 : 600,
-                                        fontSize: { xs: 11, md: 11.5 },
-                                        lineHeight: 1.15,
-                                        textAlign: 'center',
-                                        transition: 'all 0.2s',
-                                        whiteSpace: 'pre-line',
-                                        position: 'relative',
-                                        zIndex: stages.length - index,
-                                        '&:hover': {
-                                            opacity: 0.88,
-                                        }
-                                    }}
-                                >
-                                    <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
-                                        {stage}
-                                    </Typography>
-                                </Box>
-                            );
-                        });
-                    })()}
-                </Box>
-                <Button
-                    variant="contained"
-                    disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
-                    onClick={handleStageUpdateClick}
-                    sx={{
-                        height: 36,
-                        borderRadius: 1.5,
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: '#2081C3',
-                        color: 'common.white',
-                        minWidth: 130,
-                        '&:hover': { bgcolor: '#1a699f' },
-                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
-                    }}
-                >
-                    {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
-                </Button>
-            </Card>
+                                return (
+                                    <Box
+                                        key={stage}
+                                        onClick={() => setSelectedStage(stage)}
+                                        sx={{
+                                            height: 46,
+                                            display: 'flex',
+                                            flex: '1 1 0',
+                                            minWidth: { xs: 100, md: 92 },
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            px: 1,
+                                            ml: index === 0 ? 0 : '-10px',
+                                            cursor: 'pointer',
+                                            userSelect: 'none',
+                                            clipPath: getClipPath(index, stages.length),
+                                            bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
+                                            color: isCompletedOrActive ? 'common.white' : '#4c545a',
+                                            fontWeight: isActive ? 800 : 600,
+                                            fontSize: { xs: 11, md: 11.5 },
+                                            lineHeight: 1.15,
+                                            textAlign: 'center',
+                                            transition: 'all 0.2s',
+                                            whiteSpace: 'pre-line',
+                                            position: 'relative',
+                                            zIndex: stages.length - index,
+                                            '&:hover': {
+                                                opacity: 0.88,
+                                            }
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
+                                            {stage}
+                                        </Typography>
+                                    </Box>
+                                );
+                            });
+                        })()}
+                    </Box>
+                    {canEditLead &&(
+                        <Button
+                            variant="contained"
+                            disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
+                            onClick={handleStageUpdateClick}
+                            sx={{
+                                height: 36,
+                                borderRadius: 1.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: '#2081C3',
+                                color: 'common.white',
+                                minWidth: 130,
+                                '&:hover': { bgcolor: '#1a699f' },
+                                '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                            }}
+                        >
+                            {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
+                        </Button>
+                    )}
+                </Card>
 
             {/* Premium Header Banner */}
             <Box
@@ -876,45 +991,63 @@ export function LeadDetailsView() {
                 </Box>
             </Box>
 
-            {/* Tabs */}
-            <Box
-                sx={{
-                    borderBottom: 1,
-                    borderColor: 'divider',
-                    bgcolor: 'background.paper',
-                    borderRadius: '12px 12px 0 0',
-                    mb: 0,
-                }}
-            >
-                <Tabs
-                    value={currentTab}
-                    onChange={(e, newValue) => setCurrentTab(newValue)}
-                    sx={{ px: 2.5 }}
+            {/* Grid layout containing left column (details & tabs) and right column (notes) */}
+            <Grid container spacing={3}>
+                <Grid 
+                    size={{ xs: 12, md: showNotes ? 8.4 : 12 }}
+                    sx={{ 
+                        transition: (themeVar) => themeVar.transitions.create(['width', 'flex-basis', 'max-width'], {
+                            duration: themeVar.transitions.duration.shorter,
+                        })
+                    }}
                 >
-                    {TABS.map((tab) => (
-                        <Tab
-                            key={tab.value}
-                            value={tab.value}
-                            label={tab.label}
-                            iconPosition="start"
-                            sx={{ minHeight: 48, fontWeight: 700 }}
-                        />
-                    ))}
-                </Tabs>
-            </Box>
+                    <Card
+                        sx={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%',
+                            borderRadius: 2.5,
+                            border: (themeVar) => `1px solid ${themeVar.palette.mode === 'light' ? '#E2EAF5' : alpha(themeVar.palette.primary.main, 0.16)}`,
+                            bgcolor: 'background.paper',
+                            boxShadow: 'none',
+                        }}
+                    >
+                        {/* Tabs */}
+                        <Box
+                            sx={{
+                                borderBottom: 1,
+                                borderColor: 'divider',
+                            }}
+                        >
+                        <Tabs
+                            value={currentTab}
+                            onChange={(e, newValue) => {
+                                setCurrentTab(newValue);
+                                setShowNotes(newValue === 'notes');
+                            }}
+                            sx={{ px: 2.5 }}
+                        >
+                            {TABS.map((tab) => (
+                                <Tab
+                                    key={tab.value}
+                                    value={tab.value}
+                                    label={tab.label}
+                                    iconPosition="start"
+                                    sx={{ minHeight: 48, fontWeight: 700 }}
+                                />
+                            ))}
+                        </Tabs>
+                    </Box>
 
             {/* Tab Content */}
             <Box
                 sx={{
-                    bgcolor: 'background.paper',
-                    borderRadius: '0 0 12px 12px',
                     p: 4,
-                    border:  `1px solid ${theme.palette.divider}`,
-                    borderTop: 0,
+                    flexGrow: 1,
                 }}
             >
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {currentTab === 'general' && (
+                    {(currentTab === 'general' || currentTab === 'notes') && (
                         <>
                             {/* General Information */}
                             <Box sx={{ margin: 2 }}>
@@ -1026,7 +1159,7 @@ export function LeadDetailsView() {
                         </Box>
                     )}
 
-                    {currentTab === 'followups' && (
+                    {currentTab === 'followups' && canViewFollowups && (
                         <LeadFollowupDetails
                             title="Followup History"
                             list={followupHistory}
@@ -1034,7 +1167,7 @@ export function LeadDetailsView() {
                         />
                     )}
 
-                    {currentTab === 'proposal' && (
+                    {currentTab === 'proposal' && canViewProposals && (
                         <LeadProposalDetails
                             title="Proposal List"
                             list={proposalHistory}
@@ -1133,23 +1266,168 @@ export function LeadDetailsView() {
                                     <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, maxWidth: 400, mx: 'auto' }}>
                                         Convert this lead into a permanent Client and Company record in the CRM.
                                     </Typography>
-                                    <Button
-                                        variant="contained"
-                                        size="large"
-                                        color="primary"
-                                        startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
-                                        onClick={() => setOpenConvertDialog(true)}
-                                        disabled={converting}
-                                        sx={{ px: 4, height: 48, fontWeight: 800 }}
-                                    >
-                                        {converting ? 'Converting...' : 'Convert Lead Now'}
-                                    </Button>
+                                    {canCreateClient && canCreateCompany &&(
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            color="primary"
+                                            startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
+                                            onClick={() => setOpenConvertDialog(true)}
+                                            disabled={converting}
+                                            sx={{ px: 4, height: 48, fontWeight: 800 }}
+                                        >
+                                            {converting ? 'Converting...' : 'Convert Lead Now'}
+                                        </Button>
+                                    )}
+                                    {!canCreateClient && !canCreateCompany &&(
+                                        <Typography variant="body1" sx={{ color: '#ff0010', mb: 4, maxWidth: 400, mx: 'auto', fontWeight: 600 }}>
+                                            Permission denied. You cannot convert this lead.
+                                        </Typography>
+                                    )}
                                 </Box>
                             )}
                         </Box>
                     )}
                 </Box>
             </Box>
+            </Card>
+            </Grid>
+
+            {showNotes && (
+                <Grid size={{ xs: 12, md: 3.6 }}>
+                    <Card
+                        sx={{
+                            p: 3,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            height: '100%',
+                            minHeight: 400,
+                            borderRadius: 2.5,
+                            border: (themeVar) => `1px solid ${themeVar.palette.mode === 'light' ? '#E2EAF5' : alpha(themeVar.palette.primary.main, 0.16)}`,
+                            bgcolor: 'background.paper',
+                            boxShadow: 'none',
+                        }}
+                    >
+                        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                Lead Notes
+                            </Typography>
+                            {canEditLead &&(
+                                <Button
+                                    variant="contained"
+                                    onClick={() => {
+                                        setSelectedNote(null);
+                                        setOpenNoteDialog(true);
+                                    }}
+                                    sx={{
+                                        borderRadius: 5.5,
+                                        fontWeight: 700,
+                                        textTransform: 'none',
+                                        px: 2.1,
+                                        height: 32,
+                                        bgcolor: '#2081C3',
+                                        color: '#fff',
+                                        fontSize: '0.8125rem',
+                                        letterSpacing: 0.2,
+                                        '&:hover': { bgcolor: '#1a699f' },
+                                        boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
+                                    }}
+                                >
+                                    Add Note
+                                </Button>
+                            )}
+
+                        </Stack>
+
+                        <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 800, pr: 0.5 }}>
+                            {!lead.lead_notes || lead.lead_notes.length === 0 ? (
+                                <Box sx={{ py: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Iconify icon="solar:notes-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 2, opacity: 0.24 }} />
+                                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                        No notes added yet
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', mt: 0.5 }}>
+                                        Click &quot;Add Note&quot; to create a note.
+                                    </Typography>
+                                </Box>
+                            ) : (
+                                <Stack spacing={2}>
+                                    {[...lead.lead_notes].reverse().map((note: any, index: number) => (
+                                        <Card 
+                                            key={note.name || index} 
+                                        sx={(() => {
+                                                const palettes = [
+                                                    { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },  // yellow
+                                                    { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },  // blue
+                                                    { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },  // green
+                                                    { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },  // purple
+                                                ];
+                                                const p = palettes[index % palettes.length];
+                                                return {
+                                                    p: 2.5,
+                                                    borderRadius: 1.5,
+                                                    position: 'relative',
+                                                    boxShadow: 'none',
+                                                    border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                    bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                };
+                                            })()}
+                                        >
+                                            <IconButton
+                                                size="small"
+                                                onClick={(e) => handleOpenNoteMenu(e, note)}
+                                                sx={{ position: 'absolute', top: 12, right: 12, color: 'text.disabled' }}
+                                            >
+                                                <Iconify icon="eva:more-vertical-fill" width={18} />
+                                            </IconButton>
+
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, pr: 4, color: 'text.primary' }}>
+                                                {note.title}
+                                            </Typography>
+                                            
+                                            {note.description && (
+                                                <Box 
+                                                    dangerouslySetInnerHTML={{ __html: note.description }} 
+                                                    sx={{ 
+                                                        typography: 'body2', 
+                                                        color: 'text.secondary', 
+                                                        mt: 1,
+                                                        wordBreak: 'break-word',
+                                                        '& p': { margin: 0 },
+                                                        '& ul, & ol': { pl: 2, my: 0.5 }
+                                                    }} 
+                                                />
+                                            )}
+                                            
+                                            {(note.creation || note.owner) && (
+                                                <Stack
+                                                    direction="row"
+                                                    alignItems="center"
+                                                    justifyContent="space-between"
+                                                    mt={1.5}
+                                                >
+                                                    {note.creation ? (
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                            {fDateTime(note.creation)}
+                                                        </Typography>
+                                                    ) : <span />}
+
+                                                    {note.owner && (
+                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                            {note.owner}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            )}
+                                        </Card>
+                                    ))}
+                                </Stack>
+                            )}
+                        </Box>
+                    </Card>
+                </Grid>
+            )}
+            </Grid>
 
             <AccountDetailsDialog
                 open={openAccount}
@@ -1410,6 +1688,78 @@ export function LeadDetailsView() {
                     }}
                 />
             )}
+            {/* Note Dialogs & Menus */}
+            <LeadNoteDialog
+                open={openNoteDialog}
+                onClose={() => {
+                    setOpenNoteDialog(false);
+                    setSelectedNote(null);
+                }}
+                selectedNote={selectedNote}
+                onSave={handleSaveNote}
+            />
+
+            <ConfirmDialog
+                open={openNoteDeleteConfirm}
+                onClose={() => {
+                    setOpenNoteDeleteConfirm(false);
+                    setNoteToDelete(null);
+                }}
+                title="Confirm Delete"
+                content="Are you sure you want to delete this note? This action cannot be undone."
+                icon="solar:trash-bin-trash-bold"
+                iconColor="error.main"
+                action={
+                    <Button onClick={handleConfirmDeleteNote} color="error" variant="contained" sx={{ borderRadius: 1.5, minWidth: 100 }}>
+                        Delete
+                    </Button>
+                }
+            />
+
+            <Menu
+                anchorEl={noteMenuAnchorEl}
+                open={Boolean(noteMenuAnchorEl)}
+                onClose={handleCloseNoteMenu}
+                onClick={(e) => e.stopPropagation()}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{
+                    paper: {
+                        sx: { width: 140 }
+                    }
+                }}
+            >
+                <MenuItem
+                    onClick={() => {
+                        setSelectedNote(activeMenuNote);
+                        setOpenNoteDialog(true);
+                        handleCloseNoteMenu();
+                    }}
+                    sx={{
+                        gap: 1.5,
+                        typography: 'body2',
+                        fontWeight: 600,
+                        color: 'info.main',
+                        '& svg': { color: 'inherit' }
+                    }}
+                >
+                    <Iconify icon="solar:pen-bold" width={18} />
+                    Edit
+                </MenuItem>
+                <MenuItem
+                    onClick={() => handleDeleteNoteClick(activeMenuNote)}
+                    sx={{
+                        gap: 1.5,
+                        typography: 'body2',
+                        fontWeight: 600,
+                        color: 'error.main',
+                        '& svg': { color: 'inherit' }
+                    }}
+                >
+                    <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+                    Delete
+                </MenuItem>
+            </Menu>
         </DashboardContent>
     );
 }

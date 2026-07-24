@@ -94,6 +94,12 @@ const Android12Switch = styled(Switch)(({ theme }) => ({
 
 export function ReimbursementClaimsView() {
     const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.reimbursement_claim_list || user?.permissions?.actions?.my_reimbursement_claim || user?.permissions?.actions?.reimbursement_claims;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canCreateClaim = hasCustomPerms ? !!actionPerms?.create : true;
+    const canEditClaim = hasCustomPerms ? !!actionPerms?.edit : true;
+    const canDeleteClaim = hasCustomPerms ? !!actionPerms?.delete : true;
+
     const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager', 'hr user', 'accounts manager'].includes(r.toLowerCase()))
         ? 'hr'
         : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
@@ -306,7 +312,7 @@ export function ReimbursementClaimsView() {
             const fullData = await getReimbursementClaim(row.name);
             setViewClaim(fullData);
             setOpenView(true);
-            
+
             // Mark as read for HR
             markAsRead('Reimbursement Claim', row.name).then(() => {
                 window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
@@ -346,7 +352,7 @@ export function ReimbursementClaimsView() {
         try {
             await applyReimbursementClaimWorkflowAction(id, action);
             setSnackbar({ open: true, message: `Claim ${action}ed successfully`, severity: 'success' });
-            
+
             // Mark as read for HR
             markAsRead('Reimbursement Claim', id).then(() => {
                 window.dispatchEvent(new CustomEvent('REFRESH_UNREAD_COUNTS'));
@@ -736,13 +742,13 @@ export function ReimbursementClaimsView() {
     };
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Reimbursement Claims
                 </Typography>
 
-                {permissions.write && (
+                {permissions.write && canCreateClaim && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}
@@ -831,12 +837,12 @@ export function ReimbursementClaimsView() {
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
                                                 onApplyAction={(action) => handleApplyAction(row.name, action)}
-                                                canEdit={permissions.write && (
+                                                canEdit={permissions.write && canEditClaim && (
                                                     (isHR && row.employee !== user?.employee) ||
                                                     (row.workflow_state === 'Clarification Requested') ||
                                                     (row.workflow_state === 'Submitted' && row.employee === user?.employee)
                                                 )}
-                                                canDelete={permissions.delete}
+                                                canDelete={permissions.delete && canDeleteClaim}
                                                 isHR={isHR}
                                             />
                                         ))}
@@ -1212,6 +1218,7 @@ export function ReimbursementClaimsView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 claim={viewClaim}
+                canEdit={canEditClaim}
                 onRefresh={refetch}
             />
 

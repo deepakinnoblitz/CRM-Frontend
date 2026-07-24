@@ -29,6 +29,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { TableEmptyRows } from '../../lead/table-empty-rows';
 import CRMExpenseTrackerDialog from '../crm-expense-tracker-dialog';
@@ -74,6 +76,12 @@ export default function CRMExpenseTrackerView() {
     const [currentData, setCurrentData] = useState<any>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
 
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.crm_expenses;
+    const canCreateExpense = hasCustomPerms && user?.permissions?.actions?.crm_expenses ? !!user?.permissions?.actions?.crm_expenses?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.crm_expenses?.delete : true;
+    const showActions = displayEdit || displayDelete;
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
@@ -200,20 +208,23 @@ export default function CRMExpenseTrackerView() {
     const empty = !loading && !data.length && !filterName && !canReset;
 
     return (
-        <DashboardContent maxWidth={false} sx={{mt: 2}}>
+        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Box sx={{ mb: 5, display: 'flex', alignItems: 'center' }}>
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Expense Tracker
                 </Typography>
 
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => handleOpenDialog()}
-                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                    Add Expense Tracker
-                </Button>
+                {canCreateExpense && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => handleOpenDialog()}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        Add Expense Tracker
+                    </Button>
+                )}
+
             </Box>
 
             <CRMExpenseTrackerStatsCards stats={stats} />
@@ -249,7 +260,9 @@ export default function CRMExpenseTrackerView() {
                                     { id: 'type', label: 'Type' },
                                     { id: 'date_time', label: 'Date' },
                                     { id: 'amount', label: 'Amount' },
-                                    { id: 'actions', label: 'Actions', align: 'right' },
+                                    ...(showActions
+                                        ? [{ id: 'actions', label: 'Actions', align: 'right' as const }]
+                                        : []),
                                 ]}
                             />
                             <TableBody>

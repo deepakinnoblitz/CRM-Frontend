@@ -36,6 +36,8 @@ import { LeadTableHead as SalarySlipTableHead } from 'src/sections/lead/lead-tab
 import { LeadTableToolbar as SalarySlipTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { SalarySlipDetailsDialog } from 'src/sections/report/salary-slips/salary-slip-details-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import SalarySlipCreateDialog from '../salary-slip-create-dialog';
 import { SalarySlipEditDialog } from '../salary-slip-edit-dialog';
 import { SalarySlipFiltersDrawer } from '../salary-slip-filters-drawer';
@@ -52,6 +54,12 @@ const SORT_OPTIONS = [
 ];
 
 export function SalarySlipsView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.salary_slips || user?.permissions?.actions?.my_salary_slip);
+    const actionPerms = user?.permissions?.actions?.salary_slips || user?.permissions?.actions?.my_salary_slip;
+    const canCreateSalarySlip = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditSalarySlip = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteSalarySlip = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
 
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -126,14 +134,14 @@ export function SalarySlipsView() {
             }
         };
         const checkRoleAndEmployee = async () => {
-            const user = await getCurrentUserInfo();
-            if (user) {
-                if (user.roles) {
+            const userInfo = await getCurrentUserInfo();
+            if (userInfo) {
+                if (userInfo.roles) {
                     const hrRoles = ['HR Manager', 'HR User', 'System Manager', 'Administrator'];
-                    setIsHR(user.roles.some((role: string) => hrRoles.includes(role)));
+                    setIsHR(userInfo.roles.some((role: string) => hrRoles.includes(role)));
                 }
-                if (user.employee) {
-                    setCurrentEmployeeId(user.employee);
+                if (userInfo.employee) {
+                    setCurrentEmployeeId(userInfo.employee);
                 }
             }
         };
@@ -339,7 +347,7 @@ export function SalarySlipsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
                 <Typography variant="h4">Salary Slips</Typography>
 
-                {isHR && (
+                {isHR && canCreateSalarySlip && (
                     <Stack direction="row" spacing={1}>
                         <Button
                             variant="outlined"
@@ -443,6 +451,8 @@ export function SalarySlipsView() {
                                                 onEdit={() => handleEditRow(row)}
                                                 onSubmit={() => handleSubmitRow(row.name)}
                                                 onDelete={() => handleDeleteRow(row.name)}
+                                                canEdit={canEditSalarySlip}
+                                                canDelete={canDeleteSalarySlip}
                                                 isHR={isHR}
                                             />
                                         ))}

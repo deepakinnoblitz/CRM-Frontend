@@ -48,12 +48,20 @@ import { getPurchase, deletePurchase, getPurchasePrintUrl, getDoctypeList } from
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export function PurchaseDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase;
+    const canEditPurchase = hasCustomPerms ? !!user?.permissions?.actions?.purchase?.edit : true;
+    const canDeletePurchase = hasCustomPerms ? !!user?.permissions?.actions?.purchase?.delete : true;
+    const canCreateCollection = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase_collection ? !!user?.permissions?.actions?.purchase_collection?.create : true;
 
     const [purchase, setPurchase] = useState<any>(null);
     const [contactDetails, setContactDetails] = useState<any>(null);
@@ -212,7 +220,7 @@ export function PurchaseDetailsView() {
                     >
                         Go Back
                     </Button>
-                    {paid_amount === 0 && (
+                    {paid_amount === 0 && canDeletePurchase && (
                         <Button
                             variant="contained"
                             color="error"
@@ -223,7 +231,7 @@ export function PurchaseDetailsView() {
                             Delete
                         </Button>
                     )}
-                    {paid_amount === 0 && (
+                    {paid_amount === 0 && canEditPurchase &&(
                         <Button
                             variant="contained"
                             color="primary"
@@ -241,7 +249,7 @@ export function PurchaseDetailsView() {
                             Edit Purchase
                         </Button>
                     )}
-                    {(balance_amount || 0) >= 0 && (
+                    {(balance_amount || 0) >= 0 && canCreateCollection && (
                         <Button
                             variant="contained"
                             onClick={() => router.push(`/purchase-collections/new?purchase=${encodeURIComponent(id || '')}`)}

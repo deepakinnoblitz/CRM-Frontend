@@ -59,7 +59,16 @@ import { JobOpeningsTableFiltersDrawer } from 'src/sections/job-openings/job-ope
 
 const filter = createFilterOptions<any>();
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function JobOpeningsView() {
+    const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.job_opening_list;
+    const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canCreateJobOpening = hasCustomPerms ? !!actionPerms?.create : true;
+    const canEditJobOpening = hasCustomPerms ? !!actionPerms?.edit : true;
+    const canDeleteJobOpening = hasCustomPerms ? !!actionPerms?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -380,7 +389,7 @@ export function JobOpeningsView() {
         <DashboardContent maxWidth={false} sx={{mt: 2}}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5 }}>
                 <Typography variant="h4">Job Openings</Typography>
-                {permissions.write && (
+                {permissions.write && canCreateJobOpening && (
                     <Button
                         variant="contained"
                         sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
@@ -459,8 +468,8 @@ export function JobOpeningsView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditJobOpening}
+                                                canDelete={permissions.delete && canDeleteJobOpening}
                                             />
                                         ))}
 

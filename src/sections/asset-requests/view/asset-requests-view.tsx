@@ -108,6 +108,12 @@ const PRIORITY_COLORS: Record<string, 'default' | 'warning' | 'error' | 'info'> 
 
 export function AssetRequestsView() {
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.asset_requests;
+    const actionPerms = user?.permissions?.actions?.asset_requests;
+    const canCreateAssetRequest = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditAssetRequest = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteAssetRequest = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
     const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr', 'hr manager', 'hr user', 'accounts manager'].includes(r.toLowerCase()))
         ? 'hr'
         : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
@@ -474,17 +480,19 @@ export function AssetRequestsView() {
                 <Typography variant="h4" sx={{ flexGrow: 1 }}>
                     Asset Requests
                 </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => {
-                        setOpenSubmit(true);
-                        if (isHR) setRequestType('Declaration');
-                    }}
-                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                    {isHR ? 'New Declaration' : 'New Request'}
-                </Button>
+                {canCreateAssetRequest && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => {
+                            setOpenSubmit(true);
+                            if (isHR) setRequestType('Declaration');
+                        }}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {isHR ? 'New Declaration' : 'New Request'}
+                    </Button>
+                )}
             </Box>
 
             {/* Tabs — HR sees both, employees see only theirs */}
@@ -1008,7 +1016,7 @@ export function AssetRequestsView() {
                                                                         <Iconify icon="solar:eye-bold" />
                                                                     </Badge>
                                                                 </IconButton>
-                                                                {row.status === 'Pending Approval' && (
+                                                                {row.status === 'Pending Approval' && canEditAssetRequest && (
                                                                     <IconButton
                                                                         size="small"
                                                                         onClick={(e) => {
@@ -1496,6 +1504,7 @@ export function AssetRequestsView() {
                 }}
                 requestName={selectedRequestName}
                 isHR={!!isHR}
+                canEdit={canEditAssetRequest}
                 onApprove={(req) => handleAction(req, 'approve')}
                 onReject={(req) => handleAction(req, 'reject')}
             />

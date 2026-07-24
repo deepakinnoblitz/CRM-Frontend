@@ -57,6 +57,10 @@ import { AttendanceDetailsDialog } from '../../report/attendance/attendance-deta
 export function AttendanceView() {
     const { user } = useAuth();
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.attendance_list;
+    const canCreateAttendace = hasCustomPerms && user?.permissions?.actions?.attendance_list ? !!user?.permissions?.actions?.attendance_list?.create : true;
+    const canImportAttendace = hasCustomPerms && user?.permissions?.actions?.attendance_list ? !!user?.permissions?.actions?.attendance_list?.import : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -545,21 +549,26 @@ export function AttendanceView() {
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     {isHR && permissions.write && (
                         <>
-                            <Button
-                                variant="outlined"
-                                startIcon={<Iconify icon="solar:import-bold-duotone" />}
-                                onClick={handleOpenImport}
-                            >
-                                Import
-                            </Button>
-                            <Button
-                                variant="contained"
-                                startIcon={<Iconify icon="mingcute:add-line" />}
-                                onClick={handleOpenCreate}
-                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                            >
-                                Mark Attendance
-                            </Button>
+                            {canImportAttendace &&(
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                                    onClick={handleOpenImport}
+                                >
+                                    Import
+                                </Button>
+                            )}
+                            
+                            {canCreateAttendace &&(
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Iconify icon="mingcute:add-line" />}
+                                    onClick={handleOpenCreate}
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                                >
+                                    Mark Attendance
+                                </Button>
+                            )}
                         </>
                     )}
                 </Box>

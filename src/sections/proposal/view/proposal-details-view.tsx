@@ -48,6 +48,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = ['Draft', 'Sent', 'Approved', 'Rejected', 'Expired'];
@@ -98,6 +99,12 @@ export function ProposalDetailsView() {
     }>({ open: false, message: '', severity: 'success' });
 
     const decodedId = decodeURIComponent(id || '');
+
+    const { user } = useAuth();
+
+    const proposalPerms = user?.permissions?.actions?.proposal;
+    const hasCustomLead = !!user?.permissions?.custom_permissions_assigned && !!proposalPerms;
+    const canEditProposal = hasCustomLead ? !!proposalPerms?.edit : true;
 
     useEffect(() => {
         if (id) {
@@ -205,21 +212,23 @@ export function ProposalDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => router.push(`/proposals/${encodeURIComponent(decodedId)}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {canEditProposal &&(
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/proposals/${encodeURIComponent(decodedId)}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -300,6 +309,7 @@ export function ProposalDetailsView() {
                         );
                     })}
                 </Box>
+                {canEditProposal &&(
                 <Button
                     variant="contained"
                     disabled={!selectedStatus || selectedStatus === proposal.status || updatingStatus}
@@ -319,6 +329,7 @@ export function ProposalDetailsView() {
                 >
                     {updatingStatus ? <CircularProgress size={20} color="inherit" /> : 'Update Status'}
                 </Button>
+                )}
             </Card>
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>

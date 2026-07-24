@@ -31,6 +31,8 @@ import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 import { EmailCampaignTableToolbar } from 'src/sections/email-campaigns/email-campaign-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { EmailCampaignTableRow } from '../email-campaign-table-row';
 import { EmailCampaignTableFiltersDrawer } from '../email-campaign-table-filters-drawer';
 
@@ -53,6 +55,12 @@ export function EmailCampaignsListView() {
     const [filters, setFilters] = useState({ status: 'all', target_type: 'all' });
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [deleting, setDeleting] = useState(false);
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_campaigns;
+    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.email_campaigns ? !!user?.permissions?.actions?.email_campaigns?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.delete : true;
 
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' | 'info' | 'warning' }>({
         open: false,
@@ -166,14 +174,16 @@ export function EmailCampaignsListView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Email Campaigns</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                    onClick={() => router.push('/email-campaigns/new')}
-                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                    New Campaign
-                </Button>
+                {canCreateCampaign && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                        onClick={() => router.push('/email-campaigns/new')}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        New Campaign
+                    </Button>
+                )}
             </Stack>
 
             <Card>
@@ -225,8 +235,8 @@ export function EmailCampaignsListView() {
                                                 onView={() => handleViewRow(row.name)}
                                                 onEdit={() => handleEditRow(row.name)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit
-                                                canDelete
+                                                canEdit={displayEdit}
+                                                canDelete={displayDelete}
                                             />
                                         ))}
 

@@ -23,7 +23,7 @@ import {
     FaMapMarkerAlt,
     FaMedal,
     FaUser,
-    FaWallet, 
+    FaWallet,
 } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
@@ -269,9 +269,9 @@ export function MyProfileView() {
                                         const dep = (employee.department || '').trim();
                                         const validDes = des && des !== '-';
                                         const validDep = dep && dep !== '-';
-                                        
+
                                         if (!validDes && !validDep) return null;
-                                        
+
                                         const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
                                         return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
                                     })()}
@@ -321,6 +321,8 @@ export function MyProfileView() {
                                     <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
                                     <DetailItem label="Status" value={employee.status} icon={FaInfoCircle} />
                                     <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
+                                    <DetailItem label="Blood Group" value={employee.blood_group} icon={FaHeartbeat} />
+                                    <DetailItem label="Sex" value={employee.sex} icon={FaUser} />
                                 </Box>
                             </Box>
 

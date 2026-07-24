@@ -16,6 +16,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getEmailSettings, saveEmailSettings, getEmailAccountOptions, EmailSettings } from 'src/api/email-settings';
 
+import { useAuth } from 'src/auth/auth-context';
+
 export const CustomSwitch = styled((props: SwitchProps) => (
     <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
 ))(({ theme }) => ({
@@ -66,6 +68,11 @@ export const CustomSwitch = styled((props: SwitchProps) => (
 
 export function EmailSettingsView() {
     const { enqueueSnackbar } = useSnackbar();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_settings;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.email_settings?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_settings?.edit : true;
+    
     const [settings, setSettings] = useState<Partial<EmailSettings>>({
         default_email_account: '',
         max_emails_per_batch: 100,
@@ -114,6 +121,8 @@ export function EmailSettingsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Email Settings</Typography>
                 <Stack direction="row" spacing={2}>
+                    
+                    {displayEdit && displayCreate &&(
                     <Button 
                         variant="contained" 
                         onClick={handleSave}
@@ -121,6 +130,7 @@ export function EmailSettingsView() {
                     >
                         Save Settings
                     </Button>
+                    )}
                 </Stack>
             </Stack>
 

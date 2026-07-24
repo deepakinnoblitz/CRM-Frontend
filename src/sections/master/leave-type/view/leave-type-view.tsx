@@ -26,6 +26,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { LeaveTypeDialog } from '../leave-type-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeaveTypeTableRow } from '../leave-type-table-row';
@@ -54,6 +56,13 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function LeaveTypeView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.leave_type;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreate = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEdit = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDelete = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -141,14 +150,16 @@ export function LeaveTypeView() {
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Leave Type List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Leave Type
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Leave Type
+          </Button>
+        )}
       </Stack>
 
       <Card>
@@ -199,6 +210,8 @@ export function LeaveTypeView() {
                         onEditRow={() => handleEditRow(row.name)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
                         onSelectRow={() => {}}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

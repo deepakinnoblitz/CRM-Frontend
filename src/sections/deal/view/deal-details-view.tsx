@@ -31,6 +31,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { EmailAutomationDialog } from 'src/sections/lead/email-automation-dialog';
 import { WhatsappAutomationDialog } from 'src/sections/lead/whatsapp-automation-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { DealRelatedList } from '../deal-related-list';
 
 const STAGE_OPTIONS = [
@@ -65,9 +67,30 @@ export function DealDetailsView() {
 
     const backPath = location.state?.from || '/deals';
 
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned;
+    const canViewEstimations = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.view : true;
+    const canViewInvoices = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.view : true;
+    const canCreateEstimation = hasCustomPerms && user?.permissions?.actions?.estimation ? !!user?.permissions?.actions?.estimation?.create : true;
+    const canCreateInvoice = hasCustomPerms && user?.permissions?.actions?.invoice ? !!user?.permissions?.actions?.invoice?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.prospects?.edit : true;
+    
     const [deal, setDeal] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentTab, setCurrentTab] = useState('estimations');
+
+    const TABS = [
+        ...(canViewEstimations ? [{ value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> }] : []),
+        ...(canViewInvoices ? [{ value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> }] : []),
+        { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
+    ];
+
+    const [currentTab, setCurrentTab] = useState(TABS[0]?.value || 'stage_history');
+
+    useEffect(() => {
+        if (TABS.length > 0 && !TABS.some(t => t.value === currentTab)) {
+            setCurrentTab(TABS[0].value);
+        }
+    }, [canViewEstimations, canViewInvoices]);
     const [selectedStage, setSelectedStage] = useState<string | null>(null);
     const [updatingStage, setUpdatingStage] = useState(false);
     const [confirmUpdate, setConfirmUpdate] = useState(false);
@@ -288,12 +311,6 @@ export function DealDetailsView() {
         }
     }, [deal, router]);
 
-    const TABS = [
-        { value: 'estimations', label: 'Estimations', icon: <HiOutlineClipboardDocumentCheck size={18} /> },
-        { value: 'invoices', label: 'Invoices', icon: <HiOutlineDocumentText size={18} /> },
-        { value: 'stage_history', label: 'Stage History', icon: <HiOutlineClock size={18} /> },
-    ];
-
     if (loading) {
         return (
             <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
@@ -340,36 +357,40 @@ export function DealDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCreateEstimation}
-                        startIcon={<GrDocumentTime size={17} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-                            color: '#fff',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Create Estimation
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCreateInvoice}
-                        startIcon={<GrDocumentStore size={17} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-                            color: '#fff',
-                            '&:hover': { bgcolor: '#007850' }
-                        }}
-                    >
-                        Create Invoice
-                    </Button>
+                    {canCreateEstimation && (
+                        <Button
+                            variant="contained"
+                            onClick={handleCreateEstimation}
+                            startIcon={<GrDocumentTime size={17} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                                color: '#fff',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Create Estimation
+                        </Button>
+                    )}
+                    {canCreateInvoice && (
+                        <Button
+                            variant="contained"
+                            onClick={handleCreateInvoice}
+                            startIcon={<GrDocumentStore size={17} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                                color: '#fff',
+                                '&:hover': { bgcolor: '#007850' }
+                            }}
+                        >
+                            Create Invoice
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -436,25 +457,27 @@ export function DealDetailsView() {
                         });
                     })()}
                 </Box>
-                <Button
-                    variant="contained"
-                    disabled={!selectedStage || selectedStage === (STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In') || updatingStage}
-                    onClick={handleStageUpdateClick}
-                    sx={{
-                        height: 36,
-                        px: 3,
-                        borderRadius: 1.5,
-                        fontWeight: 700,
-                        textTransform: 'none',
-                        bgcolor: '#2081C3',
-                        color: 'common.white',
-                        minWidth: 130,
-                        '&:hover': { bgcolor: '#1a699f' },
-                        '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
-                    }}
-                >
-                    {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Update Stage'}
-                </Button>
+                {displayEdit  &&(
+                    <Button
+                        variant="contained"
+                        disabled={!selectedStage || selectedStage === (STAGE_OPTIONS.some(s => s.value === deal.stage) ? deal.stage : 'Just In') || updatingStage}
+                        onClick={handleStageUpdateClick}
+                        sx={{
+                            height: 36,
+                            px: 3,
+                            borderRadius: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            bgcolor: '#2081C3',
+                            color: 'common.white',
+                            minWidth: 130,
+                            '&:hover': { bgcolor: '#1a699f' },
+                            '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                        }}
+                    >
+                        {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Update Stage'}
+                    </Button>
+                )}
             </Card>
 
             <Card sx={{ overflow: 'hidden', borderRadius: 2 }}>

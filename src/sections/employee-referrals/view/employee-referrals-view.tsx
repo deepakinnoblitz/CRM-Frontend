@@ -31,6 +31,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ReferralModal } from '../referral-modal';
 import { ReferralTableToolbar } from '../referral-table-toolbar';
 import { ReferralTableFiltersDrawer } from '../referral-table-filters-drawer';
@@ -44,6 +46,13 @@ const TABS = [
 ];
 
 export function EmployeeReferralsView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.employee_referral_list;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateReferral = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditReferral = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteReferral = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const viewType = searchParams.get('view'); // 'hr' or default (employee)
@@ -317,14 +326,16 @@ export function EmployeeReferralsView() {
                                 >
                                   View
                                 </Button>
-                                <Button
-                                  variant="contained"
-                                  size="small"
-                                  onClick={() => handleReferClick(row.name)}
-                                  sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-                                >
-                                  Refer
-                                </Button>
+                                {canCreateReferral && (
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => handleReferClick(row.name)}
+                                    sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+                                  >
+                                    Refer
+                                  </Button>
+                                )}
                               </Stack>
                             </TableCell>
                           </TableRow>

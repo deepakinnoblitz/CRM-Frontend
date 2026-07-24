@@ -24,6 +24,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 function DetailRow({ label, value, mono = false }: { label: string; value?: any; mono?: boolean }) {
@@ -53,6 +54,10 @@ export function MetaFormsDetailsView() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
+    
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_forms;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_forms ? !!user?.permissions?.actions?.meta_forms?.edit : true;
 
     const [form, setForm] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -139,22 +144,24 @@ export function MetaFormsDetailsView() {
                     >
                         Back to List
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/lead-integration/meta-forms/${form.name}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            px: 2.5,
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit Form
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/lead-integration/meta-forms/${form.name}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                px: 2.5,
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit Form
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

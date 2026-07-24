@@ -38,9 +38,11 @@ type Props = {
   index: number;
   onEdit: VoidFunction;
   onDelete: VoidFunction;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
-export function RemindersTableRow({ row, index, onEdit, onDelete }: Props) {
+export function RemindersTableRow({ row, index, onEdit, onDelete, canEdit = true, canDelete = true }: Props) {
   const theme = useTheme();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [openDetail, setOpenDetail] = useState(false);
@@ -153,12 +155,16 @@ export function RemindersTableRow({ row, index, onEdit, onDelete }: Props) {
             <IconButton size="small" onClick={() => setOpenDetail(true)} sx={{ color: '#00A5D1' }}>
               <Iconify icon="solar:eye-bold" />
             </IconButton>
-            <IconButton size="small" onClick={onEdit}>
-              <Iconify icon="solar:pen-bold" sx={{ color: 'primary.main' }} />
-            </IconButton>
-            <IconButton size="small" onClick={() => setConfirmDelete(true)} sx={{ color: 'error.main' }}>
-              <Iconify icon="solar:trash-bin-trash-bold" />
-            </IconButton>
+            {canEdit && (
+              <IconButton size="small" onClick={onEdit}>
+                <Iconify icon="solar:pen-bold" sx={{ color: 'primary.main' }} />
+              </IconButton>
+            )}
+            {canDelete && (
+              <IconButton size="small" onClick={() => setConfirmDelete(true)} sx={{ color: 'error.main' }}>
+                <Iconify icon="solar:trash-bin-trash-bold" />
+              </IconButton>
+            )}
           </Stack>
         </TableCell>
       </TableRow>

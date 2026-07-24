@@ -46,6 +46,8 @@ import { LeadTableHead as AnnouncementTableHead } from 'src/sections/lead/lead-t
 import { LeadTableToolbar as AnnouncementTableToolbar } from 'src/sections/lead/lead-table-toolbar';
 import { AnnouncementDetailsDialog } from 'src/sections/report/announcements/announcements-details-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { AnnouncementsTableFiltersDrawer } from '../announcements-table-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -93,6 +95,13 @@ const ANNOUNCEMENT_SORT_OPTIONS = [
 ];
 
 export function AnnouncementsView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.announcements;
+    const actionPerms = user?.permissions?.actions?.announcements;
+    const canCreateAnnouncement = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditAnnouncement = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteAnnouncement = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -308,7 +317,7 @@ export function AnnouncementsView() {
                     Announcements
                 </Typography>
 
-                {permissions.write && (
+                {permissions.write && canCreateAnnouncement && (
                     <Button
                         variant="contained"
                         startIcon={<Iconify icon="mingcute:add-line" />}
@@ -379,8 +388,8 @@ export function AnnouncementsView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditAnnouncement}
+                                                canDelete={permissions.delete && canDeleteAnnouncement}
                                             />
                                         ))}
 

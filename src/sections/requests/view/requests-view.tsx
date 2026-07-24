@@ -61,6 +61,12 @@ import { RequestsTableFiltersDrawer } from '../requests-table-filters-drawer';
 
 export function RequestsView() {
   const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list);
+  const actionPerms = user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list;
+  const canCreateRequest = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+  const canEditRequest = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+  const canDeleteRequest = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+
   const { socket } = useSocket(user?.email);
   const isHR = user?.roles?.some((role: string) =>
     ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
@@ -440,7 +446,7 @@ export function RequestsView() {
           Request List
         </Typography>
 
-        {permissions.write && (
+        {permissions.write && canCreateRequest && (
           <Button
             variant="contained"
             startIcon={<Iconify icon="mingcute:add-line" />}
@@ -535,8 +541,8 @@ export function RequestsView() {
                         onView={() => handleViewRow(row)}
                         onEdit={() => handleEditRow(row)}
                         onDelete={() => handleDeleteRow(row.name)}
-                        canEdit={permissions.write}
-                        canDelete={permissions.delete}
+                        canEdit={permissions.write && canEditRequest}
+                        canDelete={permissions.delete && canDeleteRequest}
                         onApplyAction={(action) => handleApplyAction(row.name, action)}
                         onClarify={(clarificationMessage) => handleClarify(row.name, clarificationMessage)}
                         isHR={isHR}
