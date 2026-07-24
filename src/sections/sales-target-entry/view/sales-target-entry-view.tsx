@@ -170,7 +170,7 @@ export function SalesTargetEntryView() {
         try {
             const [usersList, contactsList, sourcesList, servicesList] = await Promise.all([
                 getDoctypeList('User', ['name', 'full_name']),
-                getDoctypeList('Contacts', ['name', 'first_name', 'phone']),
+                getDoctypeList('Contacts', ['name', 'first_name', 'last_name', 'phone']),
                 getDoctypeList('Lead From', ['name']),
                 getDoctypeList('Service', ['name']),
             ]);
@@ -482,6 +482,7 @@ export function SalesTargetEntryView() {
                                                     canView={permissions.read}
                                                     hideCheckbox
                                                     index={page * rowsPerPage + index}
+                                                    contactsOptions={contactsOptions}
                                                 />
                                             ))}
 
