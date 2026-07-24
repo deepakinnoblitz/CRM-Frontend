@@ -6,6 +6,7 @@ import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Grid from '@mui/material/Grid';
 import Alert from '@mui/material/Alert';
+import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -13,7 +14,11 @@ import Switch from '@mui/material/Switch';
 import Avatar from '@mui/material/Avatar';
 import Snackbar from '@mui/material/Snackbar';
 import { styled } from '@mui/material/styles';
+import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -21,6 +26,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
+import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
@@ -34,10 +40,73 @@ import {
 } from 'src/api/user-permissions';
 
 import { Iconify } from 'src/components/iconify';
+import { Scrollbar } from 'src/components/scrollbar';
 
+import { isActionAllowed } from './view/role-permission-create-view';
 import { UserPermissionFormDialog } from '../user-permission/user-permission-form-dialog';
 
 // Android 12 Switch Style
+const getFriendlyModuleName = (module: string) => {
+    if (module === 'deal') return 'Prospects';
+    if (module === 'account') return 'Company';
+    if (module === 'contact') return 'Clients';
+    if (module === 'purchase_collection') return 'Purchase Settlement';
+    if (module.startsWith('email_') || module.startsWith('whatsapp_')) {
+        return module.startsWith('email_') ? 'Mail Automation' : 'WhatsApp Automation';
+    }
+    if (module.startsWith('asset_')) return 'Asset';
+    if (module === 'expense_tracker' || module === 'reimbursement_claims') return 'Expenses';
+    if (module === 'crm_expenses') return 'CRM Expense Tracker';
+    if (module === 'employee_evaluation' || module === 'badges' || module === 'employee_monthly_award') return 'Employee Performance';
+    if (module === 'job_openings' || module === 'job_applicants' || module === 'interviews' || module === 'employee_referrals') return 'Recruitment';
+    if (module === 'attendance_list' || module === 'daily_log' || module === 'wfh_attendance') return 'Attendance';
+    if (module.startsWith('meta_') || module === 'webhook_logs') return 'Lead Integration';
+    if (module.startsWith('master_')) return 'Masters';
+    if (module.startsWith('report_')) return 'Reports';
+    return (module || '').split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+const getFriendlyScreenName = (screen: string) => {
+    if (screen === 'Purchase Collections') return 'Purchase Settlements';
+    return screen;
+};
+
+const getRowSpan = (rows: any[], index: number) => {
+    const currentFriendly = getFriendlyModuleName(rows[index]?.module_id || '');
+    if (index > 0 && getFriendlyModuleName(rows[index - 1]?.module_id || '') === currentFriendly) {
+        return 0;
+    }
+    let span = 1;
+    for (let i = index + 1; i < rows.length; i++) {
+        if (getFriendlyModuleName(rows[i]?.module_id || '') === currentFriendly) {
+            span++;
+        } else {
+            break;
+        }
+    }
+    return span;
+};
+
+const renderToggleIcon = (row: any, key: string) => {
+    const allowed = isActionAllowed(row.module_id, row.screen_id, key);
+    if (!allowed) {
+        return (
+            <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)', color: 'text.disabled' }}>
+                -
+            </TableCell>
+        );
+    }
+    const value = row[key];
+    return (
+        <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+            {value ? (
+                <Iconify icon="solar:check-circle-bold" sx={{ color: '#00a76f' }} width={24} />
+            ) : (
+                <Iconify icon="solar:close-circle-bold" sx={{ color: '#919eab' }} width={24} />
+            )}
+        </TableCell>
+    );
+};
 const Android12Switch = styled(Switch)(({ theme }) => ({
   width: 36,
   height: 20,
@@ -972,7 +1041,7 @@ export function UserFormDialog({
       <Dialog
         open={!!selectedRoleForView}
         onClose={() => setSelectedRoleForView(null)}
-        maxWidth="md"
+        maxWidth="lg"
         fullWidth
         PaperProps={{ sx: { borderRadius: 2 } }}
       >
@@ -982,112 +1051,65 @@ export function UserFormDialog({
             <Iconify icon="mingcute:close-line" />
           </IconButton>
         </DialogTitle>
-        <DialogContent sx={{ p: 0 }}>
-          <Box sx={{ overflowX: 'auto', p: 3 }}>
-            {(() => {
-              const groupedPermissions = selectedRoleForView?.permissions || [];
-              const sortedPermissions = [...groupedPermissions].sort((a: any, b: any) =>
-                (a.module_id || '').localeCompare(b.module_id || '')
-              );
+        <DialogContent sx={{ p: 3 }}>
+          {(() => {
+            const dialogPermissions = selectedRoleForView?.permissions || [];
 
-              const moduleRowSpans: { [key: string]: number } = {};
-              sortedPermissions.forEach((perm: any) => {
-                moduleRowSpans[perm.module_id] = (moduleRowSpans[perm.module_id] || 0) + 1;
-              });
-
-              const renderedModules: { [key: string]: boolean } = {};
-
-              return sortedPermissions.length > 0 ? (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', border: '1px solid #e0e0e0' }}>
-                  <thead>
-                    <tr style={{ backgroundColor: '#1ba5ea', color: 'white' }}>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'left', border: '1px solid #1ba5ea', width: '20%' }}>Menu Name</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'left', border: '1px solid #1ba5ea', width: '30%' }}>Access Name</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Add</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Edit</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>View</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Delete</th>
-                      <th style={{ padding: '12px 16px', fontWeight: 600, textAlign: 'center', border: '1px solid #1ba5ea' }}>Export</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sortedPermissions.map((perm: any) => {
-                      const showModuleCell = !renderedModules[perm.module_id];
-                      if (showModuleCell) {
-                        renderedModules[perm.module_id] = true;
-                      }
-
-                      return (
-                        <tr key={perm.name} style={{ borderBottom: '1px solid #e0e0e0' }}>
-                           {showModuleCell && (
-                            <td
-                              rowSpan={moduleRowSpans[perm.module_id]}
-                              style={{
-                                padding: '12px 16px',
-                                fontWeight: 700,
-                                border: '1px solid #e0e0e0',
-                                textAlign: 'center',
-                                verticalAlign: 'middle',
-                                backgroundColor: '#f9f9f9',
-                                color: '#133B27'
-                              }}
-                            >
-                              {(perm.module_id || '')
-                                .replace(/_/g, ' ')
-                                .split(' ')
-                                .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                                .join(' ')}
-                            </td>
-                          )}
-                          <td style={{ padding: '12px 16px', border: '1px solid #e0e0e0', color: 'text.primary', fontWeight: 500 }}>
-                            {(perm.screen_id || '')
-                              .replace(/_/g, ' ')
-                              .split(' ')
-                              .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                              .join(' ')}
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-                            <Iconify
-                              icon={(perm.add_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
-                              sx={{ color: perm.add_permission ? 'success.main' : 'text.disabled' }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-                            <Iconify
-                              icon={(perm.edit_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
-                              sx={{ color: perm.edit_permission ? 'success.main' : 'text.disabled' }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-                            <Iconify
-                              icon={(perm.view_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
-                              sx={{ color: perm.view_permission ? 'success.main' : 'text.disabled' }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-                            <Iconify
-                              icon={(perm.delete_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
-                              sx={{ color: perm.delete_permission ? 'success.main' : 'text.disabled' }}
-                            />
-                          </td>
-                          <td style={{ padding: '12px 16px', textAlign: 'center', border: '1px solid #e0e0e0' }}>
-                            <Iconify
-                              icon={(perm.export_permission ? "lucide:check-circle-2" : "lucide:x-circle") as any}
-                              sx={{ color: perm.export_permission ? 'success.main' : 'text.disabled' }}
-                            />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              ) : (
-                <Box sx={{ py: 3, textAlign: 'center' }}>
-                  <Typography variant="body2" color="text.secondary">No screen permissions defined.</Typography>
-                </Box>
-              );
-            })()}
-          </Box>
+            return dialogPermissions.length > 0 ? (
+              <TableContainer sx={{ border: '1px solid rgba(224, 224, 224, 1)', borderRadius: 1 }}>
+                <Scrollbar>
+                  <Table size="medium">
+                      <TableRow sx={{ bgcolor: '#08a3cd' }}>
+                        <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Menu Name</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Access Name</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Edit</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>View</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Delete</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Export</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Import</TableCell>
+                      </TableRow>
+                    <TableBody>
+                      {dialogPermissions.map((row: any, idx: number) => {
+                        const span = getRowSpan(dialogPermissions, idx);
+                        return (
+                          <TableRow key={idx} hover sx={{ borderBottom: '1px solid rgba(224, 224, 224, 1)' }}>
+                            {span > 0 && (
+                              <TableCell
+                                rowSpan={span}
+                                sx={{
+                                  verticalAlign: 'middle',
+                                  borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  fontWeight: 'bold',
+                                  color: 'text.primary',
+                                  bgcolor: 'rgba(244, 246, 248, 0.4)'
+                                }}
+                              >
+                                {getFriendlyModuleName(row.module_id)}
+                              </TableCell>
+                            )}
+                            <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+                              {getFriendlyScreenName(row.screen_id)}
+                            </TableCell>
+                            {renderToggleIcon(row, 'add_permission')}
+                            {renderToggleIcon(row, 'edit_permission')}
+                            {renderToggleIcon(row, 'view_permission')}
+                            {renderToggleIcon(row, 'delete_permission')}
+                            {renderToggleIcon(row, 'export_permission')}
+                            {renderToggleIcon(row, 'import_permission')}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </Scrollbar>
+              </TableContainer>
+            ) : (
+              <Box sx={{ py: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">No screen permissions defined.</Typography>
+              </Box>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </>
