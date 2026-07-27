@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -84,6 +85,15 @@ export function ContactReportView() {
     // View Details
     const [openView, setOpenView] = useState(false);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openContactId) {
+            setSelectedContactId(location.state.openContactId);
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -677,6 +687,7 @@ export function ContactReportView() {
                     setOpenView(false);
                     setSelectedContactId(null);
                 }}
+                initialTab={location.state?.activeTab}
             />
 
         </DashboardContent>
