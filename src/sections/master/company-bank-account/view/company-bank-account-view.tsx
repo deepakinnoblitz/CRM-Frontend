@@ -25,6 +25,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../../lead/table-no-data';
 import { LeadTableHead } from '../../../lead/lead-table-head';
 import { TableEmptyRows } from '../../../lead/table-empty-rows';
@@ -52,6 +54,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function CompanyBankAccountView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.company_bank_account;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.company_bank_account ? !!user?.permissions?.actions?.company_bank_account?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.company_bank_account ? !!user?.permissions?.actions?.company_bank_account?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.company_bank_account ? !!user?.permissions?.actions?.company_bank_account?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -151,14 +159,16 @@ export function CompanyBankAccountView() {
         <Typography variant="h4" flexGrow={1}>
           Company Bank Account
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Bank Account
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Bank Account
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -207,6 +217,8 @@ export function CompanyBankAccountView() {
                         onViewRow={() => handleViewRow(row.name)}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

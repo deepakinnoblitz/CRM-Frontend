@@ -33,6 +33,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { WhatsAppAutomationsTableToolbar } from '../whatsapp-automations-table-toolbar';
 import { WhatsAppAutomationsFiltersDrawer, WhatsAppAutomationsFiltersProps } from '../whatsapp-automations-filters-drawer';
 
@@ -67,6 +69,12 @@ export function WhatsAppAutomationsListView() {
     const [loading, setLoading] = useState(true);
     const [templatesMap, setTemplatesMap] = useState<Record<string, string>>({});
     const { enqueueSnackbar } = useSnackbar();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_automations;
+    const canCreateAutomation = hasCustomPerms && user?.permissions?.actions?.whatsapp_automations ? !!user?.permissions?.actions?.whatsapp_automations?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automations?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_automations?.delete : true;
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -148,19 +156,22 @@ export function WhatsAppAutomationsListView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">CRM WhatsApp Automations</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => router.push('/whatsapp-automation/new')}
-                    sx={{
-                        borderRadius: 1.5,
-                        bgcolor: '#08a3cd',
-                        color: 'common.white',
-                        '&:hover': { bgcolor: '#068fb3' },
-                    }}
-                >
-                    New Automation
-                </Button>
+                
+                {canCreateAutomation &&(
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => router.push('/whatsapp-automation/new')}
+                        sx={{
+                            borderRadius: 1.5,
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                        }}
+                    >
+                        New Automation
+                    </Button>
+                )}
             </Stack>
 
             <Card
@@ -289,12 +300,16 @@ export function WhatsAppAutomationsListView() {
                                                         <IconButton onClick={() => router.push(`/whatsapp-automation/${row.name}/view`)} sx={{ color: 'info.main' }} title="View">
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton onClick={() => router.push(`/whatsapp-automation/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
-                                                        <IconButton onClick={() => setConfirmDelete({ open: true, id: row.name })} sx={{ color: 'error.main' }} title="Delete">
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
+                                                        {displayEdit && (
+                                                            <IconButton onClick={() => router.push(`/whatsapp-automation/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {displayDelete &&(
+                                                            <IconButton onClick={() => setConfirmDelete({ open: true, id: row.name })} sx={{ color: 'error.main' }} title="Delete">
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

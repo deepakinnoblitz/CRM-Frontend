@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -50,6 +51,9 @@ export function AccountReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.company_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.company_report ? !!user?.permissions?.actions?.company_report?.export : true;
+
     const { exportingPdf, handleExportPdf } = usePdfExport();
     // Filters
     const [accountName, setAccountName] = useState('');
@@ -80,6 +84,15 @@ export function AccountReportView() {
     // View Details
     const [openView, setOpenView] = useState(false);
     const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openAccountId) {
+            setSelectedAccountId(location.state.openAccountId);
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -468,39 +481,43 @@ export function AccountReportView() {
                         </Select>
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateAccountPdf({
-                            reportData: filteredData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Accounts', value: reportData.length },
-                                { label: 'With GSTIN', value: reportData.filter((r: any) => r.gstin).length },
-                                { label: 'With Website', value: reportData.filter((r: any) => r.website).length },
-                                { label: 'With Phone', value: reportData.filter((r: any) => r.phone_number).length },
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    {canExport && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                            onClick={handleExport}
+                            disabled={reportData.length === 0}
+                            sx={{ mr: 1 }}
+                        >
+                            Export Excel
+                        </Button>
+                    )}
+                    {canExport && (
+                        <Button
+                            variant="contained"
+                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                            onClick={() => handleExportPdf(() => generateAccountPdf({
+                                reportData: filteredData,
+                                selected,
+                                summary: summaryData.length > 0 ? summaryData : [
+                                    { label: 'Total Accounts', value: reportData.length },
+                                    { label: 'With GSTIN', value: reportData.filter((r: any) => r.gstin).length },
+                                    { label: 'With Website', value: reportData.filter((r: any) => r.website).length },
+                                    { label: 'With Phone', value: reportData.filter((r: any) => r.phone_number).length },
+                                ]
+                            }))}
+                            disabled={exportingPdf || reportData.length === 0}
+                            sx={{
+                                bgcolor: '#f43f5e',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#e11d48' },
+                                height: 37,
+                                px: 3,
+                            }}
+                        >
+                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                        </Button>
+                    )}
                 </Card>
 
                 <Box
@@ -632,6 +649,7 @@ export function AccountReportView() {
                     setOpenView(false);
                     setSelectedAccountId(null);
                 }}
+                initialTab={location.state?.activeTab}
             />
 
         </DashboardContent>

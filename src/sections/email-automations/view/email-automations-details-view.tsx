@@ -24,6 +24,8 @@ import { getEmailAutomation } from 'src/api/email-automation';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function EmailAutomationsDetailsView() {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -31,6 +33,10 @@ export function EmailAutomationsDetailsView() {
     const [automation, setAutomation] = useState<any>(null);
     const [templateName, setTemplateName] = useState<string>('');
     const [fetching, setFetching] = useState(true);
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_automations;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_automations?.edit : true;
 
     useEffect(() => {
         if (id) {
@@ -126,21 +132,23 @@ export function EmailAutomationsDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/email-automations/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {displayEdit &&(
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/email-automations/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

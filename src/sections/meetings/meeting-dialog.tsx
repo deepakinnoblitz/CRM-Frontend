@@ -4,29 +4,36 @@ import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
-import { styled } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, styled } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { createFilterOptions } from '@mui/material/Autocomplete';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel, Card } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
+import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { getDoctypeList } from 'src/api/leads';
-import { type Meeting, createMeeting, updateMeeting, deleteMeeting } from 'src/api/meetings';
+import { createMeetingStatus, fetchMeetingStatuses } from 'src/api/masters';
+import { type Meeting, createMeeting, updateMeeting, deleteMeeting, getMeeting } from 'src/api/meetings';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import MeetingNoteDialog from './meeting-note-dialog';
+
 // ----------------------------------------------------------------------
+
+const filter = createFilterOptions<any>();
 
 const Android12Switch = styled(Switch)(({ theme }) => ({
     padding: 8,
@@ -63,6 +70,8 @@ type Props = {
     selectedMeeting?: Meeting | null;
     initialData?: Partial<Meeting>;
     onSuccess?: () => void;
+    canEdit?: boolean;
+    canDelete?: boolean;
 };
 
 const INITIAL_MEETING_STATE: Partial<Meeting> = {
@@ -84,7 +93,7 @@ const INITIAL_MEETING_STATE: Partial<Meeting> = {
     participants: [],
 };
 
-export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess }: Props) {
+export default function MeetingDialog({ open, onClose, selectedMeeting, initialData, onSuccess, canEdit = true, canDelete = true }: Props) {
     const [meetingData, setMeetingData] = useState<Partial<Meeting>>(INITIAL_MEETING_STATE);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
@@ -92,6 +101,90 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         message: '',
         severity: 'success',
     });
+
+    const [openNoteDialog, setOpenNoteDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<any>(null);
+
+    const handleSaveNote = async (noteTitle: string, noteDescription: string) => {
+        if (!selectedMeeting) return;
+
+        let updatedNotes = [];
+        const currentNotes = meetingData.meeting_notes || [];
+        if (selectedNote && selectedNote.name) {
+            // Edit mode
+            updatedNotes = currentNotes.map((n: any) =>
+                n.name === selectedNote.name ? { ...n, title: noteTitle, description: noteDescription } : n
+            );
+        } else {
+            // Create mode
+            updatedNotes = [...currentNotes, { title: noteTitle, description: noteDescription }];
+        }
+
+        const payload = {
+            ...meetingData,
+            meeting_notes: updatedNotes,
+        };
+
+        const formattedPayload = {
+            ...payload,
+            from: payload.from?.replace('T', ' '),
+            to: payload.to?.replace('T', ' ') || undefined,
+        };
+
+        await updateMeeting(selectedMeeting.name, formattedPayload);
+        
+        // Refresh meeting details
+        const refreshedMeeting = await getMeeting(selectedMeeting.name);
+        setMeetingData({
+            ...refreshedMeeting,
+            from: refreshedMeeting.from.replace(' ', 'T'),
+            to: refreshedMeeting.to?.replace(' ', 'T') || '',
+            completed_meet_notes: stripHtml(refreshedMeeting.completed_meet_notes || ''),
+            meeting_notes: refreshedMeeting.meeting_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: selectedNote ? 'Note updated successfully' : 'Note added successfully',
+            severity: 'success'
+        });
+    };
+
+    const handleDeleteNote = async (noteToDelete: any) => {
+        if (!selectedMeeting) return;
+
+        const currentNotes = meetingData.meeting_notes || [];
+        const updatedNotes = currentNotes.filter((n: any) => n.name !== noteToDelete.name);
+
+        const payload = {
+            ...meetingData,
+            meeting_notes: updatedNotes,
+        };
+
+        const formattedPayload = {
+            ...payload,
+            from: payload.from?.replace('T', ' '),
+            to: payload.to?.replace('T', ' ') || undefined,
+        };
+
+        await updateMeeting(selectedMeeting.name, formattedPayload);
+        
+        // Refresh meeting details
+        const refreshedMeeting = await getMeeting(selectedMeeting.name);
+        setMeetingData({
+            ...refreshedMeeting,
+            from: refreshedMeeting.from.replace(' ', 'T'),
+            to: refreshedMeeting.to?.replace(' ', 'T') || '',
+            completed_meet_notes: stripHtml(refreshedMeeting.completed_meet_notes || ''),
+            meeting_notes: refreshedMeeting.meeting_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: 'Note deleted successfully',
+            severity: 'success'
+        });
+    };
 
     const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -101,6 +194,28 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
     const [contactOptions, setContactOptions] = useState<any[]>([]);
     const [accountOptions, setAccountOptions] = useState<any[]>([]);
     const [userOptions, setUserOptions] = useState<any[]>([]);
+    const [meetingStatusOptions, setMeetingStatusOptions] = useState<string[]>([]);
+    const [createMeetingStatusOpen, setCreateMeetingStatusOpen] = useState(false);
+    const [newMeetingStatusName, setNewMeetingStatusName] = useState('');
+    const [creatingMeetingStatus, setCreatingMeetingStatus] = useState(false);
+
+    const handleCreateMeetingStatusSubmit = async () => {
+        if (!newMeetingStatusName.trim()) return;
+        try {
+            setCreatingMeetingStatus(true);
+            await createMeetingStatus({ meeting_status: newMeetingStatusName.trim(), status: 'Active' });
+            setMeetingStatusOptions((prev) => [...prev, newMeetingStatusName.trim()]);
+            setMeetingData((prev) => ({ ...prev, completed_meet_status: newMeetingStatusName.trim() }));
+            setCreateMeetingStatusOpen(false);
+            setSnackbar({ open: true, message: 'Meeting Status created successfully', severity: 'success' });
+        } catch (err: any) {
+            console.error(err);
+            const friendlyMsg = getFriendlyErrorMessage(err);
+            setSnackbar({ open: true, message: friendlyMsg, severity: 'error' });
+        } finally {
+            setCreatingMeetingStatus(false);
+        }
+    };
 
     useEffect(() => {
         if (open) {
@@ -110,30 +225,43 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
             getDoctypeList('User', ['name', 'full_name']).then((users) => {
                 setUserOptions(users.filter((u: any) => u.name !== 'Administrator' && u.name !== 'Guest'));
             });
+            fetchMeetingStatuses({
+                page: 1,
+                page_size: 1000,
+                filters: [['Meeting Status', 'status', '=', 'Active']]
+            }).then((res) => {
+                const options = (res.data || []).map((item: any) => item.meeting_status);
+                setMeetingStatusOptions(options);
+            }).catch(console.error);
         }
     }, [open]);
 
     useEffect(() => {
         if (selectedMeeting) {
-            setMeetingData({
-                title: selectedMeeting.title,
-                meet_for: selectedMeeting.meet_for || 'Lead',
-                outgoing_call_status: selectedMeeting.outgoing_call_status || 'Scheduled',
-                completed_meet_status: selectedMeeting.completed_meet_status || '',
-                enter_id: selectedMeeting.enter_id || '',
-                from: selectedMeeting.from.replace(' ', 'T'),
-                to: selectedMeeting.to?.replace(' ', 'T') || '',
-                meeting_venue: selectedMeeting.meeting_venue || 'In Office',
-                location: selectedMeeting.location || '',
-                completed_meet_notes: stripHtml(selectedMeeting.completed_meet_notes || ''),
-                lead_name: selectedMeeting.lead_name || '',
-                contact_name: selectedMeeting.contact_name || '',
-                accounts_name: selectedMeeting.accounts_name || '',
-                enable_reminder: selectedMeeting.enable_reminder || 0,
-                remind_before_minutes: selectedMeeting.remind_before_minutes || 60,
-                host: selectedMeeting.host || '',
-                participants: selectedMeeting.participants || [],
-            });
+            getMeeting(selectedMeeting.name)
+                .then((fullMeeting) => {
+                    setMeetingData({
+                        title: fullMeeting.title,
+                        meet_for: fullMeeting.meet_for || 'Lead',
+                        outgoing_call_status: fullMeeting.outgoing_call_status || 'Scheduled',
+                        completed_meet_status: fullMeeting.completed_meet_status || '',
+                        enter_id: fullMeeting.enter_id || '',
+                        from: fullMeeting.from.replace(' ', 'T'),
+                        to: fullMeeting.to?.replace(' ', 'T') || '',
+                        meeting_venue: fullMeeting.meeting_venue || 'In Office',
+                        location: fullMeeting.location || '',
+                        completed_meet_notes: stripHtml(fullMeeting.completed_meet_notes || ''),
+                        lead_name: fullMeeting.lead_name || '',
+                        contact_name: fullMeeting.contact_name || '',
+                        accounts_name: fullMeeting.accounts_name || '',
+                        enable_reminder: fullMeeting.enable_reminder || 0,
+                        remind_before_minutes: fullMeeting.remind_before_minutes || 60,
+                        host: fullMeeting.host || '',
+                        participants: fullMeeting.participants || [],
+                        meeting_notes: fullMeeting.meeting_notes || [],
+                    });
+                })
+                .catch(console.error);
         } else if (initialData) {
             setMeetingData({
                 ...INITIAL_MEETING_STATE,
@@ -200,7 +328,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth={selectedMeeting ? "lg" : "md"} PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -214,7 +342,9 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
                 <DialogContent dividers sx={{ borderBottom: 'none', px: 4, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Grid container spacing={4} sx={{ py: 2 }}>
+                            <Grid size={{ xs: 12, md: selectedMeeting ? 8 : 12 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {/* General Section */}
                             <Box>
                                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
@@ -415,47 +545,76 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                                 </Select>
                                             </FormControl>
                                         </Grid>
-
                                         {meetingData.outgoing_call_status === 'Completed' && (
                                             <Grid size={{ xs: 12, md: 6 }}>
                                                 <Autocomplete
                                                     fullWidth
-                                                    options={[
-                                                        'Called – No Response',
-                                                        'Called – Phone Switched Off',
-                                                        'Called – Number Not Reachable',
-                                                        'Called – Wrong Number',
-                                                        'Called – Left Voicemail',
-                                                        'Called – Asked to Call Later',
-                                                        'Called – Spoke Briefly',
-                                                        'Spoke to Prospect – Not Available',
-                                                        'Spoke to Prospect – Confirmed Interest',
-                                                        'Spoke to Prospect – Needs More Time',
-                                                        'Spoke to Prospect – Will Revert Soon',
-                                                        'Spoke to Prospect – Awaiting Internal Discussion',
-                                                        'Demo Scheduled',
-                                                        'Demo Completed',
-                                                        'Demo Rescheduled',
-                                                        'Prospect Did Not Attend Demo',
-                                                        'Proposal / Quotation Sent',
-                                                        'Pricing Discussion Ongoing',
-                                                        'Negotiation in Progress',
-                                                        'Awaiting Prospect Approval',
-                                                        'Deal Won – Order Confirmed',
-                                                        'Deal Lost – Price Issue',
-                                                        'Deal Lost – No Requirement',
-                                                        'Deal Lost – Competitor Chosen',
-                                                        'Order Processing Started',
-                                                        'Payment Received',
-                                                        'Delivery / Implementation Started',
-                                                        'Post-Sales Follow-up Scheduled',
-                                                        'Lead Not Interested',
-                                                        'Lead Invalid',
-                                                        'Lead Closed – No Response',
-                                                        'Others'
-                                                    ]}
+                                                    options={meetingStatusOptions}
                                                     value={meetingData.completed_meet_status || null}
-                                                    onChange={(_, newValue) => setMeetingData({ ...meetingData, completed_meet_status: newValue || '' })}
+                                                    onChange={(_, newValue: any) => {
+                                                        if (typeof newValue === 'string') {
+                                                            setMeetingData({ ...meetingData, completed_meet_status: newValue });
+                                                        } else if (newValue && newValue.isNew) {
+                                                            setNewMeetingStatusName(newValue.inputValue);
+                                                            setCreateMeetingStatusOpen(true);
+                                                        } else {
+                                                            setMeetingData({ ...meetingData, completed_meet_status: newValue || '' });
+                                                        }
+                                                    }}
+                                                    filterOptions={(options, params) => {
+                                                        const filtered = filter(options, params) as any[];
+                                                        const { inputValue } = params;
+                                                        const isExisting = options.some((option) => inputValue === option);
+
+                                                        if (inputValue !== '' && !isExisting) {
+                                                            filtered.push({
+                                                                inputValue,
+                                                                label: `+ Create "${inputValue}"`,
+                                                                isNew: true,
+                                                            });
+                                                        } else if (inputValue === '') {
+                                                            filtered.push({
+                                                                inputValue: '',
+                                                                label: '+ Create Meeting Status',
+                                                                isNew: true,
+                                                            });
+                                                        }
+                                                        return filtered;
+                                                    }}
+                                                    getOptionLabel={(option: any) => {
+                                                        if (typeof option === 'string') return option;
+                                                        if (option.inputValue) return option.inputValue;
+                                                        return option.label || '';
+                                                    }}
+                                                    renderOption={(props, option: any) => {
+                                                        const { key, ...optionProps } = props as any;
+                                                        return (
+                                                            <Box component="li" key={key || (typeof option === 'string' ? option : option.label)} {...optionProps} sx={{
+                                                                typography: 'body2',
+                                                                ...(option.isNew && {
+                                                                    color: 'primary.main',
+                                                                    fontWeight: 600,
+                                                                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                                                    borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                                                    mt: 0.5,
+                                                                    '&:hover': {
+                                                                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.16),
+                                                                    }
+                                                                })
+                                                            }}>
+                                                                {option.isNew ? (
+                                                                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ py: 0.5 }}>
+                                                                        <Iconify icon="solar:add-circle-bold" width={24} />
+                                                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                                            {option.inputValue ? `Create "${option.inputValue}"` : 'Create Meeting Status'}
+                                                                        </Typography>
+                                                                    </Stack>
+                                                                ) : (
+                                                                    option.label || option
+                                                                )}
+                                                            </Box>
+                                                        );
+                                                    }}
                                                     renderInput={(params) => <TextField {...params} label="Meeting Status" />}
                                                 />
                                             </Grid>
@@ -583,12 +742,102 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                     onChange={(e) => setMeetingData({ ...meetingData, completed_meet_notes: e.target.value })}
                                 />
                             </Box>
-                        </Box>
+                                </Box>
+                            </Grid>
+
+                            {/* Right Side: Meeting Notes Panel (only in edit mode) */}
+                            {selectedMeeting && (
+                                <Grid size={{ xs: 12, md: 4 }} sx={{ borderLeft: (theme) => `1px solid ${theme.palette.divider}`, pl: 3 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                                Notes
+                                            </Typography>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="info"
+                                                startIcon={<Iconify icon="mingcute:add-line" width={18} height={18} />}
+                                                onClick={() => { setSelectedNote(null); setOpenNoteDialog(true); }}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                Add Note
+                                            </Button>
+                                        </Box>
+
+                                        <Box sx={{ overflowY: 'auto', maxHeight: 500, pr: 0.5 }}>
+                                            {!meetingData.meeting_notes || meetingData.meeting_notes.length === 0 ? (
+                                                <Box sx={{ py: 8, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Iconify icon="solar:notes-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 2, opacity: 0.6 }} />
+                                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 700 }}>
+                                                        No Notes Yet
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, maxWidth: 200 }}>
+                                                        Click &quot;Add Note&quot; to create your first meeting note.
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                <Stack spacing={1.5}>
+                                                    {[...meetingData.meeting_notes].reverse().map((note: any, index: number) => (
+                                                        <Card
+                                                            key={note.name || index}
+                                                            sx={(() => {
+                                                                const palettes = [
+                                                                    { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },
+                                                                    { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },
+                                                                    { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },
+                                                                    { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },
+                                                                ];
+                                                                const p = palettes[index % palettes.length];
+                                                                return {
+                                                                    p: 2,
+                                                                    borderRadius: 1.5,
+                                                                    position: 'relative',
+                                                                    boxShadow: 'none',
+                                                                    border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                                    bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                                };
+                                                            })()}
+                                                        >
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, flex: 1 }}>
+                                                                    {note.title}
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', gap: 0.25, ml: 1 }}>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => { setSelectedNote(note); setOpenNoteDialog(true); }}
+                                                                        sx={{ p: 0.5, color: 'primary.main' }}
+                                                                    >
+                                                                        <Iconify icon="solar:pen-bold" width={16} />
+                                                                    </IconButton>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => handleDeleteNote(note)}
+                                                                        sx={{ p: 0.5 }}
+                                                                    >
+                                                                        <Iconify icon="solar:trash-bin-trash-bold" width={16} />
+                                                                    </IconButton>
+                                                                </Box>
+                                                            </Box>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>
+                                                                {stripHtml(note.description)}
+                                                            </Typography>
+                                                        </Card>
+                                                    ))}
+                                                </Stack>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            )}
+                        </Grid>
                     </LocalizationProvider>
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
-                    {selectedMeeting && (
+                    {selectedMeeting && canDelete && (
                         <Button
                             color="error"
                             variant="contained"
@@ -599,17 +848,19 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                             Delete
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        color="info"
-                        onClick={handleSaveMeeting}
-                        disabled={isSubmitting}
-                        sx={{ borderRadius: 1, px: 3 }}
-                    >
-                        {isSubmitting 
-                            ? (selectedMeeting ? 'Saving...' : 'Creating...') 
-                            : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
-                    </Button>
+                    {((!selectedMeeting && canEdit) || (selectedMeeting && canEdit)) && (
+                        <Button
+                            variant="contained"
+                            color="info"
+                            onClick={handleSaveMeeting}
+                            disabled={isSubmitting}
+                            sx={{ borderRadius: 1, px: 3 }}
+                        >
+                            {isSubmitting 
+                                ? (selectedMeeting ? 'Saving...' : 'Creating...') 
+                                : (selectedMeeting ? 'Save Changes' : 'Create Meeting')}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 
@@ -624,6 +875,47 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     </Button>
                 }
             />
+
+            <Dialog
+                open={createMeetingStatusOpen}
+                onClose={() => !creatingMeetingStatus && setCreateMeetingStatusOpen(false)}
+                fullWidth
+                maxWidth="xs"
+                PaperProps={{
+                    sx: { borderRadius: 2 }
+                }}
+            >
+                <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 2, pb: 2 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>Create Meeting Status</Typography>
+                    <IconButton
+                        onClick={() => !creatingMeetingStatus && setCreateMeetingStatusOpen(false)}
+                        sx={{ color: 'text.secondary' }}
+                    >
+                        <Iconify icon="mingcute:close-line" />
+                    </IconButton>
+                </DialogTitle>
+                <DialogContent sx={{ px: 3, pb: 2, pt: 1 }}>
+                    <TextField
+                        fullWidth
+                        label="Meeting Status"
+                        value={newMeetingStatusName}
+                        onChange={(e) => setNewMeetingStatusName(e.target.value)}
+                        required
+                        autoFocus
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button
+                        variant="contained"
+                        onClick={handleCreateMeetingStatusSubmit}
+                        disabled={creatingMeetingStatus || !newMeetingStatusName.trim()}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        {creatingMeetingStatus ? 'Creating...' : 'Create'}
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}
@@ -646,6 +938,13 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <MeetingNoteDialog
+                open={openNoteDialog}
+                onClose={() => { setOpenNoteDialog(false); setSelectedNote(null); }}
+                selectedNote={selectedNote}
+                onSave={handleSaveNote}
+            />
         </>
     );
 }

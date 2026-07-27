@@ -31,6 +31,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { TableEmptyRows } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ReferralModal } from '../referral-modal';
 import { ReferralTableToolbar } from '../referral-table-toolbar';
 import { ReferralTableFiltersDrawer } from '../referral-table-filters-drawer';
@@ -44,6 +46,16 @@ const TABS = [
 ];
 
 export function EmployeeReferralsView() {
+  const { user } = useAuth();
+  const actionPerms =
+    user?.permissions?.actions?.refer_a_friend ||
+    user?.permissions?.actions?.employee_referrals ||
+    user?.permissions?.actions?.employee_referral_list;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateReferral = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditReferral = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteReferral = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const viewType = searchParams.get('view'); // 'hr' or default (employee)
@@ -183,6 +195,7 @@ export function EmployeeReferralsView() {
     (filters.location !== 'all' ? 1 : 0);
 
   const handleReferClick = (jobName: string) => {
+    if (!canCreateReferral) return;
     setSelectedJob(jobName);
     setOpenModal(true);
   };
@@ -317,14 +330,16 @@ export function EmployeeReferralsView() {
                                 >
                                   View
                                 </Button>
-                                <Button
-                                  variant="contained"
-                                  size="small"
-                                  onClick={() => handleReferClick(row.name)}
-                                  sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-                                >
-                                  Refer
-                                </Button>
+                                {canCreateReferral && (
+                                  <Button
+                                    variant="contained"
+                                    size="small"
+                                    onClick={() => handleReferClick(row.name)}
+                                    sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+                                  >
+                                    Refer
+                                  </Button>
+                                )}
                               </Stack>
                             </TableCell>
                           </TableRow>
@@ -494,7 +509,7 @@ export function EmployeeReferralsView() {
       </Card>
 
       <ReferralModal
-        open={openModal}
+        open={openModal && canCreateReferral}
         onClose={() => setOpenModal(false)}
         onSuccess={(msg) => {
           setSnackbar({ open: true, message: msg, severity: 'success' });
@@ -508,7 +523,7 @@ export function EmployeeReferralsView() {
       <JobOpeningDetailsDialog
         open={openJobDetails}
         onClose={() => setOpenJobDetails(false)}
-        onRefer={handleReferClick}
+        onRefer={canCreateReferral ? handleReferClick : undefined}
         job={selectedJobData}
       />
 

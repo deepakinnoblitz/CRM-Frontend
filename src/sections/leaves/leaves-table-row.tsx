@@ -22,8 +22,9 @@ import { getLeaveWorkflowActions, type WorkflowAction } from 'src/api/leaves';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-import { ClarificationDialog } from '../report/requests/clarification-dialog';
+import { useAuth } from 'src/auth/auth-context';
 
+import { ClarificationDialog } from '../report/requests/clarification-dialog';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -82,6 +83,10 @@ export function LeavesTableRow({
             default: return 'default';
         }
     };
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.leaves;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.leaves?.edit : true;
 
     const [openMenu, setOpenMenu] = useState<HTMLElement | null>(null);
 
@@ -313,7 +318,7 @@ export function LeavesTableRow({
                             </Badge>
                         </IconButton>
 
-                        {showActions && (
+                        {showActions && displayEdit &&(
                             <IconButton
                                 size="small"
                                 onClick={handleOpenMenu}

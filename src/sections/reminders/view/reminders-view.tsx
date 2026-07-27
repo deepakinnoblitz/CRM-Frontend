@@ -30,6 +30,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData, TableEmptyRows } from 'src/components/table';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { RemindersTableRow } from '../reminders-table-row';
 import { RemindersTableHead } from '../reminders-table-head';
 import { RemindersTableToolbar } from '../reminders-toolbar';
@@ -39,6 +41,13 @@ import { RemindersSettingsView } from '../reminders-settings-view';
 // ----------------------------------------------------------------------
 
 export function RemindersView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.reminders;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreate = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEdit = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDelete = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [currentTab, setCurrentTab] = useState('reminders');
   const [filterName, setFilterName] = useState('');
   const [page, setPage] = useState(0);
@@ -137,17 +146,19 @@ export function RemindersView() {
           </Tabs>
 
           {currentTab === 'reminders' ? (
-            <Button
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-              sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
-              onClick={() => {
-                setSelectedReminder(null);
-                setOpenForm(true);
-              }}
-            >
-              New Reminder
-            </Button>
+            canCreate && (
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+                sx={{ bgcolor: '#00A5D1', '&:hover': { bgcolor: '#0084a7' } }}
+                onClick={() => {
+                  setSelectedReminder(null);
+                  setOpenForm(true);
+                }}
+              >
+                New Reminder
+              </Button>
+            )
           ) : (
             <LoadingButton
               variant="contained"
@@ -216,6 +227,8 @@ export function RemindersView() {
                                 setSnackbar({ open: true, message: 'Failed to delete reminder', severity: 'error' });
                               }
                             }}
+                            canEdit={canEdit}
+                            canDelete={canDelete}
                           />
                         ))}
 

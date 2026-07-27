@@ -3,7 +3,7 @@ import { MuiTelInput } from 'mui-tel-input';
 import { IoMdCloudDownload } from "react-icons/io";
 import { TbLayoutKanbanFilled } from "react-icons/tb";
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -35,7 +35,7 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import Autocomplete, { createFilterOptions } from '@mui/material/Autocomplete';
 
-import { useLeads } from 'src/hooks/useLeads';
+import { useLeads, useKanbanLeads } from 'src/hooks/useLeads';
 
 import { getString } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
@@ -49,6 +49,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import { useAuth } from 'src/auth/auth-context';
 
 import { TableNoData } from '../table-no-data';
 import { LeadTableRow } from '../lead-table-row';
@@ -176,11 +178,28 @@ export function LeadView() {
   const [openConvertConfirm, setOpenConvertConfirm] = useState(false);
 
   // Permissions State
+  const { user } = useAuth();
   const [permissions, setPermissions] = useState<{ read: boolean; write: boolean; delete: boolean }>({
     read: true,
     write: true,
     delete: true,
   });
+
+  const actualPermissions = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.lead
+    ? {
+        read: !!user.permissions.actions.lead.view,
+        write: !!user.permissions.actions.lead.edit,
+        create: !!user.permissions.actions.lead.create,
+        delete: !!user.permissions.actions.lead.delete,
+        import: !!user.permissions.actions.lead.import,
+      }
+    : {
+        read: permissions.read,
+        write: permissions.write,
+        create: permissions.write,
+        delete: permissions.delete,
+        import: permissions.write,
+      };
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -221,6 +240,14 @@ export function LeadView() {
     filterName,
     filters,
     sortBy
+  );
+
+  const { columnsData: kanbanColumnsData, data: kanbanLeads, loading: kanbanLoading, refetch: refetchKanban } = useKanbanLeads(
+    filterName,
+    filters,
+    sortBy,
+    viewMode === 'kanban',
+    allWorkflowStates
   );
 
   const handleFilters = (update: any) => {
@@ -396,9 +423,12 @@ export function LeadView() {
     if (!deleteId) return;
     try {
       setDeleting(true);
+      const deletedLead = data.find((l: any) => l.name === deleteId) || (kanbanLeads as any[]).find((l: any) => l.name === deleteId);
+      const stage = deletedLead?.workflow_state;
       await deleteLead(deleteId);
       setSnackbar({ open: true, message: 'Lead deleted successfully', severity: 'success' });
       await refetch();
+      await refetchKanban(stage);
       setOpenDelete(false);
     } catch (e: any) {
       console.error(e);
@@ -412,10 +442,15 @@ export function LeadView() {
 
   const handleBulkDelete = async () => {
     try {
+      const stagesToRefetch = Array.from(new Set(table.selected.map(id => {
+        const lead = data.find((l: any) => l.name === id) || (kanbanLeads as any[]).find((l: any) => l.name === id);
+        return lead?.workflow_state;
+      }).filter(Boolean))) as string[];
       await Promise.all(table.selected.map((id) => deleteLead(id)));
       setSnackbar({ open: true, message: `${table.selected.length} leads deleted successfully`, severity: 'success' });
       table.onSelectAllRows(false, []);
       await refetch();
+      await refetchKanban(stagesToRefetch);
     } catch (e: any) {
       console.error(e);
       const friendlyMsg = getFriendlyErrorMessage(e);
@@ -542,6 +577,17 @@ export function LeadView() {
         remarks,
       };
 
+      const affectedStages: string[] = [];
+      if (currentLeadId) {
+        const oldLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+        if (oldLead?.workflow_state) affectedStages.push(oldLead.workflow_state);
+        if (leadData.workflow_state && leadData.workflow_state !== oldLead?.workflow_state) {
+          affectedStages.push(leadData.workflow_state);
+        }
+      } else {
+        affectedStages.push(leadData.workflow_state || allWorkflowStates[0] || 'New Lead');
+      }
+
       if (currentLeadId) {
         await updateLead(currentLeadId, leadData);
         setSnackbar({ open: true, message: 'Lead updated successfully', severity: 'success' });
@@ -551,6 +597,7 @@ export function LeadView() {
       }
 
       await refetch();
+      await refetchKanban(affectedStages);
       handleCloseCreate();
     } catch (err: any) {
       console.error(err);
@@ -1299,10 +1346,13 @@ export function LeadView() {
                     color="inherit"
                     variant="outlined"
                     onClick={() => {
+                      const convertedLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+                      const stage = convertedLead?.workflow_state;
                       setConvertResult(null);
                       setCurrentTab('general');
                       handleCloseCreate();
                       refetch();
+                      refetchKanban(stage);
                     }}
                     sx={{ mt: 4, borderRadius: 1.5 }}
                   >
@@ -1434,25 +1484,25 @@ export function LeadView() {
               </Button>
             </Box>
 
-            {permissions.write && (
-              <>
-                <Button
-                  variant="contained"
-                  startIcon={<IoMdCloudDownload size={20} />}
-                  onClick={() => setOpenImport(true)}
-                  sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
-                >
-                  Import
-                </Button>
-                <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="mingcute:add-line" />}
-                  onClick={handleOpenCreate}
-                  sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                  New Lead
-                </Button>
-              </>
+            {actualPermissions.import && (
+              <Button
+                variant="contained"
+                startIcon={<IoMdCloudDownload size={20} />}
+                onClick={() => setOpenImport(true)}
+                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+              >
+                Import
+              </Button>
+            )}
+            {actualPermissions.create && (
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+                onClick={handleOpenCreate}
+                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+              >
+                New Lead
+              </Button>
             )}
           </Box>
         </Box>
@@ -1473,13 +1523,13 @@ export function LeadView() {
               onDelete={handleBulkDelete}
             />
 
-            <TableContainer 
+            <TableContainer
               ref={tableContainerRef}
               onMouseDown={handleMouseDown}
               onMouseLeave={handleMouseLeave}
               onMouseUp={handleMouseUp}
               onMouseMove={handleMouseMove}
-              sx={{ 
+              sx={{
                 overflow: 'auto',
                 cursor: 'grab',
                 userSelect: 'none',
@@ -1561,8 +1611,9 @@ export function LeadView() {
                           onEdit={() => handleEditRow({ id: row.name })}
                           onDelete={() => onDeleteRow(row.name)}
                           onView={() => handleViewRow({ id: row.name })}
-                          canEdit={permissions.write}
-                          canDelete={permissions.delete}
+                          canEdit={actualPermissions.write}
+                          canDelete={actualPermissions.delete}
+                          canView={actualPermissions.read}
                         />
                       ))}
 
@@ -1602,15 +1653,20 @@ export function LeadView() {
               onRowsPerPageChange={table.onChangeRowsPerPage}
             />
           </Card>
+        ) : kanbanLoading && kanbanLeads.length === 0 ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 'calc(118vh - 170px)' }}>
+            <CircularProgress sx={{ color: '#08a3cd' }} />
+          </Box>
         ) : (
           <LeadKanbanBoard
-            leads={data}
+            columnsData={kanbanColumnsData}
+            leads={kanbanLeads}
             workflowStates={allWorkflowStates}
             onOpenLead={(id) => handleViewRow({ id })}
             onEditLead={(id) => handleEditRow({ id })}
             onDeleteLead={(id) => handleDeleteClick(id)}
             onAddLead={(selectedState) => handleOpenCreate(selectedState)}
-            permissions={permissions}
+            permissions={actualPermissions}
           />
         )}
       </DashboardContent>
@@ -1640,11 +1696,11 @@ export function LeadView() {
         title="Confirm Delete"
         content="Are you sure you want to delete this lead?"
         action={
-          <LoadingButton 
-            loading={deleting} 
-            onClick={handleConfirmDelete} 
-            color="error" 
-            variant="contained" 
+          <LoadingButton
+            loading={deleting}
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
             sx={{ borderRadius: 1.5, minWidth: 100 }}
           >
             Delete
@@ -1672,6 +1728,9 @@ export function LeadView() {
                 const newStage = pendingWorkflowChange.next_state;
 
                 if (currentLeadId) {
+                  const transitionedLead = data.find((l: any) => l.name === currentLeadId) || (kanbanLeads as any[]).find((l: any) => l.name === currentLeadId);
+                  const oldStage = transitionedLead?.workflow_state;
+
                   // Use applyWorkflowAction instead of updateLead to respect/trigger workflow logic
                   await applyWorkflowAction('Lead', currentLeadId, action);
 
@@ -1681,6 +1740,12 @@ export function LeadView() {
                   const newActions = await getWorkflowActions('Lead', newStage);
                   setWorkflowActions(newActions);
                   await refetch(); // Refresh table data
+
+                  const stages = [];
+                  if (oldStage) stages.push(oldStage);
+                  if (newStage) stages.push(newStage);
+                  await refetchKanban(stages);
+
                   setSnackbar({ open: true, message: 'Workflow status updated successfully', severity: 'success' });
                 }
                 setPendingWorkflowChange(null);

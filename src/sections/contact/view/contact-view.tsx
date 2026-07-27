@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
 
 import Box from '@mui/material/Box';
@@ -31,6 +32,8 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { TableNoData } from '../../lead/table-no-data';
 import { ContactTableRow } from '../contact-table-row';
 import { ContactFormDialog } from '../contact-form-dialog';
@@ -53,6 +56,7 @@ const CONTACT_SORT_OPTIONS = [
 ];
 
 export function ContactView() {
+    const { user } = useAuth();
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -71,6 +75,15 @@ export function ContactView() {
     const [currentContactId, setCurrentContactId] = useState<string | null>(null);
     const [openView, setOpenView] = useState(false);
     const [openImport, setOpenImport] = useState(false);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openContactId) {
+            setCurrentContactId(location.state.openContactId);
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     const [countryOptions, setCountryOptions] = useState<string[]>([]);
     const [stateOptions, setStateOptions] = useState<string[]>([]);
@@ -111,6 +124,10 @@ export function ContactView() {
         write: true,
         delete: true,
     });
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.clients;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.clients?.create : permissions.write;
+    const displayImport = hasCustomPerms ? !!user?.permissions?.actions?.clients?.import : permissions.write;
 
     const { data, total, loading, refetch } = useContacts(
         page + 1,
@@ -422,24 +439,28 @@ export function ContactView() {
                     Clients
                 </Typography>
 
-                {permissions.write && (
+                {(displayImport || displayCreate) && (
                     <Box sx={{ display: 'flex', gap: 2 }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<IoMdCloudDownload size={20} />}
-                            onClick={() => setOpenImport(true)}
-                            sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
-                        >
-                            Import
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={handleOpenCreate}
-                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                        >
-                            New Client
-                        </Button>
+                        {displayImport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<IoMdCloudDownload size={20} />}
+                                onClick={() => setOpenImport(true)}
+                                sx={{ bgcolor: '#02c281', color: 'common.white', '&:hover': { bgcolor: '#029f69' } }}
+                            >
+                                Import
+                            </Button>
+                        )}
+                        {displayCreate && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                New Client
+                            </Button>
+                        )}
                     </Box>
                 )}
             </Box>
@@ -619,6 +640,7 @@ export function ContactView() {
                 }}
                 contactId={currentContactId}
                 onEdit={handleEditRow}
+                initialTab={location.state?.activeTab}
             />
         </DashboardContent>
     );

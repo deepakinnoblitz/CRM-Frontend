@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
 import { useBoolean } from 'minimal-shared/hooks';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Grid from '@mui/material/Grid';
 import Alert from '@mui/material/Alert';
+import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -13,7 +14,11 @@ import Switch from '@mui/material/Switch';
 import Avatar from '@mui/material/Avatar';
 import Snackbar from '@mui/material/Snackbar';
 import { styled } from '@mui/material/styles';
+import TableRow from '@mui/material/TableRow';
 import TextField from '@mui/material/TextField';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -21,11 +26,13 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
+import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { uploadFile } from 'src/api/data-import';
 import { getRoles, getModules } from 'src/api/users';
+import { fetchRolePermissions } from 'src/api/permission-management';
 import {
   fetchUserPermissions,
   createUserPermission,
@@ -33,10 +40,73 @@ import {
 } from 'src/api/user-permissions';
 
 import { Iconify } from 'src/components/iconify';
+import { Scrollbar } from 'src/components/scrollbar';
 
+import { isActionAllowed } from './view/role-permission-create-view';
 import { UserPermissionFormDialog } from '../user-permission/user-permission-form-dialog';
 
 // Android 12 Switch Style
+const getFriendlyModuleName = (module: string) => {
+    if (module === 'deal') return 'Prospects';
+    if (module === 'account') return 'Company';
+    if (module === 'contact') return 'Clients';
+    if (module === 'purchase_collection') return 'Purchase Settlement';
+    if (module.startsWith('email_') || module.startsWith('whatsapp_')) {
+        return module.startsWith('email_') ? 'Mail Automation' : 'WhatsApp Automation';
+    }
+    if (module.startsWith('asset_')) return 'Asset';
+    if (module === 'expense_tracker' || module === 'reimbursement_claims') return 'Expenses';
+    if (module === 'crm_expenses') return 'CRM Expense Tracker';
+    if (module === 'employee_evaluation' || module === 'badges' || module === 'employee_monthly_award') return 'Employee Performance';
+    if (module === 'job_openings' || module === 'job_applicants' || module === 'interviews' || module === 'employee_referrals') return 'Recruitment';
+    if (module === 'attendance_list' || module === 'daily_log' || module === 'wfh_attendance') return 'Attendance';
+    if (module.startsWith('meta_') || module === 'webhook_logs') return 'Lead Integration';
+    if (module.startsWith('master_')) return 'Masters';
+    if (module.startsWith('report_')) return 'Reports';
+    return (module || '').split('_').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
+const getFriendlyScreenName = (screen: string) => {
+    if (screen === 'Purchase Collections') return 'Purchase Settlements';
+    return screen;
+};
+
+const getRowSpan = (rows: any[], index: number) => {
+    const currentFriendly = getFriendlyModuleName(rows[index]?.module_id || '');
+    if (index > 0 && getFriendlyModuleName(rows[index - 1]?.module_id || '') === currentFriendly) {
+        return 0;
+    }
+    let span = 1;
+    for (let i = index + 1; i < rows.length; i++) {
+        if (getFriendlyModuleName(rows[i]?.module_id || '') === currentFriendly) {
+            span++;
+        } else {
+            break;
+        }
+    }
+    return span;
+};
+
+const renderToggleIcon = (row: any, key: string) => {
+    const allowed = isActionAllowed(row.module_id, row.screen_id, key);
+    if (!allowed) {
+        return (
+            <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)', color: 'text.disabled' }}>
+                -
+            </TableCell>
+        );
+    }
+    const value = row[key];
+    return (
+        <TableCell align="center" sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+            {value ? (
+                <Iconify icon="solar:check-circle-bold" sx={{ color: '#00a76f' }} width={24} />
+            ) : (
+                <Iconify icon="solar:close-circle-bold" sx={{ color: '#919eab' }} width={24} />
+            )}
+        </TableCell>
+    );
+};
 const Android12Switch = styled(Switch)(({ theme }) => ({
   width: 36,
   height: 20,
@@ -144,6 +214,11 @@ export function UserFormDialog({
   const [userPermissions, setUserPermissions] = useState<any[]>([]);
   const [loadingPermissions, setLoadingPermissions] = useState(false);
   const [openPermissionDialog, setOpenPermissionDialog] = useState(false);
+
+  // Role Permissions state (Permission Management)
+  const [rolePermissions, setRolePermissions] = useState<any[]>([]);
+  const [loadingRolePermissions, setLoadingRolePermissions] = useState(false);
+  const [selectedRoleForView, setSelectedRoleForView] = useState<any | null>(null);
   const [permissionFormData, setPermissionFormData] = useState({
     allow: 'Employee',
     for_value: '',
@@ -296,6 +371,40 @@ export function UserFormDialog({
       setLoadingPermissions(false);
     }
   };
+
+  const loadRolePermissions = useCallback(async () => {
+    const selectedRoles = formData.roles || [];
+    if (selectedRoles.length === 0) {
+      setRolePermissions([]);
+      setFormData((prev: any) => ({ ...prev, custom_permissions: [] }));
+      return;
+    }
+    setLoadingRolePermissions(true);
+    try {
+      const data = await fetchRolePermissions(selectedRoles);
+      setRolePermissions(data);
+
+      const validPmNames = new Set(data.map((rp: any) => rp.name));
+      setFormData((prev: any) => {
+        const currentCustom = prev.custom_permissions || [];
+        const filteredCustom = currentCustom.filter((p: any) => validPmNames.has(p.permission_manager));
+        if (filteredCustom.length !== currentCustom.length) {
+          return { ...prev, custom_permissions: filteredCustom };
+        }
+        return prev;
+      });
+    } catch (err) {
+      console.error('Failed to load role permissions:', err);
+    } finally {
+      setLoadingRolePermissions(false);
+    }
+  }, [formData.roles, setFormData]);
+
+  useEffect(() => {
+    if (open) {
+      loadRolePermissions();
+    }
+  }, [open, loadRolePermissions]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);
@@ -598,19 +707,19 @@ export function UserFormDialog({
 
         <Grid container spacing={3}>
           {roles.map((role) => (
-              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
-                <FormControlLabel
-                  control={
-                    <Android12Switch
-                      checked={(formData.roles || []).includes(role.name)}
-                      onChange={() => handleRoleToggle(role.name)}
-                      size="small"
-                    />
-                  }
-                  label={role.name}
-                />
-              </Grid>
-            ))}
+            <Grid size={{ xs: 12, sm: 6, md: 4 }} key={role.name}>
+              <FormControlLabel
+                control={
+                  <Android12Switch
+                    checked={(formData.roles || []).includes(role.name)}
+                    onChange={() => handleRoleToggle(role.name)}
+                    size="small"
+                  />
+                }
+                label={role.name}
+              />
+            </Grid>
+          ))}
         </Grid>
       </Stack>
     </Box>
@@ -800,10 +909,94 @@ export function UserFormDialog({
     </Box>
   );
 
+  const handlePermissionToggle = (pmName: string, pmLabel: string) => {
+    const currentPerms = formData.custom_permissions || [];
+    const exists = currentPerms.some((p: any) => p.permission_manager === pmName);
+    let newPerms;
+    if (exists) {
+      newPerms = currentPerms.filter((p: any) => p.permission_manager !== pmName);
+    } else {
+      newPerms = [...currentPerms, { permission_manager: pmName, permission_name: pmLabel }];
+    }
+    setFormData({ ...formData, custom_permissions: newPerms });
+  };
+
+  const renderRolePermissionsTab = (
+    <Box sx={{ p: 3 }}>
+      <Stack spacing={3}>
+        <Box>
+          <Typography variant="h6" sx={{ mb: 1 }}>Role Permissions</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select the specific frontend roles (permissions) to assign to this user.
+          </Typography>
+        </Box>
+
+        {loadingRolePermissions ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : rolePermissions.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 5, border: '1px dashed', borderColor: 'divider', borderRadius: 1.5 }}>
+            <Typography variant="body2" color="text.secondary">
+              No active permissions found. Make sure at least one role (e.g. HR, CRM And Sales, Employee) is selected in the Roles tab.
+            </Typography>
+          </Box>
+        ) : (
+          <Grid container spacing={3}>
+            {rolePermissions.map((rp) => {
+              const isChecked = (formData.custom_permissions || []).some(
+                (p: any) => p.permission_manager === rp.name
+              );
+              return (
+                <Grid size={{ xs: 12, sm: 6, md: 4 }} key={rp.name}>
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: '100%' }}>
+                    <FormControlLabel
+                      control={
+                        <Android12Switch
+                          checked={isChecked}
+                          onChange={() => handlePermissionToggle(rp.name, rp.frontend_role_name)}
+                          size="small"
+                        />
+                      }
+                      label={
+                        <Stack spacing={0.25}>
+                          <Typography variant="body2" sx={{ fontWeight: 600, pl: 1 }}>
+                            {rp.frontend_role_name}
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1 }}>
+                            {rp.backend_master_role}
+                          </Typography>
+                        </Stack>
+                      }
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => setSelectedRoleForView(rp)}
+                      sx={{
+                        p: 0.5,
+                        width: 28,
+                        height: 28,
+                        color: 'text.secondary',
+                        bgcolor: 'action.hover',
+                        '&:hover': { bgcolor: 'action.selected', color: 'primary.main' }
+                      }}
+                    >
+                      <Iconify icon="solar:eye-bold" width={16} height={16} />
+                    </IconButton>
+                  </Stack>
+                </Grid>
+              );
+            })}
+          </Grid>
+        )}
+      </Stack>
+    </Box>
+  );
+
   return (
     <>
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { borderRadius: 2, boxShadow: (themeVar) => themeVar.customShadows.z24, } }}>
-        <DialogTitle sx={{borderBottom: (theme) => `1px solid ${theme.palette.divider}`,}}>
+        <DialogTitle sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, }}>
           {selectedUser ? 'Edit User' : 'New User'}
           <IconButton onClick={onClose} sx={{ position: 'absolute', right: 8, top: 8 }}>
             <Iconify icon="mingcute:close-line" />
@@ -816,7 +1009,8 @@ export function UserFormDialog({
           sx={{ px: 3, borderBottom: 1, borderColor: 'divider' }}
         >
           <Tab label="User Details" value="details" />
-          <Tab label="Roles & Permissions" value="roles" />
+          <Tab label="Roles" value="roles" />
+          <Tab label="Role Permission" value="role-permissions" />
           {/* <Tab label="Allow Modules" value="modules" /> */}
           {selectedUser && <Tab label="User Permissions" value="permissions" />}
           <Tab label="Password" value="password" />
@@ -825,6 +1019,7 @@ export function UserFormDialog({
         <DialogContent sx={{ p: 0 }}>
           {currentTab === 'details' && renderUserDetailsTab}
           {currentTab === 'roles' && renderRolesTab}
+          {currentTab === 'role-permissions' && renderRolePermissionsTab}
           {/* {currentTab === 'modules' && renderModulesTab} */}
           {currentTab === 'permissions' && selectedUser && renderUserPermissionsTab}
           {currentTab === 'password' && renderPasswordTab}
@@ -852,6 +1047,82 @@ export function UserFormDialog({
           {validationSnackbar}
         </Alert>
       </Snackbar>
+
+      {/* Role Details Viewer Dialog */}
+      <Dialog
+        open={!!selectedRoleForView}
+        onClose={() => setSelectedRoleForView(null)}
+        maxWidth="lg"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2 } }}
+      >
+        <DialogTitle sx={{ borderBottom: (theme) => `1px solid ${theme.palette.divider}`, pr: 6 }}>
+          Role Permissions: {selectedRoleForView?.frontend_role_name}
+          <IconButton onClick={() => setSelectedRoleForView(null)} sx={{ position: 'absolute', right: 8, top: 8 }}>
+            <Iconify icon="mingcute:close-line" />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {(() => {
+            const dialogPermissions = selectedRoleForView?.permissions || [];
+
+            return dialogPermissions.length > 0 ? (
+              <TableContainer sx={{ border: '1px solid rgba(224, 224, 224, 1)', borderRadius: 1 }}>
+                <Scrollbar>
+                  <Table size="medium">
+                      <TableRow sx={{ bgcolor: '#08a3cd' }}>
+                        <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Menu Name</TableCell>
+                        <TableCell sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Access Name</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Add</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Edit</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>View</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Delete</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Export</TableCell>
+                        <TableCell align="center" sx={{ fontWeight: 800, color: 'common.white', borderRight: '1px solid rgba(224, 224, 224, 1)', bgcolor: '#08a3cd' }}>Import</TableCell>
+                      </TableRow>
+                    <TableBody>
+                      {dialogPermissions.map((row: any, idx: number) => {
+                        const span = getRowSpan(dialogPermissions, idx);
+                        return (
+                          <TableRow key={idx} hover sx={{ borderBottom: '1px solid rgba(224, 224, 224, 1)' }}>
+                            {span > 0 && (
+                              <TableCell
+                                rowSpan={span}
+                                sx={{
+                                  verticalAlign: 'middle',
+                                  borderRight: '1px solid rgba(224, 224, 224, 1)',
+                                  fontWeight: 'bold',
+                                  color: 'text.primary',
+                                  bgcolor: 'rgba(244, 246, 248, 0.4)'
+                                }}
+                              >
+                                {getFriendlyModuleName(row.module_id)}
+                              </TableCell>
+                            )}
+                            <TableCell sx={{ borderRight: '1px solid rgba(224, 224, 224, 1)' }}>
+                              {getFriendlyScreenName(row.screen_id)}
+                            </TableCell>
+                            {renderToggleIcon(row, 'add_permission')}
+                            {renderToggleIcon(row, 'edit_permission')}
+                            {renderToggleIcon(row, 'view_permission')}
+                            {renderToggleIcon(row, 'delete_permission')}
+                            {renderToggleIcon(row, 'export_permission')}
+                            {renderToggleIcon(row, 'import_permission')}
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </Scrollbar>
+              </TableContainer>
+            ) : (
+              <Box sx={{ py: 3, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">No screen permissions defined.</Typography>
+              </Box>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

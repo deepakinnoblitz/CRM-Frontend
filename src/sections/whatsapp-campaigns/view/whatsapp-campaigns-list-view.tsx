@@ -31,6 +31,8 @@ import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 import { WhatsAppCampaignTableToolbar } from 'src/sections/whatsapp-campaigns/whatsapp-campaign-table-toolbar';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { WhatsAppCampaignTableRow } from '../whatsapp-campaign-table-row';
 import { WhatsAppCampaignTableFiltersDrawer } from '../whatsapp-campaign-table-filters-drawer';
 
@@ -61,6 +63,12 @@ export function WhatsAppCampaignsListView() {
         message: '',
         severity: 'success',
     });
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_campaigns;
+    const canCreateCampaign = hasCustomPerms && user?.permissions?.actions?.whatsapp_campaigns ? !!user?.permissions?.actions?.whatsapp_campaigns?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_campaigns?.delete : true;
 
     const [openFilters, setOpenFilters] = useState(false);
 
@@ -160,14 +168,16 @@ export function WhatsAppCampaignsListView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">CRM WhatsApp Campaigns</Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                    onClick={() => router.push('/whatsapp-campaigns/new')}
-                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                >
-                    New Campaign
-                </Button>
+                {canCreateCampaign &&(
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                        onClick={() => router.push('/whatsapp-campaigns/new')}
+                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                    >
+                        New Campaign
+                    </Button>
+                )}
             </Stack>
 
             <Card>
@@ -219,8 +229,8 @@ export function WhatsAppCampaignsListView() {
                                                 onView={() => handleViewRow(row.name)}
                                                 onEdit={() => handleEditRow(row.name)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit
-                                                canDelete
+                                                canEdit = {displayEdit}
+                                                canDelete = {displayDelete}
                                             />
                                         ))}
 

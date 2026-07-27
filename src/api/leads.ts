@@ -31,6 +31,7 @@ export interface Lead {
     interest_level?: 'High' | 'Medium' | 'Low';
     phone_numbers?: LeadPhoneRow[];
     emails?: LeadEmailRow[];
+    lead_notes?: any[];
     modified?: string;
 }
 
@@ -544,5 +545,23 @@ export async function sendEmailAutomationMessage(
     if (!res.ok || json.exc) {
         throw new Error(handleFrappeError(json, "Unable to send WhatsApp message."));
     }
+    return json.message;
+}
+
+export async function saveLead(doc: any) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.save", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+            doc: {
+                doctype: "Lead",
+                ...doc
+            }
+        })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to save lead"));
     return json.message;
 }

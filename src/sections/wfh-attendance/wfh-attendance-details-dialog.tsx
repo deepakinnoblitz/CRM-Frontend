@@ -44,6 +44,9 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
     const hrRoles = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
     const isHR = user?.roles?.some((role: string) => hrRoles.includes(role));
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.wfh_attendance;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.wfh_attendance?.edit : true;
+
     useEffect(() => {
         if (open && wfhId) {
             setLoading(true);
@@ -219,7 +222,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                 )}
             </DialogContent>
 
-            {isHR && wfh?.workflow_state === 'Pending' && (
+            {isHR && displayEdit && wfh?.workflow_state === 'Pending' && (
                 <DialogActions sx={{ px: 4, py: 3, bgcolor: (theme) => alpha(theme.palette.grey[500], 0.04) }}>
                     <Stack direction="row" spacing={1.5} sx={{ width: 1 }}>
                         <LoadingButton

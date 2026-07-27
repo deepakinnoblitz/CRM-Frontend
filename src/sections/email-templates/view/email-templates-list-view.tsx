@@ -37,9 +37,10 @@ import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { EmailTemplateTableToolbar } from '../email-templates-table-toolbar';
 import { EmailTemplateFiltersDrawer } from '../email-templates-filters-drawer';
-
 
 const TABLE_HEAD = [
     { id: 'template_name', label: 'Template Name', minWidth: 250 },
@@ -67,6 +68,12 @@ export function EmailTemplateListView() {
     const [categories, setCategories] = useState<any[]>([]);
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_templates;
+    const canCreateTemplete = hasCustomPerms && user?.permissions?.actions?.email_templates ? !!user?.permissions?.actions?.email_templates?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_templates?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.email_templates?.delete : true;
 
     useEffect(() => {
         const msg = sessionStorage.getItem('email_template_success_message');
@@ -155,14 +162,16 @@ export function EmailTemplateListView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Email Templates</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                        onClick={handleCreateNew}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Template
-                    </Button>
+                    {canCreateTemplete && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Template
+                        </Button>
+                    )}
                 </Box>
             </Stack>
 
@@ -281,12 +290,17 @@ export function EmailTemplateListView() {
                                                         <IconButton onClick={() => router.push(`/email-templates/${row.name}/view`)} sx={{ color: 'info.main' }} title="View">
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton onClick={() => router.push(`/email-templates/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        { displayEdit && (
+                                                            <IconButton onClick={() => router.push(`/email-templates/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        
+                                                        { displayDelete && (
                                                         <IconButton onClick={() => setConfirmDelete({ open: true, id: row.name })} sx={{ color: 'error.main' }} title="Delete">
                                                             <Iconify icon="solar:trash-bin-trash-bold" />
                                                         </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

@@ -13,6 +13,7 @@ import { DashboardLayout } from 'src/layouts/dashboard';
 
 import { AuthGuard } from 'src/auth/auth-guard';
 import { useAuth } from 'src/auth/auth-context';
+import { RolePermissionGuard } from 'src/auth/role-permission-guard';
 
 
 // ----------------------------------------------------------------------
@@ -60,6 +61,12 @@ export const ProposalListPage = lazy(() => import('src/pages/proposals/list'));
 export const ProposalCreatePage = lazy(() => import('src/pages/proposals/new'));
 export const ProposalEditPage = lazy(() => import('src/pages/proposals/edit'));
 export const ProposalDetailsPage = lazy(() => import('src/pages/proposals/details'));
+
+export const RolePermissionListPage = lazy(() => import('src/pages/role-permissions/list'));
+export const RolePermissionCreatePage = lazy(() => import('src/pages/role-permissions/new'));
+export const RolePermissionEditPage = lazy(() => import('src/pages/role-permissions/edit'));
+export const RolePermissionDetailsPage = lazy(() => import('src/pages/role-permissions/details'));
+
 
 export const EmailTemplateListPage = lazy(() => import('src/pages/email-templates/list'));
 export const EmailTemplateCreatePage = lazy(() => import('src/pages/email-templates/new'));
@@ -119,6 +126,7 @@ export const WhatsAppSettingsPage = lazy(() => import('src/pages/whatsapp-settin
 export const ProductsPage = lazy(() => import('src/pages/products'));
 
 export const LeadReportPage = lazy(() => import('src/pages/reports/lead'));
+export const SalesTargetEntryReportPage = lazy(() => import('src/pages/reports/sales-target-entry'));
 export const ContactReportPage = lazy(() => import('src/pages/reports/contact'));
 export const AccountReportPage = lazy(() => import('src/pages/reports/account'));
 export const CallsReportPage = lazy(() => import('src/pages/reports/calls'));
@@ -200,7 +208,10 @@ export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/perf
 export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const BloodGroupPage = lazy(() => import('src/pages/blood-group'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
+export const CallStatusPage = lazy(() => import('src/pages/call-status'));
+export const MeetingStatusPage = lazy(() => import('src/pages/meeting-status'));
 export const EmailTemplateCategoryPage = lazy(() => import('../pages/email-template-category'));
 export const WhatsAppTemplateCategoryPage = lazy(() => import('../pages/whatsapp-template-category'));
 export const ServicePage = lazy(() => import('src/pages/service'));
@@ -210,6 +221,7 @@ export const PaymentTypePage = lazy(() => import('../pages/payment-type'));
 export const TaxTypesPage = lazy(() => import('src/pages/tax-types'));
 export const CompanyBankAccountPage = lazy(() => import('src/pages/company-bank-account'));
 export const EmployeeOverallReportPage = lazy(() => import('src/pages/employee-overall-report'));
+export const SalesTargetEntryPage = lazy(() => import('src/pages/sales-target-entry'));
 
 
 const renderFallback = () => (
@@ -239,163 +251,173 @@ export const routesSection: RouteObject[] = [
       {
         path: 'leads',
         children: [
-          { index: true, element: <LeadsPage /> },
-          { path: ':id/view', element: <LeadDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="lead"><LeadsPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="lead"><LeadDetailsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'users', element: <UsersPage /> },
-      { path: 'user-permissions', element: <UserPermissionsPage /> },
+      { path: 'users', element: <RolePermissionGuard actionKey="users_list"><UsersPage /></RolePermissionGuard> },
+      { path: 'user-permissions', element: <RolePermissionGuard actionKey="users_list"><UserPermissionsPage /></RolePermissionGuard> },
       { path: 'user-profile', element: <ProfilePage /> },
       { path: 'my-profile', element: <MyProfilePage /> },
       { path: 'chat', element: <ChatPage /> },
 
-      { path: 'contacts', element: <ContactPage /> },
-      { path: 'accounts', element: <AccountsPage /> },
+      { path: 'contacts', element: <RolePermissionGuard actionKey="clients"><ContactPage /></RolePermissionGuard> },
+      { path: 'accounts', element: <RolePermissionGuard actionKey="company"><AccountsPage /></RolePermissionGuard> },
+      { path: 'sales-target-entry', element: <RolePermissionGuard actionKey="sales_target_entry"><SalesTargetEntryPage /></RolePermissionGuard> },
       {
         path: 'deals',
         children: [
-          { index: true, element: <DealsPage /> },
-          { path: ':id/view', element: <DealDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="prospects"><DealsPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="prospects"><DealDetailsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'events', element: <EventsPage /> },
-      { path: 'calls', element: <CallsPage /> },
-      { path: 'meetings', element: <MeetingsPage /> },
-      { path: 'todo', element: <ToDoPage /> },
+      { path: 'events', element: <RolePermissionGuard actionKey="events"><EventsPage /></RolePermissionGuard> },
+      { path: 'calls', element: <RolePermissionGuard actionKey="events"><CallsPage /></RolePermissionGuard> },
+      { path: 'meetings', element: <RolePermissionGuard actionKey="events"><MeetingsPage /></RolePermissionGuard> },
+      { path: 'todo', element: <RolePermissionGuard actionKey="events"><ToDoPage /></RolePermissionGuard> },
       { path: 'task-manager', element: <TaskManagerPage /> },
       { path: 'products', element: <ProductsPage /> },
       {
         path: 'invoices',
         children: [
-          { index: true, element: <InvoiceListPage /> },
-          { path: 'new', element: <InvoiceCreatePage /> },
-          { path: ':id/edit', element: <InvoiceEditPage /> },
-          { path: ':id/view', element: <InvoiceDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="invoice"><InvoiceListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="invoice"><InvoiceCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="invoice"><InvoiceEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="invoice"><InvoiceDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'estimations',
         children: [
           { index: true, element: <Navigate to="/deals?tab=estimations" replace /> },
-          { path: 'new', element: <EstimationCreatePage /> },
-          { path: ':id/edit', element: <EstimationEditPage /> },
-          { path: ':id/view', element: <EstimationDetailsPage /> },
+          { path: 'new', element: <RolePermissionGuard actionKey="estimation"><EstimationCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="estimation"><EstimationEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="estimation"><EstimationDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'proposals',
         children: [
-          { index: true, element: <ProposalListPage /> },
-          { path: 'new', element: <ProposalCreatePage /> },
-          { path: ':id/edit', element: <ProposalEditPage /> },
-          { path: ':id/view', element: <ProposalDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="proposal"><ProposalListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="proposal"><ProposalCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="proposal"><ProposalEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="proposal"><ProposalDetailsPage /></RolePermissionGuard> },
+        ],
+      },
+      {
+        path: 'role-permissions',
+        children: [
+          { index: true, element: <RolePermissionListPage /> },
+          { path: 'new', element: <RolePermissionCreatePage /> },
+          { path: ':id/edit', element: <RolePermissionEditPage /> },
+          { path: ':id/view', element: <RolePermissionDetailsPage /> },
         ],
       },
       {
         path: 'email-templates',
         children: [
-          { index: true, element: <EmailTemplateListPage /> },
-          { path: 'new', element: <EmailTemplateCreatePage /> },
-          { path: ':id/edit', element: <EmailTemplateEditPage /> },
-          { path: ':id/view', element: <EmailTemplateDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'email-campaigns',
         children: [
-          { index: true, element: <EmailCampaignListPage /> },
-          { path: 'new', element: <EmailCampaignCreatePage /> },
-          { path: ':id/edit', element: <EmailCampaignEditPage /> },
-          { path: ':id/view', element: <EmailCampaignDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="email_campaigns"><EmailCampaignListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="email_campaigns"><EmailCampaignCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="email_campaigns"><EmailCampaignEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="email_campaigns"><EmailCampaignDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'whatsapp-campaigns',
         children: [
-          { index: true, element: <WhatsAppCampaignListPage /> },
-          { path: 'new', element: <WhatsAppCampaignCreatePage /> },
-          { path: ':id/edit', element: <WhatsAppCampaignEditPage /> },
-          { path: ':id/view', element: <WhatsAppCampaignDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="whatsapp_campaigns"><WhatsAppCampaignListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="whatsapp_campaigns"><WhatsAppCampaignCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="whatsapp_campaigns"><WhatsAppCampaignEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="whatsapp_campaigns"><WhatsAppCampaignDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'email-automations',
         children: [
-          { index: true, element: <EmailAutomationListPage /> },
-          { path: 'new', element: <EmailAutomationCreatePage /> },
-          { path: ':id/edit', element: <EmailAutomationEditPage /> },
-          { path: ':id/view', element: <EmailAutomationDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="email_automations"><EmailAutomationListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="email_automations"><EmailAutomationCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="email_automations"><EmailAutomationEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="email_automations"><EmailAutomationDetailsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'email-settings', element: <EmailSettingsPage /> },
+      { path: 'email-settings', element: <RolePermissionGuard actionKey="email_settings"><EmailSettingsPage /></RolePermissionGuard> },
       {
         path: 'whatsapp-templates',
         children: [
-          { index: true, element: <WhatsAppTemplateListPage /> },
-          { path: 'new', element: <WhatsAppTemplateCreatePage /> },
-          { path: ':id/edit', element: <WhatsAppTemplateEditPage /> },
-          { path: ':id/view', element: <WhatsAppTemplateDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="whatsapp_templates"><WhatsAppTemplateListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="whatsapp_templates"><WhatsAppTemplateCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="whatsapp_templates"><WhatsAppTemplateEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="whatsapp_templates"><WhatsAppTemplateDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
         path: 'whatsapp-automation',
         children: [
-          { index: true, element: <WhatsAppAutomationListPage /> },
-          { path: 'new', element: <WhatsAppAutomationCreatePage /> },
-          { path: ':id/edit', element: <WhatsAppAutomationEditPage /> },
-          { path: ':id/view', element: <WhatsAppAutomationDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="whatsapp_automations"><WhatsAppAutomationListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="whatsapp_automations"><WhatsAppAutomationCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="whatsapp_automations"><WhatsAppAutomationEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="whatsapp_automations"><WhatsAppAutomationDetailsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'whatsapp-settings', element: <WhatsAppSettingsPage /> },
+      { path: 'whatsapp-settings', element: <RolePermissionGuard actionKey="whatsapp_settings"><WhatsAppSettingsPage /></RolePermissionGuard> },
       {
         path: 'lead-integration',
         children: [
           {
             path: 'meta-apps',
             children: [
-              { index: true, element: <MetaAppsListPage /> },
-              { path: 'new', element: <MetaAppsCreatePage /> },
-              { path: ':id/edit', element: <MetaAppsEditPage /> },
-              { path: ':id/view', element: <MetaAppsDetailsPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="meta_apps"><MetaAppsListPage /></RolePermissionGuard> },
+              { path: 'new', element: <RolePermissionGuard actionKey="meta_apps"><MetaAppsCreatePage /></RolePermissionGuard> },
+              { path: ':id/edit', element: <RolePermissionGuard actionKey="meta_apps"><MetaAppsEditPage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="meta_apps"><MetaAppsDetailsPage /></RolePermissionGuard> },
             ],
           },
           {
             path: 'meta-pages',
             children: [
-              { index: true, element: <MetaPagesListPage /> },
-              { path: 'new', element: <MetaPagesCreatePage /> },
-              { path: ':id/edit', element: <MetaPagesEditPage /> },
-              { path: ':id/view', element: <MetaPagesDetailsPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="meta_pages"><MetaPagesListPage /></RolePermissionGuard> },
+              { path: 'new', element: <RolePermissionGuard actionKey="meta_pages"><MetaPagesCreatePage /></RolePermissionGuard> },
+              { path: ':id/edit', element: <RolePermissionGuard actionKey="meta_pages"><MetaPagesEditPage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="meta_pages"><MetaPagesDetailsPage /></RolePermissionGuard> },
             ],
           },
           {
             path: 'meta-forms',
             children: [
-              { index: true, element: <MetaFormsListPage /> },
-              { path: 'new', element: <MetaFormsCreatePage /> },
-              { path: ':id/edit', element: <MetaFormsEditPage /> },
-              { path: ':id/view', element: <MetaFormsDetailsPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="meta_forms"><MetaFormsListPage /></RolePermissionGuard> },
+              { path: 'new', element: <RolePermissionGuard actionKey="meta_forms"><MetaFormsCreatePage /></RolePermissionGuard> },
+              { path: ':id/edit', element: <RolePermissionGuard actionKey="meta_forms"><MetaFormsEditPage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="meta_forms"><MetaFormsDetailsPage /></RolePermissionGuard> },
             ],
           },
           {
             path: 'webhook-logs',
             children: [
-              { index: true, element: <MetaWebhookLogsPage /> },
-              { path: ':id/view', element: <MetaWebhookLogViewPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="webhook_logs"><MetaWebhookLogsPage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="webhook_logs"><MetaWebhookLogViewPage /></RolePermissionGuard> },
             ],
           },
           {
             path: 'meta-queue',
             children: [
-              { index: true, element: <MetaQueuePage /> },
-              { path: ':id/view', element: <MetaQueueViewPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="meta_queue"><MetaQueuePage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="meta_queue"><MetaQueueViewPage /></RolePermissionGuard> },
             ],
           },
           {
             path: 'meta-leads',
             children: [
-              { index: true, element: <MetaLeadsPage /> },
-              { path: ':id/view', element: <MetaLeadsViewPage /> },
+              { index: true, element: <RolePermissionGuard actionKey="meta_leads"><MetaLeadsPage /></RolePermissionGuard> },
+              { path: ':id/view', element: <RolePermissionGuard actionKey="meta_leads"><MetaLeadsViewPage /></RolePermissionGuard> },
             ],
           },
         ],
@@ -405,127 +427,131 @@ export const routesSection: RouteObject[] = [
       {
         path: 'employee',
         children: [
-          { index: true, element: <EmployeePage /> },
-          { path: ':id/view', element: <EmployeeDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="employee"><EmployeePage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="employee"><EmployeeDetailsPage /></RolePermissionGuard> },
         ]
       },
-      { path: 'attendance', element: <AttendancePage /> },
-      { path: 'leaves', element: <LeavesPage /> },
-      { path: 'leave-allocations', element: <LeaveAllocationsPage /> },
+      { path: 'attendance', element: <RolePermissionGuard actionKey="attendance_list"><AttendancePage /></RolePermissionGuard> },
+      { path: 'leaves', element: <RolePermissionGuard actionKey="leaves"><LeavesPage /></RolePermissionGuard> },
+      { path: 'leave-allocations', element: <RolePermissionGuard actionKey="leaves"><LeaveAllocationsPage /></RolePermissionGuard> },
       { path: 'payroll', element: <PayrollPage /> },
-      { path: 'requests', element: <RequestsPage /> },
-      { path: 'announcements', element: <AnnouncementsPage /> },
+      { path: 'requests', element: <RolePermissionGuard actionKey="requests"><RequestsPage /></RolePermissionGuard> },
+      { path: 'announcements', element: <RolePermissionGuard actionKey="announcements"><AnnouncementsPage /></RolePermissionGuard> },
       {
         path: 'asset',
         children: [
-          { index: true, element: <AssetsPage /> },
-          { path: 'list', element: <AssetsPage /> },
-          { path: 'assignments', element: <AssetAssignmentsPage /> },
-          { path: 'requests', element: <AssetRequestsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="asset_list"><AssetsPage /></RolePermissionGuard> },
+          { path: 'list', element: <RolePermissionGuard actionKey="asset_list"><AssetsPage /></RolePermissionGuard> },
+          { path: 'assignments', element: <RolePermissionGuard actionKey="asset_assignments"><AssetAssignmentsPage /></RolePermissionGuard> },
+          { path: 'requests', element: <RolePermissionGuard actionKey="asset_requests"><AssetRequestsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'timesheets', element: <TimesheetsPage /> },
-      { path: 'wfh-attendance', element: <WFHAttendancePage /> },
-      { path: 'daily-log', element: <DailyLogPage /> },
-      { path: 'import-attendance', element: <ImportAttendancePage /> },
-      { path: 'department', element: <DepartmentPage /> },
-      { path: 'project', element: <ProjectPage /> },
-      { path: 'activity-type', element: <ActivityTypePage /> },
-      { path: 'claim-type', element: <ClaimTypePage /> },
-      { path: 'bank-account', element: <BankAccountPage /> },
-      { path: 'asset-category', element: <AssetCategoryPage /> },
-      { path: 'performance-criteria-category', element: <PerformanceCriteriaCategoryPage /> },
-      { path: 'designation', element: <DesignationPage /> },
-      { path: 'salary-structure-component', element: <SalaryStructureComponentPage /> },
-      { path: 'leave-type', element: <LeaveTypePage /> },
-      { path: 'master/lead-from', element: <LeadFromPage /> },
-      { path: 'master/email-template-category', element: <EmailTemplateCategoryPage /> },
-      { path: 'master/whatsapp-template-category', element: <WhatsAppTemplateCategoryPage /> },
-      { path: 'master/service', element: <ServicePage /> },
-      { path: 'master/item', element: <ItemPage /> },
-      { path: 'master/payment-terms', element: <PaymentTermsPage /> },
-      { path: 'master/payment-type', element: <PaymentTypePage /> },
-      { path: 'master/tax-types', element: <TaxTypesPage /> },
-      { path: 'master/company-bank-account', element: <CompanyBankAccountPage /> },
-      { path: 'employee-overall-report', element: <EmployeeOverallReportPage /> },
-      { path: 'timesheet-reports', element: <TimesheetReportPage /> },
+      { path: 'timesheets', element: <RolePermissionGuard actionKey="timesheets"><TimesheetsPage /></RolePermissionGuard> },
+      { path: 'wfh-attendance', element: <RolePermissionGuard actionKey="wfh_attendance"><WFHAttendancePage /></RolePermissionGuard> },
+      { path: 'daily-log', element: <RolePermissionGuard actionKey="daily_log"><DailyLogPage /></RolePermissionGuard> },
+      { path: 'import-attendance', element: <RolePermissionGuard actionKey="attendance_list"><ImportAttendancePage /></RolePermissionGuard> },
+      { path: 'department', element: <RolePermissionGuard actionKey="master_department"><DepartmentPage /></RolePermissionGuard> },
+      { path: 'project', element: <RolePermissionGuard actionKey="master_project"><ProjectPage /></RolePermissionGuard> },
+      { path: 'activity-type', element: <RolePermissionGuard actionKey="master_activity_type"><ActivityTypePage /></RolePermissionGuard> },
+      { path: 'claim-type', element: <RolePermissionGuard actionKey="master_claim_type"><ClaimTypePage /></RolePermissionGuard> },
+      { path: 'bank-account', element: <RolePermissionGuard actionKey="master_bank_account"><BankAccountPage /></RolePermissionGuard> },
+      { path: 'asset-category', element: <RolePermissionGuard actionKey="master_asset_category"><AssetCategoryPage /></RolePermissionGuard> },
+      { path: 'performance-criteria-category', element: <RolePermissionGuard actionKey="master_criteria_category"><PerformanceCriteriaCategoryPage /></RolePermissionGuard> },
+      { path: 'designation', element: <RolePermissionGuard actionKey="master_designation"><DesignationPage /></RolePermissionGuard> },
+      { path: 'salary-structure-component', element: <RolePermissionGuard actionKey="master_salary_component"><SalaryStructureComponentPage /></RolePermissionGuard> },
+      { path: 'leave-type', element: <RolePermissionGuard actionKey="master_leave_type"><LeaveTypePage /></RolePermissionGuard> },
+      { path: 'blood-group', element: <RolePermissionGuard actionKey="master_blood_group"><BloodGroupPage /></RolePermissionGuard> },
+      { path: 'master/lead-from', element: <RolePermissionGuard actionKey="master_lead_from"><LeadFromPage /></RolePermissionGuard> },
+      { path: 'master/call-status', element: <RolePermissionGuard actionKey="master_call_status"><CallStatusPage /></RolePermissionGuard> },
+      { path: 'master/meeting-status', element: <RolePermissionGuard actionKey="master_meeting_status"><MeetingStatusPage /></RolePermissionGuard> },
+      { path: 'master/email-template-category', element: <RolePermissionGuard actionKey="master_email_template_category"><EmailTemplateCategoryPage /></RolePermissionGuard> },
+      { path: 'master/whatsapp-template-category', element: <RolePermissionGuard actionKey="master_whatsapp_template_category"><WhatsAppTemplateCategoryPage /></RolePermissionGuard> },
+      { path: 'master/service', element: <RolePermissionGuard actionKey="master_service"><ServicePage /></RolePermissionGuard> },
+      { path: 'master/item', element: <RolePermissionGuard actionKey="master_item"><ItemPage /></RolePermissionGuard> },
+      { path: 'master/payment-terms', element: <RolePermissionGuard actionKey="master_payment_terms"><PaymentTermsPage /></RolePermissionGuard> },
+      { path: 'master/payment-type', element: <RolePermissionGuard actionKey="master_payment_type"><PaymentTypePage /></RolePermissionGuard> },
+      { path: 'master/tax-types', element: <RolePermissionGuard actionKey="master_tax_types"><TaxTypesPage /></RolePermissionGuard> },
+      { path: 'master/company-bank-account', element: <RolePermissionGuard actionKey="master_company_bank_account"><CompanyBankAccountPage /></RolePermissionGuard> },
+      { path: 'employee-overall-report', element: <RolePermissionGuard actionKey="report_employee_overall"><EmployeeOverallReportPage /></RolePermissionGuard> },
+      { path: 'timesheet-reports', element: <RolePermissionGuard actionKey="report_timesheet"><TimesheetReportPage /></RolePermissionGuard> },
       {
         path: 'expenses',
         children: [
-          { index: true, element: <ExpensesListPage /> },
-          { path: 'new', element: <ExpensesNewPage /> },
-          { path: ':id/edit', element: <ExpensesEditPage /> },
-          { path: ':id/view', element: <ExpensesDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="expense_tracker"><ExpensesListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="expense_tracker"><ExpensesNewPage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="expense_tracker"><ExpensesEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="expense_tracker"><ExpensesDetailsPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'crm-expense-tracker', element: <CRMExpenseTrackerPage /> },
-      { path: 'expense-tracker', element: <ExpenseTrackerPage /> },
-      { path: 'holidays', element: <HolidaysPage /> },
-      { path: 'reimbursement-claims', element: <ReimbursementClaimsPage /> },
+      { path: 'crm-expense-tracker', element: <RolePermissionGuard actionKey="crm_expenses"><CRMExpenseTrackerPage /></RolePermissionGuard> },
+      { path: 'expense-tracker', element: <RolePermissionGuard actionKey="expense_tracker"><ExpenseTrackerPage /></RolePermissionGuard> },
+      { path: 'holidays', element: <RolePermissionGuard actionKey="holidays"><HolidaysPage /></RolePermissionGuard> },
+      { path: 'reimbursement-claims', element: <RolePermissionGuard actionKey="reimbursement_claims"><ReimbursementClaimsPage /></RolePermissionGuard> },
       { path: 'renewals-tracker', element: <RenewalTrackerPage /> },
-      { path: 'salary-slips', element: <SalarySlipsPage /> },
-      { path: 'job-openings', element: <JobOpeningsPage /> },
-      { path: 'job-applicants', element: <JobApplicantsPage /> },
-      { path: 'interviews', element: <InterviewPage /> },
-      { path: 'employee-referrals', element: <EmployeeReferralsPage /> },
+      { path: 'salary-slips', element: <RolePermissionGuard actionKey="salary_slips"><SalarySlipsPage /></RolePermissionGuard> },
+      { path: 'job-openings', element: <RolePermissionGuard actionKey="job_openings"><JobOpeningsPage /></RolePermissionGuard> },
+      { path: 'job-applicants', element: <RolePermissionGuard actionKey="job_applicants"><JobApplicantsPage /></RolePermissionGuard> },
+      { path: 'interviews', element: <RolePermissionGuard actionKey="interviews"><InterviewPage /></RolePermissionGuard> },
+      { path: 'employee-referrals', element: <RolePermissionGuard actionKey="employee_referrals"><EmployeeReferralsPage /></RolePermissionGuard> },
       {
         path: 'purchase',
         children: [
-          { index: true, element: <PurchaseListPage /> },
-          { path: 'new', element: <PurchaseNewPage /> },
-          { path: 'edit/:id', element: <PurchaseEditPage /> },
-          { path: ':id', element: <PurchaseDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="purchase"><PurchaseListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="purchase"><PurchaseNewPage /></RolePermissionGuard> },
+          { path: 'edit/:id', element: <RolePermissionGuard actionKey="purchase"><PurchaseEditPage /></RolePermissionGuard> },
+          { path: ':id', element: <RolePermissionGuard actionKey="purchase"><PurchaseDetailsPage /></RolePermissionGuard> },
         ],
       },
 
       {
         path: 'invoice-collections',
         children: [
-          { index: true, element: <InvoiceCollectionListPage /> },
-          { path: 'new', element: <InvoiceCollectionCreatePage /> },
-          { path: ':id/edit', element: <InvoiceCollectionEditPage /> },
-          { path: ':id/view', element: <InvoiceCollectionDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="invoice_collection"><InvoiceCollectionListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="invoice_collection"><InvoiceCollectionCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="invoice_collection"><InvoiceCollectionEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="invoice_collection"><InvoiceCollectionDetailsPage /></RolePermissionGuard> },
         ],
       },
 
       {
         path: 'purchase-collections',
         children: [
-          { index: true, element: <PurchaseCollectionListPage /> },
-          { path: 'new', element: <PurchaseCollectionCreatePage /> },
-          { path: ':id/edit', element: <PurchaseCollectionEditPage /> },
-          { path: ':id/view', element: <PurchaseCollectionDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="purchase_collection"><PurchaseCollectionListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="purchase_collection"><PurchaseCollectionCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="purchase_collection"><PurchaseCollectionEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="purchase_collection"><PurchaseCollectionDetailsPage /></RolePermissionGuard> },
         ],
       },
 
       {
         path: 'reports',
         children: [
-          { path: 'lead', element: <LeadReportPage /> },
-          { path: 'contact', element: <ContactReportPage /> },
-          { path: 'account', element: <AccountReportPage /> },
-          { path: 'calls', element: <CallsReportPage /> },
-          { path: 'meeting', element: <MeetingReportPage /> },
-          { path: 'purchase', element: <PurchaseReportPage /> },
-          { path: 'expense', element: <ExpenseReportPage /> },
-          { path: 'estimation', element: <EstimationReportPage /> },
-          { path: 'invoice', element: <InvoiceReportPage /> },
-          { path: 'invoice-collection', element: <InvoiceCollectionReportPage /> },
-          { path: 'purchase-settlement', element: <PurchaseCollectionReportPage /> },
-          { path: 'timesheet', element: <TimesheetReportPage /> },
-          { path: 'attendance', element: <AttendanceReportPage /> },
-          { path: 'leave-allocation', element: <LeaveAllocationReportPage /> },
-          { path: 'daily-log', element: <DailyLogReportPage /> },
-          { path: 'task-manager', element: <TaskReportPage /> },
-          { path: 'salary-slip', element: <SalarySlipReportPage /> },
-          { path: 'proposal', element: <ProposalReportPage /> },
-          { path: 'prospects', element: <ProspectsReportPage /> },
+          { path: 'lead', element: <RolePermissionGuard actionKey="report_lead"><LeadReportPage /></RolePermissionGuard> },
+          { path: 'sales-target-entry', element: <RolePermissionGuard actionKey="report_sales_target_entry"><SalesTargetEntryReportPage /></RolePermissionGuard> },
+          { path: 'contact', element: <RolePermissionGuard actionKey="report_clients"><ContactReportPage /></RolePermissionGuard> },
+          { path: 'account', element: <RolePermissionGuard actionKey="report_company"><AccountReportPage /></RolePermissionGuard> },
+          { path: 'calls', element: <RolePermissionGuard actionKey="report_calls"><CallsReportPage /></RolePermissionGuard> },
+          { path: 'meeting', element: <RolePermissionGuard actionKey="report_meeting"><MeetingReportPage /></RolePermissionGuard> },
+          { path: 'purchase', element: <RolePermissionGuard actionKey="report_purchase"><PurchaseReportPage /></RolePermissionGuard> },
+          { path: 'expense', element: <RolePermissionGuard actionKey="report_expense"><ExpenseReportPage /></RolePermissionGuard> },
+          { path: 'estimation', element: <RolePermissionGuard actionKey="report_estimation"><EstimationReportPage /></RolePermissionGuard> },
+          { path: 'invoice', element: <RolePermissionGuard actionKey="report_invoice"><InvoiceReportPage /></RolePermissionGuard> },
+          { path: 'invoice-collection', element: <RolePermissionGuard actionKey="report_invoice_collection"><InvoiceCollectionReportPage /></RolePermissionGuard> },
+          { path: 'purchase-settlement', element: <RolePermissionGuard actionKey="report_purchase_settlement"><PurchaseCollectionReportPage /></RolePermissionGuard> },
+          { path: 'timesheet', element: <RolePermissionGuard actionKey="report_timesheet"><TimesheetReportPage /></RolePermissionGuard> },
+          { path: 'attendance', element: <RolePermissionGuard actionKey="report_attendance"><AttendanceReportPage /></RolePermissionGuard> },
+          { path: 'leave-allocation', element: <RolePermissionGuard actionKey="report_leave_allocation"><LeaveAllocationReportPage /></RolePermissionGuard> },
+          { path: 'daily-log', element: <RolePermissionGuard actionKey="report_daily_log"><DailyLogReportPage /></RolePermissionGuard> },
+          { path: 'task-manager', element: <RolePermissionGuard actionKey="report_task"><TaskReportPage /></RolePermissionGuard> },
+          { path: 'salary-slip', element: <RolePermissionGuard actionKey="report_salary_slip"><SalarySlipReportPage /></RolePermissionGuard> },
+          { path: 'proposal', element: <RolePermissionGuard actionKey="report_proposal"><ProposalReportPage /></RolePermissionGuard> },
+          { path: 'prospects', element: <RolePermissionGuard actionKey="report_prospects"><ProspectsReportPage /></RolePermissionGuard> },
         ],
       },
-      { path: 'employee-evaluation', element: <EmployeeEvaluationPage /> },
-      { path: 'badges', element: <BadgesPage /> },
-      { path: 'employee-monthly-award', element: <EmployeeMonthlyAwardPage /> },
-      { path: 'reminders', element: <RemindersPage /> },
+      { path: 'employee-evaluation', element: <RolePermissionGuard actionKey="employee_evaluation"><EmployeeEvaluationPage /></RolePermissionGuard> },
+      { path: 'badges', element: <RolePermissionGuard actionKey="badges"><BadgesPage /></RolePermissionGuard> },
+      { path: 'employee-monthly-award', element: <RolePermissionGuard actionKey="employee_monthly_award"><EmployeeMonthlyAwardPage /></RolePermissionGuard> },
+      { path: 'reminders', element: <RolePermissionGuard actionKey="reminders"><RemindersPage /></RolePermissionGuard> },
       { path: 'settings', element: <SettingsPage /> },
     ],
   },

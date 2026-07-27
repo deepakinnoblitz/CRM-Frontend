@@ -59,6 +59,8 @@ export function MetaPagesDetailsView() {
     const navigate = useNavigate();
     const { enqueueSnackbar } = useSnackbar();
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_pages;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_pages ? !!user?.permissions?.actions?.meta_pages?.edit : true;
 
     const [page, setPage] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -188,14 +190,16 @@ export function MetaPagesDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/lead-integration/meta-pages/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        Edit
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/lead-integration/meta-pages/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

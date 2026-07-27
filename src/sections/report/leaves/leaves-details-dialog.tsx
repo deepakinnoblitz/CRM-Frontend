@@ -58,6 +58,9 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
     const isHR = userRoles.some(r => r.includes('HR')) || userRoles.includes('Administrator') || userRoles.includes('System Manager');
     const isEmployee = !isHR;
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.leaves;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.leaves?.edit : true;
+
     const fetchData = useCallback(async (isSilent = false) => {
         if (!leaveId) return;
         if (!isSilent) setLoading(true);
@@ -579,6 +582,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                 {filteredActions.length > 0 && (
                     <>
                         <Divider />
+                        {displayEdit &&(
                         <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
                             {filteredActions.map((action) => {
                                 const isPendingThis = submitting && selectedAction?.action === action.action;
@@ -607,6 +611,7 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
                                 );
                             })}
                         </DialogActions>
+                        )}
                     </>
                 )}
             </Dialog >

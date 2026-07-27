@@ -33,12 +33,17 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export function EmailCampaignsDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_campaigns;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_campaigns?.edit : true;
 
     const [campaign, setCampaign] = useState<any>(null);
     const [emailQueue, setEmailQueue] = useState<EmailQueueItem[]>([]);
@@ -245,7 +250,7 @@ export function EmailCampaignsDetailsView() {
                     >
                         Refresh
                     </Button>
-                    {!['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
+                    {displayEdit && !['Running', 'Completed', 'Cancelled'].includes(campaign.status) && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStart />}
@@ -262,7 +267,7 @@ export function EmailCampaignsDetailsView() {
                             Start Campaign
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugPause />}
@@ -279,7 +284,7 @@ export function EmailCampaignsDetailsView() {
                             Pause
                         </Button>
                     )}
-                    {campaign.status === 'Running' && (
+                    {displayEdit && campaign.status === 'Running' && (
                         <Button
                             variant="contained"
                             startIcon={<VscDebugStop />}
@@ -296,21 +301,23 @@ export function EmailCampaignsDetailsView() {
                             Stop
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        onClick={handleEdit}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {displayEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={handleEdit}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
@@ -412,7 +419,7 @@ export function EmailCampaignsDetailsView() {
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                             <IoMdPerson size={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Recipients</Typography>
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary' }}>List of Mail Recipients</Typography>
                         </Stack>
                         <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -498,7 +505,7 @@ export function EmailCampaignsDetailsView() {
                     <Stack spacing={1.5}>
                         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: '#08a3cd' }}>
                             <IoMdList size={20} />
-                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase',  color: 'text.secondary' }}>List of Mail Sends</Typography>
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', color: 'text.secondary' }}>List of Mail Sends</Typography>
                         </Stack>
                         <Card sx={{ p: 0, mt: 2, borderRadius: 1.5, border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.08)}` }}>
                             <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

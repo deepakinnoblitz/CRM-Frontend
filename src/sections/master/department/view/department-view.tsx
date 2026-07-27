@@ -26,6 +26,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { DepartmentDialog } from '../department-dialog';
 import { TableNoData } from '../../../lead/table-no-data';
 import { DepartmentTableRow } from '../department-table-row';
@@ -51,7 +53,15 @@ const SORT_OPTIONS = [
 
 // ----------------------------------------------------------------------
 
+
 export function DepartmentView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.department;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateDept = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditDept = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteDept = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -201,14 +211,16 @@ export function DepartmentView() {
     <DashboardContent maxWidth={false} sx={{mt: 2}}>
       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
         <Typography variant="h4">Department List</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Department
-        </Button>
+        {canCreateDept && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Department
+          </Button>
+        )}
       </Stack>
 
       <Card>
@@ -260,6 +272,8 @@ export function DepartmentView() {
                         onEditRow={() => handleEditRow(row.name)}
                         onViewRow={() => handleViewRow(row.name)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEditDept}
+                        canDelete={canDeleteDept}
                       />
                     ))}
 

@@ -21,6 +21,8 @@ type Props = {
   onSelectRow: VoidFunction;
   onDeleteRow: VoidFunction;
   index?: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 export function LeaveTypeTableRow({
@@ -30,6 +32,8 @@ export function LeaveTypeTableRow({
   onSelectRow,
   onDeleteRow,
   index,
+  canEdit = true,
+  canDelete = true,
 }: Props) {
   const { leave_type_name, is_paid, max_leaves, status, carry_forward, reset_frequency } = row;
   const [openView, setOpenView] = useState(false);
@@ -122,13 +126,17 @@ export function LeaveTypeTableRow({
             <Iconify icon="solar:eye-bold" />
           </IconButton>
 
-          <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
+          {canEdit && (
+            <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          )}
 
-          <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
+          {canDelete && (
+            <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
         </Box>
       </TableCell>
     </TableRow>

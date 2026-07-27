@@ -42,6 +42,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { generateProposalPdf } from 'src/components/export/pdf/proposal-pdf-generator';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 const getStatusStyle = (status: string) => {
@@ -88,6 +89,10 @@ export function ProposalReportView() {
     const [loading, setLoading] = useState(false);
 
     const { exportingPdf, handleExportPdf } = usePdfExport();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.proposal_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.proposal_report ? !!user?.permissions?.actions?.proposal_report?.export : true;
 
     // Filters
     const [lead, setLead] = useState<any>(location.state?.filters?.lead || null);
@@ -693,44 +698,48 @@ export function ProposalReportView() {
 
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: { md: 'auto' } }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={filteredData.length === 0}
-                            sx={{
-                                bgcolor: '#0ea5e9',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#0284c7' },
-                                height: 40,
-                                px: 3,
-                            }}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateProposalPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: [
-                                    { label: 'Total Proposals', value: totalProposals },
-                                    { label: 'Approved Proposals', value: approvedProposals },
-                                    { label: 'Pending Proposals', value: pendingProposals }
-                                ]
-                            }))}
-                            disabled={exportingPdf || filteredData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 40,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport &&(
+                            <>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={handleExport}
+                                    disabled={filteredData.length === 0}
+                                    sx={{
+                                        bgcolor: '#0ea5e9',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#0284c7' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    Export Excel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={() => handleExportPdf(() => generateProposalPdf({
+                                        reportData: filteredData,
+                                        selected,
+                                        summary: [
+                                            { label: 'Total Proposals', value: totalProposals },
+                                            { label: 'Approved Proposals', value: approvedProposals },
+                                            { label: 'Pending Proposals', value: pendingProposals }
+                                        ]
+                                    }))}
+                                    disabled={exportingPdf || filteredData.length === 0}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 40,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </>
+                        )}
                     </Stack>
                 </Card>
 

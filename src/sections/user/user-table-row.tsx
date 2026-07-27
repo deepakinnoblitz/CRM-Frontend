@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export type UserProps = {
@@ -35,6 +36,12 @@ export function UserTableRow({
   onDelete,
   index,
 }: UserTableRowProps) {
+
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.users_list;
+  const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.edit : true;
+  const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.users_list?.delete : true;
+
   return (
     <TableRow
       hover
@@ -135,12 +142,16 @@ export function UserTableRow({
           <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
             <Iconify icon="solar:eye-bold" />
           </IconButton>
+          {displayEdit &&(
           <IconButton size="small" onClick={onEdit} sx={{ color: 'primary.main' }}>
             <Iconify icon="solar:pen-bold" />
           </IconButton>
+          )}
+          {displayDelete &&(
           <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
             <Iconify icon="solar:trash-bin-trash-bold" />
           </IconButton>
+          )}
         </Box>
       </TableCell>
     </TableRow>

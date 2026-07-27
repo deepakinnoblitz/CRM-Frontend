@@ -18,6 +18,8 @@ type Props = {
   onSelectRow: VoidFunction;
   onDeleteRow: VoidFunction;
   index?: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 export function ProjectTableRow({
@@ -28,6 +30,8 @@ export function ProjectTableRow({
   onSelectRow,
   onDeleteRow,
   index,
+  canEdit = true,
+  canDelete = true,
 }: Props) {
   const { project_name, name, status, customer } = row;
 
@@ -91,14 +95,17 @@ export function ProjectTableRow({
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
 
+          {canEdit && (
+            <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          )}
 
-          <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
-
-          <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
+          {canDelete && (
+            <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
         </Box>
       </TableCell>
     </TableRow>

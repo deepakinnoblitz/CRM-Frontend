@@ -19,9 +19,16 @@ import { fetchCrmEmailTemplateCategories } from 'src/api/masters';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function EmailTemplateDetailsView() {
     const { id } = useParams();
     const navigate = useNavigate();
+    
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_templates;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_templates?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.email_templates?.delete : true;
 
     const [template, setTemplate] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
@@ -222,21 +229,24 @@ export function EmailTemplateDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/email-templates/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {displayEdit && 
+                    ( 
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/email-templates/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

@@ -10,6 +10,7 @@ import { fDate, fTime, fDecimalHours } from 'src/utils/format-time';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -36,6 +37,10 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
     const totalBreakHours = breaks.reduce((sum: number, b: any) => sum + (b.break_duration || 0), 0) / 60;
 
     const isActive = status === 'Active';
+
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.daily_log;
+  const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.daily_log?.edit : true;
 
     return (
         <TableRow
@@ -135,7 +140,7 @@ export function EmployeeDailyLogTableRow({ row, index, isHR, onView }: Props) {
                     <Iconify icon="solar:eye-bold" />
                 </IconButton>
 
-                {isHR && !isActive && (
+                {isHR && !isActive && displayEdit &&(
                     <IconButton onClick={() => row.onEdit?.()} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:pen-bold" />
                     </IconButton>

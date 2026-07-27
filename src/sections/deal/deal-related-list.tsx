@@ -88,7 +88,8 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
 
             } else if (type === 'stage_history') {
                 const hist = deal?.stage_history || [];
-                setData(hist);
+                const paginated = hist.slice(page * rowsPerPage, (page + 1) * rowsPerPage);
+                setData(paginated);
                 setTotal(hist.length);
                 setLoading(false);
                 return;

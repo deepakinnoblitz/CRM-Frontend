@@ -29,6 +29,8 @@ type Props = {
     selectedTodo?: ToDo | null;
     initialData?: Partial<ToDo>;
     onSuccess?: () => void;
+    canEdit?: boolean;
+    canDelete?: boolean;
 };
 
 const INITIAL_TODO_STATE: Partial<ToDo> = {
@@ -38,7 +40,7 @@ const INITIAL_TODO_STATE: Partial<ToDo> = {
     date: dayjs().format('YYYY-MM-DD'),
 };
 
-export default function TodoDialog({ open, onClose, selectedTodo, initialData, onSuccess }: Props) {
+export default function TodoDialog({ open, onClose, selectedTodo, initialData, onSuccess, canEdit = true, canDelete = true }: Props) {
     const [todoData, setTodoData] = useState<Partial<ToDo>>(INITIAL_TODO_STATE);
     const [formErrors, setFormErrors] = useState({ description: false });
     const [confirmDelete, setConfirmDelete] = useState(false);
@@ -203,7 +205,7 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                 </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
-                    {selectedTodo && (
+                    {selectedTodo && canDelete && (
                         <Button
                             color="error"
                             variant="contained"
@@ -214,14 +216,16 @@ export default function TodoDialog({ open, onClose, selectedTodo, initialData, o
                             Delete
                         </Button>
                     )}
-                    <Button
-                        variant="contained"
-                        color="info"
-                        onClick={handleSaveToDo}
-                        sx={{ borderRadius: 1, px: 3 }}
-                    >
-                        {selectedTodo ? 'Save Changes' : 'Create Task'}
-                    </Button>
+                    {((!selectedTodo && canEdit) || (selectedTodo && canEdit)) && (
+                        <Button
+                            variant="contained"
+                            color="info"
+                            onClick={handleSaveToDo}
+                            sx={{ borderRadius: 1, px: 3 }}
+                        >
+                            {selectedTodo ? 'Save Changes' : 'Create Task'}
+                        </Button>
+                    )}
                 </DialogActions>
             </Dialog>
 

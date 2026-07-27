@@ -25,6 +25,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { MasterEmptyState } from 'src/sections/master/master-empty-state';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { ItemDialog } from '../item-dialog';
 import { ItemTableRow } from '../item-table-row';
 import { TableNoData } from '../../../lead/table-no-data';
@@ -49,6 +51,12 @@ const SORT_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function ItemView() {
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.item;
+  const canCreate = hasCustomPerms && user?.permissions?.actions?.item ? !!user?.permissions?.actions?.item?.create : true;
+  const canEdit = hasCustomPerms && user?.permissions?.actions?.item ? !!user?.permissions?.actions?.item?.edit : true;
+  const canDelete = hasCustomPerms && user?.permissions?.actions?.item ? !!user?.permissions?.actions?.item?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -141,14 +149,16 @@ export function ItemView() {
         <Typography variant="h4" flexGrow={1}>
           Item
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="mingcute:add-line" />}
-          onClick={handleOpenCreate}
-          sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-        >
-          New Item
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+            onClick={handleOpenCreate}
+            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+          >
+            New Item
+          </Button>
+        )}
       </Box>
 
       <Card>
@@ -196,6 +206,8 @@ export function ItemView() {
                         row={row}
                         onEditRow={() => handleEditRow(row)}
                         onDeleteRow={() => handleDeleteRow(row.name)}
+                        canEdit={canEdit}
+                        canDelete={canDelete}
                       />
                     ))}
 

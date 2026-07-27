@@ -38,6 +38,9 @@ type Props = {
 
 export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket }: Props) {
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list);
+    const actionPerms = user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list;
+    const canEdit = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
     const [openClarification, setOpenClarification] = useState(false);
     const [clarificationType, setClarificationType] = useState<'HR' | 'Employee'>('HR');
     const [internalRequest, setInternalRequest] = useState<any>(request);
@@ -467,7 +470,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                     <Divider />
                     <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
                         {/* HR Actions */}
-                        {!isEmployee && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
+                        {!isEmployee && canEdit && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
                             <>
                                 <LoadingButton
                                     color="success"

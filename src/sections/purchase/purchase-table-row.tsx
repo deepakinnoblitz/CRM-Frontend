@@ -12,6 +12,7 @@ import { fCurrency } from 'src/utils/format-number';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 export type PurchaseProps = {
@@ -72,6 +73,10 @@ export function PurchaseTableRow({
     hideCheckbox = false,
     index,
 }: PurchaseTableRowProps) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.purchase?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.purchase?.delete : canDelete;
     return (
         <TableRow
             hover
@@ -158,12 +163,12 @@ export function PurchaseTableRow({
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
-                    {canEdit && row.paid_amount === 0 && (
+                    {canEdit && displayEdit && row.paid_amount === 0 && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && row.paid_amount === 0 && (
+                    {canDelete && displayDelete && row.paid_amount === 0 && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

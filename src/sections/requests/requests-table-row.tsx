@@ -176,7 +176,7 @@ export function RequestTableRow({
         return 'solar:pen-bold';
     };
 
-    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Open' || row.workflow_state === 'Clarification Requested');
+    const showActions = canEdit && isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Open' || row.workflow_state === 'Clarification Requested');
 
     const getStatusColor = (status: string) => {
 

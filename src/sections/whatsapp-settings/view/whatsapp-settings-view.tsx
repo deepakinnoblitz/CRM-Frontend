@@ -35,6 +35,8 @@ import { getWhatsAppSettings, saveWhatsAppSettings, testWhatsAppConnection, getW
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 export const CustomSwitch = styled((props: SwitchProps) => (
     <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
 ))(({ theme }) => ({
@@ -85,6 +87,12 @@ export const CustomSwitch = styled((props: SwitchProps) => (
 
 export function WhatsAppSettingsView() {
     const { enqueueSnackbar } = useSnackbar();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_settings;
+    const displayCreate = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_settings?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_settings?.edit : true;
+
     const [settings, setSettings] = useState<Partial<WhatsAppSettings>>({
         enable_whatsapp: 1,
         token_type: 'Temporary',
@@ -284,34 +292,38 @@ export function WhatsAppSettingsView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">CRM WhatsApp Settings</Typography>
                 <Stack direction="row" spacing={2}>
-                    <Button
-                        variant="outlined"
-                        onClick={handleTestConnection}
-                        disabled={testing}
-                        sx={{ borderRadius: 1.5 }}
-                    >
-                        {testing ? 'Testing...' : 'Test Connection'}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => setSendModalOpen(true)}
-                        sx={{
-                            bgcolor: '#25D366',
-                            color: '#FFFFFF',
-                            '&:hover': { bgcolor: '#1EBE5D' },
-                            '&:active': { bgcolor: '#128C7E' },
-                            borderRadius: 1.5,
-                        }}
-                    >
-                        Send WhatsApp Message
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleSave}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1.5 }}
-                    >
-                        Save Settings
-                    </Button>
+                    {displayEdit && displayCreate &&(
+                        <>
+                            <Button
+                                variant="outlined"
+                                onClick={handleTestConnection}
+                                disabled={testing}
+                                sx={{ borderRadius: 1.5 }}
+                            >
+                                {testing ? 'Testing...' : 'Test Connection'}
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={() => setSendModalOpen(true)}
+                                sx={{
+                                    bgcolor: '#25D366',
+                                    color: '#FFFFFF',
+                                    '&:hover': { bgcolor: '#1EBE5D' },
+                                    '&:active': { bgcolor: '#128C7E' },
+                                    borderRadius: 1.5,
+                                }}
+                            >
+                                Send WhatsApp Message
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleSave}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 1.5 }}
+                            >
+                                Save Settings
+                            </Button>
+                        </>
+                    )}
                 </Stack>
             </Stack>
 

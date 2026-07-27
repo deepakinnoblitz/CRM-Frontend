@@ -29,6 +29,8 @@ export type ExpenseTrackerTableRowProps = {
     onSelectRow: () => void;
     onEdit: () => void;
     onDelete: () => void;
+    canEdit?: boolean;
+    canDelete?: boolean;
     index?: number;
     hideCheckbox?: boolean;
 };
@@ -39,6 +41,8 @@ export function ExpenseTrackerTableRow({
     onSelectRow,
     onEdit,
     onDelete,
+    canEdit = true,
+    canDelete = true,
     index,
     hideCheckbox = false,
 }: ExpenseTrackerTableRowProps) {
@@ -77,6 +81,12 @@ export function ExpenseTrackerTableRow({
                             fontWeight: 800,
                             border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
                             mx: 'auto',
+                            transition: (theme) => theme.transitions.create(['all'], { duration: theme.transitions.duration.shorter }),
+                            '&:hover': {
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                transform: 'scale(1.1)',
+                            },
                         }}
                     >
                         {index + 1}
@@ -84,17 +94,11 @@ export function ExpenseTrackerTableRow({
                 </TableCell>
             )}
 
-            <TableCell>
-                <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
-                    {titlenotes || '-'}
-                </Typography>
+            <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                {date_time ? dayjs(date_time).format('DD MMM YYYY · HH:mm') : '-'}
             </TableCell>
 
-            <TableCell>
-                <Typography variant="body2" noWrap>
-                    {date_time ? dayjs(date_time).format('DD MMM YYYY h:mm A') : '-'}
-                </Typography>
-            </TableCell>
+            <TableCell sx={{ fontWeight: 600 }}>{titlenotes || '-'}</TableCell>
 
             <TableCell>
                 <Label
@@ -112,13 +116,17 @@ export function ExpenseTrackerTableRow({
 
             <TableCell align="right">
                 <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                    <IconButton size="small" color="info" onClick={onEdit}>
-                        <Iconify icon="solar:pen-bold" />
-                    </IconButton>
+                    {canEdit && (
+                        <IconButton size="small" color="info" onClick={onEdit}>
+                            <Iconify icon="solar:pen-bold" />
+                        </IconButton>
+                    )}
 
-                    <IconButton size="small" color="error" onClick={onDelete}>
-                        <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
+                    {canDelete && (
+                        <IconButton size="small" color="error" onClick={onDelete}>
+                            <Iconify icon="solar:trash-bin-trash-bold" />
+                        </IconButton>
+                    )}
                 </Box>
             </TableCell>
         </TableRow>

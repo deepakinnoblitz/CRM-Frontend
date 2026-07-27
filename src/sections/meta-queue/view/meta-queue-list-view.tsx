@@ -35,6 +35,8 @@ import { EmptyContent } from 'src/components/empty-content';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { MetaQueueFiltersDrawer, MetaQueueFilters } from '../meta-queue-filters-drawer';    
 // ----------------------------------------------------------------------
 
@@ -74,6 +76,12 @@ function formatDatetime(val?: string) {
 // ----------------------------------------------------------------------
 
 export function MetaQueueListView() {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_queue;
+    const canCreate = hasCustomPerms && user?.permissions?.actions?.meta_queue ? !!user?.permissions?.actions?.meta_queue?.create : true;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_queue ? !!user?.permissions?.actions?.meta_queue?.edit : true;
+    const canDelete = hasCustomPerms && user?.permissions?.actions?.meta_queue ? !!user?.permissions?.actions?.meta_queue?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');

@@ -90,7 +90,7 @@ export function ReimbursementClaimTableRow({
         action();
     };
 
-    const showActions = isHR && (row.workflow_state === 'Pending' || row.workflow_state === 'Submitted');
+    const showActions = isHR && canEdit && (row.workflow_state === 'Pending' || row.workflow_state === 'Submitted');
 
     return (
         <>

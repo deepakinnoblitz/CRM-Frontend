@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -51,6 +52,9 @@ export function ContactReportView() {
     const [loading, setLoading] = useState(false);
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.clients_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.clients_report ? !!user?.permissions?.actions?.clients_report?.export : true;
+
     const { exportingPdf, handleExportPdf } = usePdfExport();
 
     // Filters
@@ -81,6 +85,15 @@ export function ContactReportView() {
     // View Details
     const [openView, setOpenView] = useState(false);
     const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openContactId) {
+            setSelectedContactId(location.state.openContactId);
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     // Selection
     const [selected, setSelected] = useState<string[]>([]);
@@ -469,37 +482,41 @@ export function ContactReportView() {
                         </Select>
                     </FormControl>
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateContactPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Contacts', value: reportData.length },
-                                    { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
-                                    { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 37,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generateContactPdf({
+                                    reportData: filteredData,
+                                    selected,
+                                    summary: summaryData.length > 0 ? summaryData : [
+                                        { label: 'Total Contacts', value: reportData.length },
+                                        { label: 'Email Contacts', value: reportData.filter((r: any) => r.email).length },
+                                        { label: 'Phone Contacts', value: reportData.filter((r: any) => r.phone).length },
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 37,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        )}
                     </Stack>
                 </Card>
 
@@ -670,6 +687,7 @@ export function ContactReportView() {
                     setOpenView(false);
                     setSelectedContactId(null);
                 }}
+                initialTab={location.state?.activeTab}
             />
 
         </DashboardContent>

@@ -20,6 +20,22 @@ type UserType = {
   last_login?: string;
   user_status?: string;
   has_crm_permission?: boolean;
+  permissions?: {
+    custom_permissions_assigned: boolean;
+    frontend_role: string | null;
+    menus: { [key: string]: boolean };
+    menu_mapping: { [key: string]: string };
+    actions: {
+      [key: string]: {
+        view: boolean;
+        create: boolean;
+        edit: boolean;
+        delete: boolean;
+        export: boolean;
+        import: boolean;
+      };
+    };
+  };
 };
 
 type AuthContextType = {

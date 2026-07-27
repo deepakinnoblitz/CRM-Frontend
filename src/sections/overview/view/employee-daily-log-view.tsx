@@ -54,7 +54,7 @@ const SORT_OPTIONS = [
 export function EmployeeDailyLogView() {
     const { user } = useAuth();
 
-    const HR_ROLES = ['HR Manager', 'HR', 'System Manager', 'Administrator'];
+    const HR_ROLES = ['HR', 'System Manager', 'Administrator'];
     const isHR = user?.roles?.some((role: string) => HR_ROLES.includes(role)) ?? false;
 
     const { socket } = useSocket(user?.email);

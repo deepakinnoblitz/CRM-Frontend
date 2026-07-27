@@ -14,9 +14,11 @@ type Props = {
   onEdit: () => void;
   onDelete: () => void;
   onView: () => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
-export function BadgeTableRow({ row, index, onEdit, onDelete, onView }: Props) {
+export function BadgeTableRow({ row, index, onEdit, onDelete, onView, canEdit = true, canDelete = true }: Props) {
   return (
     <TableRow
       hover
@@ -80,12 +82,16 @@ export function BadgeTableRow({ row, index, onEdit, onDelete, onView }: Props) {
         <IconButton onClick={onView} sx={{ color: 'info.main' }}>
           <Iconify icon="solar:eye-bold" />
         </IconButton>
-        <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
-          <Iconify icon="solar:pen-bold" />
-        </IconButton>
-        <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
-          <Iconify icon="solar:trash-bin-trash-bold" />
-        </IconButton>
+        {canEdit && (
+          <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
+            <Iconify icon="solar:pen-bold" />
+          </IconButton>
+        )}
+        {canDelete && (
+          <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
+            <Iconify icon="solar:trash-bin-trash-bold" />
+          </IconButton>
+        )}
       </TableCell>
     </TableRow>
   );

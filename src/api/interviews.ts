@@ -166,3 +166,18 @@ export async function getInterviewPermissions() {
 
     return (await res.json()).message || { read: false, write: false, delete: false };
 }
+
+export async function createInterviewType(data: { interview_type: string; notes?: string }) {
+    const headers = await getAuthHeaders();
+
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "Interview Type", ...data } })
+    });
+
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create interview type"));
+    return json.message;
+}
+

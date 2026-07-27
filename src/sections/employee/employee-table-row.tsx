@@ -10,6 +10,7 @@ import Typography from '@mui/material/Typography';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type Props = {
@@ -44,6 +45,11 @@ export function EmployeeTableRow({
     hideCheckbox = false,
     index,
 }: Props) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.employee;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.employee?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.employee?.delete : true;
+
     return (
         <TableRow
             hover
@@ -127,12 +133,12 @@ export function EmployeeTableRow({
                     <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon="solar:eye-bold" />
                     </IconButton>
-                    {canEdit && (
+                    {displayEdit && (
                         <IconButton size="small" onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && (
+                    {displayDelete && (
                         <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

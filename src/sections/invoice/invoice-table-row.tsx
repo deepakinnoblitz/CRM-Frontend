@@ -28,6 +28,8 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
+
 // ----------------------------------------------------------------------
 
 export type InvoiceProps = {
@@ -72,6 +74,10 @@ export function InvoiceTableRow({
     hideCheckbox = false,
     index,
 }: InvoiceTableRowProps) {
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.invoice?.edit : canEdit;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.invoice?.delete : canDelete;
     return (
         <TableRow
             hover
@@ -154,12 +160,12 @@ export function InvoiceTableRow({
                     <IconButton onClick={onView} sx={{ color: 'info.main' }}>
                         <Iconify icon={"solar:eye-bold" as any} />
                     </IconButton>
-                    {canEdit && row.received_amount === 0 && (
+                    {displayEdit && row.received_amount === 0 && (
                         <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                             <Iconify icon="solar:pen-bold" />
                         </IconButton>
                     )}
-                    {canDelete && row.received_amount === 0 && (
+                    {displayDelete && row.received_amount === 0 && (
                         <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                             <Iconify icon="solar:trash-bin-trash-bold" />
                         </IconButton>

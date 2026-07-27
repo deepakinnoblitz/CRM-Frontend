@@ -37,6 +37,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { MetaAppsFiltersDrawer, MetaAppsFilters } from '../meta-apps-filters-drawer';
 
 // ----------------------------------------------------------------------
@@ -64,6 +66,12 @@ const TABLE_HEAD = [
 
 export function MetaAppsListView() {
     const router = useRouter();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.meta_apps;
+    const canCreate = hasCustomPerms && user?.permissions?.actions?.meta_apps ? !!user?.permissions?.actions?.meta_apps?.create : true;
+    const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_apps ? !!user?.permissions?.actions?.meta_apps?.edit : true;
+    const canDelete = hasCustomPerms && user?.permissions?.actions?.meta_apps ? !!user?.permissions?.actions?.meta_apps?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -161,14 +169,16 @@ export function MetaAppsListView() {
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Meta Apps</Typography>
                 <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"mingcute:add-line" as any} />}
-                        onClick={handleCreateNew}
-                        sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                    >
-                        New Meta App
-                    </Button>
+                    {canCreate && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Iconify icon={"mingcute:add-line" as any} />}
+                            onClick={handleCreateNew}
+                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                        >
+                            New Meta App
+                        </Button>
+                    )}
                 </Box>
             </Stack>
 
@@ -467,20 +477,24 @@ export function MetaAppsListView() {
                                                         >
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton
-                                                            onClick={() => router.push(`/lead-integration/meta-apps/${row.name}/edit`)}
-                                                            sx={{ color: 'primary.main' }}
-                                                            title="Edit"
-                                                        >
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            onClick={() => setConfirmDelete({ open: true, id: row.name })}
-                                                            sx={{ color: 'error.main' }}
-                                                            title="Delete"
-                                                        >
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
+                                                        {canEdit && (
+                                                            <IconButton
+                                                                onClick={() => router.push(`/lead-integration/meta-apps/${row.name}/edit`)}
+                                                                sx={{ color: 'primary.main' }}
+                                                                title="Edit"
+                                                            >
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        {canDelete && (
+                                                            <IconButton
+                                                                onClick={() => setConfirmDelete({ open: true, id: row.name })}
+                                                                sx={{ color: 'error.main' }}
+                                                                title="Delete"
+                                                            >
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

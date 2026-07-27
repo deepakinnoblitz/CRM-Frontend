@@ -63,6 +63,10 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 export function PurchaseReportView() {
     const { user } = useAuth();
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.purchase_report ? !!user?.permissions?.actions?.purchase_report?.export : true;
+
     const navigate = useNavigate();
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -569,39 +573,43 @@ export function PurchaseReportView() {
                         </Select>
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExport}
-                        disabled={reportData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generatePurchasePdf({
-                            reportData: filteredData,
-                            selected,
-                            summary: summaryData.length > 0 ? summaryData : [
-                                { label: 'Total Purchase Bills', value: reportData.length },
-                                { label: 'Sub Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.sub_total || 0), 0) },
-                                { label: 'Tax Amount', value: reportData.reduce((acc, curr) => acc + (curr.tax_amount || 0), 0) },
-                                { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
-                            ]
-                        }))}
-                        disabled={exportingPdf || reportData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                    {canExport &&(
+                        <>
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                                sx={{ mr: 1 }}
+                            >
+                                Export Excel
+                            </Button>
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generatePurchasePdf({
+                                    reportData: filteredData,
+                                    selected,
+                                    summary: summaryData.length > 0 ? summaryData : [
+                                        { label: 'Total Purchase Bills', value: reportData.length },
+                                        { label: 'Sub Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.sub_total || 0), 0) },
+                                        { label: 'Tax Amount', value: reportData.reduce((acc, curr) => acc + (curr.tax_amount || 0), 0) },
+                                        { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 37,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        </>
+                    )}
                 </Card>
 
                 <Box

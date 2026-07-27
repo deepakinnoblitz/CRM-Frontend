@@ -57,7 +57,14 @@ import { EmployeeReportDetailsDialog } from '../employee-report-details-dialog';
 
 const STATUS_OPTIONS = ['Active', 'Inactive'];
 
+import { useAuth } from 'src/auth/auth-context';
+
 export function EmployeeOverallReportView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.employee_overall_report;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canExport = hasCustomPerms ? !!actionPerms?.export : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [orderBy, setOrderBy] = useState('date_of_joining');
@@ -1548,39 +1555,41 @@ export function EmployeeOverallReportView() {
               )}
             />
 
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                startIcon={exporting ? undefined : <Iconify icon="solar:export-bold" />}
-                onClick={handleExport}
-                disabled={exporting || data.length === 0}
-                sx={{
-                  bgcolor: '#0ea5e9',
-                  color: 'common.white',
-                  '&:hover': { bgcolor: '#0284c7' },
-                  height: 40,
-                  px: 3,
-                }}
-              >
-                {exporting ? 'Exporting Excel...' : 'Export Excel'}
-              </Button>
+            {canExport && (
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  startIcon={exporting ? undefined : <Iconify icon="solar:export-bold" />}
+                  onClick={handleExport}
+                  disabled={exporting || data.length === 0}
+                  sx={{
+                    bgcolor: '#0ea5e9',
+                    color: 'common.white',
+                    '&:hover': { bgcolor: '#0284c7' },
+                    height: 40,
+                    px: 3,
+                  }}
+                >
+                  {exporting ? 'Exporting Excel...' : 'Export Excel'}
+                </Button>
 
-              <Button
-                variant="contained"
-                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                onClick={handleExportPdf}
-                disabled={exportingPdf || data.length === 0}
-                sx={{
-                  bgcolor: '#f43f5e',
-                  color: 'common.white',
-                  '&:hover': { bgcolor: '#e11d48' },
-                  height: 40,
-                  px: 3,
-                }}
-              >
-                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-              </Button>
-            </Stack>
+                <Button
+                  variant="contained"
+                  startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                  onClick={handleExportPdf}
+                  disabled={exportingPdf || data.length === 0}
+                  sx={{
+                    bgcolor: '#f43f5e',
+                    color: 'common.white',
+                    '&:hover': { bgcolor: '#e11d48' },
+                    height: 40,
+                    px: 3,
+                  }}
+                >
+                  {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                </Button>
+              </Stack>
+            )}
           </Stack>
         </Card>
 

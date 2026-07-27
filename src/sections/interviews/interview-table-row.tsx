@@ -155,7 +155,7 @@ export function InterviewTableRow({
                 </Stack>
             </TableCell>
 
-            <TableCell>{formatDateTime(row.scheduled_on, row.from_time)}</TableCell>
+            <TableCell>{formatDateTime(row.scheduled_on, row.from_time) || "-"}</TableCell>
 
             <TableCell>{renderStatus(row.overall_status)}</TableCell>
 

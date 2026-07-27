@@ -66,6 +66,10 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 export function EstimationReportView() {
     const { user } = useAuth();
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.estimation_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.estimation_report ? !!user?.permissions?.actions?.estimation_report?.export : true;
+
     const navigate = useNavigate();
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
@@ -610,37 +614,41 @@ export function EstimationReportView() {
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateEstimationPdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Estimations', value: reportData.length },
-                                    { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
-                                    { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 37,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport &&(
+                            <>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={handleExport}
+                                    disabled={reportData.length === 0}
+                                >
+                                    Export Excel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={() => handleExportPdf(() => generateEstimationPdf({
+                                        reportData: filteredData,
+                                        selected,
+                                        summary: summaryData.length > 0 ? summaryData : [
+                                            { label: 'Total Estimations', value: reportData.length },
+                                            { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
+                                            { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                                        ]
+                                    }))}
+                                    disabled={exportingPdf || reportData.length === 0}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 37,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </>
+                        )}
                     </Stack>
                 </Card>
 

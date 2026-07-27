@@ -63,6 +63,9 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 
 export function PurchaseCollectionReportView() {
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase_settlement_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.purchase_settlement_report ? !!user?.permissions?.actions?.purchase_settlement_report?.export : true;
+
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -448,36 +451,40 @@ export function PurchaseCollectionReportView() {
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generatePurchaseCollectionPdf({
-                                reportData: filteredData,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Purchase Amount', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0) },
-                                    { label: 'Total Paid', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0) },
-                                    { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0) }
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 36,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                onClick={handleExport}
+                                disabled={reportData.length === 0}
+                            >
+                                Export Excel
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="contained"
+                                startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                onClick={() => handleExportPdf(() => generatePurchaseCollectionPdf({
+                                    reportData: filteredData,
+                                    summary: summaryData.length > 0 ? summaryData : [
+                                        { label: 'Total Purchase Amount', value: reportData.reduce((acc, curr) => acc + (curr.amount_to_pay || 0), 0) },
+                                        { label: 'Total Paid', value: reportData.reduce((acc, curr) => acc + (curr.amount_collected || 0), 0) },
+                                        { label: 'Total Pending', value: reportData.reduce((acc, curr) => acc + (curr.amount_pending || 0), 0) }
+                                    ]
+                                }))}
+                                disabled={exportingPdf || reportData.length === 0}
+                                sx={{
+                                    bgcolor: '#f43f5e',
+                                    color: 'common.white',
+                                    '&:hover': { bgcolor: '#e11d48' },
+                                    height: 36,
+                                    px: 3,
+                                }}
+                            >
+                                {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                            </Button>
+                        )}
                     </Stack>
                 </Card>
 

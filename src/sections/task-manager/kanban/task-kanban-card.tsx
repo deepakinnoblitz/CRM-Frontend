@@ -20,6 +20,7 @@ import { TaskManager } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 interface Props {
@@ -65,6 +66,12 @@ export default function TaskKanbanCard({
     const priorityColor =
         task.priority === 'High' ? 'error' :
             task.priority === 'Medium' ? 'warning' : 'info';
+
+    const { user } = useAuth();
+    const actionPerms = user?.permissions?.actions?.task_manager || user?.permissions?.actions?.tasks;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const displayEdit = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const displayDelete = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
 
     return (
         <Card
@@ -211,7 +218,21 @@ export default function TaskKanbanCard({
                     }
                 }}
             >
-                {permissions.write && (
+                {!displayEdit && !displayDelete &&(
+                    <MenuItem
+                        sx={{
+                            gap: 1.5,
+                            typography: 'body2',
+                            fontWeight: 600,
+                            color: 'text.disabled',
+                            p:2,
+                            justifyContent: 'center'
+                        }}
+                    >
+                        No Permission
+                    </MenuItem>
+                )}
+                {displayEdit && (
                     <MenuItem
                         onClick={handleEdit}
                         sx={{
@@ -227,7 +248,7 @@ export default function TaskKanbanCard({
                     </MenuItem>
                 )}
 
-                {permissions.delete && (
+                {displayDelete && (
                     <MenuItem
                         onClick={handleDelete}
                         sx={{

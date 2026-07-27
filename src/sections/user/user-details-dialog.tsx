@@ -209,38 +209,77 @@ export function UserDetailsDialog({ open, onClose, userId, onEdit }: Props) {
                         </Box>
 
                         {/* Roles Section */}
-                        {user.roles && user.roles.length > 0 && (
+                        {/* Roles & Custom Role Permissions Section */}
+                        {((user.roles && user.roles.length > 0) || (user.custom_permissions && user.custom_permissions.length > 0)) && (
                             <>
                                 <Divider sx={{ borderStyle: 'dashed' }} />
                                 <Box sx={{ px: 2 }}>
-                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2, fontSize: '15px' }}>
-                                        ROLES:
-                                    </Typography>
-                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                                        {user.roles.map((roleItem: any) => {
-                                            const roleName = typeof roleItem === 'string' ? roleItem : roleItem.role;
-                                            return (
-                                                <Label
-                                                    key={roleName}
-                                                    variant="filled"
-                                                    color="primary"
-                                                    sx={{
-                                                        height: 30,
-                                                        px: 2,
-                                                        borderRadius: 10,
-                                                        fontSize: '14px',
-                                                        fontWeight: 600,
-                                                        boxShadow: (theme) => `0 4px 12px ${theme.palette.primary.main}40`,
-                                                    }}
-                                                >
-                                                    {roleName}
-                                                </Label>
-                                            );
-                                        })}
-                                    </Box>
+                                    {user.roles && user.roles.length > 0 && (
+                                        <Box>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2, fontSize: '15px' }}>
+                                                ROLES:
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                                                {user.roles.map((roleItem: any) => {
+                                                    const roleName = typeof roleItem === 'string' ? roleItem : roleItem.role;
+                                                    return (
+                                                        <Label
+                                                            key={roleName}
+                                                            variant="filled"
+                                                            color="primary"
+                                                            sx={{
+                                                                height: 30,
+                                                                px: 2,
+                                                                borderRadius: 10,
+                                                                fontSize: '14px',
+                                                                fontWeight: 600,
+                                                                boxShadow: (theme) => `0 4px 12px ${theme.palette.primary.main}40`,
+                                                            }}
+                                                        >
+                                                            {roleName}
+                                                        </Label>
+                                                    );
+                                                })}
+                                            </Box>
+                                        </Box>
+                                    )}
 
-                                    {/* Permissions subsection */}
-                                    <Box sx={{ mt: 3 }}>
+                                    {user.custom_permissions && user.custom_permissions.length > 0 && (
+                                        <Box sx={{ mt: 3 }}>
+                                            <Typography variant="subtitle1" sx={{ fontWeight: 800, color: 'text.primary', mb: 2, fontSize: '15px' }}>
+                                                ROLE PERMISSIONS:
+                                            </Typography>
+                                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                                                {user.custom_permissions.map((permItem: any) => (
+                                                    <Label
+                                                        key={permItem.name || permItem.permission_manager}
+                                                        variant="filled"
+                                                        color="info"
+                                                        sx={{
+                                                            height: 30,
+                                                            px: 2,
+                                                            borderRadius: 10,
+                                                            fontSize: '14px',
+                                                            fontWeight: 600,
+                                                            boxShadow: (theme) => `0 4px 12px ${theme.palette.info.main}40`,
+                                                        }}
+                                                    >
+                                                        {permItem.permission_name}
+                                                    </Label>
+                                                ))}
+                                            </Box>
+                                        </Box>
+                                    )}
+                                </Box>
+                            </>
+                        )}
+
+                        {/* Assigned User Permissions Section */}
+                        {((user.roles && user.roles.length > 0) || userPermissions.length > 0) && (
+                            <>
+                                <Divider sx={{ borderStyle: 'dashed' }} />
+                                <Box sx={{ px: 2 }}>
+                                    <Box>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'text.secondary', mb: 1.5, fontSize: '13px', textTransform: 'uppercase' }}>
                                             ASSIGNED PERMISSIONS:
                                         </Typography>

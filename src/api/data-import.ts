@@ -78,7 +78,7 @@ export async function getImportStatus(name: string) {
 }
 
 export async function getImportPreview(name: string) {
-    const res = await frappeRequest(`/api/method/frappe.core.doctype.data_import.data_import.get_preview_from_template?data_import=${name}`);
+    const res = await frappeRequest(`/api/method/company.company.frontend_api.get_custom_import_preview?data_import_name=${name}`);
 
     if (!res.ok) {
         const error = await res.json();

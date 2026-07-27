@@ -16,6 +16,8 @@ type Props = {
   onSelectRow: VoidFunction;
   onDeleteRow: VoidFunction;
   index?: number;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 export function ClaimTypeTableRow({
@@ -25,6 +27,8 @@ export function ClaimTypeTableRow({
   onSelectRow,
   onDeleteRow,
   index,
+  canEdit = true,
+  canDelete = true,
 }: Props) {
   const { claim_type } = row;
 
@@ -77,13 +81,17 @@ export function ClaimTypeTableRow({
 
       <TableCell align="right">
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5 }}>
-          <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
+          {canEdit && (
+            <IconButton size="small" onClick={onEditRow} sx={{ color: 'primary.main' }}>
+              <Iconify icon="solar:pen-bold" />
+            </IconButton>
+          )}
 
-          <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
+          {canDelete && (
+            <IconButton size="small" onClick={onDeleteRow} sx={{ color: 'error.main' }}>
+              <Iconify icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          )}
         </Box>
       </TableCell>
     </TableRow>

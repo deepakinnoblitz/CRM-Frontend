@@ -40,6 +40,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { generateProspectsPdf } from 'src/components/export/pdf/prospects-pdf-generator';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 const STAGE_OPTIONS = [
@@ -197,6 +198,10 @@ function SummaryCard({ item }: { item: { label: string; value: any; indicator?: 
 export function ProspectsReportView() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.prospects_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.prospects_report ? !!user?.permissions?.actions?.prospects_report?.export : true;
 
     const [reportData, setReportData] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
@@ -627,38 +632,38 @@ export function ProspectsReportView() {
                     </FormControl>
 
                     <Box sx={{ flexGrow: 1 }} />
-
-                    {/* Export Excel */}
-                    <Button
-                        variant="contained"
-                        startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                        onClick={handleExportExcel}
-                        disabled={filteredData.length === 0}
-                        sx={{ mr: 1 }}
-                    >
-                        Export Excel
-                    </Button>
-
-                    {/* Export PDF */}
-                    <Button
-                        variant="contained"
-                        startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                        onClick={() => handleExportPdf(() => generateProspectsPdf({
-                            reportData: filteredData,
-                            selected,
-                            summary: summaryCards,
-                        }))}
-                        disabled={exportingPdf || filteredData.length === 0}
-                        sx={{
-                            bgcolor: '#f43f5e',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#e11d48' },
-                            height: 37,
-                            px: 3,
-                        }}
-                    >
-                        {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                    </Button>
+                        {canExport && (
+                            <>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={handleExportExcel}
+                                    disabled={filteredData.length === 0}
+                                    sx={{ mr: 1 }}
+                                >
+                                    Export Excel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={() => handleExportPdf(() => generateProspectsPdf({
+                                        reportData: filteredData,
+                                        selected,
+                                        summary: summaryCards,
+                                    }))}
+                                    disabled={exportingPdf || filteredData.length === 0}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 37,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </>
+                        )}
                 </Card>
 
                 {/* Summary Cards */}

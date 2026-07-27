@@ -23,7 +23,7 @@ import {
     FaMapMarkerAlt,
     FaMedal,
     FaUser,
-    FaWallet, 
+    FaWallet,
 } from 'react-icons/fa';
 
 import Box from '@mui/material/Box';
@@ -59,6 +59,10 @@ import { PersonalityManagement } from '../../overview/personality-management';
 
 export function MyProfileView() {
     const { user, setUser } = useAuth();
+    const actionPerms = user?.permissions?.actions?.my_profile;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const canEditProfile = hasCustomPerms ? !!actionPerms?.edit : true;
+
     const [employee, setEmployee] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
@@ -234,33 +238,35 @@ export function MyProfileView() {
                                         )}
                                     </Box>
 
-                                    <Tooltip title={uploading ? "Uploading..." : "Change Profile Picture"} placement="top">
-                                        <IconButton
-                                            className="edit-icon"
-                                            component="label"
-                                            disabled={uploading}
-                                            sx={{
-                                                position: 'absolute',
-                                                bottom: 2,
-                                                right: 2,
-                                                bgcolor: 'primary.main',
-                                                color: 'primary.contrastText',
-                                                padding: 0.8,
-                                                opacity: 0.9,
-                                                transform: 'scale(0.9)',
-                                                transition: (theme) => theme.transitions.create(['opacity', 'transform']),
-                                                boxShadow: (theme) => theme.customShadows?.z8,
-                                                '&:hover': {
-                                                    bgcolor: 'primary.dark',
-                                                    opacity: 1,
-                                                    transform: 'scale(1)',
-                                                },
-                                            }}
-                                        >
-                                            <ReactIcon icon={FaCamera} size={18} />
-                                            <input type="file" hidden accept="image/*" onChange={handleFileUpload} />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {canEditProfile && (
+                                        <Tooltip title={uploading ? "Uploading..." : "Change Profile Picture"} placement="top">
+                                            <IconButton
+                                                className="edit-icon"
+                                                component="label"
+                                                disabled={uploading}
+                                                sx={{
+                                                    position: 'absolute',
+                                                    bottom: 2,
+                                                    right: 2,
+                                                    bgcolor: 'primary.main',
+                                                    color: 'primary.contrastText',
+                                                    padding: 0.8,
+                                                    opacity: 0.9,
+                                                    transform: 'scale(0.9)',
+                                                    transition: (theme) => theme.transitions.create(['opacity', 'transform']),
+                                                    boxShadow: (theme) => theme.customShadows?.z8,
+                                                    '&:hover': {
+                                                        bgcolor: 'primary.dark',
+                                                        opacity: 1,
+                                                        transform: 'scale(1)',
+                                                    },
+                                                }}
+                                            >
+                                                <ReactIcon icon={FaCamera} size={18} />
+                                                <input type="file" hidden accept="image/*" onChange={handleFileUpload} />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </Box>
                                 <Box sx={{ flexGrow: 1, minWidth: 0 }}>
                                     <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
@@ -269,9 +275,9 @@ export function MyProfileView() {
                                         const dep = (employee.department || '').trim();
                                         const validDes = des && des !== '-';
                                         const validDep = dep && dep !== '-';
-                                        
+
                                         if (!validDes && !validDep) return null;
-                                        
+
                                         const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
                                         return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
                                     })()}
@@ -321,6 +327,8 @@ export function MyProfileView() {
                                     <DetailItem label="Joining Date" value={fDate(employee.date_of_joining, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
                                     <DetailItem label="Status" value={employee.status} icon={FaInfoCircle} />
                                     <DetailItem label="Date of Birth" value={fDate(employee.dob, 'DD-MM-YYYY')} icon={FaCalendarAlt} />
+                                    <DetailItem label="Blood Group" value={employee.blood_group} icon={FaHeartbeat} />
+                                    <DetailItem label="Sex" value={employee.sex} icon={FaUser} />
                                 </Box>
                             </Box>
 

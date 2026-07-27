@@ -32,6 +32,7 @@ import { getWhatsAppTemplate, fetchWhatsAppTemplateCategories } from 'src/api/wh
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 const formatFileSize = (bytes: number) => {
@@ -53,6 +54,10 @@ export function WhatsAppTemplateDetailsView() {
     const [attachmentsMeta, setAttachmentsMeta] = useState<Record<string, any>>({});
 
     const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.whatsapp_templates;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.whatsapp_templates?.edit : true;
 
     useEffect(() => {
         const loadCategories = async () => {
@@ -207,21 +212,23 @@ export function WhatsAppTemplateDetailsView() {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => navigate(`/whatsapp-templates/${encodeURIComponent(id || '')}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' }
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {displayEdit &&(
+                        <Button
+                            variant="contained"
+                            onClick={() => navigate(`/whatsapp-templates/${encodeURIComponent(id || '')}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 

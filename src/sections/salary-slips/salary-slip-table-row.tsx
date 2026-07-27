@@ -32,7 +32,8 @@ type Props = {
     onEdit: () => void;
     onSubmit: () => void;
     onDelete: () => void;
-
+    canEdit?: boolean;
+    canDelete?: boolean;
     hideCheckbox?: boolean;
     index?: number;
     isHR?: boolean;
@@ -46,6 +47,8 @@ export function SalarySlipTableRow({
     onEdit,
     onSubmit,
     onDelete,
+    canEdit = true,
+    canDelete = true,
     hideCheckbox = false,
     index,
     isHR = false,
@@ -152,17 +155,17 @@ export function SalarySlipTableRow({
                     </IconButton>
                     {isHR && (
                         <>
-                            {row.docstatus === 0 && (
+                            {row.docstatus === 0 && canEdit && (
                                 <IconButton onClick={onSubmit} sx={{ color: 'success.main' }} title="Submit Slip">
                                     <Iconify icon={"solar:check-circle-bold" as any} />
                                 </IconButton>
                             )}
-                            {row.docstatus === 0 && (
+                            {row.docstatus === 0 && canEdit && (
                                 <IconButton onClick={onEdit} sx={{ color: 'primary.main' }}>
                                     <Iconify icon={"solar:pen-bold" as any} />
                                 </IconButton>
                             )}
-                            {row.docstatus === 0 && (
+                            {row.docstatus === 0 && canDelete && (
 
                                 <IconButton onClick={onDelete} sx={{ color: 'error.main' }}>
                                     <Iconify icon={"solar:trash-bin-trash-bold" as any} />

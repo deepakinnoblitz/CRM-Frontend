@@ -23,6 +23,7 @@ export interface Call {
     remind_before_minutes?: number;
     host?: string;
     participants?: { user: string }[];
+    call_notes?: any[];
 }
 
 export async function fetchCalls(start?: string, end?: string): Promise<Call[]> {
@@ -46,6 +47,7 @@ export async function fetchCalls(start?: string, end?: string): Promise<Call[]> 
             "outgoing_call_status",
             "completed_call_status",
             "completed_call_notes",
+            "call_notes",
             "call_purpose",
             "call_agenda",
             "color",

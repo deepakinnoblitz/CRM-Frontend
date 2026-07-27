@@ -35,6 +35,8 @@ import { TableNoData } from 'src/sections/proposal/table-no-data';
 import { TableEmptyRows } from 'src/sections/proposal/table-empty-rows';
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { EmailAutomationsTableToolbar } from '../email-automations-table-toolbar';
 import { EmailAutomationsFiltersDrawer, EmailAutomationsFiltersProps } from '../email-automations-filters-drawer';
 
@@ -69,6 +71,12 @@ export function EmailAutomationsListView() {
     const [loading, setLoading] = useState(true);
     const [templatesMap, setTemplatesMap] = useState<Record<string, string>>({});
     const { enqueueSnackbar } = useSnackbar();
+
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.email_automations;
+    const canCreateTemplete = hasCustomPerms && user?.permissions?.actions?.email_automations ? !!user?.permissions?.actions?.email_automations?.create : true;
+    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.email_automations?.edit : true;
+    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.email_automations?.delete : true;
 
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -150,7 +158,9 @@ export function EmailAutomationsListView() {
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
                 <Typography variant="h4">Email Automations</Typography>
-                <Button
+                
+                {canCreateTemplete &&(
+                    <Button
                     variant="contained"
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={() => router.push('/email-automations/new')}
@@ -163,6 +173,7 @@ export function EmailAutomationsListView() {
                 >
                     New Automation
                 </Button>
+                )}
             </Stack>
 
             <Card
@@ -295,12 +306,16 @@ export function EmailAutomationsListView() {
                                                         <IconButton onClick={() => router.push(`/email-automations/${row.name}/view`)} sx={{ color: 'info.main' }} title="View">
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
-                                                        <IconButton onClick={() => router.push(`/email-automations/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        { displayEdit && (
+                                                            <IconButton onClick={() => router.push(`/email-automations/${row.name}/edit`)} sx={{ color: 'primary.main' }} title="Edit">
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
+                                                        { displayDelete && (
                                                         <IconButton onClick={() => setConfirmDelete({ open: true, id: row.name })} sx={{ color: 'error.main' }} title="Delete">
                                                             <Iconify icon="solar:trash-bin-trash-bold" />
                                                         </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

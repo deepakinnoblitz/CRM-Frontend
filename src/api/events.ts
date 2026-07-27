@@ -114,3 +114,14 @@ export async function getEventPermissions() {
     const data = await res.json();
     return data.message || { read: false, write: false, delete: false };
 }
+
+export async function getEvent(name: string) {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Event&name=${name}`);
+
+    if (!res.ok) {
+        throw new Error("Failed to fetch event details");
+    }
+
+    return (await res.json()).message;
+}
+

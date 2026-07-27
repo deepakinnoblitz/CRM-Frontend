@@ -73,6 +73,12 @@ export function AssetAssignmentsView() {
     const theme = useTheme();
 
     const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.asset_assignments;
+    const actionPerms = user?.permissions?.actions?.asset_assignments;
+    const canCreateAssignment = hasCustomPerms && actionPerms ? !!actionPerms?.create : true;
+    const canEditAssignment = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const canDeleteAssignment = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
+    const canImportAssignment = hasCustomPerms && actionPerms ? !!actionPerms?.import : true;
 
     const isHR = user?.roles?.some((role: string) =>
         ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
@@ -351,23 +357,27 @@ export function AssetAssignmentsView() {
                     {isHR ? 'Asset Assignments' : 'My Assets'}
                 </Typography>
 
-                {permissions.write && (
+                {(permissions.write && (canCreateAssignment || canImportAssignment)) && (
                     <Stack direction="row" spacing={1}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Iconify icon="solar:import-bold-duotone" />}
-                            onClick={() => setOpenImport(true)}
-                        >
-                            Import
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon="mingcute:add-line" />}
-                            onClick={handleOpenCreate}
-                            sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
-                        >
-                            New Assignment
-                        </Button>
+                        {canImportAssignment && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<Iconify icon="solar:import-bold-duotone" />}
+                                onClick={() => setOpenImport(true)}
+                            >
+                                Import
+                            </Button>
+                        )}
+                        {canCreateAssignment && (
+                            <Button
+                                variant="contained"
+                                startIcon={<Iconify icon="mingcute:add-line" />}
+                                onClick={handleOpenCreate}
+                                sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
+                            >
+                                New Assignment
+                            </Button>
+                        )}
                     </Stack>
                 )}
             </Box>
@@ -441,8 +451,8 @@ export function AssetAssignmentsView() {
                                                 onView={() => handleViewRow(row)}
                                                 onEdit={() => handleEditRow(row)}
                                                 onDelete={() => handleDeleteRow(row.name)}
-                                                canEdit={permissions.write}
-                                                canDelete={permissions.delete}
+                                                canEdit={permissions.write && canEditAssignment}
+                                                canDelete={permissions.delete && canDeleteAssignment}
                                                 isHR={isHR}
                                             />
                                         ))}

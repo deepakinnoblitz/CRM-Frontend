@@ -46,11 +46,12 @@ type Props = {
     onClose: () => void;
     requestName: string | null;
     isHR: boolean;
+    canEdit?: boolean;
     onApprove?: (request: any) => void;
     onReject?: (request: any) => void;
 };
 
-export function AssetRequestDetailsDialog({ open, onClose, requestName, isHR, onApprove, onReject }: Props) {
+export function AssetRequestDetailsDialog({ open, onClose, requestName, isHR, canEdit = true, onApprove, onReject }: Props) {
     const theme = useTheme();
     const [request, setRequest] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -333,7 +334,7 @@ export function AssetRequestDetailsDialog({ open, onClose, requestName, isHR, on
                 )}
             </DialogContent>
 
-            {isHR && request?.status === 'Pending Approval' && (
+            {isHR && request?.status === 'Pending Approval' && canEdit && (
                 <DialogActions sx={{ px: 4, py: 3, bgcolor: alpha(theme.palette.grey[500], 0.04) }}>
                     <Stack direction="row" spacing={1.5} sx={{ width: 1 }}>
                         <Button

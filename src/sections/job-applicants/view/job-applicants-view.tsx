@@ -50,9 +50,18 @@ import { LeadTableToolbar as JobApplicantTableToolbar } from 'src/sections/lead/
 import { JobApplicantDetailsDialog } from 'src/sections/job-applicants/job-applicant-details-dialog';
 import { JobApplicantsTableFiltersDrawer } from 'src/sections/job-applicants/job-applicants-table-filters-drawer';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
+
 export function JobApplicantsView() {
+  const { user } = useAuth();
+  const actionPerms = user?.permissions?.actions?.job_applicant_list;
+  const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
+  const canCreateApplicant = hasCustomPerms ? !!actionPerms?.create : true;
+  const canEditApplicant = hasCustomPerms ? !!actionPerms?.edit : true;
+  const canDeleteApplicant = hasCustomPerms ? !!actionPerms?.delete : true;
+
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [filterName, setFilterName] = useState('');
@@ -416,7 +425,7 @@ export function JobApplicantsView() {
     <DashboardContent maxWidth={false}>
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 5, mt: 3 }}>
         <Typography variant="h4">Job Applicants</Typography>
-        {permissions.write && (
+        {permissions.write && canCreateApplicant && (
           <Button
             variant="contained"
             sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' } }}
@@ -442,26 +451,27 @@ export function JobApplicantsView() {
           sortOptions={[
             { value: 'date_desc', label: 'Newest First' },
             { value: 'date_asc', label: 'Oldest First' },
-            { value: 'name_asc', label: 'Name: A to Z' },
-            { value: 'name_desc', label: 'Name: Z to A' },
+            { value: 'name_asc', label: 'Applicant Name: A to Z' },
+            { value: 'name_desc', label: 'Applicant Name: Z to A' },
           ]}
         />
 
         <Scrollbar>
           <TableContainer sx={{ overflow: 'unset' }}>
-            <Table sx={{ minWidth: 800, borderCollapse: 'collapse' }}>
+            <Table sx={{ minWidth: 800 }}>
               <JobApplicantTableHead
                 order={order}
                 orderBy={orderBy}
                 rowCount={data.length}
                 numSelected={selected.length}
                 onSelectAllRows={(checked: boolean) => handleSelectAllRows(checked)}
-                showIndex
                 hideCheckbox
+                showIndex
                 headLabel={[
-                  { id: 'applicant_name', label: 'Name' },
-                  { id: 'job_title', label: 'Job Opening' },
+                  { id: 'applicant_name', label: 'Applicant Name' },
+                  { id: 'email_id', label: 'Email' },
                   { id: 'phone_number', label: 'Phone' },
+                  { id: 'job_title', label: 'Job Title' },
                   { id: 'status', label: 'Status' },
                   { id: '', label: '' },
                 ]}
@@ -494,8 +504,8 @@ export function JobApplicantsView() {
                         onView={() => handleViewRow(row)}
                         onEdit={() => handleEditRow(row)}
                         onDelete={() => handleDeleteRow(row.name)}
-                        canEdit={permissions.write}
-                        canDelete={permissions.delete}
+                        canEdit={permissions.write && canEditApplicant}
+                        canDelete={permissions.delete && canDeleteApplicant}
                       />
                     ))}
 

@@ -68,6 +68,9 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 export function InvoiceReportView() {
     const { user } = useAuth();
 
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.invoice_report;
+    const canExport = hasCustomPerms && user?.permissions?.actions?.invoice_report ? !!user?.permissions?.actions?.invoice_report?.export : true;
+
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState<any[]>([]);
     const [summaryData, setSummaryData] = useState<any[]>([]);
@@ -594,37 +597,41 @@ export function InvoiceReportView() {
                     </FormControl>
                     <Box sx={{ flexGrow: 1 }} />
                     <Stack direction="row" spacing={1} sx={{ ml: 'auto' }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<Iconify icon={"solar:export-bold" as any} />}
-                            onClick={handleExport}
-                            disabled={reportData.length === 0}
-                        >
-                            Export Excel
-                        </Button>
-                        <Button
-                            variant="contained"
-                            startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
-                            onClick={() => handleExportPdf(() => generateInvoicePdf({
-                                reportData: filteredData,
-                                selected,
-                                summary: summaryData.length > 0 ? summaryData : [
-                                    { label: 'Total Invoices', value: reportData.length },
-                                    { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
-                                    { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
-                                ]
-                            }))}
-                            disabled={exportingPdf || reportData.length === 0}
-                            sx={{
-                                bgcolor: '#f43f5e',
-                                color: 'common.white',
-                                '&:hover': { bgcolor: '#e11d48' },
-                                height: 37,
-                                px: 3,
-                            }}
-                        >
-                            {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
-                        </Button>
+                        {canExport && (
+                            <>
+                                <Button
+                                    variant="contained"
+                                    startIcon={<Iconify icon={"solar:export-bold" as any} />}
+                                    onClick={handleExport}
+                                    disabled={reportData.length === 0}
+                                >
+                                    Export Excel
+                                </Button>
+                                <Button
+                                    variant="contained"
+                                    startIcon={exportingPdf ? undefined : <Iconify icon={"solar:file-download-bold" as any} />}
+                                    onClick={() => handleExportPdf(() => generateInvoicePdf({
+                                        reportData: filteredData,
+                                        selected,
+                                        summary: summaryData.length > 0 ? summaryData : [
+                                            { label: 'Total Invoices', value: reportData.length },
+                                            { label: 'Total Quantity', value: reportData.reduce((acc, curr) => acc + (curr.quantity || 0), 0) },
+                                            { label: 'Grand Total Amount', value: reportData.reduce((acc, curr) => acc + (curr.grand_total || 0), 0) }
+                                        ]
+                                    }))}
+                                    disabled={exportingPdf || reportData.length === 0}
+                                    sx={{
+                                        bgcolor: '#f43f5e',
+                                        color: 'common.white',
+                                        '&:hover': { bgcolor: '#e11d48' },
+                                        height: 37,
+                                        px: 3,
+                                    }}
+                                >
+                                    {exportingPdf ? 'Exporting PDF...' : 'Export PDF'}
+                                </Button>
+                            </>
+                        )}
                     </Stack>
                 </Card>
 

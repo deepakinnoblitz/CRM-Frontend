@@ -14,6 +14,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { Iconify } from 'src/components/iconify';
 
+import { useAuth } from 'src/auth/auth-context';
 // ----------------------------------------------------------------------
 
 type EmployeeDailyLogTableToolbarProps = {
@@ -59,6 +60,10 @@ export function EmployeeDailyLogTableToolbar({
   };
 
   const currentSortLabel = sortOptions.find((opt: { value: string; label: string }) => opt.value === sortBy)?.label || 'Sort';
+
+  const { user } = useAuth();
+  const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.daily_log;
+  const displaySettings = hasCustomPerms ? !!user?.permissions?.actions?.daily_log?.create : true;
 
   return (
     <Toolbar
@@ -193,7 +198,7 @@ export function EmployeeDailyLogTableToolbar({
           </>
         )}
 
-        {isHR && onOpenSettings && (
+        {isHR && onOpenSettings && displaySettings &&(
           <Button
             disableRipple
             color="inherit"
