@@ -52,7 +52,10 @@ import { TimesheetReportCalendar } from './timesheet-report-calendar';
 export function TimesheetsReportView() {
     const theme = useTheme();
     const { user } = useAuth();
-    const actionPerms = user?.permissions?.actions?.timesheet_report;
+    const actionPerms =
+      user?.permissions?.actions?.my_timesheet_report ||
+      user?.permissions?.actions?.timesheet_report ||
+      user?.permissions?.actions?.report_timesheet;
     const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
     const canExport = hasCustomPerms ? !!actionPerms?.export : true;
     const [reportData, setReportData] = useState<any[]>([]);
