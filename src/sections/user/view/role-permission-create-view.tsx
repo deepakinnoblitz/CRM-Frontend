@@ -520,6 +520,11 @@ export const isActionAllowed = (moduleId: string, screenId: string, key: string)
         return key === 'view_permission' || key === 'add_permission';
     }
 
+    // My Timesheet does not have Delete permission
+    if (scr === 'my timesheet' && key === 'delete_permission') {
+        return false;
+    }
+
     // 2. Reports only have View and Export permissions
     const isReport = scr.includes('report') || mod.startsWith('report_');
     if (isReport) {

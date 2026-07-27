@@ -60,7 +60,10 @@ import { LeavesDetailsDialog } from '../../leaves/leaves-details-dialog';
 export function AttendanceReportView() {
     const theme = useTheme();
     const { user } = useAuth();
-    const actionPerms = user?.permissions?.actions?.attendance_report;
+    const actionPerms =
+      user?.permissions?.actions?.my_attendance_report ||
+      user?.permissions?.actions?.attendance_report ||
+      user?.permissions?.actions?.report_attendance;
     const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
     const canExport = hasCustomPerms ? !!actionPerms?.export : true;
 

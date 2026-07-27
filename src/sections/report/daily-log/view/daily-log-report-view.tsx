@@ -63,7 +63,10 @@ import { EmployeeDailyLogDetailsDialog } from '../../../overview/employee-daily-
 export function DailyLogReportView() {
     const theme = useTheme();
     const { user } = useAuth();
-    const actionPerms = user?.permissions?.actions?.daily_log_report;
+    const actionPerms =
+      user?.permissions?.actions?.my_daily_log_report ||
+      user?.permissions?.actions?.daily_log_report ||
+      user?.permissions?.actions?.report_daily_log;
     const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
     const canExport = hasCustomPerms ? !!actionPerms?.export : true;
 

@@ -47,7 +47,10 @@ const TABS = [
 
 export function EmployeeReferralsView() {
   const { user } = useAuth();
-  const actionPerms = user?.permissions?.actions?.employee_referral_list;
+  const actionPerms =
+    user?.permissions?.actions?.refer_a_friend ||
+    user?.permissions?.actions?.employee_referrals ||
+    user?.permissions?.actions?.employee_referral_list;
   const hasCustomPerms = !!user?.permissions?.custom_permissions_assigned && !!actionPerms;
   const canCreateReferral = hasCustomPerms ? !!actionPerms?.create : true;
   const canEditReferral = hasCustomPerms ? !!actionPerms?.edit : true;
@@ -192,6 +195,7 @@ export function EmployeeReferralsView() {
     (filters.location !== 'all' ? 1 : 0);
 
   const handleReferClick = (jobName: string) => {
+    if (!canCreateReferral) return;
     setSelectedJob(jobName);
     setOpenModal(true);
   };
@@ -505,7 +509,7 @@ export function EmployeeReferralsView() {
       </Card>
 
       <ReferralModal
-        open={openModal}
+        open={openModal && canCreateReferral}
         onClose={() => setOpenModal(false)}
         onSuccess={(msg) => {
           setSnackbar({ open: true, message: msg, severity: 'success' });
@@ -519,7 +523,7 @@ export function EmployeeReferralsView() {
       <JobOpeningDetailsDialog
         open={openJobDetails}
         onClose={() => setOpenJobDetails(false)}
-        onRefer={handleReferClick}
+        onRefer={canCreateReferral ? handleReferClick : undefined}
         job={selectedJobData}
       />
 
