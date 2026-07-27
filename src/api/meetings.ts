@@ -22,6 +22,7 @@ export interface Meeting {
     remind_before_minutes?: number;
     host?: string;
     participants?: { user: string }[];
+    meeting_notes?: { name?: string; title: string; description: string }[];
 }
 
 
