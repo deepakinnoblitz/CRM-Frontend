@@ -488,31 +488,55 @@ export function RolePermissionCreateView({ onBack }: RolePermissionCreateViewPro
 }
 
 export const isActionAllowed = (moduleId: string, screenId: string, key: string) => {
-  const mod = moduleId ? moduleId.toLowerCase() : '';
-  const scr = screenId ? screenId.toLowerCase() : '';
+    const mod = moduleId ? moduleId.toLowerCase() : '';
+    const scr = screenId ? screenId.toLowerCase() : '';
 
-  // 1. Dashboards only have View permission
-  if (scr.includes('dashboard') || mod.includes('dashboard')) {
-    return key === 'view_permission';
-  }
+    // 1. Dashboards only have View permission
+    if (scr.includes('dashboard') || mod.includes('dashboard')) {
+        return key === 'view_permission';
+    }
 
-  // 2. Reports only have View and Export permissions
-  const isReport = scr.includes('report') || mod.startsWith('report_');
-  if (isReport) {
-    return key === 'view_permission' || key === 'export_permission';
-  }
+    // 1.5. Profile / My Profile only have View and Edit permission
+    if (scr === 'my profile' || mod === 'profile') {
+        return key === 'view_permission' || key === 'edit_permission';
+    }
 
-  // 3. Only reports have export permission, other modules do not
-  if (key === 'export_permission') {
-    return false;
-  }
+    // 1.8. My Attendance and My Daily Log only have View permission
+    if (scr === 'my attendance' || scr === 'my daily log' || scr === 'my salary slip' || scr ==='my asset list') {
+        return key === 'view_permission';
+    }
 
-  // 4. Only Lead, Clients, and Company have Import permission. Other modules do not.
-  if (key === 'import_permission') {
-    const isImportAllowedModule = mod === 'lead' || mod === 'clients' || mod === 'company' || mod === 'attendance' || mod === 'asset_record';
-    const isImportAllowedScreen = scr === 'leads' || scr === 'clients' || scr === 'company' || mod === 'attendance_list' || mod === 'asset_list' || mod === 'asset_assignments';
-    return isImportAllowedModule || isImportAllowedScreen;
-  }
+    // 1.9. Only View and Add permission for Employee application/request screens
+    const onlyViewAndAddScreens = [
+        'my leave application',
+        'my request list',
+        'my wfh attendance',
+        'my salary slip',
+        'my reimbursement claim',
+        'my asset requests',
+        'refer a friend'
+    ];
+    if (onlyViewAndAddScreens.includes(scr)) {
+        return key === 'view_permission' || key === 'add_permission';
+    }
 
-  return true;
+    // 2. Reports only have View and Export permissions
+    const isReport = scr.includes('report') || mod.startsWith('report_');
+    if (isReport) {
+        return key === 'view_permission' || key === 'export_permission';
+    }
+
+    // 3. Only reports have export permission, other modules do not
+    if (key === 'export_permission') {
+        return false;
+    }
+
+    // 4. Only Lead, Clients, and Company have Import permission. Other modules do not.
+    if (key === 'import_permission') {
+        const isImportAllowedModule = mod === 'lead' || mod === 'clients' || mod === 'company' || mod === 'attendance' || mod === 'asset_record';
+        const isImportAllowedScreen = scr === 'leads' || scr === 'clients' || scr === 'company' || mod === 'attendance_list' || mod === 'asset_list' || mod === 'asset_assignments';
+        return isImportAllowedModule || isImportAllowedScreen;
+    }
+
+    return true;
 };
