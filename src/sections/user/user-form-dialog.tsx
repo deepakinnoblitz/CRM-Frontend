@@ -376,24 +376,35 @@ export function UserFormDialog({
     const selectedRoles = formData.roles || [];
     if (selectedRoles.length === 0) {
       setRolePermissions([]);
+      setFormData((prev: any) => ({ ...prev, custom_permissions: [] }));
       return;
     }
     setLoadingRolePermissions(true);
     try {
       const data = await fetchRolePermissions(selectedRoles);
       setRolePermissions(data);
+
+      const validPmNames = new Set(data.map((rp: any) => rp.name));
+      setFormData((prev: any) => {
+        const currentCustom = prev.custom_permissions || [];
+        const filteredCustom = currentCustom.filter((p: any) => validPmNames.has(p.permission_manager));
+        if (filteredCustom.length !== currentCustom.length) {
+          return { ...prev, custom_permissions: filteredCustom };
+        }
+        return prev;
+      });
     } catch (err) {
       console.error('Failed to load role permissions:', err);
     } finally {
       setLoadingRolePermissions(false);
     }
-  }, [formData.roles]);
+  }, [formData.roles, setFormData]);
 
   useEffect(() => {
-    if (currentTab === 'role-permissions') {
+    if (open) {
       loadRolePermissions();
     }
-  }, [currentTab, formData.roles, loadRolePermissions]);
+  }, [open, loadRolePermissions]);
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: string) => {
     setCurrentTab(newValue);

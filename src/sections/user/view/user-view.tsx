@@ -17,6 +17,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useUsers } from 'src/hooks/useUsers';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchRolePermissions } from 'src/api/permission-management';
 import { getUser, createUser, updateUser, deleteUser } from 'src/api/users';
 
 import { Iconify } from 'src/components/iconify';
@@ -163,6 +164,21 @@ export const UserView = forwardRef(
     const handleSubmit = async () => {
       setIsSubmitting(true);
       try {
+        let cleanedCustomPermissions = formData.custom_permissions || [];
+        if (formData.roles && formData.roles.length > 0) {
+          try {
+            const activeRolePermissions = await fetchRolePermissions(formData.roles);
+            const validPmNames = new Set(activeRolePermissions.map((rp) => rp.name));
+            cleanedCustomPermissions = cleanedCustomPermissions.filter((p) =>
+              validPmNames.has(p.permission_manager)
+            );
+          } catch (e) {
+            console.error('Failed to validate role permissions before submit:', e);
+          }
+        } else {
+          cleanedCustomPermissions = [];
+        }
+
         if (selectedUser) {
           await updateUser(selectedUser.name, {
             first_name: formData.first_name,
@@ -176,7 +192,7 @@ export const UserView = forwardRef(
             roles: formData.roles,
             block_modules: formData.block_modules,
             user_image: formData.user_image,
-            custom_permissions: formData.custom_permissions,
+            custom_permissions: cleanedCustomPermissions,
           });
 
           // Trigger password change if provided during update
@@ -202,7 +218,7 @@ export const UserView = forwardRef(
             send_welcome_email: formData.send_welcome_email,
             new_password: formData.new_password,
             user_image: formData.user_image,
-            custom_permissions: formData.custom_permissions,
+            custom_permissions: cleanedCustomPermissions,
           });
           enqueueSnackbar('User created successfully', { variant: 'success' });
         }

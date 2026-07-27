@@ -626,7 +626,7 @@ export function LeadDetailsView() {
 
     if (loading) {
         return (
-            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
                 <CircularProgress />
             </DashboardContent>
         );
