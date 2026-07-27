@@ -185,9 +185,10 @@ export default function TaskListView({
     const isEmpty = !tasks.length && !loading;
 
     const { user } = useAuth();
-    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.task_manager;
-    const displayEdit = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.edit : true;
-    const displayDelete = hasCustomPerms ? !!user?.permissions?.actions?.task_manager?.delete : true;
+    const actionPerms = user?.permissions?.actions?.task_manager || user?.permissions?.actions?.tasks;
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && !!actionPerms;
+    const displayEdit = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
+    const displayDelete = hasCustomPerms && actionPerms ? !!actionPerms?.delete : true;
 
     return (
         <>
