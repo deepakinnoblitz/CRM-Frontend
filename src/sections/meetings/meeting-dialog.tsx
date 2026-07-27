@@ -17,17 +17,19 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel, Card } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { getDoctypeList } from 'src/api/leads';
 import { createMeetingStatus, fetchMeetingStatuses } from 'src/api/masters';
-import { type Meeting, createMeeting, updateMeeting, deleteMeeting } from 'src/api/meetings';
+import { type Meeting, createMeeting, updateMeeting, deleteMeeting, getMeeting } from 'src/api/meetings';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
+
+import MeetingNoteDialog from './meeting-note-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -100,6 +102,90 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
         severity: 'success',
     });
 
+    const [openNoteDialog, setOpenNoteDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<any>(null);
+
+    const handleSaveNote = async (noteTitle: string, noteDescription: string) => {
+        if (!selectedMeeting) return;
+
+        let updatedNotes = [];
+        const currentNotes = meetingData.meeting_notes || [];
+        if (selectedNote && selectedNote.name) {
+            // Edit mode
+            updatedNotes = currentNotes.map((n: any) =>
+                n.name === selectedNote.name ? { ...n, title: noteTitle, description: noteDescription } : n
+            );
+        } else {
+            // Create mode
+            updatedNotes = [...currentNotes, { title: noteTitle, description: noteDescription }];
+        }
+
+        const payload = {
+            ...meetingData,
+            meeting_notes: updatedNotes,
+        };
+
+        const formattedPayload = {
+            ...payload,
+            from: payload.from?.replace('T', ' '),
+            to: payload.to?.replace('T', ' ') || undefined,
+        };
+
+        await updateMeeting(selectedMeeting.name, formattedPayload);
+        
+        // Refresh meeting details
+        const refreshedMeeting = await getMeeting(selectedMeeting.name);
+        setMeetingData({
+            ...refreshedMeeting,
+            from: refreshedMeeting.from.replace(' ', 'T'),
+            to: refreshedMeeting.to?.replace(' ', 'T') || '',
+            completed_meet_notes: stripHtml(refreshedMeeting.completed_meet_notes || ''),
+            meeting_notes: refreshedMeeting.meeting_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: selectedNote ? 'Note updated successfully' : 'Note added successfully',
+            severity: 'success'
+        });
+    };
+
+    const handleDeleteNote = async (noteToDelete: any) => {
+        if (!selectedMeeting) return;
+
+        const currentNotes = meetingData.meeting_notes || [];
+        const updatedNotes = currentNotes.filter((n: any) => n.name !== noteToDelete.name);
+
+        const payload = {
+            ...meetingData,
+            meeting_notes: updatedNotes,
+        };
+
+        const formattedPayload = {
+            ...payload,
+            from: payload.from?.replace('T', ' '),
+            to: payload.to?.replace('T', ' ') || undefined,
+        };
+
+        await updateMeeting(selectedMeeting.name, formattedPayload);
+        
+        // Refresh meeting details
+        const refreshedMeeting = await getMeeting(selectedMeeting.name);
+        setMeetingData({
+            ...refreshedMeeting,
+            from: refreshedMeeting.from.replace(' ', 'T'),
+            to: refreshedMeeting.to?.replace(' ', 'T') || '',
+            completed_meet_notes: stripHtml(refreshedMeeting.completed_meet_notes || ''),
+            meeting_notes: refreshedMeeting.meeting_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: 'Note deleted successfully',
+            severity: 'success'
+        });
+    };
+
     const [confirmDelete, setConfirmDelete] = useState(false);
 
     const [formErrors, setFormErrors] = useState<{ [key: string]: boolean }>({});
@@ -152,25 +238,30 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
     useEffect(() => {
         if (selectedMeeting) {
-            setMeetingData({
-                title: selectedMeeting.title,
-                meet_for: selectedMeeting.meet_for || 'Lead',
-                outgoing_call_status: selectedMeeting.outgoing_call_status || 'Scheduled',
-                completed_meet_status: selectedMeeting.completed_meet_status || '',
-                enter_id: selectedMeeting.enter_id || '',
-                from: selectedMeeting.from.replace(' ', 'T'),
-                to: selectedMeeting.to?.replace(' ', 'T') || '',
-                meeting_venue: selectedMeeting.meeting_venue || 'In Office',
-                location: selectedMeeting.location || '',
-                completed_meet_notes: stripHtml(selectedMeeting.completed_meet_notes || ''),
-                lead_name: selectedMeeting.lead_name || '',
-                contact_name: selectedMeeting.contact_name || '',
-                accounts_name: selectedMeeting.accounts_name || '',
-                enable_reminder: selectedMeeting.enable_reminder || 0,
-                remind_before_minutes: selectedMeeting.remind_before_minutes || 60,
-                host: selectedMeeting.host || '',
-                participants: selectedMeeting.participants || [],
-            });
+            getMeeting(selectedMeeting.name)
+                .then((fullMeeting) => {
+                    setMeetingData({
+                        title: fullMeeting.title,
+                        meet_for: fullMeeting.meet_for || 'Lead',
+                        outgoing_call_status: fullMeeting.outgoing_call_status || 'Scheduled',
+                        completed_meet_status: fullMeeting.completed_meet_status || '',
+                        enter_id: fullMeeting.enter_id || '',
+                        from: fullMeeting.from.replace(' ', 'T'),
+                        to: fullMeeting.to?.replace(' ', 'T') || '',
+                        meeting_venue: fullMeeting.meeting_venue || 'In Office',
+                        location: fullMeeting.location || '',
+                        completed_meet_notes: stripHtml(fullMeeting.completed_meet_notes || ''),
+                        lead_name: fullMeeting.lead_name || '',
+                        contact_name: fullMeeting.contact_name || '',
+                        accounts_name: fullMeeting.accounts_name || '',
+                        enable_reminder: fullMeeting.enable_reminder || 0,
+                        remind_before_minutes: fullMeeting.remind_before_minutes || 60,
+                        host: fullMeeting.host || '',
+                        participants: fullMeeting.participants || [],
+                        meeting_notes: fullMeeting.meeting_notes || [],
+                    });
+                })
+                .catch(console.error);
         } else if (initialData) {
             setMeetingData({
                 ...INITIAL_MEETING_STATE,
@@ -237,7 +328,7 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth={selectedMeeting ? "lg" : "md"} PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -251,7 +342,9 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
 
                 <DialogContent dividers sx={{ borderBottom: 'none', px: 4, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Grid container spacing={4} sx={{ py: 2 }}>
+                            <Grid size={{ xs: 12, md: selectedMeeting ? 8 : 12 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {/* General Section */}
                             <Box>
                                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
@@ -649,7 +742,97 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                                     onChange={(e) => setMeetingData({ ...meetingData, completed_meet_notes: e.target.value })}
                                 />
                             </Box>
-                        </Box>
+                                </Box>
+                            </Grid>
+
+                            {/* Right Side: Meeting Notes Panel (only in edit mode) */}
+                            {selectedMeeting && (
+                                <Grid size={{ xs: 12, md: 4 }} sx={{ borderLeft: (theme) => `1px solid ${theme.palette.divider}`, pl: 3 }}>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                                Notes
+                                            </Typography>
+                                            <Button
+                                                size="small"
+                                                variant="contained"
+                                                color="info"
+                                                startIcon={<Iconify icon="mingcute:add-line" width={18} height={18} />}
+                                                onClick={() => { setSelectedNote(null); setOpenNoteDialog(true); }}
+                                                sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+                                            >
+                                                Add Note
+                                            </Button>
+                                        </Box>
+
+                                        <Box sx={{ overflowY: 'auto', maxHeight: 500, pr: 0.5 }}>
+                                            {!meetingData.meeting_notes || meetingData.meeting_notes.length === 0 ? (
+                                                <Box sx={{ py: 8, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <Iconify icon="solar:notes-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 2, opacity: 0.6 }} />
+                                                    <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 700 }}>
+                                                        No Notes Yet
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, maxWidth: 200 }}>
+                                                        Click &quot;Add Note&quot; to create your first meeting note.
+                                                    </Typography>
+                                                </Box>
+                                            ) : (
+                                                <Stack spacing={1.5}>
+                                                    {[...meetingData.meeting_notes].reverse().map((note: any, index: number) => (
+                                                        <Card
+                                                            key={note.name || index}
+                                                            sx={(() => {
+                                                                const palettes = [
+                                                                    { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },
+                                                                    { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },
+                                                                    { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },
+                                                                    { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },
+                                                                ];
+                                                                const p = palettes[index % palettes.length];
+                                                                return {
+                                                                    p: 2,
+                                                                    borderRadius: 1.5,
+                                                                    position: 'relative',
+                                                                    boxShadow: 'none',
+                                                                    border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                                    bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                                };
+                                                            })()}
+                                                        >
+                                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5, flex: 1 }}>
+                                                                    {note.title}
+                                                                </Typography>
+                                                                <Box sx={{ display: 'flex', gap: 0.25, ml: 1 }}>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => { setSelectedNote(note); setOpenNoteDialog(true); }}
+                                                                        sx={{ p: 0.5, color: 'primary.main' }}
+                                                                    >
+                                                                        <Iconify icon="solar:pen-bold" width={16} />
+                                                                    </IconButton>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => handleDeleteNote(note)}
+                                                                        sx={{ p: 0.5 }}
+                                                                    >
+                                                                        <Iconify icon="solar:trash-bin-trash-bold" width={16} />
+                                                                    </IconButton>
+                                                                </Box>
+                                                            </Box>
+                                                            <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap', fontSize: '0.8rem' }}>
+                                                                {stripHtml(note.description)}
+                                                            </Typography>
+                                                        </Card>
+                                                    ))}
+                                                </Stack>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                </Grid>
+                            )}
+                        </Grid>
                     </LocalizationProvider>
                 </DialogContent>
 
@@ -755,6 +938,13 @@ export default function MeetingDialog({ open, onClose, selectedMeeting, initialD
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <MeetingNoteDialog
+                open={openNoteDialog}
+                onClose={() => { setOpenNoteDialog(false); setSelectedNote(null); }}
+                selectedNote={selectedNote}
+                onSave={handleSaveNote}
+            />
         </>
     );
 }

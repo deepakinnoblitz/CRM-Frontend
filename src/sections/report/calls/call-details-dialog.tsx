@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
@@ -9,6 +12,8 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
+
+import { stripHtml } from 'src/utils/string';
 
 import { getCall } from 'src/api/calls';
 import { getLead } from 'src/api/leads';
@@ -45,7 +50,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
             getCall(callId)
                 .then(async (data) => {
                     setCall(data);
-                    
+
                     // Fetch reference details based on call_for field
                     if (data.call_for === 'Lead' && data.lead_name) {
                         try {
@@ -86,7 +91,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                     console.error(err);
                     setLoading(false);
                 });
-        } 
+        }
     }, [open, callId]);
 
     const getStatusColor = (status: string) => {
@@ -109,12 +114,14 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
         </Label>
     );
 
+    const hasNotes = !!(call && call.call_notes && call.call_notes.length > 0);
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
             fullWidth
-            maxWidth="md"
+            maxWidth={hasNotes ? "lg" : "md"}
             TransitionProps={{ onExited: () => setCall(null) }}
             PaperProps={{
                 sx: {
@@ -153,199 +160,298 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                         <Iconify icon="svg-spinners:12-dots-scale-rotate" width={40} sx={{ color: 'primary.main' }} />
                     </Box>
                 ) : call ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                        {/* Header Info */}
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <Box
-                                sx={{
-                                    width: 64,
-                                    height: 64,
-                                    borderRadius: 2,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                    color: 'info.main',
-                                    flexShrink: 0,
-                                }}
-                            >
-                                <Iconify icon="solar:phone-calling-bold" width={32} />
-                            </Box>
-                            <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-                                    {call.title}
-                                </Typography>
-                                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                    {(call.call_for === 'Contact' ? 'Client' : call.call_for === 'Accounts' ? 'Company' : call.call_for)} with {call.lead_name}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                                {renderStatus(call.outgoing_call_status)}
-                                <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                    ID: {call.name}
-                                </Typography>
-                            </Box>
-                        </Box>
-
-                        {/* Lead Information */}
-                        {leadData && (
-                            <>
-                                <Box>
-                                    <SectionHeader title="Lead" />
+                    <Grid container spacing={4}>
+                        <Grid size={{ xs: 12, md: hasNotes ? 8 : 12 }}>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                {/* Header Info */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                                     <Box
                                         sx={{
-                                            p: 3,
+                                            width: 64,
+                                            height: 64,
                                             borderRadius: 2,
-                                            bgcolor: 'rgb(222 242 255 / 20%)',
-                                            border: (t) => `1px solid ${t.palette.divider}`,
-                                            position: 'relative',
                                             display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 1,
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
+                                            color: 'info.main',
+                                            flexShrink: 0,
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                                {leadData.lead_name}
-                                            </Typography>
-                                            <IconButton
-                                                size="small"
+                                        <Iconify icon="solar:phone-calling-bold" width={32} />
+                                    </Box>
+                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                        <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                            {call.title}
+                                        </Typography>
+                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            {call.call_for === 'Lead' && `Call for Lead: ${leadData ? `${leadData.lead_name} (${leadData.name})` : call.lead_name}`}
+                                            {call.call_for === 'Contact' && `Call for Client: ${clientData ? `${clientData.first_name || ''} ${clientData.last_name || ''} (${clientData.name})`.trim() : call.contact_name}`}
+                                            {call.call_for === 'Accounts' && `Call for Company: ${companyData ? `${companyData.account_name} (${companyData.name})` : call.account_name}`}
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
+                                        {renderStatus(call.outgoing_call_status)}
+                                        <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 600 }}>
+                                            ID: {call.name}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                {/* Lead Information */}
+                                {leadData && (
+                                    <>
+                                        <Divider />
+                                        <Box>
+                                            <SectionHeader title="Lead Details" />
+                                            <Box
                                                 onClick={() => navigate(`/leads/${leadData.name}/view`)}
-                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                                sx={{
+                                                    p: 3,
+                                                    bgcolor: 'rgb(222 242 255 / 20%)',
+                                                    border: (t) => `1px solid ${t.palette.divider}`,
+                                                    borderRadius: 2,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgb(222 242 255 / 20%)'
+                                                    },
+                                                }}
                                             >
-                                                <Iconify icon="solar:eye-bold" width={20} />
-                                            </IconButton>
+                                                <Box>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                                        {leadData.lead_name}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600, fontSize: 13 }}>
+                                                        ID: {leadData.name}
+                                                    </Typography>
+                                                     {(() => {
+                                                         const phones: string[] = [];
+                                                         if (leadData.phone_number) phones.push(leadData.phone_number);
+                                                         if (leadData.phone_numbers && Array.isArray(leadData.phone_numbers)) {
+                                                             leadData.phone_numbers.forEach((p: any) => {
+                                                                 if (p.phone && !phones.includes(p.phone)) phones.push(p.phone);
+                                                             });
+                                                         }
+                                                         const joined = phones.join(', ');
+                                                         return joined ? (
+                                                             <Typography variant="body2" sx={{ color: 'text.primary', mt: 0.5, fontSize: 15, fontWeight: 600 }}>
+                                                                 Phone: {joined}
+                                                             </Typography>
+                                                         ) : null;
+                                                     })()}
+                                                     {(() => {
+                                                         const emails: string[] = [];
+                                                         if (leadData.email) emails.push(leadData.email);
+                                                         if (leadData.emails && Array.isArray(leadData.emails)) {
+                                                             leadData.emails.forEach((e: any) => {
+                                                                 if (e.email && !emails.includes(e.email)) emails.push(e.email);
+                                                             });
+                                                         }
+                                                         const joined = emails.join(', ');
+                                                         return joined ? (
+                                                             <Typography variant="body2" sx={{ color: 'text.primary', fontSize: 15, fontWeight: 600 }}>
+                                                                 Email: {joined}
+                                                             </Typography>
+                                                         ) : null;
+                                                     })()}
+                                                </Box>
+                                                <IconButton color="primary">
+                                                    <Iconify icon="solar:eye-bold" width={20} />
+                                                </IconButton>
+                                            </Box>
                                         </Box>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                            ID: {leadData.name}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </>
-                        )}
+                                    </>
+                                )}
 
-                        {/* Client Information */}
-                        {clientData && (
-                            <>
-                                <Box>
-                                    <SectionHeader title="Client" />
-                                    <Box
-                                        sx={{
-                                            p: 3,
-                                            borderRadius: 2,
-                                            bgcolor: 'rgb(222 242 255 / 20%)',
-                                            border: (t) => `1px solid ${t.palette.divider}`,
-                                            position: 'relative',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 1,
-                                        }}
-                                    >
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                                {clientData.first_name} {clientData.last_name || ''}
-                                            </Typography>
-                                            <IconButton
-                                                size="small"
+                                {/* Client Information */}
+                                {clientData && (
+                                    <>
+                                        <Divider />
+                                        <Box>
+                                            <SectionHeader title="Client Details" />
+                                            <Box
                                                 onClick={() => setOpenClientDetails(true)}
-                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
+                                                sx={{
+                                                    p: 3,
+                                                    bgcolor: 'rgb(222 242 255 / 20%)',
+                                                    border: (t) => `1px solid ${t.palette.divider}`,
+                                                    borderRadius: 2,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgb(222 242 255 / 20%)'
+                                                    },
+                                                }}
                                             >
-                                                <Iconify icon="solar:eye-bold" width={20} />
-                                            </IconButton>
+                                                <Box>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                                        {`${clientData.first_name || ''} ${clientData.last_name || ''}`.trim()}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                        ID: {clientData.name}
+                                                    </Typography>
+                                                    {clientData.phone && (
+                                                        <Typography variant="body2" sx={{ color: 'text.primary', mt: 0.5, fontSize: 15, fontWeight: 600 }}>
+                                                            Phone: {clientData.phone}
+                                                        </Typography>
+                                                    )}
+                                                    {clientData.email && (
+                                                        <Typography variant="body2" sx={{ color: 'text.primary', fontSize: 15, fontWeight: 600 }}>
+                                                            Email: {clientData.email}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                                <IconButton color="primary">
+                                                    <Iconify icon="solar:eye-bold" width={20} />
+                                                </IconButton>
+                                            </Box>
                                         </Box>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                            ID: {clientData.name}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </>
-                        )}
+                                    </>
+                                )}
 
-                        {/* Company Information */}
-                        {companyData && (
-                            <>
+                                {/* Company Information */}
+                                {companyData && (
+                                    <>
+                                        <Divider />
+                                        <Box>
+                                            <SectionHeader title="Company Details" />
+                                            <Box
+                                                onClick={() => setOpenCompanyDetails(true)}
+                                                sx={{
+                                                    p: 3,
+                                                    bgcolor: 'rgb(222 242 255 / 20%)',
+                                                    border: (t) => `1px solid ${t.palette.divider}`,
+                                                    borderRadius: 2,
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    '&:hover': {
+                                                        bgcolor: 'rgb(222 242 255 / 20%)',
+                                                    },
+                                                }}
+                                            >
+                                                <Box>
+                                                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 0.5 }}>
+                                                        {companyData.account_name}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                                        ID: {companyData.name}
+                                                    </Typography>
+                                                    {companyData.phone_number && (
+                                                        <Typography variant="body2" sx={{ color: 'text.primary', mt: 0.5, fontSize: 15, fontWeight: 600 }}>
+                                                            Phone: {companyData.phone_number}
+                                                        </Typography>
+                                                    )}
+                                                    {companyData.website && (
+                                                        <Typography variant="body2" sx={{ color: 'text.primary', fontSize: 15, fontWeight: 600 }}>
+                                                            Website: {companyData.website}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                                <IconButton color="primary">
+                                                    <Iconify icon="solar:eye-bold" width={20} />
+                                                </IconButton>
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+
+                                {/* General Information */}
                                 <Box>
-                                    <SectionHeader title="Company" />
+                                    <SectionHeader title="Call Information" />
                                     <Box
                                         sx={{
-                                            p: 3,
-                                            borderRadius: 2,
-                                            bgcolor: 'rgb(222 242 255 / 20%)',
-                                            border: (t) => `1px solid ${t.palette.divider}`,
-                                            position: 'relative',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: 1,
+                                            display: 'grid',
+                                            gap: 2,
+                                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
                                         }}
                                     >
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                                                {companyData.account_name}
-                                            </Typography>
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => setOpenCompanyDetails(true)}
-                                                sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}
-                                            >
-                                                <Iconify icon="solar:eye-bold" width={20} />
-                                            </IconButton>
+                                        <Box sx={{ p: 3, bgcolor: 'rgb(222 242 255 / 20%)', border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 2, gridColumn: '1 / -1', mb: 2 }}>
+                                            <DetailItem label="Subject" value={call.title} fullWidth />
                                         </Box>
-                                        <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                            ID: {companyData.name}
-                                        </Typography>
+                                        <DetailItem label="Start Time" value={call.call_start_time ? new Date(call.call_start_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
+                                        <DetailItem label="End Time" value={call.call_end_time ? new Date(call.call_end_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
+                                        <DetailItem label="Owner" value={call.owner} icon="solar:user-rounded-bold" />
                                     </Box>
                                 </Box>
-                            </>
-                        )}
 
-                      
-
-                        {/* General Information */}
-                        <Box>
-                            <SectionHeader title="Call Information" />
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gap: 2,
-                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                                }}
-                            >
-                                <Box sx={{ p: 3, bgcolor: 'rgb(222 242 255 / 20%)', border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 2, gridColumn: '1 / -1', mb: 2 }}>
-                                    <DetailItem label="Subject" value={call.title} fullWidth />
+                                {/* Discussion */}
+                                <Box>
+                                    <SectionHeader title="Call Discussion" />
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gap: 2,
+                                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                        }}
+                                    >
+                                        <DetailItem label="Purpose" value={call.call_purpose} icon="solar:flag-bold" fullWidth />
+                                        <DetailItem label="Agenda" value={call.call_agenda} icon="solar:checklist-bold" fullWidth />
+                                    </Box>
                                 </Box>
-                                <DetailItem label="Call For" value={call.call_for === 'Contact' ? 'Client' : call.call_for === 'Accounts' ? 'Company' : call.call_for} icon="solar:user-bold" />
-                                <DetailItem label="Reference" value={call.lead_name} icon="solar:link-bold" />
-                                <DetailItem label="Start Time" value={call.call_start_time ? new Date(call.call_start_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
-                                <DetailItem label="End Time" value={call.call_end_time ? new Date(call.call_end_time).toLocaleString() : '-'} icon="solar:clock-circle-bold" />
-                                <DetailItem label="Owner" value={call.owner} icon="solar:user-rounded-bold" />
-                            </Box>
-                        </Box>
 
-                        
-                        {/* Discussion */}
-                        <Box>
-                            <SectionHeader title="Call Discussion" />
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gap: 2,
-                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
-                                }}
-                            >
-                                <DetailItem label="Purpose" value={call.call_purpose} icon="solar:flag-bold" fullWidth />
-                                <DetailItem label="Agenda" value={call.call_agenda} icon="solar:checklist-bold" fullWidth />
+                                {/* System Information */}
+                                <Box sx={{ p: 3, bgcolor: 'rgb(222 242 255 / 20%)', border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 2 }}>
+                                    <SectionHeader title="System Information" />
+                                    <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                                        <DetailItem label="Created On" value={new Date(call.creation).toLocaleString()} icon="solar:calendar-date-bold" />
+                                        <DetailItem label="Modified On" value={new Date(call.modified).toLocaleString()} icon="solar:calendar-minimalistic-bold" />
+                                    </Box>
+                                </Box>
                             </Box>
-                        </Box>
+                        </Grid>
 
-                        {/* System Information */}
-                        <Box sx={{ p: 3, bgcolor: 'background.neutral', borderRadius: 2 }}>
-                            <SectionHeader title="System Information" />
-                            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
-                                <DetailItem label="Created On" value={new Date(call.creation).toLocaleString()} icon="solar:calendar-date-bold" />
-                                <DetailItem label="Modified On" value={new Date(call.modified).toLocaleString()} icon="solar:calendar-minimalistic-bold" />
-                            </Box>
-                        </Box>
-                    </Box>
+                        {/* Right Side: Call Notes Panel */}
+                        {hasNotes && (
+                            <Grid size={{ xs: 12, md: 4 }} sx={{ borderLeft: (theme) => `1px solid ${theme.palette.divider}`, pl: 4 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                                        Call Notes
+                                    </Typography>
+                                    
+                                    <Box sx={{ overflowY: 'auto', maxHeight: 600, pr: 0.5 }}>
+                                        <Stack spacing={2}>
+                                            {[...call.call_notes].reverse().map((note: any, index: number) => (
+                                                <Card
+                                                    key={note.name || index}
+                                                    sx={(() => {
+                                                        const palettes = [
+                                                            { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },
+                                                            { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },
+                                                            { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },
+                                                            { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },
+                                                        ];
+                                                        const p = palettes[index % palettes.length];
+                                                        return {
+                                                            p: 2,
+                                                            borderRadius: 1.5,
+                                                            position: 'relative',
+                                                            boxShadow: 'none',
+                                                            border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                            bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                        };
+                                                    })()}
+                                                >
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>
+                                                        {note.title}
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                                                        {stripHtml(note.description)}
+                                                    </Typography>
+                                                </Card>
+                                            ))}
+                                        </Stack>
+                                    </Box>
+                                </Box>
+                            </Grid>
+                        )}
+                    </Grid>
                 ) : (
                     <Box sx={{ py: 10, textAlign: 'center' }}>
                         <Iconify icon="solar:ghost-bold" width={64} sx={{ color: 'text.disabled', mb: 2 }} />
@@ -386,7 +492,7 @@ function SectionHeader({ title }: { title: string }) {
                 sx={{
                     fontWeight: 800,
                     textTransform: 'uppercase',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     color: 'text.primary',
                 }}
             >

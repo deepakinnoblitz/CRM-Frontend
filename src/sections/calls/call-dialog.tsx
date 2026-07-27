@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import {  IoMdTrash } from "react-icons/io";
+import { IoMdTrash } from "react-icons/io";
 import { useState, useEffect } from 'react';
 
 import Dialog from '@mui/material/Dialog';
@@ -17,18 +17,19 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel } from '@mui/material';
+import { Box, Grid, Stack, Alert, Button, Switch, Snackbar, IconButton, Typography, Autocomplete, FormControlLabel, Card } from '@mui/material';
 
 import { stripHtml } from 'src/utils/string';
 import { getFriendlyErrorMessage } from 'src/utils/error-handler';
 
 import { getDoctypeList } from 'src/api/leads';
 import { createCallStatus, fetchCallStatuses } from 'src/api/masters';
-import { type Call, createCall, updateCall, deleteCall } from 'src/api/calls';
+import { type Call, createCall, updateCall, deleteCall, getCall } from 'src/api/calls';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
 
+import CallNoteDialog from './call-note-dialog';
 // ----------------------------------------------------------------------
 
 const filter = createFilterOptions<any>();
@@ -101,6 +102,78 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
     const [confirmDelete, setConfirmDelete] = useState(false);
 
+    const [openNoteDialog, setOpenNoteDialog] = useState(false);
+    const [selectedNote, setSelectedNote] = useState<any>(null);
+
+    const handleSaveNote = async (noteTitle: string, noteDescription: string) => {
+        if (!selectedCall) return;
+
+        let updatedNotes = [];
+        const currentNotes = callData.call_notes || [];
+        if (selectedNote && selectedNote.name) {
+            // Edit mode
+            updatedNotes = currentNotes.map((n: any) =>
+                n.name === selectedNote.name ? { ...n, title: noteTitle, description: noteDescription } : n
+            );
+        } else {
+            // Create mode
+            updatedNotes = [...currentNotes, { title: noteTitle, description: noteDescription }];
+        }
+
+        const payload = {
+            ...callData,
+            call_notes: updatedNotes,
+        };
+
+        await updateCall(selectedCall.name, payload);
+        
+        // Refresh call details
+        const refreshedCall = await getCall(selectedCall.name);
+        setCallData({
+            ...refreshedCall,
+            call_start_time: refreshedCall.call_start_time.replace(' ', 'T'),
+            call_end_time: refreshedCall.call_end_time?.replace(' ', 'T') || '',
+            call_agenda: stripHtml(refreshedCall.call_agenda || ''),
+            call_notes: refreshedCall.call_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: selectedNote ? 'Note updated successfully' : 'Note added successfully',
+            severity: 'success'
+        });
+    };
+
+    const handleDeleteNote = async (noteToDelete: any) => {
+        if (!selectedCall) return;
+
+        const currentNotes = callData.call_notes || [];
+        const updatedNotes = currentNotes.filter((n: any) => n.name !== noteToDelete.name);
+
+        const payload = {
+            ...callData,
+            call_notes: updatedNotes,
+        };
+
+        await updateCall(selectedCall.name, payload);
+        
+        // Refresh call details
+        const refreshedCall = await getCall(selectedCall.name);
+        setCallData({
+            ...refreshedCall,
+            call_start_time: refreshedCall.call_start_time.replace(' ', 'T'),
+            call_end_time: refreshedCall.call_end_time?.replace(' ', 'T') || '',
+            call_agenda: stripHtml(refreshedCall.call_agenda || ''),
+            call_notes: refreshedCall.call_notes || [],
+        });
+
+        setSnackbar({
+            open: true,
+            message: 'Note deleted successfully',
+            severity: 'success'
+        });
+    };
+
     const [formErrors, setFormErrors] = useState<{ [key: string]: boolean }>({});
 
     const [leadOptions, setLeadOptions] = useState<any[]>([]);
@@ -151,23 +224,35 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
     useEffect(() => {
         if (selectedCall) {
-            setCallData({
-                title: selectedCall.title,
-                call_purpose: selectedCall.call_purpose || '',
-                call_agenda: stripHtml(selectedCall.call_agenda || ''),
-                call_for: selectedCall.call_for || 'Lead',
-                outgoing_call_status: selectedCall.outgoing_call_status || 'Scheduled',
-                completed_call_status: selectedCall.completed_call_status || '',
-                call_start_time: selectedCall.call_start_time.replace(' ', 'T'),
-                call_end_time: selectedCall.call_end_time?.replace(' ', 'T') || '',
-                lead_name: selectedCall.lead_name || '',
-                contact_name: selectedCall.contact_name || '',
-                account_name: selectedCall.account_name || '',
-                enter_id: selectedCall.enter_id || '',
-                enable_reminder: selectedCall.enable_reminder || 0,
-                remind_before_minutes: selectedCall.remind_before_minutes || 60,
-                host: selectedCall.host || '',
-                participants: selectedCall.participants || [],
+            getCall(selectedCall.name).then((fullCall) => {
+                setCallData({
+                    ...fullCall,
+                    call_start_time: fullCall.call_start_time.replace(' ', 'T'),
+                    call_end_time: fullCall.call_end_time?.replace(' ', 'T') || '',
+                    call_agenda: stripHtml(fullCall.call_agenda || ''),
+                    call_notes: fullCall.call_notes || [],
+                });
+            }).catch((err) => {
+                console.error("Failed to fetch full call details", err);
+                setCallData({
+                    title: selectedCall.title,
+                    call_purpose: selectedCall.call_purpose || '',
+                    call_agenda: stripHtml(selectedCall.call_agenda || ''),
+                    call_for: selectedCall.call_for || 'Lead',
+                    outgoing_call_status: selectedCall.outgoing_call_status || 'Scheduled',
+                    completed_call_status: selectedCall.completed_call_status || '',
+                    call_start_time: selectedCall.call_start_time.replace(' ', 'T'),
+                    call_end_time: selectedCall.call_end_time?.replace(' ', 'T') || '',
+                    lead_name: selectedCall.lead_name || '',
+                    contact_name: selectedCall.contact_name || '',
+                    account_name: selectedCall.account_name || '',
+                    enter_id: selectedCall.enter_id || '',
+                    enable_reminder: selectedCall.enable_reminder || 0,
+                    remind_before_minutes: selectedCall.remind_before_minutes || 60,
+                    host: selectedCall.host || '',
+                    participants: selectedCall.participants || [],
+                    call_notes: selectedCall.call_notes || [],
+                });
             });
         } else if (initialData) {
             setCallData({
@@ -235,7 +320,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
     return (
         <>
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24,}}}>
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth={selectedCall ? "lg" : "md"} PaperProps={{ sx: { borderRadius: 2, boxShadow: (theme) => theme.customShadows.z24, } }}>
                 <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Typography variant="h6" sx={{ fontWeight: 700 }}>
@@ -249,7 +334,9 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
                 <DialogContent dividers sx={{ borderBottom: 'none', px: 4, pb: 0 }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
-                        <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Grid container spacing={4}>
+                            <Grid size={{ xs: 12, md: selectedCall ? 8 : 12 }}>
+                                <Box sx={{ py: 2, display: 'flex', flexDirection: 'column', gap: 4 }}>
                             {/* General Section */}
                             <Box>
                                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
@@ -558,49 +645,49 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
 
                             {/* Reminder Section */}
                             {!selectedCall && (
-                            <Box>
-                                <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
-                                    Reminder Settings
-                                </Typography>
-                                <Stack spacing={2}>
-                                    <FormControlLabel
-                                        control={
-                                            <Android12Switch
-                                                checked={callData.enable_reminder === 1}
-                                                onChange={(e) => setCallData({ ...callData, enable_reminder: e.target.checked ? 1 : 0 })}
-                                            />
-                                        }
-                                        label="Enable Reminder"
-                                    />
-                                    {callData.enable_reminder === 1 && (
-                                        <Box>
-                                            <TimePicker
-                                                label="Remind Before (Time)"
-                                                value={dayjs().startOf('day').add(callData.remind_before_minutes || 60, 'minutes')}
-                                                onChange={(newValue: dayjs.Dayjs | null) => {
-                                                    if (newValue) {
-                                                        const hours = newValue.hour();
-                                                        const minutes = newValue.minute();
-                                                        const totalMinutes = hours * 60 + minutes;
-                                                        setCallData({ ...callData, remind_before_minutes: totalMinutes });
-                                                    }
-                                                }}
-                                                ampm={false}
-                                                views={['hours', 'minutes']}
-                                                format="HH:mm"
-                                                slotProps={{
-                                                    textField: {
-                                                        fullWidth: true,
-                                                        helperText: 'Set hours and minutes before the call'
-                                                    }
-                                                }}
-                                            />
-                                        </Box>
-                                    )}
-                                </Stack>
-                            </Box>
+                                <Box>
+                                    <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
+                                        Reminder Settings
+                                    </Typography>
+                                    <Stack spacing={2}>
+                                        <FormControlLabel
+                                            control={
+                                                <Android12Switch
+                                                    checked={callData.enable_reminder === 1}
+                                                    onChange={(e) => setCallData({ ...callData, enable_reminder: e.target.checked ? 1 : 0 })}
+                                                />
+                                            }
+                                            label="Enable Reminder"
+                                        />
+                                        {callData.enable_reminder === 1 && (
+                                            <Box>
+                                                <TimePicker
+                                                    label="Remind Before (Time)"
+                                                    value={dayjs().startOf('day').add(callData.remind_before_minutes || 60, 'minutes')}
+                                                    onChange={(newValue: dayjs.Dayjs | null) => {
+                                                        if (newValue) {
+                                                            const hours = newValue.hour();
+                                                            const minutes = newValue.minute();
+                                                            const totalMinutes = hours * 60 + minutes;
+                                                            setCallData({ ...callData, remind_before_minutes: totalMinutes });
+                                                        }
+                                                    }}
+                                                    ampm={false}
+                                                    views={['hours', 'minutes']}
+                                                    format="HH:mm"
+                                                    slotProps={{
+                                                        textField: {
+                                                            fullWidth: true,
+                                                            helperText: 'Set hours and minutes before the call'
+                                                        }
+                                                    }}
+                                                />
+                                            </Box>
+                                        )}
+                                    </Stack>
+                                </Box>
                             )}
-                            
+
                             {/* Agenda Section */}
                             <Box>
                                 <Typography variant="overline" sx={{ color: 'text.secondary', fontWeight: 700, mb: 2, display: 'block' }}>
@@ -626,8 +713,98 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                                 </Stack>
                             </Box>
                         </Box>
-                    </LocalizationProvider>
-                </DialogContent>
+                    </Grid>
+
+                    {/* Right Side: Call Notes Panel (Only in Edit Mode) */}
+                    {selectedCall && (
+                        <Grid size={{ xs: 12, md: 4 }} sx={{ borderLeft: (theme) => `1px solid ${theme.palette.divider}`, pl: 4, py: 2 }}>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                    Call Notes
+                                </Typography>
+                                <Button
+                                    size="small"
+                                    variant="contained"
+                                    startIcon={<Iconify icon="mingcute:add-line" width={18} height={18} />}
+                                    onClick={() => {
+                                        setSelectedNote(null);
+                                        setOpenNoteDialog(true);
+                                    }}
+                                    sx={{ bgcolor: '#08a3cd', color: 'common.white', '&:hover': { bgcolor: '#068fb3' }, borderRadius: 2 }}
+                                >
+                                    Add Note
+                                </Button>
+                            </Stack>
+
+                            <Box sx={{ overflowY: 'auto', maxHeight: 500, pr: 0.5 }}>
+                                {!callData.call_notes || callData.call_notes.length === 0 ? (
+                                    <Box sx={{ py: 12, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon="solar:notes-bold-duotone" width={64} sx={{ color: 'text.disabled', mb: 2, opacity: 0.6 }} />
+                                        <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 700 }}>
+                                            No Notes Added Yet
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, maxWidth: 220 }}>
+                                            Click &quot;Add Note&quot; to keep track of details for this call.
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Stack spacing={2}>
+                                        {[...callData.call_notes].reverse().map((note: any, index: number) => (
+                                            <Card
+                                                key={note.name || index}
+                                                sx={(() => {
+                                                    const palettes = [
+                                                        { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },
+                                                        { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },
+                                                        { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },
+                                                        { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },
+                                                    ];
+                                                    const p = palettes[index % palettes.length];
+                                                    return {
+                                                        p: 2,
+                                                        borderRadius: 1.5,
+                                                        position: 'relative',
+                                                        boxShadow: 'none',
+                                                        border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                        bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                    };
+                                                })()}
+                                            >
+                                                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={1}>
+                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                                        {note.title}
+                                                    </Typography>
+                                                    <Stack direction="row" spacing={0.5}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                setSelectedNote(note);
+                                                                setOpenNoteDialog(true);
+                                                            }}
+                                                        >
+                                                            <Iconify icon="solar:pen-bold" width={16} sx={{ color: 'primary.main' }} />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleDeleteNote(note)}
+                                                        >
+                                                            <Iconify icon="solar:trash-bin-trash-bold" width={16} sx={{ color: 'error.main' }} />
+                                                        </IconButton>
+                                                    </Stack>
+                                                </Stack>
+                                                <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
+                                                    {stripHtml(note.description)}
+                                                </Typography>
+                                            </Card>
+                                        ))}
+                                    </Stack>
+                                )}
+                            </Box>
+                        </Grid>
+                    )}
+                </Grid>
+            </LocalizationProvider>
+        </DialogContent>
 
                 <DialogActions sx={{ p: 2.5, pt: 2, gap: 1.5 }}>
                     {selectedCall && canDelete && (
@@ -636,7 +813,7 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                             variant="contained"
                             onClick={() => setConfirmDelete(true)}
                             startIcon={<IoMdTrash size={20} />}
-                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', mr:'auto' }}
+                            sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', mr: 'auto' }}
                         >
                             Delete
                         </Button>
@@ -649,8 +826,8 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                             disabled={isSubmitting}
                             sx={{ borderRadius: 1, px: 3 }}
                         >
-                            {isSubmitting 
-                                ? (selectedCall ? 'Saving...' : 'Creating...') 
+                            {isSubmitting
+                                ? (selectedCall ? 'Saving...' : 'Creating...')
                                 : (selectedCall ? 'Save Changes' : 'Create Call')}
                         </Button>
                     )}
@@ -731,6 +908,16 @@ export default function CallDialog({ open, onClose, selectedCall, initialData, o
                     {snackbar.message}
                 </Alert>
             </Snackbar>
+
+            <CallNoteDialog
+                open={openNoteDialog}
+                onClose={() => {
+                    setOpenNoteDialog(false);
+                    setSelectedNote(null);
+                }}
+                selectedNote={selectedNote}
+                onSave={handleSaveNote}
+            />
         </>
     );
 }
