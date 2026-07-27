@@ -1,4 +1,5 @@
 import { MuiTelInput } from 'mui-tel-input';
+import { useLocation } from 'react-router-dom';
 import { IoMdCloudDownload } from "react-icons/io";
 import { useState, useEffect, useCallback } from 'react';
 
@@ -71,6 +72,15 @@ export function AccountView() {
     const [openView, setOpenView] = useState(false);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
     const [creating, setCreating] = useState(false);
+
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.openAccountId) {
+            setCurrentAccount({ name: location.state.openAccountId });
+            setOpenView(true);
+        }
+    }, [location.state]);
 
     // Form state
     const [accountName, setAccountName] = useState('');
@@ -777,6 +787,7 @@ export function AccountView() {
                 }}
                 accountId={currentAccount?.name}
                 onEdit={() => handleEditRow(currentAccount?.name)}
+                initialTab={location.state?.activeTab}
             />
 
             <ConfirmDialog

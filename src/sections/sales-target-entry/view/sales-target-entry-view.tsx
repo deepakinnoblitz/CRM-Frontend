@@ -170,7 +170,7 @@ export function SalesTargetEntryView() {
         try {
             const [usersList, contactsList, sourcesList, servicesList] = await Promise.all([
                 getDoctypeList('User', ['name', 'full_name']),
-                getDoctypeList('Contacts', ['name', 'first_name', 'phone']),
+                getDoctypeList('Contacts', ['name', 'first_name', 'last_name', 'phone']),
                 getDoctypeList('Lead From', ['name']),
                 getDoctypeList('Service', ['name']),
             ]);
@@ -282,13 +282,24 @@ export function SalesTargetEntryView() {
         if (!status) errors.status = true;
         if (!contactName) errors.contactName = true;
         if (!contactNumber || !contactNumber.trim()) errors.contactNumber = true;
+        if (value === '' || value === null || value === undefined || Number(value) <= 0) errors.value = true;
         setValidationErrors(errors);
-        return Object.keys(errors).length === 0;
+
+        const hasOtherErrors = Boolean(errors.salesPerson || errors.month || errors.status || errors.contactName || errors.contactNumber);
+        const isValueOnlyError = Boolean(errors.value && !hasOtherErrors);
+        const isValid = Object.keys(errors).length === 0;
+
+        return { isValid, isValueOnlyError };
     };
 
     const handleSaveEntry = async () => {
-        if (!validateForm()) {
-            enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
+        const { isValid, isValueOnlyError } = validateForm();
+        if (!isValid) {
+            if (isValueOnlyError) {
+                enqueueSnackbar('Value cannot be zero', { variant: 'error' });
+            } else {
+                enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
+            }
             return;
         }
 
@@ -482,6 +493,7 @@ export function SalesTargetEntryView() {
                                                     canView={permissions.read}
                                                     hideCheckbox
                                                     index={page * rowsPerPage + index}
+                                                    contactsOptions={contactsOptions}
                                                 />
                                             ))}
 
@@ -895,9 +907,18 @@ export function SalesTargetEntryView() {
                             <TextField
                                 label="Value"
                                 type="number"
+                                required
                                 fullWidth
                                 value={value}
-                                onChange={(e) => setValue(e.target.value !== '' ? Number(e.target.value) : '')}
+                                onChange={(e) => {
+                                    const val = e.target.value !== '' ? Number(e.target.value) : '';
+                                    setValue(val);
+                                    if (typeof val === 'number' && val >= 1 && validationErrors.value) {
+                                        setValidationErrors((prev) => ({ ...prev, value: false }));
+                                    }
+                                }}
+                                error={Boolean(validationErrors.value)}
+                                helperText={validationErrors.value ? "Value cannot be zero" : ""}
                             />
                             <TextField
                                 label="Advance"
@@ -927,13 +948,13 @@ export function SalesTargetEntryView() {
                         />
                     </DialogContent>
                     <DialogActions sx={{ p: 2 }}>
-                        <Button
+                        <LoadingButton
                             onClick={handleSaveEntry}
                             variant="contained"
-                            disabled={creating}
+                            loading={creating}
                         >
-                            {creating ? (isEdit ? 'Updating...' : 'Creating...') : (isEdit ? 'Update' : 'Create')}
-                        </Button>
+                            {isEdit ? 'Update' : 'Create'}
+                        </LoadingButton>
                     </DialogActions>
                 </Dialog>
 

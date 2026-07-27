@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
@@ -45,6 +46,7 @@ type SalesTargetEntryTableRowProps = {
     canView?: boolean;
     hideCheckbox?: boolean;
     index?: number;
+    contactsOptions?: any[];
 };
 
 export function SalesTargetEntryTableRow({
@@ -59,6 +61,7 @@ export function SalesTargetEntryTableRow({
     canView = true,
     hideCheckbox = false,
     index,
+    contactsOptions = [],
 }: SalesTargetEntryTableRowProps) {
     const { user } = useAuth();
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.sales_target_entry;
@@ -135,7 +138,29 @@ export function SalesTargetEntryTableRow({
 
             <TableCell>{row.month || '-'}</TableCell>
 
-            <TableCell>{row.contact_name || '-'}</TableCell>
+            <TableCell>
+                {(() => {
+                    if (!row.contact_name) return '-';
+                    const contactObj = contactsOptions.find((c: any) => c.name === row.contact_name);
+                    const contactName = contactObj
+                        ? ([contactObj.first_name, contactObj.last_name].filter(Boolean).join(' ') || contactObj.name)
+                        : row.contact_name;
+                    const contactId = row.contact_name;
+
+                    return (
+                        <Stack spacing={0.2}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {contactName}
+                            </Typography>
+                            {contactId && contactId !== contactName && (
+                                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    {contactId}
+                                </Typography>
+                            )}
+                        </Stack>
+                    );
+                })()}
+            </TableCell>
 
             <TableCell>{row.service || '-'}</TableCell>
 

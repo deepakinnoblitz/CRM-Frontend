@@ -342,7 +342,7 @@ export function DealDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push(backPath)}
+                        onClick={() => router.push(backPath, location.state)}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
