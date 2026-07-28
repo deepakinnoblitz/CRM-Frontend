@@ -33,6 +33,8 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { HRDocumentTemplateTableToolbar } from '../hr-document-templates-table-toolbar';
 import { HRDocumentTemplateFiltersDrawer } from '../hr-document-templates-filters-drawer';
 
@@ -46,6 +48,12 @@ const TABLE_HEAD = [
 
 export function HRDocumentTemplateListView() {
     const router = useRouter();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.hr_document_templates;
+    const canCreate = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.create : true;
+    const canEdit = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.edit : true;
+    const canDelete = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -158,19 +166,21 @@ export function HRDocumentTemplateListView() {
                         Document Templates
                     </Typography>
                 </Stack>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => router.push('/hr-document-templates/new')}
-                    sx={{
-                        borderRadius: 1,
-                        bgcolor: '#08a3cd',
-                        color: 'common.white',
-                        '&:hover': { bgcolor: '#068fb3' },
-                    }}
-                >
-                    New Template
-                </Button>
+                {canCreate && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => router.push('/hr-document-templates/new')}
+                        sx={{
+                            borderRadius: 1,
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                        }}
+                    >
+                        New Template
+                    </Button>
+                )}
             </Stack>
 
             <Card>
@@ -306,25 +316,29 @@ export function HRDocumentTemplateListView() {
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
 
-                                                        <IconButton
-                                                            onClick={() =>
-                                                                router.push(
-                                                                    `/hr-document-templates/${encodeURIComponent(row.name)}/edit`
-                                                                )
-                                                            }
-                                                            sx={{ color: 'primary.main' }}
-                                                            title="Edit"
-                                                        >
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        {canEdit && (
+                                                            <IconButton
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/hr-document-templates/${encodeURIComponent(row.name)}/edit`
+                                                                    )
+                                                                }
+                                                                sx={{ color: 'primary.main' }}
+                                                                title="Edit"
+                                                            >
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
 
-                                                        <IconButton
-                                                            onClick={() => setConfirmDelete({ open: true, id: row.name })}
-                                                            sx={{ color: 'error.main' }}
-                                                            title="Delete"
-                                                        >
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
+                                                        {canDelete && (
+                                                            <IconButton
+                                                                onClick={() => setConfirmDelete({ open: true, id: row.name })}
+                                                                sx={{ color: 'error.main' }}
+                                                                title="Delete"
+                                                            >
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>

@@ -82,14 +82,6 @@ export const hrNavData = [
     ],
   },
   {
-    title: 'Document Generator',
-    path: '/hr-document-templates',
-    icon: <HiOutlineDocumentText size={18} />,
-    children: [
-      { title: 'Document Templates', path: '/hr-document-templates' },
-    ],
-  },
-  {
     title: 'Request List',
     path: '/requests',
     icon: <FiList size={18} />,
@@ -157,6 +149,14 @@ export const hrNavData = [
       { title: 'Job Applicant List', path: '/job-applicants' },
       { title: 'Interview List', path: '/interviews' },
       { title: 'Employee Referral List', path: '/employee-referrals?view=hr' },
+    ],
+  },
+  {
+    title: 'Document Generator',
+    path: '/hr-document-templates',
+    icon: <HiOutlineDocumentText size={18} />,
+    children: [
+      { title: 'Document Templates', path: '/hr-document-templates' },
     ],
   },
   {

@@ -15,14 +15,20 @@ import { useRouter } from 'src/routes/hooks';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRDocumentTemplate, HRDocumentTemplate } from 'src/api/hr-document-template';
 
+import { useAuth } from 'src/auth/auth-context';
+
 type Props = {
     id: string;
 };
 
 export function HRDocumentTemplateDetailsView({ id }: Props) {
     const router = useRouter();
+    const { user } = useAuth();
     const [loading, setLoading] = useState(true);
     const [doc, setDoc] = useState<HRDocumentTemplate | null>(null);
+
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.hr_document_templates;
+    const canEdit = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.edit : true;
 
     const loadDetails = useCallback(async () => {
         setLoading(true);
@@ -88,21 +94,23 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                     >
                         Go Back
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={() => router.push(`/hr-document-templates/${encodeURIComponent(doc.name)}/edit`)}
-                        startIcon={<IoMdCreate size={20} />}
-                        sx={{
-                            borderRadius: 1.5,
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            bgcolor: '#08a3cd',
-                            color: 'common.white',
-                            '&:hover': { bgcolor: '#068fb3' },
-                        }}
-                    >
-                        Edit
-                    </Button>
+                    {canEdit && (
+                        <Button
+                            variant="contained"
+                            onClick={() => router.push(`/hr-document-templates/${encodeURIComponent(doc.name)}/edit`)}
+                            startIcon={<IoMdCreate size={20} />}
+                            sx={{
+                                borderRadius: 1.5,
+                                fontWeight: 600,
+                                textTransform: 'none',
+                                bgcolor: '#08a3cd',
+                                color: 'common.white',
+                                '&:hover': { bgcolor: '#068fb3' },
+                            }}
+                        >
+                            Edit
+                        </Button>
+                    )}
                 </Stack>
             </Stack>
 
