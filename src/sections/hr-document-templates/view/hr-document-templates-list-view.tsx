@@ -38,9 +38,8 @@ import { HRDocumentTemplateFiltersDrawer } from '../hr-document-templates-filter
 
 const TABLE_HEAD = [
     { id: 'template_name', label: 'Template Name', minWidth: 250 },
-    { id: 'category', label: 'Category', width: 180 },
-    { id: 'document_type', label: 'Document Type', width: 180 },
-    { id: 'subject', label: 'Subject', width: 280 },
+    { id: 'category', label: 'Category', width: 220 },
+    { id: 'subject', label: 'Subject', width: 320 },
     { id: 'status', label: 'Status', align: 'center', width: 140 },
     { id: 'action', label: 'Actions', align: 'center', width: 120 },
 ];
@@ -64,6 +63,14 @@ export function HRDocumentTemplateListView() {
     const { enqueueSnackbar } = useSnackbar();
     const [categories, setCategories] = useState<any[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem('hr_document_template_success_message');
+        if (msg) {
+            enqueueSnackbar(msg, { variant: 'success' });
+            sessionStorage.removeItem('hr_document_template_success_message');
+        }
+    }, [enqueueSnackbar]);
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -145,10 +152,10 @@ export function HRDocumentTemplateListView() {
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        HR Document Templates
+                        Document Templates
                     </Typography>
                 </Stack>
                 <Button
@@ -156,7 +163,7 @@ export function HRDocumentTemplateListView() {
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={() => router.push('/hr-document-templates/new')}
                     sx={{
-                        borderRadius: 1.5,
+                        borderRadius: 1,
                         bgcolor: '#08a3cd',
                         color: 'common.white',
                         '&:hover': { bgcolor: '#068fb3' },
@@ -205,7 +212,7 @@ export function HRDocumentTemplateListView() {
                                                 tabIndex={-1}
                                                 sx={{
                                                     '& td, & th': {
-                                                        py: 1.25,
+                                                        py: 2,
                                                         borderBottom: (t) => `1px solid ${t.palette.divider}`,
                                                     },
                                                     '&:last-child td, &:last-child th': { borderBottom: 0 },
@@ -247,15 +254,9 @@ export function HRDocumentTemplateListView() {
                                                     </Typography>
                                                 </TableCell>
 
-                                                <TableCell sx={{ maxWidth: 180 }}>
+                                                <TableCell sx={{ maxWidth: 220 }}>
                                                     <Typography variant="body2" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
                                                         {row.category || '—'}
-                                                    </Typography>
-                                                </TableCell>
-
-                                                <TableCell sx={{ maxWidth: 180 }}>
-                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.document_type || row.category || '—'}
                                                     </Typography>
                                                 </TableCell>
 

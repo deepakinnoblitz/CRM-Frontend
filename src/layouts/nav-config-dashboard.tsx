@@ -86,7 +86,7 @@ export const hrNavData = [
     path: '/hr-document-templates',
     icon: <HiOutlineDocumentText size={18} />,
     children: [
-      { title: 'HR Document Templates', path: '/hr-document-templates' },
+      { title: 'Document Templates', path: '/hr-document-templates' },
     ],
   },
   {

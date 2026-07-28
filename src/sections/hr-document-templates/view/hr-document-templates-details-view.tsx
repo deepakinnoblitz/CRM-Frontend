@@ -133,7 +133,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                         >
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 14 }}>
                                         Template Name
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
@@ -141,7 +141,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 14 }}>
                                         Category
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
@@ -149,7 +149,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 14 }}>
                                         Description
                                     </Typography>
                                     <Typography
@@ -181,15 +181,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                         >
                             <Stack spacing={1.5}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
-                                        Document Type
-                                    </Typography>
-                                    <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
-                                        {doc.document_type || doc.category || '-'}
-                                    </Typography>
-                                </Stack>
-                                <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12 }}>
+                                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 14 }}>
                                         Status
                                     </Typography>
                                     <Chip
@@ -243,30 +235,13 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                     </Stack>
 
                                     <Stack spacing={1}>
-                                        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                                            <Typography
-                                                variant="caption"
-                                                color="text.secondary"
-                                                sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}
-                                            >
-                                                TEMPLATE CONTENT
-                                            </Typography>
-                                            <Button
-                                                size="small"
-                                                variant="contained"
-                                                sx={{
-                                                    textTransform: 'none',
-                                                    fontWeight: 600,
-                                                    bgcolor: '#08a3cd',
-                                                    color: 'common.white',
-                                                    pointerEvents: 'none',
-                                                    '&:hover': { bgcolor: '#08a3cd' },
-                                                }}
-                                                startIcon={<IoMdDocument size={16} />}
-                                            >
-                                                Plain Text
-                                            </Button>
-                                        </Stack>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600, mb: 1 }}
+                                        >
+                                            TEMPLATE CONTENT
+                                        </Typography>
                                         <Box
                                             sx={{
                                                 p: 2,

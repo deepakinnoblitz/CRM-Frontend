@@ -1,4 +1,4 @@
-import Editor from '@monaco-editor/react';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { MdContentCopy } from 'react-icons/md';
 import { IoMdArrowBack } from 'react-icons/io';
@@ -9,7 +9,6 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
-import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -36,20 +35,9 @@ import { RichTextEditor } from 'src/components/rich-text-editor/rich-text-editor
 
 import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
-const isPlainTextEmpty = (val: string) => {
-    if (!val) return true;
-    const doc = new DOMParser().parseFromString(val, 'text/html');
-    const text = doc.body.textContent || '';
-    return text.replace(/\s/g, '').trim() === '';
-};
-
-const isHtmlCodeEmpty = (val: string) => {
-    if (!val) return true;
-    return val.trim() === '';
-};
-
 export function HRDocumentTemplateCreateView() {
     const router = useRouter();
+    const { enqueueSnackbar } = useSnackbar();
 
     const [templateName, setTemplateName] = useState('');
     const [category, setCategory] = useState('');
@@ -57,9 +45,7 @@ export function HRDocumentTemplateCreateView() {
     const [description, setDescription] = useState('');
     const [subject, setSubject] = useState('');
     const [templateContent, setTemplateContent] = useState('');
-    const [templateContentHtml, setTemplateContentHtml] = useState('');
     const [isActive, setIsActive] = useState(true);
-    const [isHtmlMode, setIsHtmlMode] = useState(false);
 
     const [isSaving, setIsSaving] = useState(false);
     const [errors, setErrors] = useState<{
@@ -77,20 +63,6 @@ export function HRDocumentTemplateCreateView() {
 
     const filter = createFilterOptions<any>();
 
-    const [snackbar, setSnackbar] = useState<{
-        open: boolean;
-        message: string;
-        severity: 'success' | 'error' | 'info' | 'warning';
-    }>({
-        open: false,
-        message: '',
-        severity: 'success',
-    });
-
-    const handleCloseSnackbar = () => {
-        setSnackbar((prev) => ({ ...prev, open: false }));
-    };
-
     useEffect(() => {
         async function loadInitialData() {
             try {
@@ -101,7 +73,7 @@ export function HRDocumentTemplateCreateView() {
                 setCategoryOptions(cats);
                 setVariables(vars);
             } catch (err) {
-                console.error('Failed to load HR Document Template initial data:', err);
+                console.error('Failed to load initial data:', err);
             }
         }
         loadInitialData();
@@ -118,9 +90,9 @@ export function HRDocumentTemplateCreateView() {
             setDocumentType(created.category_name || created.name);
             setCreateCategoryOpen(false);
             setNewCategoryName('');
-            setSnackbar({ open: true, message: 'Category created successfully', severity: 'success' });
+            enqueueSnackbar('Category created successfully', { variant: 'success' });
         } catch (error: any) {
-            setSnackbar({ open: true, message: error.message || 'Failed to create category', severity: 'error' });
+            enqueueSnackbar(error.message || 'Failed to create category', { variant: 'error' });
         } finally {
             setCreatingCategory(false);
         }
@@ -128,11 +100,7 @@ export function HRDocumentTemplateCreateView() {
 
     const handleCopyVariable = (variableStr: string) => {
         navigator.clipboard.writeText(variableStr);
-        setSnackbar({
-            open: true,
-            message: `Copied ${variableStr} to clipboard`,
-            severity: 'success',
-        });
+        enqueueSnackbar(`Copied ${variableStr} to clipboard`, { variant: 'success' });
     };
 
     const handleSave = async () => {
@@ -154,8 +122,7 @@ export function HRDocumentTemplateCreateView() {
             missingFields.push('Subject');
         }
 
-        const currentContent = isHtmlMode ? templateContentHtml : templateContent;
-        if (!currentContent || currentContent === '<p><br></p>' || currentContent.trim() === '') {
+        if (!templateContent || templateContent === '<p><br></p>' || templateContent.trim() === '') {
             newErrors.templateContent = true;
             missingFields.push('Template Content');
         }
@@ -163,11 +130,7 @@ export function HRDocumentTemplateCreateView() {
         setErrors(newErrors);
 
         if (missingFields.length) {
-            setSnackbar({
-                open: true,
-                severity: 'error',
-                message: `Please fill in: ${missingFields.join(', ')}`,
-            });
+            enqueueSnackbar(`Please fill in: ${missingFields.join(', ')}`, { variant: 'error' });
             return;
         }
 
@@ -180,22 +143,15 @@ export function HRDocumentTemplateCreateView() {
                 is_active: isActive ? 1 : 0,
                 description: description.trim(),
                 subject: subject.trim(),
-                template_content: currentContent,
+                template_content: templateContent,
                 document_for: 'Employee',
             });
 
-            setSnackbar({
-                open: true,
-                severity: 'success',
-                message: 'HR Document Template created successfully',
-            });
+            sessionStorage.setItem('hr_document_template_success_message', 'HR Document Template created successfully.');
             router.push('/hr-document-templates');
         } catch (error: any) {
-            setSnackbar({
-                open: true,
-                severity: 'error',
-                message: error.message || 'Failed to create HR document template',
-            });
+            enqueueSnackbar(error.message || 'Failed to create HR document template', { variant: 'error' });
+            setIsSaving(false);
         } finally {
             setIsSaving(false);
         }
@@ -203,7 +159,7 @@ export function HRDocumentTemplateCreateView() {
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={1}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
                         Create New HR Document Template
@@ -377,14 +333,6 @@ export function HRDocumentTemplateCreateView() {
 
                             <TextField
                                 fullWidth
-                                label="Document Type"
-                                value={documentType}
-                                InputProps={{ readOnly: true }}
-                                helperText="Auto-populated from Category"
-                            />
-
-                            <TextField
-                                fullWidth
                                 multiline
                                 rows={3}
                                 label="Description"
@@ -413,121 +361,29 @@ export function HRDocumentTemplateCreateView() {
                             />
 
                             <Box>
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    sx={{ mb: 1 }}
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: 600,
+                                        color: errors.templateContent ? 'error.main' : 'text.secondary',
+                                        mb: 1,
+                                    }}
                                 >
-                                    <Typography
-                                        variant="body2"
-                                        sx={{
-                                            fontWeight: 600,
-                                            color: errors.templateContent ? 'error.main' : 'text.secondary',
-                                        }}
-                                    >
-                                        Template Content <Box component="span" sx={{ color: 'error.main' }}>*</Box>
-                                    </Typography>
-                                    <Stack direction="row" spacing={1}>
-                                        <Button
-                                            size="small"
-                                            variant={!isHtmlMode ? 'contained' : 'outlined'}
-                                            onClick={() => setIsHtmlMode(false)}
-                                            startIcon={<Iconify icon={"solar:document-bold" as any} />}
-                                            disabled={isHtmlMode && !isHtmlCodeEmpty(templateContentHtml)}
-                                            sx={{
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                                ...(!isHtmlMode
-                                                    ? {
-                                                          bgcolor: '#08a3cd',
-                                                          color: 'common.white',
-                                                          '&:hover': { bgcolor: '#068fb3' },
-                                                      }
-                                                    : {
-                                                          bgcolor: 'transparent',
-                                                          color: '#08a3cd',
-                                                          borderColor: '#08a3cd',
-                                                          '&:hover': {
-                                                              borderColor: '#068fb3',
-                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                          },
-                                                      }),
-                                            }}
-                                        >
-                                            Plain Text
-                                        </Button>
-                                        <Button
-                                            size="small"
-                                            variant={isHtmlMode ? 'contained' : 'outlined'}
-                                            onClick={() => setIsHtmlMode(true)}
-                                            startIcon={<Iconify icon={"solar:code-bold" as any} />}
-                                            disabled={!isHtmlMode && !isPlainTextEmpty(templateContent)}
-                                            sx={{
-                                                textTransform: 'none',
-                                                fontWeight: 600,
-                                                ...(isHtmlMode
-                                                    ? {
-                                                          bgcolor: '#08a3cd',
-                                                          color: 'common.white',
-                                                          '&:hover': { bgcolor: '#068fb3' },
-                                                      }
-                                                    : {
-                                                          bgcolor: 'transparent',
-                                                          color: '#08a3cd',
-                                                          borderColor: '#08a3cd',
-                                                          '&:hover': {
-                                                              borderColor: '#068fb3',
-                                                              bgcolor: 'rgba(8, 163, 205, 0.08)',
-                                                          },
-                                                      }),
-                                            }}
-                                        >
-                                            HTML Code
-                                        </Button>
-                                    </Stack>
-                                </Stack>
+                                    Template Content <Box component="span" sx={{ color: 'error.main' }}>*</Box>
+                                </Typography>
 
-                                {!isHtmlMode ? (
-                                    <RichTextEditor
-                                        value={templateContent}
-                                        onChange={(val: string) => {
-                                            setTemplateContent(val);
-                                            if (val && val !== '<p><br></p>')
-                                                setErrors((prev) => ({ ...prev, templateContent: false }));
-                                        }}
-                                        placeholder="Enter document template content..."
-                                        error={errors.templateContent}
-                                        helperText={errors.templateContent ? 'This field is required' : undefined}
-                                        minHeight={500}
-                                    />
-                                ) : (
-                                    <Box
-                                        sx={{
-                                            border: (theme) => `1px solid ${theme.palette.divider}`,
-                                            borderRadius: 1,
-                                            overflow: 'hidden',
-                                        }}
-                                    >
-                                        <Editor
-                                            height="450px"
-                                            defaultLanguage="html"
-                                            value={templateContentHtml}
-                                            onChange={(val) => {
-                                                const newValue = val || '';
-                                                setTemplateContentHtml(newValue);
-                                                if (newValue.trim())
-                                                    setErrors((prev) => ({ ...prev, templateContent: false }));
-                                            }}
-                                            options={{
-                                                minimap: { enabled: false },
-                                                wordWrap: 'on',
-                                                formatOnPaste: true,
-                                                formatOnType: true,
-                                            }}
-                                        />
-                                    </Box>
-                                )}
+                                <RichTextEditor
+                                    value={templateContent}
+                                    onChange={(val: string) => {
+                                        setTemplateContent(val);
+                                        if (val && val !== '<p><br></p>')
+                                            setErrors((prev) => ({ ...prev, templateContent: false }));
+                                    }}
+                                    placeholder="Enter document template content..."
+                                    error={errors.templateContent}
+                                    helperText={errors.templateContent ? 'This field is required' : undefined}
+                                    minHeight={500}
+                                />
                             </Box>
                         </Stack>
                     </Card>
@@ -704,28 +560,6 @@ export function HRDocumentTemplateCreateView() {
                     </LoadingButton>
                 </DialogActions>
             </Dialog>
-
-            <Snackbar
-                open={snackbar.open}
-                autoHideDuration={4000}
-                onClose={handleCloseSnackbar}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-            >
-                <Box
-                    sx={{
-                        bgcolor: snackbar.severity === 'error' ? 'error.main' : 'grey.900',
-                        color: 'common.white',
-                        px: 2.5,
-                        py: 1.5,
-                        borderRadius: 1.5,
-                        fontWeight: 600,
-                        fontSize: '0.875rem',
-                        boxShadow: (theme) => theme.customShadows?.z8,
-                    }}
-                >
-                    {snackbar.message}
-                </Box>
-            </Snackbar>
         </DashboardContent>
     );
 }
