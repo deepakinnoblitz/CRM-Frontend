@@ -106,7 +106,11 @@ export async function fetchHRDocumentGenerations(params: FetchHRDocumentGenerati
     try {
         const [listRes, countRes] = await Promise.all([
             frappeRequest(`/api/method/frappe.client.get_list?${query.toString()}`),
-            frappeRequest(`/api/method/frappe.client.get_count?${countQuery.toString()}`),
+            frappeRequest(
+                `/api/method/company.company.frontend_api.get_permitted_count?doctype=HR Document Generation&filters=${encodeURIComponent(
+                    JSON.stringify(filters)
+                )}&or_filters=${encodeURIComponent(JSON.stringify(or_filters))}`
+            ),
         ]);
 
         const listData = await listRes.json();

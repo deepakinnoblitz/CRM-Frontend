@@ -247,7 +247,7 @@ export function HRDocumentGenerationListView() {
                                                 tabIndex={-1}
                                                 sx={{
                                                     '& td, & th': {
-                                                        py: 1.25,
+                                                        py: 2,
                                                         borderBottom: (t) => `1px solid ${t.palette.divider}`,
                                                     },
                                                     '&:last-child td, &:last-child th': { borderBottom: 0 },
