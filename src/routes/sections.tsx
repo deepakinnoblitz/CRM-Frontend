@@ -78,6 +78,11 @@ export const HRDocumentTemplateCreatePage = lazy(() => import('src/pages/hr-docu
 export const HRDocumentTemplateEditPage = lazy(() => import('src/pages/hr-document-templates/edit'));
 export const HRDocumentTemplateDetailsPage = lazy(() => import('src/pages/hr-document-templates/details'));
 
+export const HRDocumentGenerationListPage = lazy(() => import('src/pages/hr-document-generation/list'));
+export const HRDocumentGenerationCreatePage = lazy(() => import('src/pages/hr-document-generation/new'));
+export const HRDocumentGenerationEditPage = lazy(() => import('src/pages/hr-document-generation/edit'));
+export const HRDocumentGenerationDetailsPage = lazy(() => import('src/pages/hr-document-generation/details'));
+
 export const WhatsAppTemplateListPage = lazy(() => import('src/pages/whatsapp-templates/list'));
 export const WhatsAppTemplateCreatePage = lazy(() => import('src/pages/whatsapp-templates/new'));
 export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-templates/edit'));
@@ -335,6 +340,15 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <HRDocumentTemplateCreatePage /> },
           { path: ':id/edit', element: <HRDocumentTemplateEditPage /> },
           { path: ':id/view', element: <HRDocumentTemplateDetailsPage /> },
+        ],
+      },
+      {
+        path: 'hr-document-generation',
+        children: [
+          { index: true, element: <HRDocumentGenerationListPage /> },
+          { path: 'new', element: <HRDocumentGenerationCreatePage /> },
+          { path: ':id/edit', element: <HRDocumentGenerationEditPage /> },
+          { path: ':id/view', element: <HRDocumentGenerationDetailsPage /> },
         ],
       },
       {
