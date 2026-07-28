@@ -7,12 +7,12 @@ import { IoHomeOutline } from "react-icons/io5";
 import { IoMdFolderOpen } from "react-icons/io";
 import { FiList, FiUserPlus } from "react-icons/fi";
 import { HiOutlineCreditCard } from "react-icons/hi2";
-import { HiOutlineSpeakerphone } from "react-icons/hi";
 import { TbReport, TbTargetArrow } from "react-icons/tb";
 import { FaMeta, FaLink, FaBuildingUser } from "react-icons/fa6";
 import { BsFillBellFill, BsCalendar4Range } from "react-icons/bs";
 import { FaTasks, FaWhatsapp, FaHandshake } from "react-icons/fa";
 import { MdContacts, MdOutlineLaptopWindows } from "react-icons/md";
+import { HiOutlineSpeakerphone, HiOutlineDocumentText } from "react-icons/hi";
 import { RiAppsLine, RiUserAddLine, RiMailSendLine, RiCalendarScheduleLine  } from "react-icons/ri";
 import { LuUsersRound, LuCalendarCheck2, LuFileSpreadsheet, LuUserRoundSearch } from "react-icons/lu";
 
@@ -79,6 +79,14 @@ export const hrNavData = [
     children: [
       { title: 'Leave Application', path: '/leaves' },
       { title: 'Leave Allocate', path: '/leave-allocations' },
+    ],
+  },
+  {
+    title: 'Document Generator',
+    path: '/hr-document-templates',
+    icon: <HiOutlineDocumentText size={18} />,
+    children: [
+      { title: 'HR Document Templates', path: '/hr-document-templates' },
     ],
   },
   {
@@ -181,6 +189,7 @@ export const hrNavData = [
       { title: 'Blood Group', path: '/blood-group' },
       { title: 'Salary Component', path: '/salary-structure-component' },
       { title: 'Leave Type', path: '/leave-type' },
+      { title: 'HR Document Category', path: '/hr-document-category' },
     ],
   },
   {
