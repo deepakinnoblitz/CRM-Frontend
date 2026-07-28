@@ -336,10 +336,10 @@ export const routesSection: RouteObject[] = [
       {
         path: 'hr-document-templates',
         children: [
-          { index: true, element: <HRDocumentTemplateListPage /> },
-          { path: 'new', element: <HRDocumentTemplateCreatePage /> },
-          { path: ':id/edit', element: <HRDocumentTemplateEditPage /> },
-          { path: ':id/view', element: <HRDocumentTemplateDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateDetailsPage /></RolePermissionGuard> },
         ],
       },
       {

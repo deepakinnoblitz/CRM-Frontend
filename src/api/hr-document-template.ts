@@ -62,7 +62,6 @@ export async function fetchHRDocumentTemplates(params: FetchHRDocumentTemplatesP
     if (params.search) {
         or_filters.push(['HR Document Template', 'template_name', 'like', `%${params.search}%`]);
         or_filters.push(['HR Document Template', 'category', 'like', `%${params.search}%`]);
-        or_filters.push(['HR Document Template', 'document_type', 'like', `%${params.search}%`]);
     }
 
     if (params.filters) {
@@ -88,7 +87,6 @@ export async function fetchHRDocumentTemplates(params: FetchHRDocumentTemplatesP
             'name',
             'template_name',
             'category',
-            'document_type',
             'is_active',
             'description',
             'subject',
