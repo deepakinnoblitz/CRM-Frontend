@@ -33,20 +33,27 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
 
+import { useAuth } from 'src/auth/auth-context';
+
 import { HRDocumentTemplateTableToolbar } from '../hr-document-templates-table-toolbar';
 import { HRDocumentTemplateFiltersDrawer } from '../hr-document-templates-filters-drawer';
 
 const TABLE_HEAD = [
     { id: 'template_name', label: 'Template Name', minWidth: 250 },
-    { id: 'category', label: 'Category', width: 180 },
-    { id: 'document_type', label: 'Document Type', width: 180 },
-    { id: 'subject', label: 'Subject', width: 280 },
+    { id: 'category', label: 'Category', width: 220 },
+    { id: 'subject', label: 'Subject', width: 320 },
     { id: 'status', label: 'Status', align: 'center', width: 140 },
     { id: 'action', label: 'Actions', align: 'center', width: 120 },
 ];
 
 export function HRDocumentTemplateListView() {
     const router = useRouter();
+    const { user } = useAuth();
+    const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.hr_document_templates;
+    const canCreate = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.create : true;
+    const canEdit = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.edit : true;
+    const canDelete = hasCustomPerms ? !!user?.permissions?.actions?.hr_document_templates?.delete : true;
+
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [filterName, setFilterName] = useState('');
@@ -64,6 +71,14 @@ export function HRDocumentTemplateListView() {
     const { enqueueSnackbar } = useSnackbar();
     const [categories, setCategories] = useState<any[]>([]);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    useEffect(() => {
+        const msg = sessionStorage.getItem('hr_document_template_success_message');
+        if (msg) {
+            enqueueSnackbar(msg, { variant: 'success' });
+            sessionStorage.removeItem('hr_document_template_success_message');
+        }
+    }, [enqueueSnackbar]);
 
     const fetchTemplates = useCallback(async () => {
         setLoading(true);
@@ -145,25 +160,27 @@ export function HRDocumentTemplateListView() {
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                        HR Document Templates
+                        Document Templates
                     </Typography>
                 </Stack>
-                <Button
-                    variant="contained"
-                    startIcon={<Iconify icon="mingcute:add-line" />}
-                    onClick={() => router.push('/hr-document-templates/new')}
-                    sx={{
-                        borderRadius: 1.5,
-                        bgcolor: '#08a3cd',
-                        color: 'common.white',
-                        '&:hover': { bgcolor: '#068fb3' },
-                    }}
-                >
-                    New Template
-                </Button>
+                {canCreate && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Iconify icon="mingcute:add-line" />}
+                        onClick={() => router.push('/hr-document-templates/new')}
+                        sx={{
+                            borderRadius: 1,
+                            bgcolor: '#08a3cd',
+                            color: 'common.white',
+                            '&:hover': { bgcolor: '#068fb3' },
+                        }}
+                    >
+                        New Template
+                    </Button>
+                )}
             </Stack>
 
             <Card>
@@ -205,7 +222,7 @@ export function HRDocumentTemplateListView() {
                                                 tabIndex={-1}
                                                 sx={{
                                                     '& td, & th': {
-                                                        py: 1.25,
+                                                        py: 2,
                                                         borderBottom: (t) => `1px solid ${t.palette.divider}`,
                                                     },
                                                     '&:last-child td, &:last-child th': { borderBottom: 0 },
@@ -247,15 +264,9 @@ export function HRDocumentTemplateListView() {
                                                     </Typography>
                                                 </TableCell>
 
-                                                <TableCell sx={{ maxWidth: 180 }}>
+                                                <TableCell sx={{ maxWidth: 220 }}>
                                                     <Typography variant="body2" noWrap sx={{ fontWeight: 600, color: 'text.primary' }}>
                                                         {row.category || '—'}
-                                                    </Typography>
-                                                </TableCell>
-
-                                                <TableCell sx={{ maxWidth: 180 }}>
-                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
-                                                        {row.document_type || row.category || '—'}
                                                     </Typography>
                                                 </TableCell>
 
@@ -305,25 +316,29 @@ export function HRDocumentTemplateListView() {
                                                             <Iconify icon="solar:eye-bold" />
                                                         </IconButton>
 
-                                                        <IconButton
-                                                            onClick={() =>
-                                                                router.push(
-                                                                    `/hr-document-templates/${encodeURIComponent(row.name)}/edit`
-                                                                )
-                                                            }
-                                                            sx={{ color: 'primary.main' }}
-                                                            title="Edit"
-                                                        >
-                                                            <Iconify icon="solar:pen-bold" />
-                                                        </IconButton>
+                                                        {canEdit && (
+                                                            <IconButton
+                                                                onClick={() =>
+                                                                    router.push(
+                                                                        `/hr-document-templates/${encodeURIComponent(row.name)}/edit`
+                                                                    )
+                                                                }
+                                                                sx={{ color: 'primary.main' }}
+                                                                title="Edit"
+                                                            >
+                                                                <Iconify icon="solar:pen-bold" />
+                                                            </IconButton>
+                                                        )}
 
-                                                        <IconButton
-                                                            onClick={() => setConfirmDelete({ open: true, id: row.name })}
-                                                            sx={{ color: 'error.main' }}
-                                                            title="Delete"
-                                                        >
-                                                            <Iconify icon="solar:trash-bin-trash-bold" />
-                                                        </IconButton>
+                                                        {canDelete && (
+                                                            <IconButton
+                                                                onClick={() => setConfirmDelete({ open: true, id: row.name })}
+                                                                sx={{ color: 'error.main' }}
+                                                                title="Delete"
+                                                            >
+                                                                <Iconify icon="solar:trash-bin-trash-bold" />
+                                                            </IconButton>
+                                                        )}
                                                     </Box>
                                                 </TableCell>
                                             </TableRow>
