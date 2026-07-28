@@ -384,14 +384,14 @@ export const crmAndSalesNavData = [
     icon: <IoMdFolderOpen size={22} />,
     children: [
       { title: 'Lead From', path: '/master/lead-from' },
-      { title: 'Call Status', path: '/master/call-status' },
-      { title: 'Meeting Status', path: '/master/meeting-status' },
       { title: 'Service', path: '/master/service' },
       { title: 'Item', path: '/master/item' },
       { title: 'Payment Terms', path: '/master/payment-terms' },
       { title: 'Payment Type', path: '/master/payment-type' },
       { title: 'Tax Types', path: '/master/tax-types' },
       { title: 'Company Bank Account', path: '/master/company-bank-account' },
+      { title: 'Call Status', path: '/master/call-status' },
+      { title: 'Meeting Status', path: '/master/meeting-status' },
       { title: 'Email Template Category', path: '/master/email-template-category' },
       { title: 'WhatsApp Template Category', path: '/master/whatsapp-template-category' },
     ],
@@ -477,7 +477,7 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
       const checkKey = menuMapping[moduleKey] || moduleKey;
 
       const menus = user?.permissions?.menus || {};
-      
+
       // If we explicitly set this menu to false, block it
       if (menus[moduleKey] === false || menus[checkKey] === false) {
         return null;
