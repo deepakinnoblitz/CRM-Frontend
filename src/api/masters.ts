@@ -86,6 +86,15 @@ export interface Designation {
     modified?: string;
 }
 
+export interface HRDocumentCategoryMaster {
+    name: string;
+    category_name: string;
+    is_active?: number | boolean;
+    description?: string;
+    creation?: string;
+    modified?: string;
+}
+
 // Department APIs
 export const fetchDepartments = (params: any) => {
     const { search, ...restParams } = params;
@@ -1905,6 +1914,77 @@ export async function deleteBloodGroup(name: string) {
 export async function getBloodGroup(name: string) {
     const res = await frappeRequest(`/api/method/frappe.client.get?doctype=Blood Group&name=${encodeURIComponent(name)}`);
     if (!res.ok) throw new Error("Failed to fetch blood group details");
+    return (await res.json()).message;
+}
+
+// HR Document Category Master APIs
+export const fetchHRDocumentCategoriesMaster = (params: any) => {
+    const { search, ...restParams } = params;
+
+    const or_filters = search ? [
+        ["HR Document Category", "category_name", "like", `%${search}%`],
+        ["HR Document Category", "description", "like", `%${search}%`],
+    ] : undefined;
+
+    return fetchFrappeList("HR Document Category", {
+        ...restParams,
+        search: undefined,
+        or_filters,
+        fields: ["name", "category_name", "is_active", "description", "creation", "modified"]
+    });
+};
+
+export async function createHRDocumentCategoryMaster(data: Partial<HRDocumentCategoryMaster>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.insert", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doc: { doctype: "HR Document Category", is_active: 1, ...data } })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to create HR document category"));
+    return json.message;
+}
+
+export async function updateHRDocumentCategoryMaster(name: string, data: Partial<HRDocumentCategoryMaster>) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.set_value", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "HR Document Category", name, fieldname: data })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to update HR document category"));
+    return json.message;
+}
+
+export async function renameHRDocumentCategoryMaster(oldName: string, newName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.rename_doc", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "HR Document Category", old_name: oldName, new_name: newName })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to rename HR document category"));
+    return json.message;
+}
+
+export async function deleteHRDocumentCategoryMaster(name: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest("/api/method/frappe.client.delete", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ doctype: "HR Document Category", name })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, "Failed to delete HR document category"));
+    return true;
+}
+
+export async function getHRDocumentCategoryMaster(name: string): Promise<HRDocumentCategoryMaster> {
+    const res = await frappeRequest(`/api/method/frappe.client.get?doctype=HR Document Category&name=${encodeURIComponent(name)}`);
+    if (!res.ok) throw new Error("Failed to fetch HR document category details");
     return (await res.json()).message;
 }
 

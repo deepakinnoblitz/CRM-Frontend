@@ -448,24 +448,10 @@ export function DailyLogReportView() {
         }
 
         const statusLower = cellStatus.toLowerCase();
-        if (statusLower.includes('unpaid')) {
+        if (statusLower.includes('unpaid') || statusLower.includes('paid') || statusLower.includes('permission') || statusLower.includes('leave')) {
             return {
-                bgcolor: 'rgba(126, 34, 206, 0.14)',
-                color: '#6b21a8',
-                fontWeight: 'bold',
-            };
-        }
-        if (statusLower.includes('paid')) {
-            return {
-                bgcolor: 'rgba(29, 78, 216, 0.14)',
-                color: '#1e40af',
-                fontWeight: 'bold',
-            };
-        }
-        if (statusLower.includes('permission')) {
-            return {
-                bgcolor: 'rgba(3, 105, 161, 0.14)',
-                color: '#075985',
+                bgcolor: '#EEEDFE',
+                color: '#26215C',
                 fontWeight: 'bold',
             };
         }
@@ -1475,16 +1461,13 @@ export function DailyLogReportView() {
                                 { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
                                 { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
                                 { label: 'Half Day', value: 'HD', color: 'rgba(234, 179, 8, 0.16)', textColor: '#854d0e' },
-                                { label: 'Unpaid Leave', value: 'Unpaid', color: 'rgba(126, 34, 206, 0.14)', textColor: '#6b21a8' },
-                                { label: 'Paid Leave', value: 'Paid', color: 'rgba(29, 78, 216, 0.14)', textColor: '#1e40af' },
-                                { label: 'Permission', value: 'Permission', color: 'rgba(3, 105, 161, 0.14)', textColor: '#075985' },
+                                { label: 'Leave Applied', value: '', hideValue: true, color: '#CECBF6', textColor: '#26215C' },
                             ].map((item) => (
                                 <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
                                     <Box
                                         sx={{
-                                            minWidth: 32,
+                                            width: 32,
                                             height: 24,
-                                            px: 0.75,
                                             borderRadius: '6px',
                                             display: 'flex',
                                             alignItems: 'center',
@@ -1648,7 +1631,7 @@ export function DailyLogReportView() {
                                                                     sx={{
                                                                         px: (showTime || isLeave) ? 1 : 0,
                                                                         py: (showTime || isLeave) ? 0.75 : 0,
-                                                                        width: showTime ? 90 : (isLeave ? 80 : 32),
+                                                                        width: showTime ? 90 : (isLeave ? 95 : 32),
                                                                         minHeight: 32,
                                                                         borderRadius: '8px',
                                                                         display: 'inline-flex',
@@ -1676,19 +1659,13 @@ export function DailyLogReportView() {
                                                                             }
                                                                             arrow
                                                                         >
-                                                                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
-                                                                                <Box component="span" sx={{ fontWeight: 700 }}>
-                                                                                    {cellStatus.replace(/\s*leave\s*/gi, '')}
-                                                                                </Box>
-                                                                                {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 && (
-                                                                                    <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.8, mt: 0.2 }}>
-                                                                                        {leaveRecord.permission_hours}m
-                                                                                    </Box>
-                                                                                )}
+                                                                            <Box component="span" sx={{ fontSize: '0.7rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                                {leaveRecord?.leave_type || cellStatus}
+                                                                                {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 ? ` (${leaveRecord.permission_hours}m)` : ''}
                                                                             </Box>
                                                                         </Tooltip>
                                                                     ) : (
-                                                                        cellStatus
+                                                                        cellStatus || '-'
                                                                     )}
                                                                 </Box>
                                                             </TableCell>

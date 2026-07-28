@@ -361,9 +361,9 @@ export function AttendanceReportView() {
         if (cellStatus === 'HD') return { bgcolor: 'rgba(254, 240, 138, 0.5)', color: '#854d0e', fontWeight: 'bold' };
         if (cellStatus === 'H') return { bgcolor: 'rgba(244, 63, 94, 0.14)', color: '#9f1239', fontWeight: 'bold' };
         const s = cellStatus.toLowerCase();
-        if (s.includes('unpaid')) return { bgcolor: 'rgba(126, 34, 206, 0.14)', color: '#6b21a8', fontWeight: 'bold' };
-        if (s.includes('paid')) return { bgcolor: 'rgba(29, 78, 216, 0.14)', color: '#1e40af', fontWeight: 'bold' };
-        if (s.includes('permission')) return { bgcolor: 'rgba(3, 105, 161, 0.14)', color: '#075985', fontWeight: 'bold' };
+        if (s.includes('unpaid') || s.includes('paid') || s.includes('permission') || s.includes('leave')) {
+            return { bgcolor: '#EEEDFE', color: '#26215C', fontWeight: 'bold' };
+        }
         if (s.includes('sick')) return { bgcolor: 'rgba(219, 39, 119, 0.14)', color: '#9d174d', fontWeight: 'bold' };
         if (s.includes('casual')) return { bgcolor: 'rgba(13, 148, 136, 0.14)', color: '#115e59', fontWeight: 'bold' };
         return { bgcolor: 'rgba(75, 85, 99, 0.14)', color: '#374151', fontWeight: 'bold' };
@@ -1240,16 +1240,13 @@ export function AttendanceReportView() {
                                         { label: 'Present', value: 'P', hideValue: true, color: 'rgba(34, 197, 94, 0.14)', textColor: '#166534' },
                                         { label: 'Absent', value: 'A', color: 'rgba(239, 68, 68, 0.14)', textColor: '#991b1b' },
                                         { label: 'Half Day', value: 'HD', color: 'rgba(254, 240, 138, 0.5)', textColor: '#854d0e' },
-                                        { label: 'Unpaid Leave', value: 'Unpaid', color: 'rgba(126, 34, 206, 0.14)', textColor: '#6b21a8' },
-                                        { label: 'Paid Leave', value: 'Paid', color: 'rgba(29, 78, 216, 0.14)', textColor: '#1e40af' },
-                                        { label: 'Permission', value: 'Permission', color: 'rgba(3, 105, 161, 0.14)', textColor: '#075985' },
+                                        { label: 'Leave Applied', value: '', hideValue: true, color: '#bbb7f7ff', textColor: '#26215C' },
                                     ].map((item) => (
                                         <Stack key={item.label} direction="row" alignItems="center" spacing={1}>
                                             <Box
                                                 sx={{
-                                                    minWidth: 32,
-                                                    height: 24,
-                                                    px: 0.75,
+                                                    width: 30,
+                                                    height: 22,
                                                     borderRadius: '6px',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -1434,7 +1431,7 @@ export function AttendanceReportView() {
                                                                             sx={{
                                                                                 px: (showTime || isLeave) ? 1 : 0,
                                                                                 py: (showTime || isLeave) ? 0.75 : 0,
-                                                                                width: showTime ? 90 : (isLeave ? 80 : 32),
+                                                                                width: showTime ? 90 : (isLeave ? 95 : 32),
                                                                                 minHeight: 32,
                                                                                 borderRadius: '8px',
                                                                                 display: 'inline-flex',
@@ -1462,19 +1459,13 @@ export function AttendanceReportView() {
                                                                                     }
                                                                                     arrow
                                                                                 >
-                                                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.1 }}>
-                                                                                        <Box component="span" sx={{ fontWeight: 700 }}>
-                                                                                            {cellStatus.replace(/\s*leave\s*/gi, '')}
-                                                                                        </Box>
-                                                                                        {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 && (
-                                                                                            <Box component="span" sx={{ fontSize: '0.625rem', fontWeight: 500, opacity: 0.8, mt: 0.2 }}>
-                                                                                                {leaveRecord.permission_hours}m
-                                                                                            </Box>
-                                                                                        )}
+                                                                                    <Box component="span" sx={{ fontSize: '0.725rem', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                                                                                        {leaveRecord?.leave_type || cellStatus}
+                                                                                        {cellStatus.toLowerCase().includes('permission') && !!leaveRecord?.permission_hours && leaveRecord.permission_hours > 0 ? ` (${leaveRecord.permission_hours}m)` : ''}
                                                                                     </Box>
                                                                                 </Tooltip>
                                                                             ) : (
-                                                                                cellStatus
+                                                                                cellStatus || '-'
                                                                             )}
                                                                         </Box>
                                                                     </TableCell>
