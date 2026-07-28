@@ -157,6 +157,7 @@ export const hrNavData = [
     icon: <HiOutlineDocumentText size={18} />,
     children: [
       { title: 'Document Templates', path: '/hr-document-templates' },
+      { title: 'Document Generation', path: '/hr-document-generation' },
     ],
   },
   {
