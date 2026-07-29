@@ -6,6 +6,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';   
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
@@ -54,6 +55,8 @@ export function HRDocumentGenerationEditView({ id }: Props) {
     const [status, setStatus] = useState('Draft');
     const [subject, setSubject] = useState('');
     const [templateContent, setTemplateContent] = useState('');
+    const [renderedSubject, setRenderedSubject] = useState('');
+    const [renderedContent, setRenderedContent] = useState('');
 
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<{ employee?: boolean; documentTemplate?: boolean }>({});
@@ -93,6 +96,8 @@ export function HRDocumentGenerationEditView({ id }: Props) {
                     setStatus(doc.status || 'Draft');
                     setSubject(doc.subject || '');
                     setTemplateContent(doc.template_content || '');
+                    setRenderedSubject(doc.rendered_subject || '');
+                    setRenderedContent(doc.rendered_content || '');
                 }
             } catch (err) {
                 console.error('Failed to load document details:', err);
@@ -224,13 +229,29 @@ export function HRDocumentGenerationEditView({ id }: Props) {
                     <Autocomplete
                         fullWidth
                         options={employees}
-                        getOptionLabel={(option) => `${option.name} - ${option.employee_name}`}
+                        getOptionLabel={(option) => (option.employee_name ? `${option.employee_name} (${option.name})` : option.name || '')}
+                        isOptionEqualToValue={(option, value) => option.name === value.name}
                         value={selectedEmployee}
                         onChange={(_, newValue) => {
                             setSelectedEmployee(newValue);
                             if (newValue && errors.employee) {
                                 setErrors((prev) => ({ ...prev, employee: false }));
                             }
+                        }}
+                        renderOption={(props, option) => {
+                            const { key, ...optionProps } = props as any;
+                            return (
+                                <li key={key || option.name} {...optionProps}>
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            );
                         }}
                         renderInput={(params) => (
                             <TextField
@@ -294,23 +315,81 @@ export function HRDocumentGenerationEditView({ id }: Props) {
                         placeholder="Subject line override (optional)..."
                     />
 
-                    <Box>
-                        <Stack
-                            direction="row"
-                            alignItems="center"
-                            justifyContent="space-between"
-                            sx={{ mb: 1 }}
-                        >
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                Content Override
-                            </Typography>
-                        </Stack>
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                            gap: 3,
+                            alignItems: 'start',
+                        }}
+                    >
+                        <Box>
+                            <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="space-between"
+                                sx={{ mb: 1 }}
+                            >
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+                                    Content Override
+                                </Typography>
+                            </Stack>
 
-                        <RichTextEditor
-                            value={templateContent}
-                            onChange={(val: string) => setTemplateContent(val)}
-                            placeholder="Enter document content override..."
-                        />
+                            <RichTextEditor
+                                value={templateContent}
+                                onChange={(val: string) => setTemplateContent(val)}
+                                placeholder="Enter document content override..."
+                            />
+                        </Box>
+
+                        <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                Rendered Output
+                            </Typography>
+
+                            <Stack spacing={2}>
+                                <TextField
+                                    fullWidth
+                                    label="Rendered Subject"
+                                    value={renderedSubject}
+                                    disabled
+                                    InputLabelProps={{ shrink: true }}
+                                    placeholder="No rendered subject available"
+                                />
+
+                                <Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5, display: 'block' }}>
+                                        Rendered Content
+                                    </Typography>
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 1,
+                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
+                                            minHeight: 250,
+                                            maxHeight: 500,
+                                            overflowY: 'auto',
+                                        }}
+                                    >
+                                        {renderedContent ? (
+                                            <Box
+                                                dangerouslySetInnerHTML={{ __html: renderedContent }}
+                                                sx={{
+                                                    typography: 'body2',
+                                                    '& p': { my: 0.5 },
+                                                    '& h1, & h2, & h3, & h4': { my: 1 },
+                                                }}
+                                            />
+                                        ) : (
+                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                                No rendered content available.
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </Box>
+                            </Stack>
+                        </Box>
                     </Box>
                 </Stack>
             </Card>

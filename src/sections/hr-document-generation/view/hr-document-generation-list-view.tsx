@@ -41,11 +41,10 @@ import { HRDocumentGenerationFiltersDrawer } from '../hr-document-generation-fil
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-    { id: 'employee', label: 'Employee', width: 140 },
-    { id: 'employee_name', label: 'Employee Name', minWidth: 220 },
+    { id: 'employee_name', label: 'Employee', minWidth: 250 },
     { id: 'document_template', label: 'Document Template', width: 220 },
-    { id: 'document_type', label: 'Document Type', width: 180 },
-    { id: 'status', label: 'Status', align: 'center', width: 160 },
+    { id: 'document_type', label: 'Document Type', width: 220 },
+    { id: 'status', label: 'Status', align: 'center', width: 200 },
     { id: 'action', label: 'Actions', align: 'center', width: 120 },
 ];
 
@@ -234,7 +233,7 @@ export function HRDocumentGenerationListView() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} align="center" sx={{ py: 10 }}>
+                                        <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
                                             <CircularProgress sx={{ color: '#08a3cd' }} />
                                         </TableCell>
                                     </TableRow>
@@ -283,16 +282,15 @@ export function HRDocumentGenerationListView() {
                                                     </Box>
                                                 </TableCell>
 
-                                                <TableCell>
-                                                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                                                        {row.employee || '—'}
-                                                    </Typography>
-                                                </TableCell>
-
                                                 <TableCell component="th" scope="row">
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                                                        {row.employee_name || '—'}
-                                                    </Typography>
+                                                    <Box>
+                                                        <Typography variant="subtitle2" noWrap sx={{ textTransform: 'capitalize', fontWeight: 700 }}>
+                                                            {row.employee_name || '—'}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
+                                                            {row.employee || '—'}
+                                                        </Typography>
+                                                    </Box>
                                                 </TableCell>
 
                                                 <TableCell sx={{ maxWidth: 220 }}>
@@ -364,7 +362,7 @@ export function HRDocumentGenerationListView() {
 
                                         {notFound && (
                                             <TableRow>
-                                                <TableCell colSpan={7} sx={{ p: 0, py: 5 }}>
+                                                <TableCell colSpan={6} sx={{ p: 0, py: 5 }}>
                                                     <EmptyContent
                                                         icon="solar:magnifer-bold-duotone"
                                                         title="No documents found"
@@ -380,7 +378,7 @@ export function HRDocumentGenerationListView() {
 
                                         {empty && (
                                             <TableRow>
-                                                <TableCell colSpan={7} sx={{ p: 0, py: 5 }}>
+                                                <TableCell colSpan={6} sx={{ p: 0, py: 5 }}>
                                                     <EmptyContent
                                                         icon="solar:document-text-bold-duotone"
                                                         title="No documents Found"
@@ -400,7 +398,7 @@ export function HRDocumentGenerationListView() {
                                                             '& td': { borderBottom: 'none' },
                                                         }}
                                                     >
-                                                        <TableCell colSpan={7} />
+                                                        <TableCell colSpan={6} />
                                                     </TableRow>
                                                 ))}
                                             </>
