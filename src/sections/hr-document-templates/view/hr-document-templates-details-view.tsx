@@ -217,7 +217,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                     p: 3,
                                     borderRadius: 1.5,
                                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.03),
-                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                                    border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
                                 }}
                             >
                                 <Stack spacing={3}>
@@ -234,7 +234,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                                 p: 2,
                                                 bgcolor: 'background.paper',
                                                 borderRadius: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.3)}`,
                                                 minHeight: 80,
                                             }}
                                         >
@@ -255,7 +255,7 @@ export function HRDocumentTemplateDetailsView({ id }: Props) {
                                                 p: 2,
                                                 bgcolor: 'background.paper',
                                                 borderRadius: 1,
-                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                                border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.3)}`,
                                                 minHeight: 150,
                                             }}
                                             dangerouslySetInnerHTML={{
