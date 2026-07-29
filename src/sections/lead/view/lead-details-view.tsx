@@ -315,8 +315,21 @@ export function LeadDetailsView() {
         }
     }, [lead]);
 
+    const [ownerDetails, setOwnerDetails] = useState<{ full_name: string; email: string } | null>(null);
+
     useEffect(() => {
         const loadNames = async () => {
+            if (lead?.owner) {
+                try {
+                    const userDoc = await getDoc("User", lead.owner);
+                    setOwnerDetails({
+                        full_name: userDoc.full_name || userDoc.first_name || lead.owner,
+                        email: userDoc.email || lead.owner,
+                    });
+                } catch (e) {
+                    console.error("Failed to fetch owner user doc:", e);
+                }
+            }
 
             if (lead?.converted_account) {
                 const company = await getDoc(
@@ -1110,7 +1123,24 @@ export function LeadDetailsView() {
                                         gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
                                     }}
                                 >
-                                    <DetailItem label="Owner" value={lead.owner_name || lead.owner} icon={<FaUser size={13} />} color="secondary.main" />
+                                    <Box>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+                                            Owner
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                            <Box sx={{ color: 'text.disabled', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                <FaUser size={13} />
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                    {ownerDetails?.full_name || lead.owner_name || lead.owner || '-'}
+                                                </Typography>
+                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block' }}>
+                                                    {ownerDetails?.email || (lead.owner && lead.owner.includes('@') ? lead.owner : '')}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
                                     <DetailItem label="Creation" value={`${new Date(lead.creation).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.creation).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
                                     <DetailItem label="Modified" value={`${new Date(lead.modified).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.modified).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
                                 </Box>
