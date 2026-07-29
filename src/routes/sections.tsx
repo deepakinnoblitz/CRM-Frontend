@@ -73,6 +73,16 @@ export const EmailTemplateCreatePage = lazy(() => import('src/pages/email-templa
 export const EmailTemplateEditPage = lazy(() => import('src/pages/email-templates/edit'));
 export const EmailTemplateDetailsPage = lazy(() => import('src/pages/email-templates/details'));
 
+export const HRDocumentTemplateListPage = lazy(() => import('src/pages/hr-document-templates/list'));
+export const HRDocumentTemplateCreatePage = lazy(() => import('src/pages/hr-document-templates/new'));
+export const HRDocumentTemplateEditPage = lazy(() => import('src/pages/hr-document-templates/edit'));
+export const HRDocumentTemplateDetailsPage = lazy(() => import('src/pages/hr-document-templates/details'));
+
+export const HRDocumentGenerationListPage = lazy(() => import('src/pages/hr-document-generation/list'));
+export const HRDocumentGenerationCreatePage = lazy(() => import('src/pages/hr-document-generation/new'));
+export const HRDocumentGenerationEditPage = lazy(() => import('src/pages/hr-document-generation/edit'));
+export const HRDocumentGenerationDetailsPage = lazy(() => import('src/pages/hr-document-generation/details'));
+
 export const WhatsAppTemplateListPage = lazy(() => import('src/pages/whatsapp-templates/list'));
 export const WhatsAppTemplateCreatePage = lazy(() => import('src/pages/whatsapp-templates/new'));
 export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-templates/edit'));
@@ -208,6 +218,7 @@ export const PerformanceCriteriaCategoryPage = lazy(() => import('src/pages/perf
 export const DesignationPage = lazy(() => import('src/pages/designation'));
 export const SalaryStructureComponentPage = lazy(() => import('src/pages/salary-structure-component'));
 export const LeaveTypePage = lazy(() => import('src/pages/leave-type'));
+export const HRDocumentCategoryPage = lazy(() => import('src/pages/hr-document-category'));
 export const BloodGroupPage = lazy(() => import('src/pages/blood-group'));
 export const LeadFromPage = lazy(() => import('src/pages/lead-from'));
 export const CallStatusPage = lazy(() => import('src/pages/call-status'));
@@ -320,6 +331,24 @@ export const routesSection: RouteObject[] = [
           { path: 'new', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateCreatePage /></RolePermissionGuard> },
           { path: ':id/edit', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateEditPage /></RolePermissionGuard> },
           { path: ':id/view', element: <RolePermissionGuard actionKey="email_templates"><EmailTemplateDetailsPage /></RolePermissionGuard> },
+        ],
+      },
+      {
+        path: 'hr-document-templates',
+        children: [
+          { index: true, element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="hr_document_templates"><HRDocumentTemplateDetailsPage /></RolePermissionGuard> },
+        ],
+      },
+      {
+        path: 'hr-document-generation',
+        children: [
+          { index: true, element: <HRDocumentGenerationListPage /> },
+          { path: 'new', element: <HRDocumentGenerationCreatePage /> },
+          { path: ':id/edit', element: <HRDocumentGenerationEditPage /> },
+          { path: ':id/view', element: <HRDocumentGenerationDetailsPage /> },
         ],
       },
       {
@@ -461,6 +490,7 @@ export const routesSection: RouteObject[] = [
       { path: 'salary-structure-component', element: <RolePermissionGuard actionKey="master_salary_component"><SalaryStructureComponentPage /></RolePermissionGuard> },
       { path: 'leave-type', element: <RolePermissionGuard actionKey="master_leave_type"><LeaveTypePage /></RolePermissionGuard> },
       { path: 'blood-group', element: <RolePermissionGuard actionKey="master_blood_group"><BloodGroupPage /></RolePermissionGuard> },
+      { path: 'hr-document-category', element: <HRDocumentCategoryPage /> },
       { path: 'master/lead-from', element: <RolePermissionGuard actionKey="master_lead_from"><LeadFromPage /></RolePermissionGuard> },
       { path: 'master/call-status', element: <RolePermissionGuard actionKey="master_call_status"><CallStatusPage /></RolePermissionGuard> },
       { path: 'master/meeting-status', element: <RolePermissionGuard actionKey="master_meeting_status"><MeetingStatusPage /></RolePermissionGuard> },

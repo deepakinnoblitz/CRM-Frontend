@@ -40,6 +40,7 @@ import { useRouter } from 'src/routes/hooks';
 import { fDate } from 'src/utils/format-time';
 import { handleDownload, handleDirectPrint } from 'src/utils/print';
 
+import { getDoc } from 'src/api/leads';
 import { getAccount } from 'src/api/accounts';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getProposal, updateProposal, getProposalPrintUrl } from 'src/api/proposal';
@@ -83,6 +84,7 @@ export function ProposalDetailsView() {
     const backState = location.state?.filters ? { filters: location.state.filters } : undefined;
 
     const [proposal, setProposal] = useState<any>(null);
+    const [ownerDetails, setOwnerDetails] = useState<{ full_name: string; email: string } | null>(null);
     const [billingAccountName, setBillingAccountName] = useState<string>('');
     const [loading, setLoading] = useState(true);
     const [printing, setPrinting] = useState(false);
@@ -113,6 +115,20 @@ export function ProposalDetailsView() {
                 .then(async (data) => {
                     setProposal(data);
                     setSelectedStatus(data.status || 'Draft');
+
+                    const ownerUserId = (data as any).owner_name || (data as any).owner || data.created_by;
+                    if (ownerUserId) {
+                        try {
+                            const userDoc = await getDoc("User", ownerUserId);
+                            setOwnerDetails({
+                                full_name: userDoc.full_name || userDoc.first_name || ownerUserId,
+                                email: userDoc.email || ownerUserId,
+                            });
+                        } catch (e) {
+                            console.error("Failed to fetch proposal owner user doc:", e);
+                            setOwnerDetails(null);
+                        }
+                    }
 
                     if (data.company_name) {
                         try {
@@ -377,7 +393,12 @@ export function ProposalDetailsView() {
                                             <DetailItem label="Subject" value={proposal.subject} icon={<HiOutlineCheckCircle size={20} />} />
                                         )}
                                         <DetailItem label="Total Attachments" value={String(proposal.total_attachments || 0)} icon={<HiOutlinePaperClip size={20} />} />
-                                        <DetailItem label="Created By" value={proposal.created_by || '—'} icon={<HiOutlineUser size={20} />} />
+                                        <DetailItem
+                                            label="Proposal Owner"
+                                            value={ownerDetails?.full_name || proposal.owner_name || proposal.owner || proposal.created_by || '—'}
+                                            subValue={ownerDetails?.email || (proposal.owner && proposal.owner.includes('@') ? proposal.owner : (proposal.created_by && proposal.created_by.includes('@') ? proposal.created_by : null))}
+                                            icon={<HiOutlineUser size={20} />}
+                                        />
                                     </Stack>
                                 </Box>
 

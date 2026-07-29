@@ -20,6 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { getDoc } from 'src/api/leads';
 import { CONFIG } from 'src/config-global';
 import { getContact } from 'src/api/contacts';
 
@@ -59,6 +60,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initial
     const canCreateCalendar = hasCustomPerms && user?.permissions?.actions?.calendar ? !!user?.permissions?.actions?.calendar?.create : true;
 
     const [contact, setContact] = useState<any>(null);
+    const [ownerDetails, setOwnerDetails] = useState<{ full_name: string; email: string } | null>(null);
     const [loading, setLoading] = useState(false);
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
 
@@ -81,7 +83,23 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initial
         if (open && contactId) {
             setLoading(true);
             getContact(contactId)
-                .then(setContact)
+                .then(async (data) => {
+                    setContact(data);
+                    if (data?.owner) {
+                        try {
+                            const userDoc = await getDoc("User", data.owner);
+                            setOwnerDetails({
+                                full_name: userDoc.full_name || userDoc.first_name || data.owner,
+                                email: userDoc.email || data.owner,
+                            });
+                        } catch (e) {
+                            console.error("Failed to fetch contact owner user doc:", e);
+                            setOwnerDetails(null);
+                        }
+                    } else {
+                        setOwnerDetails(null);
+                    }
+                })
                 .catch((err) => console.error('Failed to fetch contact details:', err))
                 .finally(() => setLoading(false));
         }
@@ -274,7 +292,12 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initial
                                         <Stack spacing={2.5} sx={{ mt: 2.5 }}>
                                             <DetailItem label="Email Address" value={contact.email} icon={<HiOutlineEnvelope size={18} />} />
                                             <DetailItem label="Phone Number" value={contact.phone} icon={<HiOutlinePhone size={18} />} />
-                                            <DetailItem label="Account Owner" value={contact.owner} icon={<HiOutlineBriefcase size={18} />} />
+                                            <DetailItem
+                                                label="Client Owner"
+                                                value={ownerDetails?.full_name || contact.owner}
+                                                subValue={ownerDetails?.email || (contact.owner && contact.owner.includes('@') ? contact.owner : null)}
+                                                icon={<HiOutlineBriefcase size={18} />}
+                                            />
                                         </Stack>
                                     </Box>
 
