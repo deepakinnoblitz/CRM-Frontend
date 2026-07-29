@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -14,8 +15,6 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
-
-import { useSearchParams } from 'react-router-dom';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -117,21 +116,27 @@ export function HRDocumentGenerationEditView({ id }: Props) {
     }, [id]);
 
     useEffect(() => {
+        let timer: ReturnType<typeof setTimeout>;
         if (!loadingDoc && initialTab === 'rendered' && contentSectionRef.current) {
-            const timer = setTimeout(() => {
+            timer = setTimeout(() => {
                 contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }, 150);
-            return () => clearTimeout(timer);
         }
+        return () => {
+            if (timer) clearTimeout(timer);
+        };
     }, [loadingDoc, initialTab]);
 
     const handleTemplateChange = async (template: HRDocumentTemplate | null) => {
         setSelectedTemplate(template);
         if (template) {
-            setDocumentType(template.document_type || '');
+            setDocumentType(template.category || template.document_type || '');
             if (template.name) {
                 try {
                     const details = await getHRDocumentTemplate(template.name);
+                    if (details.category || details.document_type) {
+                        setDocumentType(details.category || details.document_type || '');
+                    }
                     if (details.subject && !subject) setSubject(details.subject);
                     if (details.template_content && !templateContent) {
                         setTemplateContent(details.template_content);

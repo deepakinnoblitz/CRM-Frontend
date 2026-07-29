@@ -6,6 +6,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
@@ -13,7 +14,6 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
 import FormHelperText from '@mui/material/FormHelperText';
-import { alpha } from '@mui/material/styles';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -82,10 +82,13 @@ export function HRDocumentGenerationCreateView() {
     const handleTemplateChange = async (template: HRDocumentTemplate | null) => {
         setSelectedTemplate(template);
         if (template) {
-            setDocumentType(template.document_type || '');
+            setDocumentType(template.category || template.document_type || '');
             if (template.name) {
                 try {
                     const details = await getHRDocumentTemplate(template.name);
+                    if (details.category || details.document_type) {
+                        setDocumentType(details.category || details.document_type || '');
+                    }
                     if (details.subject) {
                         setSubject(details.subject);
                         if (errors.subject) setErrors((prev) => ({ ...prev, subject: false }));
@@ -241,7 +244,7 @@ export function HRDocumentGenerationCreateView() {
                         variant="outlined"
                         loading={rendering}
                         onClick={handleSaveAndRender}
-                        startIcon={<Iconify icon="solar:eye-bold" width={20} />}
+                        startIcon={<Iconify icon="solar:document-text-bold" width={20} />}
                         sx={{
                             borderRadius: 1.5,
                             borderColor: '#08a3cd',
