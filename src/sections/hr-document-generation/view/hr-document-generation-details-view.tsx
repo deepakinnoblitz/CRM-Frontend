@@ -1,18 +1,21 @@
 import { useState, useEffect, useCallback } from 'react';
-import { IoMdArrowBack, IoMdSettings, IoMdMail, IoMdDocument, IoMdCreate } from 'react-icons/io';
+import { IoMdArrowBack, IoMdSettings, IoMdMail, IoMdDocument, IoMdCreate, IoMdPrint } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import { alpha } from '@mui/material/styles';
+import Backdrop from '@mui/material/Backdrop';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { handleDirectPrint } from 'src/utils/print';
+
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getHRDocumentGeneration, HRDocumentGeneration } from 'src/api/hr-document-generation';
+import { getHRDocumentGeneration, getHRDocumentGenerationPrintUrl, HRDocumentGeneration } from 'src/api/hr-document-generation';
 
 type Props = {
     id: string;
@@ -51,6 +54,7 @@ const getStatusStyle = (status?: string) => {
 export function HRDocumentGenerationDetailsView({ id }: Props) {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [printing, setPrinting] = useState(false);
     const [doc, setDoc] = useState<HRDocumentGeneration | null>(null);
 
     const loadDetails = useCallback(async () => {
@@ -70,6 +74,15 @@ export function HRDocumentGenerationDetailsView({ id }: Props) {
             loadDetails();
         }
     }, [id, loadDetails]);
+
+    const handlePrint = () => {
+        if (!id) return;
+        handleDirectPrint(
+            getHRDocumentGenerationPrintUrl(id),
+            () => setPrinting(true),
+            () => setPrinting(false)
+        );
+    };
 
     if (loading) {
         return (
@@ -120,6 +133,24 @@ export function HRDocumentGenerationDetailsView({ id }: Props) {
                         }}
                     >
                         Go Back
+                    </Button>
+                    <Button
+                        variant="contained"
+                        onClick={handlePrint}
+                        startIcon={<IoMdPrint size={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            fontWeight: 600,
+                            textTransform: 'none',
+                            bgcolor: '#16a34a',
+                            color: 'common.white',
+                            px: 2.5,
+                            '&:hover': {
+                                bgcolor: '#15803d',
+                            },
+                        }}
+                    >
+                        Print
                     </Button>
                     <Button
                         variant="contained"
@@ -322,6 +353,16 @@ export function HRDocumentGenerationDetailsView({ id }: Props) {
                     </Box>
                 </Box>
             </Card>
+
+            <Backdrop
+                sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                open={printing}
+            >
+                <Stack spacing={2} alignItems="center">
+                    <CircularProgress color="inherit" />
+                    <Typography variant="subtitle1">Preparing Document PDF for Printing...</Typography>
+                </Stack>
+            </Backdrop>
         </DashboardContent>
     );
 }
