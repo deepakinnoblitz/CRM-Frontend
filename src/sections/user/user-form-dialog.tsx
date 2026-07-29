@@ -175,10 +175,16 @@ const Android12LoadingButton = styled(LoadingButton)(({ theme }) => ({
   fontWeight: 500,
   padding: '8px 20px',
   fontSize: '0.925rem',
-
   boxShadow: 'none',
   '&:hover': {
     boxShadow: 'none',
+  },
+  '&.MuiLoadingButton-loading': {
+    backgroundColor: '#08a3cd',
+    color: '#ffffff',
+  },
+  '& .MuiLoadingButton-loadingIndicator': {
+    color: '#ffffff',
   },
 }));
 
