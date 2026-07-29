@@ -14,6 +14,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
 import { handleDirectPrint } from 'src/utils/print';
 
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -273,7 +274,7 @@ export function HRDocumentGenerationDetailsView({ id }: Props) {
                                         Generated On
                                     </Typography>
                                     <Typography variant="body2" sx={{ fontWeight: 'fontWeightSemiBold' }}>
-                                        {doc.generated_on || doc.creation || '-'}
+                                        {(doc.generated_on || doc.creation) ? fDateTime(doc.generated_on || doc.creation, 'DD-MM-YYYY hh:mm:ss A') : '-'}
                                     </Typography>
                                 </Stack>
                                 <Stack direction="row" justifyContent="space-between" alignItems="center">

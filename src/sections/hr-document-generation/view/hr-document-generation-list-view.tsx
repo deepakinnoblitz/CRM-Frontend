@@ -20,6 +20,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchHRDocumentTemplates } from 'src/api/hr-document-template';
 import {
@@ -41,10 +43,11 @@ import { HRDocumentGenerationFiltersDrawer } from '../hr-document-generation-fil
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-    { id: 'employee_name', label: 'Employee', minWidth: 250 },
-    { id: 'document_template', label: 'Document Template', width: 220 },
-    { id: 'document_type', label: 'Document Type', width: 220 },
-    { id: 'status', label: 'Status', align: 'center', width: 200 },
+    { id: 'employee_name', label: 'Employee', minWidth: 220 },
+    { id: 'document_template', label: 'Document Template', width: 200 },
+    { id: 'document_type', label: 'Document Type', width: 180 },
+    { id: 'generated_on', label: 'Generated On', width: 220 },
+    { id: 'status', label: 'Status', align: 'center', width: 160 },
     { id: 'action', label: 'Actions', align: 'center', width: 120 },
 ];
 
@@ -187,7 +190,7 @@ export function HRDocumentGenerationListView() {
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5} mt={3}>
+            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={5}>
                 <Stack spacing={0.5}>
                     <Typography variant="h4" sx={{ fontWeight: 800 }}>
                         Document Generation
@@ -302,6 +305,12 @@ export function HRDocumentGenerationListView() {
                                                 <TableCell sx={{ maxWidth: 180 }}>
                                                     <Typography variant="body2" noWrap sx={{ color: 'text.primary' }}>
                                                         {row.document_type || '—'}
+                                                    </Typography>
+                                                </TableCell>
+
+                                                <TableCell sx={{ minWidth: 200 }}>
+                                                    <Typography variant="body2" noWrap sx={{ color: 'text.secondary' }}>
+                                                        {(row.generated_on || row.creation) ? fDateTime(row.generated_on || row.creation, 'DD-MM-YYYY hh:mm:ss A') : '—'}
                                                     </Typography>
                                                 </TableCell>
 
