@@ -12,6 +12,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import FormHelperText from '@mui/material/FormHelperText';
+import { alpha } from '@mui/material/styles';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -48,7 +50,13 @@ export function HRDocumentGenerationCreateView() {
     const [templateContent, setTemplateContent] = useState('');
 
     const [saving, setSaving] = useState(false);
-    const [errors, setErrors] = useState<{ employee?: boolean; documentTemplate?: boolean }>({});
+    const [rendering, setRendering] = useState(false);
+    const [errors, setErrors] = useState<{
+        employee?: boolean;
+        documentTemplate?: boolean;
+        subject?: boolean;
+        templateContent?: boolean;
+    }>({});
     const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
         open: false,
         message: '',
@@ -78,9 +86,13 @@ export function HRDocumentGenerationCreateView() {
             if (template.name) {
                 try {
                     const details = await getHRDocumentTemplate(template.name);
-                    if (details.subject) setSubject(details.subject);
+                    if (details.subject) {
+                        setSubject(details.subject);
+                        if (errors.subject) setErrors((prev) => ({ ...prev, subject: false }));
+                    }
                     if (details.template_content) {
                         setTemplateContent(details.template_content);
+                        if (errors.templateContent) setErrors((prev) => ({ ...prev, templateContent: false }));
                     }
                 } catch (err) {
                     console.error('Failed to fetch template details:', err);
@@ -94,16 +106,41 @@ export function HRDocumentGenerationCreateView() {
         }
     };
 
-    const handleSave = async () => {
-        const newErrors: { employee?: boolean; documentTemplate?: boolean } = {};
+    const isContentEmpty = (content: string) => {
+        if (!content) return true;
+        const stripped = content.replace(/<[^>]*>/g, '').trim();
+        return stripped.length === 0;
+    };
+
+    const validateForm = () => {
+        const newErrors: {
+            employee?: boolean;
+            documentTemplate?: boolean;
+            subject?: boolean;
+            templateContent?: boolean;
+        } = {};
+
         if (!selectedEmployee) newErrors.employee = true;
         if (!selectedTemplate) newErrors.documentTemplate = true;
+        if (!subject || !subject.trim()) newErrors.subject = true;
+        if (isContentEmpty(templateContent)) newErrors.templateContent = true;
 
         if (Object.keys(newErrors).length > 0) {
             setErrors(newErrors);
             setSnackbar({ open: true, message: 'Please fill in required fields', severity: 'error' });
-            return;
+            return false;
         }
+        return true;
+    };
+
+    const handleSave = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (saving || rendering) return;
+
+        if (!validateForm()) return;
 
         try {
             setSaving(true);
@@ -132,6 +169,46 @@ export function HRDocumentGenerationCreateView() {
         }
     };
 
+    const handleSaveAndRender = async (e?: React.MouseEvent) => {
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+        if (saving || rendering) return;
+
+        if (!validateForm()) return;
+
+        try {
+            setRendering(true);
+
+            const newDoc = await createHRDocumentGeneration({
+                employee: selectedEmployee!.name,
+                document_template: selectedTemplate!.name,
+                status,
+                subject: subject.trim(),
+                template_content: templateContent,
+            });
+
+            sessionStorage.setItem('hr_document_generation_success_message', 'Document created successfully');
+            setTimeout(() => {
+                if (newDoc && newDoc.name) {
+                    router.push(`/hr-document-generation/${encodeURIComponent(newDoc.name)}/edit?tab=rendered`);
+                } else {
+                    router.push('/hr-document-generation');
+                }
+            }, 500);
+        } catch (err: any) {
+            console.error(err);
+            setSnackbar({
+                open: true,
+                message: err.message || 'Failed to generate document',
+                severity: 'error',
+            });
+        } finally {
+            setRendering(false);
+        }
+    };
+
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4}>
@@ -140,9 +217,14 @@ export function HRDocumentGenerationCreateView() {
                 </Typography>
                 <Stack direction="row" spacing={2}>
                     <Button
+                        type="button"
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/hr-document-generation')}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            router.push('/hr-document-generation');
+                        }}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -155,6 +237,29 @@ export function HRDocumentGenerationCreateView() {
                     </Button>
 
                     <LoadingButton
+                        type="button"
+                        variant="outlined"
+                        loading={rendering}
+                        onClick={handleSaveAndRender}
+                        startIcon={<Iconify icon="solar:eye-bold" width={20} />}
+                        sx={{
+                            borderRadius: 1.5,
+                            borderColor: '#08a3cd',
+                            color: '#08a3cd',
+                            '&:hover': {
+                                borderColor: '#068fb3',
+                                bgcolor: (theme) => alpha('#08a3cd', 0.08),
+                            },
+                            textTransform: 'none',
+                            fontWeight: 600,
+                            px: 2.5,
+                        }}
+                    >
+                        Rendered
+                    </LoadingButton>
+
+                    <LoadingButton
+                        type="button"
                         variant="contained"
                         loading={saving}
                         onClick={handleSave}
@@ -262,10 +367,18 @@ export function HRDocumentGenerationCreateView() {
                     <TextField
                         fullWidth
                         label="Subject Override"
+                        required
+                        error={errors.subject}
+                        helperText={errors.subject ? 'Subject Override is required' : ''}
                         value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
+                        onChange={(e) => {
+                            setSubject(e.target.value);
+                            if (e.target.value.trim() && errors.subject) {
+                                setErrors((prev) => ({ ...prev, subject: false }));
+                            }
+                        }}
                         InputLabelProps={{ shrink: true }}
-                        placeholder="Subject line override (optional)..."
+                        placeholder="Enter subject line override..."
                     />
 
                     <Box>
@@ -275,16 +388,26 @@ export function HRDocumentGenerationCreateView() {
                             justifyContent="space-between"
                             sx={{ mb: 1 }}
                         >
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                Content Override
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: errors.templateContent ? 'error.main' : 'text.secondary' }}>
+                                Content Override <Box component="span" sx={{ color: 'error.main' }}>*</Box>
                             </Typography>
                         </Stack>
 
                         <RichTextEditor
                             value={templateContent}
-                            onChange={(val: string) => setTemplateContent(val)}
+                            onChange={(val: string) => {
+                                setTemplateContent(val);
+                                if (!isContentEmpty(val) && errors.templateContent) {
+                                    setErrors((prev) => ({ ...prev, templateContent: false }));
+                                }
+                            }}
                             placeholder="Enter document content override..."
                         />
+                        {errors.templateContent && (
+                            <FormHelperText error sx={{ px: 2, mt: 0.5 }}>
+                                Content Override is required
+                            </FormHelperText>
+                        )}
                     </Box>
                 </Stack>
             </Card>

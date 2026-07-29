@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { IoMdArrowBack } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
@@ -14,6 +14,8 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
+
+import { useSearchParams } from 'react-router-dom';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -44,6 +46,9 @@ type Props = {
 
 export function HRDocumentGenerationEditView({ id }: Props) {
     const router = useRouter();
+    const [searchParams] = useSearchParams();
+    const initialTab = searchParams.get('tab') === 'rendered' ? 'rendered' : 'override';
+    const contentSectionRef = useRef<HTMLDivElement>(null);
 
     const [loadingDoc, setLoadingDoc] = useState(true);
     const [employees, setEmployees] = useState<EmployeeOption[]>([]);
@@ -57,7 +62,7 @@ export function HRDocumentGenerationEditView({ id }: Props) {
     const [templateContent, setTemplateContent] = useState('');
     const [renderedSubject, setRenderedSubject] = useState('');
     const [renderedContent, setRenderedContent] = useState('');
-    const [viewMode, setViewMode] = useState<'override' | 'rendered'>('override');
+    const [viewMode, setViewMode] = useState<'override' | 'rendered'>(initialTab);
     const [refreshingRender, setRefreshingRender] = useState(false);
 
     const [saving, setSaving] = useState(false);
@@ -110,6 +115,15 @@ export function HRDocumentGenerationEditView({ id }: Props) {
         }
         loadData();
     }, [id]);
+
+    useEffect(() => {
+        if (!loadingDoc && initialTab === 'rendered' && contentSectionRef.current) {
+            const timer = setTimeout(() => {
+                contentSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 150);
+            return () => clearTimeout(timer);
+        }
+    }, [loadingDoc, initialTab]);
 
     const handleTemplateChange = async (template: HRDocumentTemplate | null) => {
         setSelectedTemplate(template);
@@ -350,7 +364,7 @@ export function HRDocumentGenerationEditView({ id }: Props) {
                         placeholder="Subject line override (optional)..."
                     />
 
-                    <Box>
+                    <Box ref={contentSectionRef}>
                         <Stack
                             direction="row"
                             alignItems="center"
