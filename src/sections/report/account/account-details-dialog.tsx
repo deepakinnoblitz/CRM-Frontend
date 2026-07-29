@@ -179,7 +179,7 @@ export function AccountDetailsDialog({ open, onClose, accountId, onEdit, initial
                                             <DetailItem label="Phone Number" value={account.phone_number} icon={<HiOutlinePhone size={18} />} />
                                             <DetailItem label="Website" value={account.website} icon={<HiOutlineGlobeAlt size={18} />} />
                                             <DetailItem label="GSTIN" value={account.gstin} icon={<HiOutlineIdentification size={18} />} />
-                                            <DetailItem label="Account Owner" value={account.owner_name} subValue={account.owner} icon={<HiOutlineBriefcase size={18} />} />
+                                            <DetailItem label="Company Owner" value={account.owner_name} subValue={account.owner} icon={<HiOutlineBriefcase size={18} />} />
                                         </Stack>
                                     </Box>
 
