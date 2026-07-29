@@ -201,7 +201,7 @@ export function HRDocumentGenerationListView() {
                     startIcon={<Iconify icon="mingcute:add-line" />}
                     onClick={() => router.push('/hr-document-generation/new')}
                     sx={{
-                        borderRadius: 1.5,
+                        borderRadius: 1,
                         bgcolor: '#08a3cd',
                         color: 'common.white',
                         '&:hover': { bgcolor: '#068fb3' },
