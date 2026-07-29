@@ -57,6 +57,8 @@ export function HRDocumentGenerationEditView({ id }: Props) {
     const [templateContent, setTemplateContent] = useState('');
     const [renderedSubject, setRenderedSubject] = useState('');
     const [renderedContent, setRenderedContent] = useState('');
+    const [viewMode, setViewMode] = useState<'override' | 'rendered'>('override');
+    const [refreshingRender, setRefreshingRender] = useState(false);
 
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState<{ employee?: boolean; documentTemplate?: boolean }>({});
@@ -129,6 +131,39 @@ export function HRDocumentGenerationEditView({ id }: Props) {
         }
         if (errors.documentTemplate) {
             setErrors((prev) => ({ ...prev, documentTemplate: false }));
+        }
+    };
+
+    const handleTabChange = async (newMode: 'override' | 'rendered') => {
+        if (newMode === viewMode) return;
+
+        setViewMode(newMode);
+
+        if (newMode === 'rendered') {
+            setRefreshingRender(true);
+            try {
+                if (selectedEmployee && selectedTemplate) {
+                    const updatedDoc = await updateHRDocumentGeneration(id, {
+                        employee: selectedEmployee.name,
+                        document_template: selectedTemplate.name,
+                        status,
+                        subject: subject.trim(),
+                        template_content: templateContent,
+                    });
+                    if (updatedDoc) {
+                        setRenderedSubject(updatedDoc.rendered_subject || '');
+                        setRenderedContent(updatedDoc.rendered_content || '');
+                    }
+                } else {
+                    const latestDoc = await getHRDocumentGeneration(id);
+                    setRenderedSubject(latestDoc.rendered_subject || '');
+                    setRenderedContent(latestDoc.rendered_content || '');
+                }
+            } catch (err) {
+                console.error('Failed to auto-refresh rendered output:', err);
+            } finally {
+                setRefreshingRender(false);
+            }
         }
     };
 
@@ -315,81 +350,153 @@ export function HRDocumentGenerationEditView({ id }: Props) {
                         placeholder="Subject line override (optional)..."
                     />
 
-                    <Box
-                        sx={{
-                            display: 'grid',
-                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                            gap: 3,
-                            alignItems: 'start',
-                        }}
-                    >
-                        <Box>
-                            <Stack
-                                direction="row"
-                                alignItems="center"
-                                justifyContent="space-between"
-                                sx={{ mb: 1 }}
-                            >
-                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
-                                    Content Override
-                                </Typography>
-                            </Stack>
-
-                            <RichTextEditor
-                                value={templateContent}
-                                onChange={(val: string) => setTemplateContent(val)}
-                                placeholder="Enter document content override..."
-                            />
-                        </Box>
-
-                        <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
-                                Rendered Output
+                    <Box>
+                        <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            sx={{ mb: 2 }}
+                        >
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2, color: 'text.secondary', fontWeight: 700 }}>
+                                Content
                             </Typography>
 
-                            <Stack spacing={2}>
-                                <TextField
-                                    fullWidth
-                                    label="Rendered Subject"
-                                    value={renderedSubject}
-                                    disabled
-                                    InputLabelProps={{ shrink: true }}
-                                    placeholder="No rendered subject available"
-                                />
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                                    p: 0.5,
+                                    borderRadius: '24px',
+                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
+                                }}
+                            >
+                                <Button
+                                    onClick={() => handleTabChange('override')}
+                                    startIcon={<Iconify icon="solar:document-text-bold" width={16} />}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 2.5,
+                                        py: 0.6,
+                                        fontSize: '0.825rem',
+                                        fontWeight: viewMode === 'override' ? 700 : 600,
+                                        color: viewMode === 'override' ? '#fff' : 'text.secondary',
+                                        bgcolor: viewMode === 'override' ? '#08a3cd' : 'transparent',
+                                        boxShadow: viewMode === 'override' ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: viewMode === 'override' ? '#08a3cd' : (theme) => alpha(theme.palette.grey[500], 0.12),
+                                        },
+                                    }}
+                                >
+                                    Content Override View
+                                </Button>
+                                <Button
+                                    onClick={() => handleTabChange('rendered')}
+                                    startIcon={<Iconify icon="solar:eye-bold" width={16} />}
+                                    sx={{
+                                        borderRadius: '20px',
+                                        px: 2.5,
+                                        py: 0.6,
+                                        fontSize: '0.825rem',
+                                        fontWeight: viewMode === 'rendered' ? 700 : 600,
+                                        color: viewMode === 'rendered' ? '#fff' : 'text.secondary',
+                                        bgcolor: viewMode === 'rendered' ? '#08a3cd' : 'transparent',
+                                        boxShadow: viewMode === 'rendered' ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                        textTransform: 'capitalize',
+                                        transition: 'all 0.2s ease-in-out',
+                                        '&:hover': {
+                                            bgcolor: viewMode === 'rendered' ? '#08a3cd' : (theme) => alpha(theme.palette.grey[500], 0.12),
+                                        },
+                                    }}
+                                >
+                                    Rendered View
+                                </Button>
+                            </Box>
+                        </Stack>
 
-                                <Box>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mb: 0.5, display: 'block' }}>
-                                        Rendered Content
-                                    </Typography>
-                                    <Box
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 1,
-                                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
-                                            border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.2)}`,
-                                            minHeight: 250,
-                                            maxHeight: 500,
-                                            overflowY: 'auto',
-                                        }}
-                                    >
-                                        {renderedContent ? (
-                                            <Box
-                                                dangerouslySetInnerHTML={{ __html: renderedContent }}
-                                                sx={{
-                                                    typography: 'body2',
-                                                    '& p': { my: 0.5 },
-                                                    '& h1, & h2, & h3, & h4': { my: 1 },
-                                                }}
-                                            />
-                                        ) : (
-                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
-                                                No rendered content available.
-                                            </Typography>
-                                        )}
+                        {viewMode === 'override' && (
+                            <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary', mb: 1 }}>
+                                    Content Override
+                                </Typography>
+                                <RichTextEditor
+                                    value={templateContent}
+                                    onChange={(val: string) => setTemplateContent(val)}
+                                    placeholder="Enter document content override..."
+                                />
+                            </Box>
+                        )}
+
+                        {viewMode === 'rendered' && (
+                            <Box
+                                sx={{
+                                    p: 3,
+                                    borderRadius: 1.5,
+                                    bgcolor: (themeVar) => alpha(themeVar.palette.primary.main, 0.03),
+                                    border: (themeVar) => `1px solid ${alpha(themeVar.palette.primary.main, 0.16)}`,
+                                }}
+                            >
+                                {refreshingRender ? (
+                                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
+                                        <CircularProgress sx={{ color: '#08a3cd' }} />
                                     </Box>
-                                </Box>
-                            </Stack>
-                        </Box>
+                                ) : (
+                                    <Stack spacing={3}>
+                                        <Stack spacing={1}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>
+                                                Rendered Subject
+                                            </Typography>
+                                            <Box
+                                                sx={{
+                                                    p: 2,
+                                                    bgcolor: 'background.paper',
+                                                    borderRadius: 1,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.3)}`,
+                                                    minHeight: 60,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                    {renderedSubject || subject || '-'}
+                                                </Typography>
+                                            </Box>
+                                        </Stack>
+
+                                        <Stack spacing={1}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ textTransform: 'uppercase', fontSize: 13, fontWeight: 600 }}>
+                                                Rendered Content
+                                            </Typography>
+                                            <Box
+                                                sx={{
+                                                    p: 2.5,
+                                                    bgcolor: 'background.paper',
+                                                    borderRadius: 1,
+                                                    border: (theme) => `1px solid ${alpha(theme.palette.grey[500], 0.3)}`,
+                                                    minHeight: 250,
+                                                }}
+                                            >
+                                                {renderedContent || templateContent ? (
+                                                    <Box
+                                                        dangerouslySetInnerHTML={{ __html: renderedContent || templateContent || '' }}
+                                                        sx={{
+                                                            typography: 'body2',
+                                                            '& p': { my: 0.5 },
+                                                            '& h1, & h2, & h3': { my: 1 },
+                                                        }}
+                                                    />
+                                                ) : (
+                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontStyle: 'italic' }}>
+                                                        No rendered content available.
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </Stack>
+                                    </Stack>
+                                )}
+                            </Box>
+                        )}
                     </Box>
                 </Stack>
             </Card>
