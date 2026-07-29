@@ -182,13 +182,29 @@ export function HRDocumentGenerationCreateView() {
                     <Autocomplete
                         fullWidth
                         options={employees}
-                        getOptionLabel={(option) => `${option.name} - ${option.employee_name}`}
+                        getOptionLabel={(option) => (option.employee_name ? `${option.employee_name} (${option.name})` : option.name || '')}
+                        isOptionEqualToValue={(option, value) => option.name === value.name}
                         value={selectedEmployee}
                         onChange={(_, newValue) => {
                             setSelectedEmployee(newValue);
                             if (newValue && errors.employee) {
                                 setErrors((prev) => ({ ...prev, employee: false }));
                             }
+                        }}
+                        renderOption={(props, option) => {
+                            const { key, ...optionProps } = props as any;
+                            return (
+                                <li key={key || option.name} {...optionProps}>
+                                    <Stack spacing={0.5}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                                            {option.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                            ID: {option.name}
+                                        </Typography>
+                                    </Stack>
+                                </li>
+                            );
                         }}
                         renderInput={(params) => (
                             <TextField
