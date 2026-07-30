@@ -164,3 +164,83 @@ export async function deleteMetaApp(name: string) {
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to delete Meta App'));
     return true;
 }
+
+// ----------------------------------------------------------------------
+// Phase 3 OAuth & Account API Helpers
+// ----------------------------------------------------------------------
+
+export async function initiateMetaOAuth(metaApp?: string) {
+    const url = `/api/method/company.company.crm_meta_api.initiate_meta_oauth${metaApp ? `?meta_app=${encodeURIComponent(metaApp)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to initiate Meta OAuth'));
+    return json.message;
+}
+
+export async function getMetaAccountStatus(accountName?: string) {
+    const url = `/api/method/company.company.crm_meta_account_api.get_meta_account_status${accountName ? `?account_name=${encodeURIComponent(accountName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to fetch Meta Account status'));
+    return json.message;
+}
+
+export async function disconnectMetaAccount(accountName: string) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.crm_meta_account_api.disconnect_meta_account', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ account_name: accountName }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to disconnect Meta Account'));
+    return json.message;
+}
+
+// ----------------------------------------------------------------------
+// Phase 4 & 5 Facebook Page Discovery & Toggle Helpers
+// ----------------------------------------------------------------------
+
+export async function fetchMetaPagesFromGraphAPI(accountName?: string) {
+    const url = `/api/method/company.company.crm_meta_page_api.fetch_meta_pages_from_graph_api${accountName ? `?account_name=${encodeURIComponent(accountName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to discover Facebook Pages'));
+    return json.message;
+}
+
+export async function toggleMetaPageConnection(pageName: string, isConnected: boolean) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.crm_meta_page_api.toggle_meta_page_connection', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ page_name: pageName, is_connected: isConnected ? 1 : 0 }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to update Page connection status'));
+    return json.message;
+}
+
+// ----------------------------------------------------------------------
+// Phase 6 Meta Lead Form Discovery & Toggle Helpers
+// ----------------------------------------------------------------------
+
+export async function fetchMetaFormsFromGraphAPI(pageName?: string) {
+    const url = `/api/method/company.company.crm_meta_form_api.fetch_meta_forms_from_graph_api${pageName ? `?page_name=${encodeURIComponent(pageName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to discover Meta Lead Forms'));
+    return json.message;
+}
+
+export async function toggleMetaFormConnection(formName: string, isActive: boolean) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.crm_meta_form_api.toggle_meta_form_connection', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ form_name: formName, is_active: isActive ? 1 : 0 }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to update Form sync status'));
+    return json.message;
+}

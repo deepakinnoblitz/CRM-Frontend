@@ -89,6 +89,7 @@ export const WhatsAppTemplateEditPage = lazy(() => import('src/pages/whatsapp-te
 export const WhatsAppTemplateDetailsPage = lazy(() => import('src/pages/whatsapp-templates/details'));
 
 export const MetaAppsListPage = lazy(() => import('src/pages/lead-integration/meta-apps/list'));
+export const MetaAccountPage = lazy(() => import('src/pages/lead-integration/meta-account'));
 export const MetaAppsCreatePage = lazy(() => import('src/pages/lead-integration/meta-apps/new'));
 export const MetaAppsEditPage = lazy(() => import('src/pages/lead-integration/meta-apps/edit'));
 export const MetaAppsDetailsPage = lazy(() => import('src/pages/lead-integration/meta-apps/details'));
@@ -401,6 +402,10 @@ export const routesSection: RouteObject[] = [
       {
         path: 'lead-integration',
         children: [
+          {
+            path: 'account',
+            element: <RolePermissionGuard actionKey="meta_apps"><MetaAccountPage /></RolePermissionGuard>,
+          },
           {
             path: 'meta-apps',
             children: [
