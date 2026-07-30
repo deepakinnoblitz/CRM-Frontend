@@ -113,6 +113,8 @@ export function MetaFormsCreateView() {
     const [formName, setFormName] = useState('');
     const [formId, setFormId] = useState('');
     const [metaPage, setMetaPage] = useState('');
+    const [formStatus, setFormStatus] = useState('ACTIVE');
+    const [locale, setLocale] = useState('');
 
     // Tracking detail fields
     const [campaignId, setCampaignId] = useState('');
@@ -277,6 +279,8 @@ export function MetaFormsCreateView() {
                 form_name: formName.trim(),
                 form_id: formId.trim(),
                 meta_page: metaPage,
+                form_status: (formStatus || '').trim() || undefined,
+                locale: (locale || '').trim() || undefined,
                 campaign_id: (campaignId || '').trim() || undefined,
                 campaign_name: (campaignName || '').trim() || undefined,
                 ad_set_id: (adSetId || '').trim() || undefined,
@@ -400,6 +404,30 @@ export function MetaFormsCreateView() {
                                         helperText={errors.metaPage ? 'Meta Page is required' : 'Select page hosting this form'}
                                     />
                                 )}
+                            />
+                            <FormControl fullWidth>
+                                <InputLabel id="form-status-label">Form Status</InputLabel>
+                                <Select
+                                    labelId="form-status-label"
+                                    value={formStatus}
+                                    label="Form Status"
+                                    onChange={(e) => setFormStatus(e.target.value)}
+                                >
+                                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                                    <MenuItem value="ARCHIVED">ARCHIVED</MenuItem>
+                                    <MenuItem value="DRAFT">DRAFT</MenuItem>
+                                    <MenuItem value="DELETED">DELETED</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <TextField
+                                fullWidth
+                                label="Locale"
+                                value={locale}
+                                onChange={(e) => setLocale(e.target.value)}
+                                helperText="Form locale (e.g. en_US, es_LA, hi_IN)"
                             />
                         </Box>
 

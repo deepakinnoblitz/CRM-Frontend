@@ -10,11 +10,17 @@ export interface MetaPage {
     page_name: string;
     page_id: string;
     meta_app: string;
+    meta_account?: string;
+    category?: string;
     page_access_token?: string;
     long_lived_token?: string;
     webhook_enabled?: number;
+    subscription_status?: string;
+    subscribed_fields?: string;
+    last_subscription_check?: string;
     business_id?: string;
     is_active?: number;
+    is_connected?: number;
     creation?: string;
     modified?: string;
     owner?: string;
@@ -65,9 +71,10 @@ export async function fetchMetaPages(params: FetchMetaPagesParams) {
     const query = new URLSearchParams({
         doctype: 'CRM Meta Page',
         fields: JSON.stringify([
-            'name', 'page_name', 'page_id', 'meta_app',
-            'page_access_token', 'long_lived_token', 'webhook_enabled',
-            'business_id', 'is_active', 'creation', 'modified', 'owner',
+            'name', 'page_name', 'page_id', 'meta_app', 'meta_account',
+            'category', 'page_access_token', 'long_lived_token', 'webhook_enabled',
+            'subscription_status', 'subscribed_fields', 'last_subscription_check',
+            'business_id', 'is_active', 'is_connected', 'creation', 'modified', 'owner',
         ]),
         filters: JSON.stringify(filters),
         or_filters: JSON.stringify(or_filters),
@@ -158,4 +165,17 @@ export async function deleteMetaPage(name: string) {
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to delete Meta Page'));
     return true;
+}
+
+// ----------------------------------------------------------------------
+// Fetch Meta Accounts list for selection dropdowns
+// ----------------------------------------------------------------------
+
+export async function fetchMetaAccounts() {
+    const res = await frappeRequest(
+        `/api/method/frappe.client.get_list?doctype=CRM Meta Account&fields=["name","facebook_user_name","facebook_user_id"]&limit_page_length=1000`
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    return json.message || [];
 }
