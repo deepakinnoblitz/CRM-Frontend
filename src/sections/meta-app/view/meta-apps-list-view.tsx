@@ -182,6 +182,8 @@ export function MetaAppsListView() {
                 </Box>
             </Stack>
 
+
+
             <Card>
                 {/* Toolbar — identical to WhatsApp Templates */}
                 <Toolbar
