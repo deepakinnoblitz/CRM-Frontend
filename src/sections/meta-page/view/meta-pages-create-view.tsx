@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
@@ -21,8 +22,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { useRouter } from 'src/routes/hooks';
 
 import { fetchMetaApps } from 'src/api/meta-app';
-import { createMetaPage } from 'src/api/meta-page';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { createMetaPage, fetchMetaAccounts } from 'src/api/meta-page';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -41,7 +42,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
             transform: 'translateX(18px)',
             color: '#fff',
             '& + .MuiSwitch-track': {
-                backgroundColor: '#08a3cd', // Match the #08a3cd theme color
+                backgroundColor: '#08a3cd',
                 opacity: 1,
                 border: 0,
             },
@@ -55,7 +56,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
     },
     '& .MuiSwitch-track': {
         borderRadius: 26 / 2,
-        backgroundColor: '#E5E7EB', // Light Gray
+        backgroundColor: '#E5E7EB',
         opacity: 1,
         transition: theme.transitions.create(['background-color'], {
             duration: 500,
@@ -63,9 +64,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
     },
 }));
 
-import { styled } from '@mui/material/styles';
-
-// ----------------------------------------------------------------------
+const SUBSCRIPTION_STATUS_OPTIONS = ['Subscribed', 'Not Subscribed', 'Failed'];
 
 export function MetaPagesCreateView() {
     const router = useRouter();
@@ -74,30 +73,40 @@ export function MetaPagesCreateView() {
     const [pageName, setPageName] = useState('');
     const [pageId, setPageId] = useState('');
     const [metaApp, setMetaApp] = useState('');
+    const [metaAccount, setMetaAccount] = useState('');
+    const [category, setCategory] = useState('');
     const [pageAccessToken, setPageAccessToken] = useState('');
     const [longLivedToken, setLongLivedToken] = useState('');
     const [businessId, setBusinessId] = useState('');
     const [webhookEnabled, setWebhookEnabled] = useState(true);
     const [isActive, setIsActive] = useState(true);
+    const [isConnected, setIsConnected] = useState(true);
+    const [subscriptionStatus, setSubscriptionStatus] = useState('Not Subscribed');
+    const [subscribedFields, setSubscribedFields] = useState('leadgen');
 
     const [metaApps, setMetaApps] = useState<any[]>([]);
+    const [metaAccounts, setMetaAccounts] = useState<any[]>([]);
     const [loadingApps, setLoadingApps] = useState(true);
 
     const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ pageName?: boolean; pageId?: boolean; metaApp?: boolean; pageAccessToken?: boolean }>({});
 
     useEffect(() => {
-        const loadMetaApps = async () => {
+        const loadInitialData = async () => {
             try {
-                const res = await fetchMetaApps({ page: 1, page_size: 1000 });
-                setMetaApps(res.data);
+                const [appsRes, accountsRes] = await Promise.all([
+                    fetchMetaApps({ page: 1, page_size: 1000 }),
+                    fetchMetaAccounts(),
+                ]);
+                setMetaApps(appsRes.data);
+                setMetaAccounts(accountsRes);
             } catch (err) {
-                enqueueSnackbar('Failed to load Meta Apps list', { variant: 'error' });
+                enqueueSnackbar('Failed to load Meta integration reference data', { variant: 'error' });
             } finally {
                 setLoadingApps(false);
             }
         };
-        loadMetaApps();
+        loadInitialData();
     }, [enqueueSnackbar]);
 
     const handleSave = async () => {
@@ -119,11 +128,16 @@ export function MetaPagesCreateView() {
                 page_name: pageName.trim(),
                 page_id: pageId.trim(),
                 meta_app: metaApp,
+                meta_account: metaAccount || undefined,
+                category: category.trim() || undefined,
                 page_access_token: pageAccessToken.trim(),
                 long_lived_token: longLivedToken.trim() || undefined,
                 business_id: businessId.trim() || undefined,
                 webhook_enabled: webhookEnabled ? 1 : 0,
                 is_active: isActive ? 1 : 0,
+                is_connected: isConnected ? 1 : 0,
+                subscription_status: subscriptionStatus,
+                subscribed_fields: subscribedFields.trim() || undefined,
             });
             sessionStorage.setItem('meta_page_success_message', 'Meta Page created successfully.');
             router.push('/lead-integration/meta-pages');
@@ -173,7 +187,7 @@ export function MetaPagesCreateView() {
                 </Stack>
 
                 <Stack spacing={3}>
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
                         <FormControlLabel
                             control={
                                 <CustomSwitch
@@ -187,9 +201,22 @@ export function MetaPagesCreateView() {
                                     <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable this page configuration</Typography>
                                 </Stack>
                             }
-                            sx={{
-                                ml: 0.5
-                            }}
+                            sx={{ ml: 0.5 }}
+                        />
+                        <FormControlLabel
+                            control={
+                                <CustomSwitch
+                                    checked={isConnected}
+                                    onChange={(e) => setIsConnected(e.target.checked)}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 1.5 }}>Is Connected</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Mark page as connected to Meta</Typography>
+                                </Stack>
+                            }
+                            sx={{ ml: 0.5 }}
                         />
                         <FormControlLabel
                             control={
@@ -204,11 +231,10 @@ export function MetaPagesCreateView() {
                                     <Typography variant="caption" sx={{ color: 'text.secondary', pl: 1.5 }}>Enable webhooks for lead streams</Typography>
                                 </Stack>
                             }
-                            sx={{
-                                ml: 0.5
-                            }}
+                            sx={{ ml: 0.5 }}
                         />
                     </Box>
+
                     <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                         <TextField
                             fullWidth
@@ -230,7 +256,7 @@ export function MetaPagesCreateView() {
                         />
                     </Box>
 
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
                         <FormControl fullWidth required error={errors.metaApp}>
                             <InputLabel id="meta-app-label">Meta App</InputLabel>
                             <Select
@@ -245,8 +271,60 @@ export function MetaPagesCreateView() {
                                     </MenuItem>
                                 ))}
                             </Select>
-                            <FormHelperText>{errors.metaApp ? 'Meta App link is required' : 'Link to CRM Meta App integration'}</FormHelperText>
+                            <FormHelperText>{errors.metaApp ? 'Meta App link is required' : 'Link to CRM Meta App'}</FormHelperText>
                         </FormControl>
+
+                        <FormControl fullWidth>
+                            <InputLabel id="meta-account-label">Meta Account</InputLabel>
+                            <Select
+                                labelId="meta-account-label"
+                                value={metaAccount}
+                                label="Meta Account"
+                                onChange={(e) => setMetaAccount(e.target.value)}
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {metaAccounts.map((acc) => (
+                                    <MenuItem key={acc.name} value={acc.name}>
+                                        {acc.facebook_user_name || acc.facebook_user_id || acc.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Link to CRM Meta Account</FormHelperText>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            label="Category"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            helperText="Facebook Page category (e.g. Business, Retail)"
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
+                        <FormControl fullWidth>
+                            <InputLabel id="sub-status-label">Subscription Status</InputLabel>
+                            <Select
+                                labelId="sub-status-label"
+                                value={subscriptionStatus}
+                                label="Subscription Status"
+                                onChange={(e) => setSubscriptionStatus(e.target.value)}
+                            >
+                                {SUBSCRIPTION_STATUS_OPTIONS.map((st) => (
+                                    <MenuItem key={st} value={st}>{st}</MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Webhook subscription state</FormHelperText>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            label="Subscribed Fields"
+                            value={subscribedFields}
+                            onChange={(e) => setSubscribedFields(e.target.value)}
+                            helperText="Comma-separated subscribed fields (default: leadgen)"
+                        />
+
                         <TextField
                             fullWidth
                             label="Business ID"

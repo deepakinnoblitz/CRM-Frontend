@@ -2,7 +2,6 @@ import { useSnackbar } from 'notistack';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
@@ -160,12 +159,38 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
 
                                 {loadingAccount ? (
                                     <CircularProgress size={16} />
-                                ) : isConnected ? (
-                                    <Chip label="Connected" color="success" size="small" sx={{ fontWeight: 700, height: 22 }} />
-                                ) : isExpired ? (
-                                    <Chip label="Connection Expired" color="warning" size="small" sx={{ fontWeight: 700, height: 22 }} />
                                 ) : (
-                                    <Chip label="Not Connected" color="default" size="small" sx={{ fontWeight: 700, height: 22 }} />
+                                    <Box
+                                        sx={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.5,
+                                            fontWeight: 700,
+                                            fontSize: 11,
+                                            textTransform: 'uppercase',
+                                            borderRadius: '6px',
+                                            padding: '4px 10px',
+                                            ...(isConnected
+                                                ? {
+                                                    bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                    border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                    color: '#15803d',
+                                                }
+                                                : isExpired
+                                                ? {
+                                                    bgcolor: 'rgba(234, 179, 8, 0.15)',
+                                                    border: '1px solid rgba(234, 179, 8, 0.35)',
+                                                    color: '#a16207',
+                                                }
+                                                : {
+                                                    bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                    border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                    color: '#b91c1c',
+                                                }),
+                                        }}
+                                    >
+                                        {isConnected ? 'Connected' : isExpired ? 'Connection Expired' : 'Not Connected'}
+                                    </Box>
                                 )}
                             </Stack>
 

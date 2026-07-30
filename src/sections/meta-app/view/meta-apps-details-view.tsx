@@ -198,8 +198,52 @@ export function MetaAppsDetailsView() {
                         <DetailRow label="App Secret" value={app.app_secret ? '••••••••••••' : undefined} />
                         <DetailRow label="Verify Token" value={app.verify_token ? '••••••••••••' : undefined} />
                         <DetailRow label="Webhook Secret" value={app.webhook_secret ? '••••••••••••' : undefined} />
+                        <DetailRow label="OAuth Redirect URI" value={app.oauth_redirect_uri} mono />
                     </Box>
                 </Card>
+
+                {/* OAuth Redirect URI Card */}
+                {app.oauth_redirect_uri && (
+                    <Card sx={{ p: 3 }}>
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
+                            <Iconify icon={"solar:link-bold" as any} width={18} />
+                            <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
+                                OAuth Configuration
+                            </Typography>
+                        </Stack>
+                        <Box
+                            sx={{
+                                p: 2,
+                                borderRadius: 1.5,
+                                bgcolor: (t) => alpha(t.palette.grey[500], 0.04),
+                                border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.12)}`,
+                            }}
+                        >
+                            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', display: 'block', mb: 0.5 }}>
+                                OAuth Redirect URI
+                            </Typography>
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{ fontSize: 14, wordBreak: 'break-all' }}
+                                >
+                                    {app.oauth_redirect_uri}
+                                </Typography>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(app.oauth_redirect_uri || '');
+                                        enqueueSnackbar('OAuth Redirect URI copied to clipboard!', { variant: 'success' });
+                                    }}
+                                    sx={{ color: '#08a3cd' }}
+                                    title="Copy OAuth Redirect URI"
+                                >
+                                    <Iconify icon={"solar:copy-bold" as any} width={18} />
+                                </IconButton>
+                            </Stack>
+                        </Box>
+                    </Card>
+                )}
 
                 {/* Webhook URL Card */}
                 {app.webhook_url && (

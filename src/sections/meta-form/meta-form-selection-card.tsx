@@ -98,11 +98,19 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                 </Stack>
 
                 <Button
-                    variant="outlined"
+                    variant="contained"
                     onClick={handleSyncForms}
                     disabled={syncing}
-                    startIcon={syncing ? <CircularProgress size={16} /> : <Iconify icon={"mingcute:refresh-1-line" as any} />}
-                    sx={{ borderRadius: 1.5 }}
+                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} />}
+                    sx={{
+                        bgcolor: '#1877F2',
+                        color: '#ffffff',
+                        fontWeight: 700,
+                        px: 3,
+                        py: 1,
+                        borderRadius: 1.5,
+                        '&:hover': { bgcolor: '#166fe5' },
+                    }}
                 >
                     {syncing ? 'Syncing Forms...' : 'Sync Lead Forms'}
                 </Button>

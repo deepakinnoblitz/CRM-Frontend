@@ -19,6 +19,8 @@ export interface MetaForm {
     form_name: string;
     form_id: string;
     meta_page: string;
+    form_status?: string;
+    locale?: string;
     campaign_id?: string;
     campaign_name?: string;
     ad_set_id?: string;
@@ -29,6 +31,7 @@ export interface MetaForm {
     allow_duplicates?: number;
     duplicate_limit_by?: string;
     field_mappings?: MetaFieldMapping[];
+    questions_json?: string;
     creation?: string;
     modified?: string;
     owner?: string;
@@ -79,7 +82,7 @@ export async function fetchMetaForms(params: FetchMetaFormsParams) {
     const query = new URLSearchParams({
         doctype: 'CRM Meta Form',
         fields: JSON.stringify([
-            'name', 'form_name', 'form_id', 'meta_page',
+            'name', 'form_name', 'form_id', 'meta_page', 'form_status', 'locale',
             'campaign_id', 'campaign_name', 'ad_set_id', 'ad_set_name',
             'ad_id', 'ad_name', 'is_active', 'allow_duplicates',
             'duplicate_limit_by', 'creation', 'modified', 'owner',

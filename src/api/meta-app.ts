@@ -12,6 +12,7 @@ export interface MetaApp {
     app_secret?: string;
     verify_token?: string;
     webhook_url?: string;
+    oauth_redirect_uri?: string;
     graph_api_version?: string;
     business_manager_id?: string;
     app_status?: string;
@@ -69,7 +70,7 @@ export async function fetchMetaApps(params: FetchMetaAppsParams) {
     const query = new URLSearchParams({
         doctype: 'CRM Meta App',
         fields: JSON.stringify([
-            'name', 'app_name', 'app_id', 'webhook_url',
+            'name', 'app_name', 'app_id', 'webhook_url', 'oauth_redirect_uri',
             'graph_api_version', 'business_manager_id', 'app_status',
             'signature_validation', 'is_default', 'is_active',
             'creation', 'modified', 'owner',

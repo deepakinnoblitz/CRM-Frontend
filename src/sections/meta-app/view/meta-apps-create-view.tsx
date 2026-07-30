@@ -82,6 +82,8 @@ export function MetaAppsCreateView() {
     const [businessManagerId, setBusinessManagerId] = useState('');
     const [appStatus, setAppStatus] = useState('Development');
     const [webhookSecret, setWebhookSecret] = useState('');
+    const [oauthRedirectUri, setOauthRedirectUri] = useState('');
+    const [webhookUrl, setWebhookUrl] = useState('');
     const [signatureValidation, setSignatureValidation] = useState(true);
     const [isDefault, setIsDefault] = useState(false);
     const [isActive, setIsActive] = useState(true);
@@ -112,6 +114,8 @@ export function MetaAppsCreateView() {
                 business_manager_id: businessManagerId.trim() || undefined,
                 app_status: appStatus,
                 webhook_secret: webhookSecret.trim() || undefined,
+                oauth_redirect_uri: oauthRedirectUri.trim() || undefined,
+                webhook_url: webhookUrl.trim() || undefined,
                 signature_validation: signatureValidation ? 1 : 0,
                 is_default: isDefault ? 1 : 0,
                 is_active: isActive ? 1 : 0,
@@ -257,6 +261,23 @@ export function MetaAppsCreateView() {
                             value={webhookSecret}
                             onChange={(e) => setWebhookSecret(e.target.value)}
                             helperText="Used for HMAC-SHA256 hash validation"
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <TextField
+                            fullWidth
+                            label="OAuth Redirect URI"
+                            value={oauthRedirectUri}
+                            onChange={(e) => setOauthRedirectUri(e.target.value)}
+                            helperText="Callback URL used by Meta OAuth after Facebook login (leave blank for default)"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Webhook Callback URL"
+                            value={webhookUrl}
+                            onChange={(e) => setWebhookUrl(e.target.value)}
+                            helperText="Callback URL registered in Meta for webhook events (leave blank for default)"
                         />
                     </Box>
 
