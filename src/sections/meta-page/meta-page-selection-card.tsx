@@ -15,21 +15,23 @@ import Typography from '@mui/material/Typography';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { fetchMetaPagesFromGraphAPI, toggleMetaPageConnection } from 'src/api/meta-app';
+import { fetchMetaPagesFromGraphAPI, getConnectedMetaPages, toggleMetaPageConnection } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
 
 type MetaPageSelectionCardProps = {
     accountName?: string | null;
     isConnectedAccount: boolean;
+    onRefresh?: () => void;
 };
 
-export function MetaPageSelectionCard({ accountName, isConnectedAccount }: MetaPageSelectionCardProps) {
+export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefresh }: MetaPageSelectionCardProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
     const [pages, setPages] = useState<any[]>([]);
 
+    // Initial load: read from DB (fast, no Graph API call)
     const loadPages = useCallback(async () => {
         if (!isConnectedAccount) {
             setPages([]);
@@ -37,12 +39,12 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount }: MetaP
         }
         setLoading(true);
         try {
-            const res = await fetchMetaPagesFromGraphAPI(accountName || undefined);
+            const res = await getConnectedMetaPages(accountName || undefined);
             if (res?.pages) {
                 setPages(res.pages);
             }
         } catch (err: any) {
-            console.error('Failed to fetch Facebook Pages:', err);
+            console.error('Failed to load connected pages:', err);
         } finally {
             setLoading(false);
         }
@@ -58,7 +60,8 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount }: MetaP
             const res = await fetchMetaPagesFromGraphAPI(accountName || undefined);
             if (res?.pages) {
                 setPages(res.pages);
-                enqueueSnackbar(`Discovered ${res.total_pages} Facebook Pages`, { variant: 'success' });
+                const pageCount = res.pages.length;
+                enqueueSnackbar(`Synced ${pageCount} Facebook Page${pageCount === 1 ? '' : 's'} successfully`, { variant: 'success' });
             }
         } catch (err: any) {
             console.error('Sync failed:', err);
@@ -76,6 +79,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount }: MetaP
             );
             await toggleMetaPageConnection(pageName, nextStatus);
             enqueueSnackbar(`Page ${nextStatus ? 'connected' : 'disconnected'} successfully`, { variant: 'success' });
+            if (onRefresh) onRefresh();
         } catch (err: any) {
             console.error('Failed to toggle page:', err);
             enqueueSnackbar(err?.message || 'Failed to update page status', { variant: 'error' });

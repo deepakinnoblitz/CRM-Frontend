@@ -366,7 +366,7 @@ export const crmAndSalesNavData = [
     children: [
       {
         title: 'Meta Integration',
-        path: '/lead-integration/meta-apps',
+        path: '/lead-integration/account',
         icon: <FaMeta size={18} />,
         children: [
           { title: 'Connect Account', path: '/lead-integration/account' },

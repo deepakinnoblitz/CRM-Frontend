@@ -209,6 +209,14 @@ export async function fetchMetaPagesFromGraphAPI(accountName?: string) {
     return json.message;
 }
 
+export async function getConnectedMetaPages(accountName?: string) {
+    const url = `/api/method/company.company.crm_meta_page_api.get_connected_meta_pages${accountName ? `?account_name=${encodeURIComponent(accountName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to load connected pages'));
+    return json.message;
+}
+
 export async function toggleMetaPageConnection(pageName: string, isConnected: boolean) {
     const headers = await getAuthHeaders();
     const res = await frappeRequest('/api/method/company.company.crm_meta_page_api.toggle_meta_page_connection', {
