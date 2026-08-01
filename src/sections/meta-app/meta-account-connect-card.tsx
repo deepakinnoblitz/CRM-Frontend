@@ -213,11 +213,15 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
                     <Stack direction="row" spacing={1.5} alignItems="center">
                         {isConnected && (
                             <Button
-                                variant="outlined"
+                                variant="contained"
                                 color="error"
-                                size="small"
                                 onClick={() => setConfirmDisconnect(true)}
-                                sx={{ borderRadius: 1.5 }}
+                                sx={{
+                                    fontWeight: 700,
+                                    px: 3,
+                                    py: 1,
+                                    borderRadius: 1.5,
+                                }}
                             >
                                 Disconnect
                             </Button>

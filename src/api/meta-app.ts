@@ -230,9 +230,13 @@ export async function toggleMetaPageConnection(pageName: string, isConnected: bo
     return json.message;
 }
 
-// ----------------------------------------------------------------------
-// Phase 6 Meta Lead Form Discovery & Toggle Helpers
-// ----------------------------------------------------------------------
+export async function getConnectedMetaForms(pageName?: string) {
+    const url = `/api/method/company.company.crm_meta_form_api.get_connected_meta_forms${pageName ? `?page_name=${encodeURIComponent(pageName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to load Meta Lead Forms'));
+    return json.message;
+}
 
 export async function fetchMetaFormsFromGraphAPI(pageName?: string) {
     const url = `/api/method/company.company.crm_meta_form_api.fetch_meta_forms_from_graph_api${pageName ? `?page_name=${encodeURIComponent(pageName)}` : ''}`;
