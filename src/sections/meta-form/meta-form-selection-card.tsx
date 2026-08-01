@@ -16,6 +16,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useRouter } from 'src/routes/hooks';
+
 import { getConnectedMetaForms, fetchMetaFormsFromGraphAPI, toggleMetaFormConnection } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
@@ -41,6 +43,7 @@ type MetaFormSelectionCardProps = {
 };
 
 export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: MetaFormSelectionCardProps) {
+    const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
@@ -265,7 +268,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                                     variant="outlined"
                                                     color="primary"
                                                     startIcon={<Iconify icon={"solar:pen-bold" as any} />}
-                                                    onClick={() => window.open(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`, '_blank')}
+                                                    onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`)}
                                                     sx={{
                                                         whiteSpace: 'nowrap',
                                                         fontWeight: 600,

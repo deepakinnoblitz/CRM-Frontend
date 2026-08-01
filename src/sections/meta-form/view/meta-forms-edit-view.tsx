@@ -331,6 +331,14 @@ export function MetaFormsEditView() {
         }
     };
 
+    const handleGoBack = () => {
+        if (window.history.length > 1 && document.referrer) {
+            router.back();
+        } else {
+            router.push('/lead-integration/meta-account');
+        }
+    };
+
     if (loading) {
         return (
             <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -352,7 +360,7 @@ export function MetaFormsEditView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.back()}
+                        onClick={handleGoBack}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
