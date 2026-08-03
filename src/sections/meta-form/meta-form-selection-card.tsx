@@ -26,7 +26,6 @@ import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
-import { CustomSwitch } from 'src/sections/meta-page/view/meta-pages-edit-view';
 
 // ----------------------------------------------------------------------
 
@@ -304,12 +303,33 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                                 </Typography>
                                             </TableCell>
 
-                                            {/* Lead Sync Toggle */}
+                                            {/* Lead Sync */}
                                             <TableCell align="center">
-                                                <CustomSwitch
-                                                    checked={!!row.is_active}
-                                                    onChange={() => handleToggleForm(row.name, !!row.is_active)}
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        fontWeight: 700,
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        ...(row.is_active
+                                                            ? {
+                                                                bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                                color: '#15803d',
+                                                            }
+                                                            : {
+                                                                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                                color: '#b91c1c',
+                                                            }),
+                                                    }}
+                                                >
+                                                    {row.is_active ? 'ACTIVE' : 'INACTIVE'}
+                                                </Box>
                                             </TableCell>
 
                                             {/* Actions */}
