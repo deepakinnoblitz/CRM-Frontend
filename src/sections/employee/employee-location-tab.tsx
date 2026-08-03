@@ -33,6 +33,15 @@ import { getLocationLogs } from 'src/api/presence';
 
 import { Iconify } from 'src/components/iconify';
 
+const STATUS_DISPLAY_MAP: Record<string, string> = {
+  'Available': 'Available - Logged In',
+  'Busy': 'In Client Meeting',
+  'Do Not Disturb': 'Team Discussion',
+  'Break': 'Lunch Break',
+  'Away': 'Break',
+  'Offline': 'Offline - Logout',
+};
+
 interface LocationLog {
   name: string;
   employee: string;
@@ -608,7 +617,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
                         </TimelineSeparator>
                         <TimelineContent sx={{ pb: 2 }}>
                           <Typography variant="subtitle2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
-                            {log.source} ({log.status})
+                            {log.source} ({STATUS_DISPLAY_MAP[log.status || ''] || log.status})
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {fDateTime(log.logged_at)}
