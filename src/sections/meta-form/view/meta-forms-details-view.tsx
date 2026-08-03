@@ -21,6 +21,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { getMetaForm } from 'src/api/meta-form';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchMetaPages, getMetaPage } from 'src/api/meta-page';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -60,13 +61,34 @@ export function MetaFormsDetailsView() {
     const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_forms ? !!user?.permissions?.actions?.meta_forms?.edit : true;
 
     const [form, setForm] = useState<any>(null);
+    const [pageName, setPageName] = useState<string>('');
     const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
         if (id) {
             setFetching(true);
             getMetaForm(id)
-                .then(setForm)
+                .then(async (formData) => {
+                    setForm(formData);
+                    let resolvedPage = formData.meta_page || '';
+                    if (formData.meta_page) {
+                        try {
+                            const pagesRes = await fetchMetaPages({ page: 1, page_size: 1000 });
+                            const match = pagesRes.data.find(
+                                (p: any) => p.name === formData.meta_page || p.page_id === formData.meta_page || p.page_name === formData.meta_page
+                            );
+                            if (match?.page_name) {
+                                resolvedPage = match.page_name;
+                            } else {
+                                const pageDoc = await getMetaPage(formData.meta_page);
+                                if (pageDoc?.page_name) resolvedPage = pageDoc.page_name;
+                            }
+                        } catch (err) {
+                            console.error('Failed to resolve Meta Page name:', err);
+                        }
+                    }
+                    setPageName(resolvedPage);
+                })
                 .catch((err) => {
                     console.error('Failed to fetch Meta Form details:', err);
                     enqueueSnackbar('Failed to load Meta Form details.', { variant: 'error' });
@@ -180,7 +202,7 @@ export function MetaFormsDetailsView() {
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' } }}>
                         <DetailRow label="Form Name" value={form.form_name} />
                         <DetailRow label="Form ID" value={form.form_id} mono />
-                        <DetailRow label="Meta Page" value={form.meta_page} />
+                        <DetailRow label="Meta Page" value={pageName || form.meta_page} />
                         <DetailRow label="Form Status" value={form.form_status} />
                         <DetailRow label="Locale" value={form.locale} />
                         <DetailRow label="Duplicate limits filter" value={form.allow_duplicates ? form.duplicate_limit_by : 'No limits filter'} />

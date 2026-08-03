@@ -43,7 +43,7 @@ export default function MetaIntegrationView() {
     }, []);
 
     return (
-        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+        <DashboardContent maxWidth={false} sx={{ pt: 2, pb: 5, bgcolor: '#ffffff', minHeight: '100vh' }}>
             <Typography variant="h4" mb={3}>
                 Meta Integration Dashboard
             </Typography>

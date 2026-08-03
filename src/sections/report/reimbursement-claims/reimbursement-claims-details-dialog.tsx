@@ -83,6 +83,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
 
     if (!claim) return null;
 
+    const statusText = claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending');
+    const statusColor = (claim.paid === 1 || ['Approved', 'Paid'].includes(claim.workflow_state))
+        ? 'success'
+        : (['Rejected', 'Cancelled'].includes(claim.workflow_state) ? 'error' : 'warning');
+
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);
         setComment('');
@@ -170,8 +175,8 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
                 <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
                     <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>{claim.amount?.toLocaleString() || 0}
                 </Typography>
-                <Label variant="soft" color={claim.paid === 1 ? 'success' : 'warning'}>
-                    {claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')}
+                <Label variant="soft" color={statusColor}>
+                    {statusText}
                 </Label>
             </Stack>
         </Box>
@@ -236,7 +241,7 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
                                     }
                                     icon="solar:wad-of-money-bold"
                                 />
-                                <DetailItem label="Status" value={claim.paid === 1 ? 'Paid' : 'Pending'} icon="solar:info-circle-bold" />
+                                <DetailItem label="Status" value={statusText} icon="solar:info-circle-bold" />
                             </Box>
                         </Box>
 
