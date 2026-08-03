@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
@@ -255,16 +256,32 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
             </Card>
 
             <Dialog open={confirmDisconnect} onClose={() => setConfirmDisconnect(false)} maxWidth="xs" fullWidth>
-                <DialogTitle>Disconnect Facebook Account?</DialogTitle>
+                <DialogTitle
+                    sx={{
+                        m: 0,
+                        p: 2,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                        Disconnect Facebook Account?
+                    </Typography>
+                    <IconButton
+                        onClick={() => setConfirmDisconnect(false)}
+                        disabled={disconnecting}
+                        sx={{ color: (theme) => theme.palette.grey[500] }}
+                    >
+                        <Iconify icon="mingcute:close-line" width={20} />
+                    </IconButton>
+                </DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" color="text.secondary">
                         Disconnecting will disable real-time lead sync for all connected Facebook Pages. Your existing leads and audit logs will remain safe in Frappe CRM.
                     </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={() => setConfirmDisconnect(false)} disabled={disconnecting}>
-                        Cancel
-                    </Button>
                     <Button
                         variant="contained"
                         color="error"
