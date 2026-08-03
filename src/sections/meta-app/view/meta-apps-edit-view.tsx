@@ -86,6 +86,8 @@ export function MetaAppsEditView() {
     const [businessManagerId, setBusinessManagerId] = useState('');
     const [appStatus, setAppStatus] = useState('Development');
     const [webhookSecret, setWebhookSecret] = useState('');
+    const [oauthRedirectUri, setOauthRedirectUri] = useState('');
+    const [webhookUrl, setWebhookUrl] = useState('');
     const [signatureValidation, setSignatureValidation] = useState(true);
     const [isDefault, setIsDefault] = useState(false);
     const [isActive, setIsActive] = useState(true);
@@ -103,6 +105,8 @@ export function MetaAppsEditView() {
                     setGraphApiVersion(data.graph_api_version || 'v23.0');
                     setBusinessManagerId(data.business_manager_id || '');
                     setAppStatus(data.app_status || 'Development');
+                    setOauthRedirectUri(data.oauth_redirect_uri || '');
+                    setWebhookUrl(data.webhook_url || '');
                     setSignatureValidation(data.signature_validation !== 0);
                     setIsDefault(!!data.is_default);
                     setIsActive(data.is_active !== 0);
@@ -133,6 +137,8 @@ export function MetaAppsEditView() {
                 signature_validation: signatureValidation ? 1 : 0,
                 is_default: isDefault ? 1 : 0,
                 is_active: isActive ? 1 : 0,
+                oauth_redirect_uri: oauthRedirectUri.trim() || '',
+                webhook_url: webhookUrl.trim() || '',
             };
             if (appSecret.trim()) updateData.app_secret = appSecret.trim();
             if (verifyToken.trim()) updateData.verify_token = verifyToken.trim();
@@ -262,6 +268,23 @@ export function MetaAppsEditView() {
                             onChange={(e) => setWebhookSecret(e.target.value)}
                             helperText="Leave blank to keep existing value"
                             placeholder="••••••••"
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                        <TextField
+                            fullWidth
+                            label="OAuth Redirect URI"
+                            value={oauthRedirectUri}
+                            onChange={(e) => setOauthRedirectUri(e.target.value)}
+                            helperText="Callback URL used by Meta OAuth after Facebook login"
+                        />
+                        <TextField
+                            fullWidth
+                            label="Webhook Callback URL"
+                            value={webhookUrl}
+                            onChange={(e) => setWebhookUrl(e.target.value)}
+                            helperText="Callback URL registered in Meta for webhook events"
                         />
                     </Box>
 

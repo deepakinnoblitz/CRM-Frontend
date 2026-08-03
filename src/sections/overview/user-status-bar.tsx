@@ -276,7 +276,7 @@ export function UserStatusBar() {
                 setIsCheckingTimesheet(false);
             }
         }
-        const willTrackLocation = 
+        const willTrackLocation =
             enableLocationTracking && (
                 (newStatus === 'Offline' && trackOnLogout) ||
                 (statusName === 'Offline' && newStatus !== 'Offline' && (trackOnLogin || trackOnStatusChange)) ||
@@ -830,8 +830,8 @@ export function UserStatusBar() {
                 <DialogContent sx={{ px: 4, pt: 6, pb: 4, textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     {/* Centered Avatar with Ring */}
                     <Box sx={{ position: 'relative', display: 'inline-flex', mb: 3 }}>
-                              <IconButton
-                                sx={{
+                        <IconButton
+                            sx={{
                                 p: '2px',
                                 width: 90,
                                 height: 90,
@@ -848,9 +848,9 @@ export function UserStatusBar() {
                                     transform: 'scale(1.05)',
                                     boxShadow: `0 0 15px ${theme.palette.primary.main}40`,
                                 }
-                                }}
-                            >
-                                <Avatar
+                            }}
+                        >
+                            <Avatar
                                 src={userAvatar}
                                 alt={displayName}
                                 sx={{
@@ -862,10 +862,10 @@ export function UserStatusBar() {
                                     fontSize: '28px',
                                     border: `2px solid ${theme.palette.background.paper}`,
                                 }}
-                                >
+                            >
                                 {displayName.charAt(0).toUpperCase()}
-                                </Avatar>
-                            </IconButton>
+                            </Avatar>
+                        </IconButton>
                     </Box>
 
                     <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', mb: 1, letterSpacing: -0.5 }}>
@@ -1258,8 +1258,8 @@ export function UserStatusBar() {
                             },
                             {
                                 icon: pendingStatus === 'Offline' ? 'solar:logout-bold' : 'solar:login-bold',
-                                title: pendingStatus === 'Offline' 
-                                    ? 'Completing Logout' 
+                                title: pendingStatus === 'Offline'
+                                    ? 'Completing Logout'
                                     : (pendingStatus === 'Available' ? 'Completing Check-In' : 'Updating Status'),
                             },
                         ].map((item) => (

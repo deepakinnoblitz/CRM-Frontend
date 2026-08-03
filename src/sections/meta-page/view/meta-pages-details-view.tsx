@@ -169,6 +169,15 @@ export function MetaPagesDetailsView() {
                                 {page.is_active ? 'Active' : 'Inactive'}
                             </Typography>
                             <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                            <Iconify
+                                icon={(page.is_connected !== 0 ? 'eva:checkmark-circle-2-fill' : 'eva:close-circle-fill') as any}
+                                sx={{ color: page.is_connected !== 0 ? 'success.main' : 'text.disabled' }}
+                                width={16}
+                            />
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: page.is_connected !== 0 ? 'success.main' : 'text.disabled', fontSize: 13 }}>
+                                {page.is_connected !== 0 ? 'Connected' : 'Not Connected'}
+                            </Typography>
+                            <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
                             <Iconify 
                                 icon={(page.webhook_enabled ? 'eva:checkmark-circle-2-fill' : 'eva:close-circle-fill') as any} 
                                 sx={{ color: page.webhook_enabled ? 'success.main' : 'text.disabled' }} 
@@ -177,6 +186,17 @@ export function MetaPagesDetailsView() {
                             <Typography variant="body2" sx={{ fontWeight: 700, color: page.webhook_enabled ? 'success.main' : 'text.disabled', fontSize: 13 }}>
                                 Webhook {page.webhook_enabled ? 'Enabled' : 'Disabled'}
                             </Typography>
+                            {page.subscription_status && (
+                                <>
+                                    <Divider orientation="vertical" flexItem sx={{ height: 14, alignSelf: 'center', mx: 1.5 }} />
+                                    <Chip
+                                        label={page.subscription_status}
+                                        size="small"
+                                        color={page.subscription_status === 'Subscribed' ? 'success' : page.subscription_status === 'Failed' ? 'error' : 'default'}
+                                        sx={{ fontWeight: 700, fontSize: 10, borderRadius: '6px', height: 20 }}
+                                    />
+                                </>
+                            )}
                         </Stack>
                     </Stack>
                 </Stack>
@@ -210,7 +230,7 @@ export function MetaPagesDetailsView() {
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary', mb: 3 }}>
                         <Iconify icon={"logos:meta-icon" as any} width={18} />
                         <Typography variant="subtitle2" sx={{ textTransform: 'uppercase', letterSpacing: 0.2 }}>
-                            Page Credentials
+                            Page Credentials & Details
                         </Typography>
                     </Stack>
 
@@ -218,6 +238,11 @@ export function MetaPagesDetailsView() {
                         <DetailRow label="Page Name" value={page.page_name} />
                         <DetailRow label="Page ID" value={page.page_id} mono />
                         <DetailRow label="Meta App Link" value={page.meta_app} />
+                        <DetailRow label="Meta Account" value={page.meta_account} />
+                        <DetailRow label="Category" value={page.category} />
+                        <DetailRow label="Subscription Status" value={page.subscription_status} />
+                        <DetailRow label="Subscribed Fields" value={page.subscribed_fields} mono />
+                        <DetailRow label="Last Subscription Check" value={page.last_subscription_check ? new Date(page.last_subscription_check).toLocaleString() : undefined} />
                         <DetailRow label="Business ID" value={page.business_id} mono />
                     </Box>
                 </Card>

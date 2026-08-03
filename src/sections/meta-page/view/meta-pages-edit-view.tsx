@@ -10,6 +10,7 @@ import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import { styled } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
@@ -24,7 +25,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { fetchMetaApps } from 'src/api/meta-app';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getMetaPage, updateMetaPage } from 'src/api/meta-page';
+import { getMetaPage, updateMetaPage, fetchMetaAccounts } from 'src/api/meta-page';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -43,7 +44,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
             transform: 'translateX(18px)',
             color: '#fff',
             '& + .MuiSwitch-track': {
-                backgroundColor: '#08a3cd', // Match the #08a3cd theme color
+                backgroundColor: '#08a3cd',
                 opacity: 1,
                 border: 0,
             },
@@ -57,7 +58,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
     },
     '& .MuiSwitch-track': {
         borderRadius: 26 / 2,
-        backgroundColor: '#E5E7EB', // Light Gray
+        backgroundColor: '#E5E7EB',
         opacity: 1,
         transition: theme.transitions.create(['background-color'], {
             duration: 500,
@@ -65,9 +66,7 @@ export const CustomSwitch = styled((props: SwitchProps) => (
     },
 }));
 
-import { styled } from '@mui/material/styles';
-
-// ----------------------------------------------------------------------
+const SUBSCRIPTION_STATUS_OPTIONS = ['Subscribed', 'Not Subscribed', 'Failed'];
 
 export function MetaPagesEditView() {
     const { id } = useParams();
@@ -78,30 +77,41 @@ export function MetaPagesEditView() {
     const [pageName, setPageName] = useState('');
     const [pageId, setPageId] = useState('');
     const [metaApp, setMetaApp] = useState('');
+    const [metaAccount, setMetaAccount] = useState('');
+    const [category, setCategory] = useState('');
     const [pageAccessToken, setPageAccessToken] = useState('');
     const [longLivedToken, setLongLivedToken] = useState('');
     const [businessId, setBusinessId] = useState('');
     const [webhookEnabled, setWebhookEnabled] = useState(true);
     const [isActive, setIsActive] = useState(true);
+    const [isConnected, setIsConnected] = useState(true);
+    const [subscriptionStatus, setSubscriptionStatus] = useState('Not Subscribed');
+    const [subscribedFields, setSubscribedFields] = useState('leadgen');
+    const [lastSubscriptionCheck, setLastSubscriptionCheck] = useState('');
 
     const [metaApps, setMetaApps] = useState<any[]>([]);
+    const [metaAccounts, setMetaAccounts] = useState<any[]>([]);
     const [loadingApps, setLoadingApps] = useState(true);
 
     const { enqueueSnackbar } = useSnackbar();
     const [errors, setErrors] = useState<{ pageName?: boolean; pageId?: boolean; metaApp?: boolean }>({});
 
     useEffect(() => {
-        const loadMetaApps = async () => {
+        const loadInitialData = async () => {
             try {
-                const res = await fetchMetaApps({ page: 1, page_size: 1000 });
-                setMetaApps(res.data);
+                const [appsRes, accountsRes] = await Promise.all([
+                    fetchMetaApps({ page: 1, page_size: 1000 }),
+                    fetchMetaAccounts(),
+                ]);
+                setMetaApps(appsRes.data);
+                setMetaAccounts(accountsRes);
             } catch (err) {
-                enqueueSnackbar('Failed to load Meta Apps list', { variant: 'error' });
+                enqueueSnackbar('Failed to load Meta integration reference data', { variant: 'error' });
             } finally {
                 setLoadingApps(false);
             }
         };
-        loadMetaApps();
+        loadInitialData();
     }, [enqueueSnackbar]);
 
     useEffect(() => {
@@ -112,11 +122,17 @@ export function MetaPagesEditView() {
                     setPageName(data.page_name || '');
                     setPageId(data.page_id || '');
                     setMetaApp(data.meta_app || '');
+                    setMetaAccount(data.meta_account || '');
+                    setCategory(data.category || '');
                     setPageAccessToken(data.page_access_token || '');
                     setLongLivedToken(data.long_lived_token || '');
                     setBusinessId(data.business_id || '');
                     setWebhookEnabled(data.webhook_enabled !== 0);
                     setIsActive(data.is_active !== 0);
+                    setIsConnected(data.is_connected !== 0);
+                    setSubscriptionStatus(data.subscription_status || 'Not Subscribed');
+                    setSubscribedFields(data.subscribed_fields || 'leadgen');
+                    setLastSubscriptionCheck(data.last_subscription_check || '');
                 })
                 .catch(() => enqueueSnackbar('Failed to load Meta Page data.', { variant: 'error' }))
                 .finally(() => setLoading(false));
@@ -141,11 +157,16 @@ export function MetaPagesEditView() {
                 page_name: pageName.trim(),
                 page_id: pageId.trim(),
                 meta_app: metaApp,
+                meta_account: metaAccount || '',
+                category: category.trim() || '',
                 page_access_token: pageAccessToken.trim(),
                 long_lived_token: longLivedToken.trim() || '',
                 business_id: businessId.trim() || '',
                 webhook_enabled: webhookEnabled ? 1 : 0,
                 is_active: isActive ? 1 : 0,
+                is_connected: isConnected ? 1 : 0,
+                subscription_status: subscriptionStatus,
+                subscribed_fields: subscribedFields.trim() || '',
             };
 
             await updateMetaPage(id!, updateData);
@@ -205,7 +226,7 @@ export function MetaPagesEditView() {
                 </Stack>
 
                 <Stack spacing={3}>
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
                         <FormControlLabel
                             control={
                                 <CustomSwitch
@@ -217,6 +238,21 @@ export function MetaPagesEditView() {
                                 <Stack spacing={0.2}>
                                     <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Active</Typography>
                                     <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Enable this page configuration</Typography>
+                                </Stack>
+                            }
+                            sx={{ ml: 0.5 }}
+                        />
+                        <FormControlLabel
+                            control={
+                                <CustomSwitch
+                                    checked={isConnected}
+                                    onChange={(e) => setIsConnected(e.target.checked)}
+                                />
+                            }
+                            label={
+                                <Stack spacing={0.2}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, pl: 2 }}>Is Connected</Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', pl: 2 }}>Mark page as connected to Meta</Typography>
                                 </Stack>
                             }
                             sx={{ ml: 0.5 }}
@@ -237,6 +273,7 @@ export function MetaPagesEditView() {
                             sx={{ ml: 0.5 }}
                         />
                     </Box>
+
                     <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
                         <TextField
                             fullWidth
@@ -258,7 +295,7 @@ export function MetaPagesEditView() {
                         />
                     </Box>
 
-                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
                         <FormControl fullWidth required error={errors.metaApp}>
                             <InputLabel id="meta-app-label">Meta App</InputLabel>
                             <Select
@@ -275,6 +312,58 @@ export function MetaPagesEditView() {
                             </Select>
                             <FormHelperText>{errors.metaApp ? 'Meta App link is required' : ''}</FormHelperText>
                         </FormControl>
+
+                        <FormControl fullWidth>
+                            <InputLabel id="meta-account-label">Meta Account</InputLabel>
+                            <Select
+                                labelId="meta-account-label"
+                                value={metaAccount}
+                                label="Meta Account"
+                                onChange={(e) => setMetaAccount(e.target.value)}
+                            >
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {metaAccounts.map((acc) => (
+                                    <MenuItem key={acc.name} value={acc.name}>
+                                        {acc.facebook_user_name || acc.facebook_user_id || acc.name}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Link to CRM Meta Account</FormHelperText>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            label="Category"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            helperText="Facebook Page category"
+                        />
+                    </Box>
+
+                    <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr 1fr' } }}>
+                        <FormControl fullWidth>
+                            <InputLabel id="sub-status-label">Subscription Status</InputLabel>
+                            <Select
+                                labelId="sub-status-label"
+                                value={subscriptionStatus}
+                                label="Subscription Status"
+                                onChange={(e) => setSubscriptionStatus(e.target.value)}
+                            >
+                                {SUBSCRIPTION_STATUS_OPTIONS.map((st) => (
+                                    <MenuItem key={st} value={st}>{st}</MenuItem>
+                                ))}
+                            </Select>
+                            <FormHelperText>Webhook subscription state</FormHelperText>
+                        </FormControl>
+
+                        <TextField
+                            fullWidth
+                            label="Subscribed Fields"
+                            value={subscribedFields}
+                            onChange={(e) => setSubscribedFields(e.target.value)}
+                            helperText="Subscribed fields (e.g. leadgen)"
+                        />
+
                         <TextField
                             fullWidth
                             label="Business ID"

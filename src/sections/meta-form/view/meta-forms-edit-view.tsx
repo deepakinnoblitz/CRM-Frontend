@@ -116,6 +116,8 @@ export function MetaFormsEditView() {
     const [formName, setFormName] = useState('');
     const [formId, setFormId] = useState('');
     const [metaPage, setMetaPage] = useState('');
+    const [formStatus, setFormStatus] = useState('ACTIVE');
+    const [locale, setLocale] = useState('');
     
     // Tracking detail fields
     const [campaignId, setCampaignId] = useState('');
@@ -207,6 +209,8 @@ export function MetaFormsEditView() {
                     setFormName(data.form_name || '');
                     setFormId(data.form_id || '');
                     setMetaPage(data.meta_page || '');
+                    setFormStatus(data.form_status || 'ACTIVE');
+                    setLocale(data.locale || '');
                     setCampaignId(data.campaign_id || '');
                     setCampaignName(data.campaign_name || '');
                     setAdSetId(data.ad_set_id || '');
@@ -300,6 +304,8 @@ export function MetaFormsEditView() {
                 form_name: formName.trim(),
                 form_id: formId.trim(),
                 meta_page: metaPage,
+                form_status: (formStatus || '').trim(),
+                locale: (locale || '').trim(),
                 campaign_id: (campaignId || '').trim(),
                 campaign_name: (campaignName || '').trim(),
                 ad_set_id: (adSetId || '').trim(),
@@ -325,6 +331,14 @@ export function MetaFormsEditView() {
         }
     };
 
+    const handleGoBack = () => {
+        if (window.history.length > 1 && document.referrer) {
+            router.back();
+        } else {
+            router.push('/lead-integration/meta-account');
+        }
+    };
+
     if (loading) {
         return (
             <DashboardContent sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
@@ -346,7 +360,7 @@ export function MetaFormsEditView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.back()}
+                        onClick={handleGoBack}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
                     >
@@ -431,6 +445,30 @@ export function MetaFormsEditView() {
                                         helperText={errors.metaPage ? 'Meta Page is required' : ''}
                                     />
                                 )}
+                            />
+                            <FormControl fullWidth>
+                                <InputLabel id="form-status-label">Form Status</InputLabel>
+                                <Select
+                                    labelId="form-status-label"
+                                    value={formStatus}
+                                    label="Form Status"
+                                    onChange={(e) => setFormStatus(e.target.value)}
+                                >
+                                    <MenuItem value="ACTIVE">ACTIVE</MenuItem>
+                                    <MenuItem value="ARCHIVED">ARCHIVED</MenuItem>
+                                    <MenuItem value="DRAFT">DRAFT</MenuItem>
+                                    <MenuItem value="DELETED">DELETED</MenuItem>
+                                </Select>
+                            </FormControl>
+                        </Box>
+
+                        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
+                            <TextField
+                                fullWidth
+                                label="Locale"
+                                value={locale}
+                                onChange={(e) => setLocale(e.target.value)}
+                                helperText="Form locale (e.g. en_US, es_LA, hi_IN)"
                             />
                         </Box>
                         <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' } }}>
