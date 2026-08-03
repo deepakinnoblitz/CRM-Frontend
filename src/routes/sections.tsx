@@ -404,7 +404,7 @@ export const routesSection: RouteObject[] = [
         children: [
           {
             path: 'account',
-            element: <RolePermissionGuard actionKey="meta_apps"><MetaAccountPage /></RolePermissionGuard>,
+            element: <RolePermissionGuard actionKey="meta_account"><MetaAccountPage /></RolePermissionGuard>,
           },
           {
             path: 'meta-apps',
