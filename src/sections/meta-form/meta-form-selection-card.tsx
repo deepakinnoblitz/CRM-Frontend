@@ -138,7 +138,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                 <Stack spacing={0.5}>
                     <Typography variant="h6">Discovered Lead Ad Instant Forms</Typography>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        Choose which Instant Forms should automatically import leads into Frappe CRM.
+                        Choose which Instant Forms should automatically import leads into CRM.
                     </Typography>
                 </Stack>
 
@@ -146,14 +146,15 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                     variant="contained"
                     onClick={handleSyncForms}
                     disabled={syncing}
-                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} />}
+                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }}/>}
                     sx={{
                         bgcolor: '#1877F2',
                         color: '#ffffff',
                         fontWeight: 700,
-                        px: 3,
+                        px: 2,
                         py: 1,
                         borderRadius: 1.5,
+                        fontSize: 13,
                         '&:hover': { bgcolor: '#166fe5' },
                     }}
                 >
@@ -175,7 +176,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                 <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
                             </InputAdornment>
                         }
-                        sx={{ maxWidth: 360, width: 1, height: 40 }}
+                        sx={{ maxWidth: 360, width: 1, height: 50 }}
                     />
                 </Stack>
             )}
@@ -316,10 +317,10 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                                 <Button
                                                     size="small"
                                                     variant="contained"
-                                                    startIcon={<Iconify icon={"solar:pen-bold" as any} />}
+                                                    startIcon={<Iconify icon={"solar:pen-bold" as any} sx={{ width: 16, height: 16 }}/>}
                                                     onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`)}
                                                     sx={{
-                                                        bgcolor: '#1877F2',
+                                                        bgcolor: '#00ab71',
                                                         color: '#ffffff',
                                                         fontWeight: 700,
                                                         whiteSpace: 'nowrap',
@@ -327,7 +328,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                                         py: 0.75,
                                                         borderRadius: 1.5,
                                                         fontSize: 12,
-                                                        '&:hover': { bgcolor: '#166fe5' },
+                                                        '&:hover': { bgcolor: '#00ab71' },
                                                     }}
                                                 >
                                                     Mapping & Rules

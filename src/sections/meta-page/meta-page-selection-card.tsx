@@ -182,14 +182,15 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                     variant="contained"
                     onClick={handleSyncPages}
                     disabled={syncing}
-                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} />}
+                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }} />}
                     sx={{
                         bgcolor: '#1877F2',
                         color: '#ffffff',
                         fontWeight: 700,
-                        px: 3,
+                        px: 2,
                         py: 1,
                         borderRadius: 1.5,
+                        fontSize: 13,
                         '&:hover': { bgcolor: '#166fe5' },
                     }}
                 >
@@ -211,7 +212,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                                 <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
                             </InputAdornment>
                         }
-                        sx={{ maxWidth: 360, width: 1, height: 40 }}
+                        sx={{ maxWidth: 360, width: 1, height: 50 }}
                     />
                 </Stack>
             )}
