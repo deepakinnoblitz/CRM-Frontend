@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -50,7 +49,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
     const [forms, setForms] = useState<any[]>([]);
 
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
     const loadForms = useCallback(async () => {
         if (!isConnectedPage) {
@@ -238,12 +237,31 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
 
                                             {/* Status */}
                                             <TableCell align="center">
-                                                <Chip
-                                                    label={row.form_status || 'ACTIVE'}
-                                                    size="small"
-                                                    color={row.form_status === 'ACTIVE' ? 'success' : 'default'}
-                                                    variant="outlined"
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        fontWeight: 700,
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        ...(row.form_status === 'ACTIVE'
+                                                            ? {
+                                                                bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                                color: '#15803d',
+                                                            }
+                                                            : {
+                                                                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                                color: '#b91c1c',
+                                                            }),
+                                                    }}
+                                                >
+                                                    {row.form_status || 'ACTIVE'}
+                                                </Box>
                                             </TableCell>
 
                                             {/* Questions count */}
@@ -283,18 +301,6 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {paginatedForms.length < 5 && (
-                                        <>
-                                            {Array.from({ length: 5 - paginatedForms.length }).map((_, i) => (
-                                                <TableRow
-                                                    key={`empty-${i}`}
-                                                    sx={{ height: 68, '& td': { borderBottom: 'none' } }}
-                                                >
-                                                    <TableCell colSpan={7} />
-                                                </TableRow>
-                                            ))}
-                                        </>
-                                    )}
                                 </TableBody>
                             </Table>
                         </TableContainer>
@@ -310,7 +316,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                             setRowsPerPage(parseInt(e.target.value, 10));
                             setPage(0);
                         }}
-                        rowsPerPageOptions={[10, 25, 50]}
+                        rowsPerPageOptions={[5, 10, 25]}
                     />
                 </>
             )}

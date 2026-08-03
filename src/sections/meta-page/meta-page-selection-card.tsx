@@ -18,6 +18,7 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { updateMetaPage } from 'src/api/meta-page';
 import { fetchMetaPagesFromGraphAPI, getConnectedMetaPages, toggleMetaPageConnection } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
@@ -32,7 +33,8 @@ import { CustomSwitch } from 'src/sections/meta-page/view/meta-pages-edit-view';
 const TABLE_HEAD = [
     { id: 'page_name', label: 'Page Name' },
     { id: 'page_id', label: 'Page ID', width: 220 },
-    { id: 'category', label: 'Category' },
+    { id: 'is_active', label: 'Active', align: 'center' as const },
+    { id: 'is_connected_state', label: 'Connected', align: 'center' as const },
     { id: 'subscription_status', label: 'Webhook Subscription', align: 'center' as const },
     { id: 'is_connected', label: 'Sync Status', align: 'center' as const },
 ];
@@ -52,7 +54,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
 
     const [filterName, setFilterName] = useState('');
     const [page, setPage] = useState(0);
-    const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [rowsPerPage, setRowsPerPage] = useState(5);
 
     // Initial load: read from DB (fast, no Graph API call)
     const loadPages = useCallback(async () => {
@@ -106,6 +108,38 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
         } catch (err: any) {
             console.error('Failed to toggle page:', err);
             enqueueSnackbar(err?.message || 'Failed to update page status', { variant: 'error' });
+            loadPages();
+        }
+    };
+
+    const handleToggleActive = async (pageName: string, currentActive: boolean) => {
+        const nextActive = !currentActive;
+        try {
+            setPages((prev) =>
+                prev.map((p) => (p.name === pageName ? { ...p, is_active: nextActive ? 1 : 0 } : p))
+            );
+            await updateMetaPage(pageName, { is_active: nextActive ? 1 : 0 });
+            enqueueSnackbar(`Page ${nextActive ? 'activated' : 'deactivated'} successfully`, { variant: 'success' });
+            if (onRefresh) onRefresh();
+        } catch (err: any) {
+            console.error('Failed to toggle page active status:', err);
+            enqueueSnackbar(err?.message || 'Failed to update page active status', { variant: 'error' });
+            loadPages();
+        }
+    };
+
+    const handleToggleConnected = async (pageName: string, currentConnected: boolean) => {
+        const nextConnected = !currentConnected;
+        try {
+            setPages((prev) =>
+                prev.map((p) => (p.name === pageName ? { ...p, is_connected: nextConnected ? 1 : 0 } : p))
+            );
+            await updateMetaPage(pageName, { is_connected: nextConnected ? 1 : 0 });
+            enqueueSnackbar(`Page ${nextConnected ? 'connected' : 'disconnected'} successfully`, { variant: 'success' });
+            if (onRefresh) onRefresh();
+        } catch (err: any) {
+            console.error('Failed to toggle page connection status:', err);
+            enqueueSnackbar(err?.message || 'Failed to update page connection status', { variant: 'error' });
             loadPages();
         }
     };
@@ -269,9 +303,20 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                                                 </Typography>
                                             </TableCell>
 
-                                            {/* Category */}
-                                            <TableCell>
-                                                <Chip label={row.category || 'General'} size="small" variant="outlined" />
+                                            {/* Active Toggle */}
+                                            <TableCell align="center">
+                                                <CustomSwitch
+                                                    checked={!!row.is_active}
+                                                    onChange={() => handleToggleActive(row.name, !!row.is_active)}
+                                                />
+                                            </TableCell>
+
+                                            {/* Connected Toggle */}
+                                            <TableCell align="center">
+                                                <CustomSwitch
+                                                    checked={!!row.is_connected}
+                                                    onChange={() => handleToggleConnected(row.name, !!row.is_connected)}
+                                                />
                                             </TableCell>
 
                                             {/* Webhook Subscription Status */}
@@ -312,19 +357,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {notFound && <TableNoData colSpan={6} searchQuery={filterName} />}
-                                    {!notFound && paginatedPages.length < 5 && (
-                                        <>
-                                            {Array.from({ length: 5 - paginatedPages.length }).map((_, i) => (
-                                                <TableRow
-                                                    key={`empty-${i}`}
-                                                    sx={{ height: 68, '& td': { borderBottom: 'none' } }}
-                                                >
-                                                    <TableCell colSpan={6} />
-                                                </TableRow>
-                                            ))}
-                                        </>
-                                    )}
+                                    {notFound && <TableNoData colSpan={7} searchQuery={filterName} />}
                                 </TableBody>
                             </Table>
                         </TableContainer>
@@ -340,7 +373,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                             setRowsPerPage(parseInt(e.target.value, 10));
                             setPage(0);
                         }}
-                        rowsPerPageOptions={[10, 25, 50]}
+                        rowsPerPageOptions={[5, 10, 25]}
                     />
                 </>
             )}
