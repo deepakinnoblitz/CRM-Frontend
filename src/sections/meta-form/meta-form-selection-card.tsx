@@ -11,6 +11,8 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import OutlinedInput from '@mui/material/OutlinedInput';
+import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -20,6 +22,7 @@ import { useRouter } from 'src/routes/hooks';
 import { getConnectedMetaForms, fetchMetaFormsFromGraphAPI, toggleMetaFormConnection } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
+import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
@@ -48,6 +51,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
     const [syncing, setSyncing] = useState(false);
     const [forms, setForms] = useState<any[]>([]);
 
+    const [filterName, setFilterName] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -104,16 +108,25 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
         }
     };
 
-    const paginatedForms = forms.slice(
+    const filteredForms = forms.filter((item) => {
+        if (!filterName) return true;
+        const searchLower = filterName.toLowerCase().trim();
+        const formNameMatch = item.form_name?.toLowerCase().includes(searchLower);
+        const formIdMatch = item.form_id?.toString().toLowerCase().includes(searchLower);
+        return formNameMatch || formIdMatch;
+    });
+
+    const notFound = !loading && filteredForms.length === 0 && !!filterName;
+    const paginatedForms = filteredForms.slice(
         page * rowsPerPage,
         page * rowsPerPage + rowsPerPage
     );
 
     useEffect(() => {
-        if (page > 0 && page * rowsPerPage >= forms.length) {
+        if (page > 0 && page * rowsPerPage >= filteredForms.length) {
             setPage(0);
         }
-    }, [forms.length, page, rowsPerPage]);
+    }, [filteredForms.length, page, rowsPerPage]);
 
     if (!isConnectedPage) {
         return null;
@@ -148,6 +161,25 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                 </Button>
             </Stack>
 
+            {forms.length > 0 && (
+                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={2}>
+                    <OutlinedInput
+                        value={filterName}
+                        onChange={(e) => {
+                            setFilterName(e.target.value);
+                            setPage(0);
+                        }}
+                        placeholder="Search forms by name or ID..."
+                        startAdornment={
+                            <InputAdornment position="start">
+                                <Iconify width={20} icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                            </InputAdornment>
+                        }
+                        sx={{ maxWidth: 360, width: 1, height: 40 }}
+                    />
+                </Stack>
+            )}
+
             {loading ? (
                 <Stack alignItems="center" py={4}>
                     <CircularProgress size={28} />
@@ -164,7 +196,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                         <TableContainer sx={{ border: (t) => `1px solid ${t.palette.divider}`, borderRadius: 1 }}>
                             <Table sx={{ minWidth: 720 }}>
                                 <ProposalTableHead
-                                    rowCount={forms.length}
+                                    rowCount={filteredForms.length}
                                     numSelected={0}
                                     onSelectAllRows={() => { }}
                                     hideCheckbox
@@ -283,17 +315,19 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                             <TableCell align="center">
                                                 <Button
                                                     size="small"
-                                                    variant="outlined"
-                                                    color="primary"
+                                                    variant="contained"
                                                     startIcon={<Iconify icon={"solar:pen-bold" as any} />}
                                                     onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`)}
                                                     sx={{
+                                                        bgcolor: '#1877F2',
+                                                        color: '#ffffff',
+                                                        fontWeight: 700,
                                                         whiteSpace: 'nowrap',
-                                                        fontWeight: 600,
-                                                        px: 1.5,
-                                                        py: 0.5,
-                                                        borderRadius: 1,
+                                                        px: 2,
+                                                        py: 0.75,
+                                                        borderRadius: 1.5,
                                                         fontSize: 12,
+                                                        '&:hover': { bgcolor: '#166fe5' },
                                                     }}
                                                 >
                                                     Mapping & Rules
@@ -301,6 +335,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                                             </TableCell>
                                         </TableRow>
                                     ))}
+                                    {notFound && <TableNoData colSpan={7} searchQuery={filterName} />}
                                 </TableBody>
                             </Table>
                         </TableContainer>
@@ -308,7 +343,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
 
                     <TablePagination
                         component="div"
-                        count={forms.length}
+                        count={filteredForms.length}
                         page={page}
                         onPageChange={(e, newPage) => setPage(newPage)}
                         rowsPerPage={rowsPerPage}
