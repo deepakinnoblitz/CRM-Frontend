@@ -177,10 +177,12 @@ export function MetaFormsDetailsView() {
                         </Stack>
                     </Stack>
 
-                    <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' } }}>
+                    <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' } }}>
                         <DetailRow label="Form Name" value={form.form_name} />
                         <DetailRow label="Form ID" value={form.form_id} mono />
                         <DetailRow label="Meta Page" value={form.meta_page} />
+                        <DetailRow label="Form Status" value={form.form_status} />
+                        <DetailRow label="Locale" value={form.locale} />
                         <DetailRow label="Duplicate limits filter" value={form.allow_duplicates ? form.duplicate_limit_by : 'No limits filter'} />
                     </Box>
                 </Card>
