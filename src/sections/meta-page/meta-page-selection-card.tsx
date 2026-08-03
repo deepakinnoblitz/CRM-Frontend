@@ -12,21 +12,22 @@ import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import OutlinedInput from '@mui/material/OutlinedInput';
 import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { updateMetaPage } from 'src/api/meta-page';
-import { fetchMetaPagesFromGraphAPI, getConnectedMetaPages, toggleMetaPageConnection } from 'src/api/meta-app';
+import { useRouter } from 'src/routes/hooks';
+
+import { fetchMetaPagesFromGraphAPI, getConnectedMetaPages } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
 import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
-import { CustomSwitch } from 'src/sections/meta-page/view/meta-pages-edit-view';
 
 // ----------------------------------------------------------------------
 
@@ -37,6 +38,7 @@ const TABLE_HEAD = [
     { id: 'is_connected_state', label: 'Connected', align: 'center' as const },
     { id: 'subscription_status', label: 'Webhook Subscription', align: 'center' as const },
     { id: 'is_connected', label: 'Sync Status', align: 'center' as const },
+    { id: 'action', label: 'Actions', align: 'center' as const, width: 140 },
 ];
 
 type MetaPageSelectionCardProps = {
@@ -47,6 +49,7 @@ type MetaPageSelectionCardProps = {
 };
 
 export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefresh, refreshSignal }: MetaPageSelectionCardProps) {
+    const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
     const [syncing, setSyncing] = useState(false);
@@ -93,54 +96,6 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
             enqueueSnackbar(err?.message || 'Failed to sync Facebook Pages', { variant: 'error' });
         } finally {
             setSyncing(false);
-        }
-    };
-
-    const handleTogglePage = async (pageName: string, currentStatus: boolean) => {
-        const nextStatus = !currentStatus;
-        try {
-            setPages((prev) =>
-                prev.map((p) => (p.name === pageName ? { ...p, is_connected: nextStatus ? 1 : 0 } : p))
-            );
-            await toggleMetaPageConnection(pageName, nextStatus);
-            enqueueSnackbar(`Page ${nextStatus ? 'connected' : 'disconnected'} successfully`, { variant: 'success' });
-            if (onRefresh) onRefresh();
-        } catch (err: any) {
-            console.error('Failed to toggle page:', err);
-            enqueueSnackbar(err?.message || 'Failed to update page status', { variant: 'error' });
-            loadPages();
-        }
-    };
-
-    const handleToggleActive = async (pageName: string, currentActive: boolean) => {
-        const nextActive = !currentActive;
-        try {
-            setPages((prev) =>
-                prev.map((p) => (p.name === pageName ? { ...p, is_active: nextActive ? 1 : 0 } : p))
-            );
-            await updateMetaPage(pageName, { is_active: nextActive ? 1 : 0 });
-            enqueueSnackbar(`Page ${nextActive ? 'activated' : 'deactivated'} successfully`, { variant: 'success' });
-            if (onRefresh) onRefresh();
-        } catch (err: any) {
-            console.error('Failed to toggle page active status:', err);
-            enqueueSnackbar(err?.message || 'Failed to update page active status', { variant: 'error' });
-            loadPages();
-        }
-    };
-
-    const handleToggleConnected = async (pageName: string, currentConnected: boolean) => {
-        const nextConnected = !currentConnected;
-        try {
-            setPages((prev) =>
-                prev.map((p) => (p.name === pageName ? { ...p, is_connected: nextConnected ? 1 : 0 } : p))
-            );
-            await updateMetaPage(pageName, { is_connected: nextConnected ? 1 : 0 });
-            enqueueSnackbar(`Page ${nextConnected ? 'connected' : 'disconnected'} successfully`, { variant: 'success' });
-            if (onRefresh) onRefresh();
-        } catch (err: any) {
-            console.error('Failed to toggle page connection status:', err);
-            enqueueSnackbar(err?.message || 'Failed to update page connection status', { variant: 'error' });
-            loadPages();
         }
     };
 
@@ -303,20 +258,62 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                                                 </Typography>
                                             </TableCell>
 
-                                            {/* Active Toggle */}
+                                            {/* Active */}
                                             <TableCell align="center">
-                                                <CustomSwitch
-                                                    checked={!!row.is_active}
-                                                    onChange={() => handleToggleActive(row.name, !!row.is_active)}
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        fontWeight: 700,
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        ...(row.is_active
+                                                            ? {
+                                                                bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                                color: '#15803d',
+                                                            }
+                                                            : {
+                                                                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                                color: '#b91c1c',
+                                                            }),
+                                                    }}
+                                                >
+                                                    {row.is_active ? 'Active' : 'Inactive'}
+                                                </Box>
                                             </TableCell>
 
-                                            {/* Connected Toggle */}
+                                            {/* Connected */}
                                             <TableCell align="center">
-                                                <CustomSwitch
-                                                    checked={!!row.is_connected}
-                                                    onChange={() => handleToggleConnected(row.name, !!row.is_connected)}
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        fontWeight: 700,
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        ...(row.is_connected
+                                                            ? {
+                                                                bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                                color: '#15803d',
+                                                            }
+                                                            : {
+                                                                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                                color: '#b91c1c',
+                                                            }),
+                                                    }}
+                                                >
+                                                    {row.is_connected ? 'Connected' : 'Disconnected'}
+                                                </Box>
                                             </TableCell>
 
                                             {/* Webhook Subscription Status */}
@@ -348,16 +345,50 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                                                 </Box>
                                             </TableCell>
 
-                                            {/* Sync Status Toggle */}
+                                            {/* Sync Status */}
                                             <TableCell align="center">
-                                                <CustomSwitch
-                                                    checked={!!row.is_connected}
-                                                    onChange={() => handleTogglePage(row.name, !!row.is_connected)}
-                                                />
+                                                <Box
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: 0.5,
+                                                        fontWeight: 700,
+                                                        fontSize: 11,
+                                                        textTransform: 'uppercase',
+                                                        borderRadius: '6px',
+                                                        padding: '4px 10px',
+                                                        ...(row.is_connected
+                                                            ? {
+                                                                bgcolor: 'rgba(34, 197, 94, 0.15)',
+                                                                border: '1px solid rgba(34, 197, 94, 0.35)',
+                                                                color: '#15803d',
+                                                            }
+                                                            : {
+                                                                bgcolor: 'rgba(239, 68, 68, 0.15)',
+                                                                border: '1px solid rgba(239, 68, 68, 0.35)',
+                                                                color: '#b91c1c',
+                                                            }),
+                                                    }}
+                                                >
+                                                    {row.is_connected ? 'Active' : 'Inactive'}
+                                                </Box>
+                                            </TableCell>
+
+                                            {/* Actions */}
+                                            <TableCell align="center">
+                                                <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                                                    <IconButton
+                                                        onClick={() => router.push(`/lead-integration/meta-pages/${encodeURIComponent(row.name)}/edit`)}
+                                                        sx={{ color: 'primary.main' }}
+                                                        title="Edit"
+                                                    >
+                                                        <Iconify icon="solar:pen-bold" />
+                                                    </IconButton>
+                                                </Box>
                                             </TableCell>
                                         </TableRow>
                                     ))}
-                                    {notFound && <TableNoData colSpan={7} searchQuery={filterName} />}
+                                    {notFound && <TableNoData colSpan={8} searchQuery={filterName} />}
                                 </TableBody>
                             </Table>
                         </TableContainer>
