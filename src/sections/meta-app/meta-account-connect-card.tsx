@@ -278,7 +278,7 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
                 </DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" color="text.secondary">
-                        Disconnecting will disable real-time lead sync for all connected Facebook Pages. Your existing leads and audit logs will remain safe in Frappe CRM.
+                        Disconnecting will disable real-time lead sync for all connected Facebook Pages. Your existing leads and audit logs will remain safe in CRM.
                     </Typography>
                 </DialogContent>
                 <DialogActions>
