@@ -55,10 +55,10 @@ export default function MetaIntegrationView() {
 
                 {/* 2. Privyr-style Discover & Select Facebook Pages */}
                 <MetaPageSelectionCard
-                    key={`pages-${refreshSignal}`}
                     accountName={accountName}
                     isConnectedAccount={isConnected}
                     onRefresh={handleRefreshAll}
+                    refreshSignal={refreshSignal}
                 />
 
                 {/* 3. Privyr-style Discover & Select Meta Lead Forms */}
