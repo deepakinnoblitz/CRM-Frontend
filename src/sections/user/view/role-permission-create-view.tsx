@@ -520,6 +520,11 @@ export const isActionAllowed = (moduleId: string, screenId: string, key: string)
         return key === 'view_permission' || key === 'add_permission';
     }
 
+    // Meta Account only has View and Add permissions (no Edit, Delete, Export, Import)
+    if (mod === 'meta_account') {
+        return key === 'view_permission';
+    }
+
     // My Timesheet does not have Delete permission
     if (scr === 'my timesheet' && key === 'delete_permission') {
         return false;
