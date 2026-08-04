@@ -456,6 +456,7 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
         if (lower === 'company expenses') return 'expense_tracker';
         if (lower === 'expense tracker') return 'crm_expenses';
         if (lower === 'expenses') return 'expense_tracker'; // HR parent fallback
+        if (lower === 'document generator') return 'hr_document_templates'; // HR parent fallback
         if (lower === 'asset list') return 'asset_list';
         if (lower === 'asset assignments') return 'asset_assignments';
         if (lower === 'asset requests') return 'asset_requests';

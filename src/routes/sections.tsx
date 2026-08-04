@@ -346,10 +346,10 @@ export const routesSection: RouteObject[] = [
       {
         path: 'hr-document-generation',
         children: [
-          { index: true, element: <HRDocumentGenerationListPage /> },
-          { path: 'new', element: <HRDocumentGenerationCreatePage /> },
-          { path: ':id/edit', element: <HRDocumentGenerationEditPage /> },
-          { path: ':id/view', element: <HRDocumentGenerationDetailsPage /> },
+          { index: true, element: <RolePermissionGuard actionKey="document_generation"><HRDocumentGenerationListPage /></RolePermissionGuard> },
+          { path: 'new', element: <RolePermissionGuard actionKey="document_generation"><HRDocumentGenerationCreatePage /></RolePermissionGuard> },
+          { path: ':id/edit', element: <RolePermissionGuard actionKey="document_generation"><HRDocumentGenerationEditPage /></RolePermissionGuard> },
+          { path: ':id/view', element: <RolePermissionGuard actionKey="document_generation"><HRDocumentGenerationDetailsPage /></RolePermissionGuard> },
         ],
       },
       {
