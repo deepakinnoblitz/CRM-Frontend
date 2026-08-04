@@ -21,8 +21,9 @@ import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { login } from 'src/api/auth';
-import { getMetaPage } from 'src/api/meta-page';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchMetaApps, getMetaApp } from 'src/api/meta-app';
+import { getMetaPage, fetchMetaAccounts } from 'src/api/meta-page';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -64,6 +65,8 @@ export function MetaPagesDetailsView() {
 
     const [page, setPage] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
+    const [appName, setAppName] = useState<string>('');
+    const [accountDisplayName, setAccountDisplayName] = useState<string>('');
 
     const [verifyDialogOpen, setVerifyDialogOpen] = useState(false);
     const [password, setPassword] = useState('');
@@ -107,7 +110,42 @@ export function MetaPagesDetailsView() {
         if (id) {
             setFetching(true);
             getMetaPage(id)
-                .then(setPage)
+                .then(async (pageData) => {
+                    setPage(pageData);
+
+                    const [appsRes, accountsRes] = await Promise.allSettled([
+                        fetchMetaApps({ page: 1, page_size: 1000 }),
+                        fetchMetaAccounts(),
+                    ]);
+
+                    const apps = appsRes.status === 'fulfilled' ? appsRes.value.data : [];
+                    const accounts = accountsRes.status === 'fulfilled' ? accountsRes.value : [];
+
+                    // Resolve Meta App Link Name
+                    let resolvedApp = pageData.meta_app || '';
+                    if (pageData.meta_app) {
+                        const match = apps.find((a: any) => a.name === pageData.meta_app || a.app_id === pageData.meta_app || a.app_name === pageData.meta_app);
+                        if (match?.app_name) {
+                            resolvedApp = match.app_name;
+                        } else {
+                            try {
+                                const appDoc = await getMetaApp(pageData.meta_app);
+                                if (appDoc?.app_name) resolvedApp = appDoc.app_name;
+                            } catch { /* fallback to raw id */ }
+                        }
+                    }
+                    setAppName(resolvedApp);
+
+                    // Resolve Meta Account Name
+                    let resolvedAccount = pageData.meta_account || '';
+                    if (pageData.meta_account) {
+                        const match = accounts.find((acc: any) => acc.name === pageData.meta_account || acc.facebook_user_id === pageData.meta_account || acc.facebook_user_name === pageData.meta_account);
+                        if (match) {
+                            resolvedAccount = match.facebook_user_name || match.facebook_user_id || match.name;
+                        }
+                    }
+                    setAccountDisplayName(resolvedAccount);
+                })
                 .catch((err) => {
                     console.error('Failed to fetch Meta Page:', err);
                     enqueueSnackbar('Failed to load Meta Page details.', { variant: 'error' });
@@ -237,8 +275,8 @@ export function MetaPagesDetailsView() {
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' } }}>
                         <DetailRow label="Page Name" value={page.page_name} />
                         <DetailRow label="Page ID" value={page.page_id} mono />
-                        <DetailRow label="Meta App Link" value={page.meta_app} />
-                        <DetailRow label="Meta Account" value={page.meta_account} />
+                        <DetailRow label="Meta App Link" value={appName || page.meta_app} />
+                        <DetailRow label="Meta Account" value={accountDisplayName || page.meta_account} />
                         <DetailRow label="Category" value={page.category} />
                         <DetailRow label="Subscription Status" value={page.subscription_status} />
                         <DetailRow label="Subscribed Fields" value={page.subscribed_fields} mono />
