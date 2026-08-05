@@ -127,7 +127,7 @@ export function EmployeeEvaluationEventTableRow({
           <IconButton size="small" onClick={onView} sx={{ color: 'info.main' }}>
             <Iconify icon="solar:eye-bold" />
           </IconButton>
-          {!hideActions && (
+          {!hideActions && docstatus !== 1 && (
             <IconButton size="small" onClick={onDelete} sx={{ color: 'error.main' }}>
               <Iconify icon="solar:trash-bin-trash-bold" />
             </IconButton>
