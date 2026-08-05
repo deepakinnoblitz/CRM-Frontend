@@ -76,34 +76,40 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
             setForms([]);
 
             const loadData = async () => {
-                setLoadingPages(true);
-                try {
-                    const res = await previewGraphApiPages(accountName || undefined);
-                    const fetchedPages = res?.pages || [];
-                    setPages(fetchedPages);
+                if (initialStep === 2) {
+                    setLoadingForms(true);
+                    setLoadingPages(true);
+                    try {
+                        const [pageRes, formRes] = await Promise.all([
+                            previewGraphApiPages(accountName || undefined).catch(() => ({ pages: [] })),
+                            previewGraphApiForms(undefined).catch(() => ({ forms: [] }))
+                        ]);
 
-                    // Pre-select pages
-                    const allPageIds = fetchedPages.map((p: any) => p.page_id);
-                    setSelectedPageIds(allPageIds);
+                        const fetchedPages = pageRes?.pages || [];
+                        setPages(fetchedPages);
+                        setSelectedPageIds(fetchedPages.map((p: any) => p.page_id));
 
-                    // If starting directly on Step 2 (Forms view), fetch forms immediately
-                    if (initialStep === 2) {
-                        setLoadingForms(true);
-                        try {
-                            const formRes = await previewGraphApiForms(fetchedPages && fetchedPages.length > 0 ? fetchedPages : undefined);
-                            const fetchedForms = formRes?.forms || [];
-                            setForms(fetchedForms);
-                            setSelectedFormIds(fetchedForms.map((f: any) => f.form_id));
-                        } catch (fErr) {
-                            console.error('Failed to preview forms:', fErr);
-                        } finally {
-                            setLoadingForms(false);
-                        }
+                        const fetchedForms = formRes?.forms || [];
+                        setForms(fetchedForms);
+                        setSelectedFormIds(fetchedForms.map((f: any) => f.form_id));
+                    } catch (err) {
+                        console.error('Failed to preview data:', err);
+                    } finally {
+                        setLoadingForms(false);
+                        setLoadingPages(false);
                     }
-                } catch (err) {
-                    console.error('Failed to preview pages:', err);
-                } finally {
-                    setLoadingPages(false);
+                } else {
+                    setLoadingPages(true);
+                    try {
+                        const res = await previewGraphApiPages(accountName || undefined);
+                        const fetchedPages = res?.pages || [];
+                        setPages(fetchedPages);
+                        setSelectedPageIds(fetchedPages.map((p: any) => p.page_id));
+                    } catch (err) {
+                        console.error('Failed to preview pages:', err);
+                    } finally {
+                        setLoadingPages(false);
+                    }
                 }
             };
             loadData();
@@ -239,53 +245,92 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
             }}
         >
             {/* Wizard Dialog Header */}
-            <DialogTitle sx={{ pb: 1 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between">
-                    <Stack spacing={0.5}>
-                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                            {activeStep === 1 ? 'Select Facebook Pages' : 'Select Lead Forms'}
-                        </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {activeStep === 1
-                                ? 'Choose the Facebook Pages you want to synchronize with CRM.'
-                                : 'Choose which Lead Forms should be imported into CRM.'}
-                        </Typography>
+            <DialogTitle sx={{ pb: 1, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <Stack spacing={2}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between">
+                        <Stack spacing={0.5}>
+                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                                {activeStep === 1 ? 'Select Facebook Pages' : 'Select Lead Forms'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {activeStep === 1
+                                    ? 'Choose the Facebook Pages you want to synchronize with CRM.'
+                                    : 'Choose which Lead Forms should be imported into CRM.'}
+                            </Typography>
+                        </Stack>
                     </Stack>
-                    <Box
-                        sx={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            px: 1.75,
-                            py: 0.75,
-                            borderRadius: '20px',
-                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
-                            color: 'primary.main',
-                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
-                            fontSize: '0.75rem',
-                            fontWeight: 700,
-                        }}
-                    >
-                        <Box
-                            sx={{
-                                width: 7,
-                                height: 7,
-                                borderRadius: '50%',
-                                bgcolor: 'primary.main',
-                            }}
-                        />
-                        <Typography
-                            component="span"
-                            sx={{
-                                fontSize: '0.75rem',
-                                fontWeight: 700,
-                                color: 'primary.main',
-                                textTransform: 'none',
-                                lineHeight: 1,
-                            }}
-                        >
-                            Step {activeStep} of 2
-                        </Typography>
+
+                    {/* Horizontal Visual Stepper */}
+                    <Box sx={{ width: '100%', pt: 1, pb: 0.5 }}>
+                        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0} sx={{ maxWidth: 460, mx: 'auto' }}>
+                            {/* Step 1 Node */}
+                            <Stack alignItems="center" spacing={0.75} sx={{ minWidth: 120 }}>
+                                <Box
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: activeStep >= 1 ? '#00b894' : 'action.disabledBackground',
+                                        color: '#fff',
+                                        boxShadow: activeStep >= 1 ? '0 4px 10px rgba(0,184,148,0.3)' : 'none',
+                                        transition: 'all 0.3s ease',
+                                    }}
+                                >
+                                    <Iconify icon="eva:checkmark-fill" width={20} />
+                                </Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.825rem', color: activeStep >= 1 ? 'text.primary' : 'text.disabled' }}>
+                                    Step 1
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.725rem' }}>
+                                    Facebook Pages
+                                </Typography>
+                            </Stack>
+
+                            {/* Connecting Progress Line */}
+                            <Box
+                                sx={{
+                                    flexGrow: 1,
+                                    height: 3,
+                                    mb: 4,
+                                    bgcolor: activeStep === 2 ? '#00b894' : 'divider',
+                                    borderRadius: 1,
+                                    transition: 'all 0.3s ease',
+                                }}
+                            />
+
+                            {/* Step 2 Node */}
+                            <Stack alignItems="center" spacing={0.75} sx={{ minWidth: 120 }}>
+                                <Box
+                                    sx={{
+                                        width: 36,
+                                        height: 36,
+                                        borderRadius: '10px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        bgcolor: activeStep === 2 ? '#00b894' : 'action.disabledBackground',
+                                        color: activeStep === 2 ? '#fff' : 'text.disabled',
+                                        boxShadow: activeStep === 2 ? '0 4px 10px rgba(0,184,148,0.3)' : 'none',
+                                        transition: 'all 0.3s ease',
+                                    }}
+                                >
+                                    {activeStep === 2 ? (
+                                        <Iconify icon="eva:checkmark-fill" width={20} />
+                                    ) : (
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>2</Typography>
+                                    )}
+                                </Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.825rem', color: activeStep === 2 ? 'text.primary' : 'text.disabled' }}>
+                                    Step 2
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.725rem' }}>
+                                    Lead Forms
+                                </Typography>
+                            </Stack>
+                        </Stack>
                     </Box>
                 </Stack>
             </DialogTitle>
@@ -484,7 +529,6 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                             <TableCell sx={{ fontWeight: 700 }}>Form ID</TableCell>
                                             <TableCell sx={{ fontWeight: 700 }}>Parent Page</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 700 }}>Active</TableCell>
-                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Total Leads</TableCell>
                                             <TableCell align="center" sx={{ fontWeight: 700 }}>Existing</TableCell>
                                         </TableRow>
                                     </TableHead>
@@ -548,9 +592,6 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                                             >
                                                                 {row.is_active ? 'Active' : 'Inactive'}
                                                             </Label>
-                                                        </TableCell>
-                                                        <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                                            {row.leads_count || 0}
                                                         </TableCell>
                                                         <TableCell align="center">
                                                             <Label
