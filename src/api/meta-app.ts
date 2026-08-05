@@ -266,12 +266,12 @@ export async function previewGraphApiPages(accountName?: string) {
     return json.message;
 }
 
-export async function previewGraphApiForms(selectedPages: any[]) {
+export async function previewGraphApiForms(selectedPages?: any[]) {
     const headers = await getAuthHeaders();
     const res = await frappeRequest('/api/method/company.company.crm_meta_sync_wizard_api.preview_graph_api_forms', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ selected_pages: JSON.stringify(selectedPages) }),
+        body: JSON.stringify({ selected_pages: selectedPages ? JSON.stringify(selectedPages) : undefined }),
     });
     const json = await res.json();
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to fetch Lead Forms for review'));
