@@ -6,6 +6,7 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
@@ -23,8 +24,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { previewGraphApiPages, previewGraphApiForms, importSelectedPagesAndForms } from 'src/api/meta-app';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 
 // ----------------------------------------------------------------------
 
@@ -56,10 +60,10 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
 
     // Pagination
     const [pageNumber1, setPageNumber1] = useState(0);
-    const [rowsPerPage1, setRowsPerPage1] = useState(5);
+    const [rowsPerPage1, setRowsPerPage1] = useState(10);
 
     const [pageNumber2, setPageNumber2] = useState(0);
-    const [rowsPerPage2, setRowsPerPage2] = useState(5);
+    const [rowsPerPage2, setRowsPerPage2] = useState(10);
 
     // Fetch Pages/Forms on Dialog open
     useEffect(() => {
@@ -222,7 +226,18 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="lg"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.customShadows.z24,
+                },
+            }}
+        >
             {/* Wizard Dialog Header */}
             <DialogTitle sx={{ pb: 1 }}>
                 <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -236,13 +251,42 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                 : 'Choose which Lead Forms should be imported into CRM.'}
                         </Typography>
                     </Stack>
-                    <Chip
-                        label={`Step ${activeStep} of 2`}
-                        color="primary"
-                        variant="filled"
-                        size="small"
-                        sx={{ fontWeight: 600 }}
-                    />
+                    <Box
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            px: 1.75,
+                            py: 0.75,
+                            borderRadius: '20px',
+                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                            color: 'primary.main',
+                            border: (theme) => `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                width: 7,
+                                height: 7,
+                                borderRadius: '50%',
+                                bgcolor: 'primary.main',
+                            }}
+                        />
+                        <Typography
+                            component="span"
+                            sx={{
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                color: 'primary.main',
+                                textTransform: 'none',
+                                lineHeight: 1,
+                            }}
+                        >
+                            Step {activeStep} of 2
+                        </Typography>
+                    </Box>
                 </Stack>
             </DialogTitle>
 
@@ -273,39 +317,52 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                         </Stack>
 
                         {/* Pages Table */}
-                        <TableContainer sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1.5, minHeight: 300, position: 'relative' }}>
-                            {loadingPages ? (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
-                                    <CircularProgress size={36} />
-                                    <Typography variant="body2" color="text.secondary">Fetching Facebook Pages from Meta...</Typography>
-                                </Box>
-                            ) : paginatedPages.length === 0 ? (
-                                <Box sx={{ py: 8, textAlign: 'center' }}>
-                                    <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 600 }}>No Facebook Pages Found</Typography>
-                                    <Typography variant="body2" color="text.disabled">Make sure your Facebook account has admin access to Facebook Pages.</Typography>
-                                </Box>
-                            ) : (
-                                <Scrollbar>
-                                    <Table size="medium" sx={{ minWidth: 680 }}>
-                                        <TableHead>
-                                            <TableRow sx={{ bgcolor: (theme) => theme.palette.background.neutral }}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox
-                                                        indeterminate={isSomePagesSelected}
-                                                        checked={isAllPagesSelected}
-                                                        onChange={handleToggleSelectAllPages}
-                                                    />
+                        <TableContainer sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1.5, minHeight: 350, position: 'relative' }}>
+                            <Scrollbar>
+                                <Table size="medium" sx={{ minWidth: 680 }}>
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: (theme) => theme.palette.background.neutral }}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    indeterminate={isSomePagesSelected}
+                                                    checked={isAllPagesSelected}
+                                                    onChange={handleToggleSelectAllPages}
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Page Name</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Page ID</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Active</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Connected</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Webhook</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Existing</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {loadingPages ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} sx={{ borderBottom: 'none' }}>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 250, py: 6, gap: 2 }}>
+                                                        <CircularProgress size={36} />
+                                                        <Typography variant="body2" color="text.secondary">Fetching Facebook Pages from Meta...</Typography>
+                                                    </Box>
                                                 </TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Page Name</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Page ID</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Active</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Connected</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Webhook</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Existing</TableCell>
                                             </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {paginatedPages.map((row) => {
+                                        ) : paginatedPages.length === 0 ? (
+                                            pageFilter ? (
+                                                <TableNoData colSpan={7} searchQuery={pageFilter} sx={{ '& td': { py: 8, borderBottom: 'none' } }} />
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={7} sx={{ p: 0, py: 8, borderBottom: 'none' }}>
+                                                        <EmptyContent
+                                                            icon={"logos:meta-icon" as any}
+                                                            title="No Facebook Pages Found"
+                                                            description="Make sure your Facebook account has admin access to Facebook Pages."
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        ) : (
+                                            paginatedPages.map((row) => {
                                                 const isSelected = selectedPageIds.includes(row.page_id);
                                                 return (
                                                     <TableRow
@@ -313,7 +370,10 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                                         hover
                                                         selected={isSelected}
                                                         onClick={() => handleTogglePage(row.page_id)}
-                                                        sx={{ cursor: 'pointer' }}
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                                                        }}
                                                     >
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} />
@@ -324,48 +384,48 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                                                 <Typography variant="subtitle2">{row.page_name}</Typography>
                                                             </Stack>
                                                         </TableCell>
-                                                        <TableCell sx={{ fontFamily: 'monospace', color: 'text.secondary', fontSize: '13px' }}>
+                                                        <TableCell sx={{ color: 'text.secondary', fontSize: '13px' }}>
                                                             {row.page_id}
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.is_active ? 'Active' : 'Inactive'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.is_active ? 'success' : 'default'}
-                                                                size="small"
-                                                                variant="filled"
-                                                            />
+                                                            >
+                                                                {row.is_active ? 'Active' : 'Inactive'}
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.is_connected ? 'Connected' : 'Not Connected'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.is_connected ? 'info' : 'default'}
-                                                                size="small"
-                                                                variant="filled"
-                                                            />
+                                                            >
+                                                                {row.is_connected ? 'Connected' : 'Not Connected'}
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.subscription_status || 'Unsubscribed'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.subscription_status === 'Subscribed' ? 'success' : 'warning'}
-                                                                size="small"
-                                                                variant="filled"
-                                                            />
+                                                            >
+                                                                {row.subscription_status || 'Unsubscribed'}
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.is_existing ? 'Already Synced' : 'New Page'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.is_existing ? 'default' : 'primary'}
-                                                                size="small"
-                                                                variant={row.is_existing ? 'outlined' : 'filled'}
-                                                            />
+                                                            >
+                                                                {row.is_existing ? 'Already Synced' : 'New Page'}
+                                                            </Label>
                                                         </TableCell>
                                                     </TableRow>
                                                 );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </Scrollbar>
-                            )}
+                                            })
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </Scrollbar>
                         </TableContainer>
 
                         {/* Page Pagination */}
@@ -379,7 +439,7 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                 setRowsPerPage1(parseInt(e.target.value, 10));
                                 setPageNumber1(0);
                             }}
-                            rowsPerPageOptions={[5, 10, 25]}
+                            rowsPerPageOptions={[10, 25, 50, 100]}
                         />
                     </Stack>
                 ) : (
@@ -408,39 +468,52 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                         </Stack>
 
                         {/* Forms Table */}
-                        <TableContainer sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1.5, minHeight: 300, position: 'relative' }}>
-                            {loadingForms ? (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 8, gap: 2 }}>
-                                    <CircularProgress size={36} />
-                                    <Typography variant="body2" color="text.secondary">Fetching Instant Forms for selected Facebook Pages...</Typography>
-                                </Box>
-                            ) : paginatedForms.length === 0 ? (
-                                <Box sx={{ py: 8, textAlign: 'center' }}>
-                                    <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 600 }}>No Lead Forms Found</Typography>
-                                    <Typography variant="body2" color="text.disabled">No instant lead forms found under the selected Facebook Pages.</Typography>
-                                </Box>
-                            ) : (
-                                <Scrollbar>
-                                    <Table size="medium" sx={{ minWidth: 680 }}>
-                                        <TableHead>
-                                            <TableRow sx={{ bgcolor: (theme) => theme.palette.background.neutral }}>
-                                                <TableCell padding="checkbox">
-                                                    <Checkbox
-                                                        indeterminate={isSomeFormsSelected}
-                                                        checked={isAllFormsSelected}
-                                                        onChange={handleToggleSelectAllForms}
-                                                    />
+                        <TableContainer sx={{ border: (theme) => `1px solid ${theme.palette.divider}`, borderRadius: 1.5, minHeight: 350, position: 'relative' }}>
+                            <Scrollbar>
+                                <Table size="medium" sx={{ minWidth: 680 }}>
+                                    <TableHead>
+                                        <TableRow sx={{ bgcolor: (theme) => theme.palette.background.neutral }}>
+                                            <TableCell padding="checkbox">
+                                                <Checkbox
+                                                    indeterminate={isSomeFormsSelected}
+                                                    checked={isAllFormsSelected}
+                                                    onChange={handleToggleSelectAllForms}
+                                                />
+                                            </TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Form Name</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Form ID</TableCell>
+                                            <TableCell sx={{ fontWeight: 700 }}>Parent Page</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Active</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Total Leads</TableCell>
+                                            <TableCell align="center" sx={{ fontWeight: 700 }}>Existing</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {loadingForms ? (
+                                            <TableRow>
+                                                <TableCell colSpan={7} sx={{ borderBottom: 'none' }}>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 250, py: 6, gap: 2 }}>
+                                                        <CircularProgress size={36} />
+                                                        <Typography variant="body2" color="text.secondary">Fetching Instant Forms for selected Facebook Pages...</Typography>
+                                                    </Box>
                                                 </TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Form Name</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Form ID</TableCell>
-                                                <TableCell sx={{ fontWeight: 700 }}>Parent Page</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Active</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Total Leads</TableCell>
-                                                <TableCell align="center" sx={{ fontWeight: 700 }}>Existing</TableCell>
                                             </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {paginatedForms.map((row) => {
+                                        ) : paginatedForms.length === 0 ? (
+                                            formFilter ? (
+                                                <TableNoData colSpan={7} searchQuery={formFilter} sx={{ '& td': { py: 8, borderBottom: 'none' } }} />
+                                            ) : (
+                                                <TableRow>
+                                                    <TableCell colSpan={7} sx={{ p: 0, py: 8, borderBottom: 'none' }}>
+                                                        <EmptyContent
+                                                            icon={"logos:meta-icon" as any}
+                                                            title="No Lead Forms Found"
+                                                            description="No instant lead forms found under the selected Facebook Pages."
+                                                        />
+                                                    </TableCell>
+                                                </TableRow>
+                                            )
+                                        ) : (
+                                            paginatedForms.map((row) => {
                                                 const isSelected = selectedFormIds.includes(row.form_id);
                                                 return (
                                                     <TableRow
@@ -448,49 +521,52 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                                         hover
                                                         selected={isSelected}
                                                         onClick={() => handleToggleForm(row.form_id)}
-                                                        sx={{ cursor: 'pointer' }}
+                                                        sx={{
+                                                            cursor: 'pointer',
+                                                            '& td, & th': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` },
+                                                        }}
                                                     >
                                                         <TableCell padding="checkbox">
                                                             <Checkbox checked={isSelected} />
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
                                                             <Stack direction="row" alignItems="center" spacing={1.5}>
-                                                                <Iconify icon="solar:document-text-bold-duotone" width={22} sx={{ color: 'primary.main' }} />
+                                                                <Iconify icon={"logos:facebook" as any} width={22} />
                                                                 <Typography variant="subtitle2">{row.form_name}</Typography>
                                                             </Stack>
                                                         </TableCell>
-                                                        <TableCell sx={{ fontFamily: 'monospace', color: 'text.secondary', fontSize: '13px' }}>
+                                                        <TableCell sx={{ color: 'text.secondary', fontSize: '13px' }}>
                                                             {row.form_id}
                                                         </TableCell>
                                                         <TableCell sx={{ color: 'text.secondary', fontWeight: 500 }}>
                                                             {row.page_name}
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.is_active ? 'Active' : 'Inactive'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.is_active ? 'success' : 'default'}
-                                                                size="small"
-                                                                variant="filled"
-                                                            />
+                                                            >
+                                                                {row.is_active ? 'Active' : 'Inactive'}
+                                                            </Label>
                                                         </TableCell>
                                                         <TableCell align="center" sx={{ fontWeight: 600 }}>
                                                             {row.leads_count || 0}
                                                         </TableCell>
                                                         <TableCell align="center">
-                                                            <Chip
-                                                                label={row.is_existing ? 'Already Synced' : 'New Form'}
+                                                            <Label
+                                                                variant="soft"
                                                                 color={row.is_existing ? 'default' : 'primary'}
-                                                                size="small"
-                                                                variant={row.is_existing ? 'outlined' : 'filled'}
-                                                            />
+                                                            >
+                                                                {row.is_existing ? 'Already Synced' : 'New Form'}
+                                                            </Label>
                                                         </TableCell>
                                                     </TableRow>
                                                 );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </Scrollbar>
-                            )}
+                                            })
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </Scrollbar>
                         </TableContainer>
 
                         {/* Form Pagination */}
@@ -504,7 +580,7 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
                                 setRowsPerPage2(parseInt(e.target.value, 10));
                                 setPageNumber2(0);
                             }}
-                            rowsPerPageOptions={[5, 10, 25]}
+                            rowsPerPageOptions={[10, 25, 50, 100]}
                         />
                     </Stack>
                 )}
