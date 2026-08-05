@@ -257,3 +257,40 @@ export async function toggleMetaFormConnection(formName: string, isActive: boole
     if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to update Form sync status'));
     return json.message;
 }
+
+export async function previewGraphApiPages(accountName?: string) {
+    const url = `/api/method/company.company.crm_meta_sync_wizard_api.preview_graph_api_pages${accountName ? `?account_name=${encodeURIComponent(accountName)}` : ''}`;
+    const res = await frappeRequest(url);
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to fetch Facebook Pages for review'));
+    return json.message;
+}
+
+export async function previewGraphApiForms(selectedPages: any[]) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.crm_meta_sync_wizard_api.preview_graph_api_forms', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ selected_pages: JSON.stringify(selectedPages) }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to fetch Lead Forms for review'));
+    return json.message;
+}
+
+export async function importSelectedPagesAndForms(accountName?: string, selectedPages?: any[], selectedForms?: any[]) {
+    const headers = await getAuthHeaders();
+    const res = await frappeRequest('/api/method/company.company.crm_meta_sync_wizard_api.import_selected_meta_pages_and_forms', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            account_name: accountName,
+            selected_pages: JSON.stringify(selectedPages || []),
+            selected_forms: JSON.stringify(selectedForms || []),
+        }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(handleFrappeError(json, 'Failed to import selected Meta Pages and Lead Forms'));
+    return json.message;
+}
+
