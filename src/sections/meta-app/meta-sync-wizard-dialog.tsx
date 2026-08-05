@@ -245,93 +245,103 @@ export function MetaSyncWizardDialog({ open, onClose, accountName, initialStep =
             }}
         >
             {/* Wizard Dialog Header */}
-            <DialogTitle sx={{ pb: 1, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
-                <Stack spacing={2}>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Stack spacing={0.5}>
-                            <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                                {activeStep === 1 ? 'Select Facebook Pages' : 'Select Lead Forms'}
+            <DialogTitle sx={{ pb: 2, pt: 2.5, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                    <Stack spacing={0.5}>
+                        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+                            {activeStep === 1 ? 'Select Facebook Pages' : 'Select Lead Forms'}
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {activeStep === 1
+                                ? 'Choose the Facebook Pages you want to synchronize with CRM.'
+                                : 'Choose which Lead Forms should be imported into CRM.'}
+                        </Typography>
+                    </Stack>
+
+                    {/* Compact Top-Right Step Badge */}
+                    <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={1.25}
+                        sx={{
+                            py: 0.75,
+                            px: 1.5,
+                            borderRadius: 2,
+                            bgcolor: (theme) => alpha(theme.palette.background.neutral, 0.8),
+                            border: (theme) => `1px solid ${theme.palette.divider}`,
+                            flexShrink: 0,
+                        }}
+                    >
+                        {/* Step 1 */}
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                            <Box
+                                sx={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: activeStep >= 1 ? '#00b894' : 'action.disabledBackground',
+                                    color: '#fff',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {activeStep > 1 ? <Iconify icon="eva:checkmark-fill" width={14} /> : '1'}
+                            </Box>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    fontWeight: activeStep === 1 ? 700 : 500,
+                                    fontSize: '0.75rem',
+                                    color: activeStep === 1 ? 'text.primary' : 'text.disabled',
+                                }}
+                            >
+                                Facebook Pages
                             </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                {activeStep === 1
-                                    ? 'Choose the Facebook Pages you want to synchronize with CRM.'
-                                    : 'Choose which Lead Forms should be imported into CRM.'}
+                        </Stack>
+
+                        {/* Connecting Line */}
+                        <Box
+                            sx={{
+                                width: 20,
+                                height: 2,
+                                bgcolor: activeStep === 2 ? '#00b894' : 'divider',
+                                borderRadius: 1,
+                            }}
+                        />
+
+                        {/* Step 2 */}
+                        <Stack direction="row" alignItems="center" spacing={0.75}>
+                            <Box
+                                sx={{
+                                    width: 22,
+                                    height: 22,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: activeStep === 2 ? '#00b894' : 'action.disabledBackground',
+                                    color: activeStep === 2 ? '#fff' : 'text.disabled',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                2
+                            </Box>
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    fontWeight: activeStep === 2 ? 700 : 500,
+                                    fontSize: '0.75rem',
+                                    color: activeStep === 2 ? 'text.primary' : 'text.disabled',
+                                }}
+                            >
+                                Lead Forms
                             </Typography>
                         </Stack>
                     </Stack>
-
-                    {/* Horizontal Visual Stepper */}
-                    <Box sx={{ width: '100%', pt: 1, pb: 0.5 }}>
-                        <Stack direction="row" alignItems="center" justifyContent="center" spacing={0} sx={{ maxWidth: 460, mx: 'auto' }}>
-                            {/* Step 1 Node */}
-                            <Stack alignItems="center" spacing={0.75} sx={{ minWidth: 120 }}>
-                                <Box
-                                    sx={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: activeStep >= 1 ? '#00b894' : 'action.disabledBackground',
-                                        color: '#fff',
-                                        boxShadow: activeStep >= 1 ? '0 4px 10px rgba(0,184,148,0.3)' : 'none',
-                                        transition: 'all 0.3s ease',
-                                    }}
-                                >
-                                    <Iconify icon="eva:checkmark-fill" width={20} />
-                                </Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.825rem', color: activeStep >= 1 ? 'text.primary' : 'text.disabled' }}>
-                                    Step 1
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.725rem' }}>
-                                    Facebook Pages
-                                </Typography>
-                            </Stack>
-
-                            {/* Connecting Progress Line */}
-                            <Box
-                                sx={{
-                                    flexGrow: 1,
-                                    height: 3,
-                                    mb: 4,
-                                    bgcolor: activeStep === 2 ? '#00b894' : 'divider',
-                                    borderRadius: 1,
-                                    transition: 'all 0.3s ease',
-                                }}
-                            />
-
-                            {/* Step 2 Node */}
-                            <Stack alignItems="center" spacing={0.75} sx={{ minWidth: 120 }}>
-                                <Box
-                                    sx={{
-                                        width: 36,
-                                        height: 36,
-                                        borderRadius: '10px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: activeStep === 2 ? '#00b894' : 'action.disabledBackground',
-                                        color: activeStep === 2 ? '#fff' : 'text.disabled',
-                                        boxShadow: activeStep === 2 ? '0 4px 10px rgba(0,184,148,0.3)' : 'none',
-                                        transition: 'all 0.3s ease',
-                                    }}
-                                >
-                                    {activeStep === 2 ? (
-                                        <Iconify icon="eva:checkmark-fill" width={20} />
-                                    ) : (
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>2</Typography>
-                                    )}
-                                </Box>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: '0.825rem', color: activeStep === 2 ? 'text.primary' : 'text.disabled' }}>
-                                    Step 2
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '0.725rem' }}>
-                                    Lead Forms
-                                </Typography>
-                            </Stack>
-                        </Stack>
-                    </Box>
                 </Stack>
             </DialogTitle>
 
