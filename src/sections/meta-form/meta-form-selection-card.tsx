@@ -19,13 +19,14 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { getConnectedMetaForms, fetchMetaFormsFromGraphAPI, toggleMetaFormConnection } from 'src/api/meta-app';
+import { toggleMetaFormConnection, getConnectedMetaForms } from 'src/api/meta-app';
 
 import { Iconify } from 'src/components/iconify';
 import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
+import { MetaSyncWizardDialog } from 'src/sections/meta-app/meta-sync-wizard-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -39,18 +40,18 @@ const TABLE_HEAD = [
 ];
 
 type MetaFormSelectionCardProps = {
-    selectedPageName?: string | null;
     isConnectedPage: boolean;
 };
 
-export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: MetaFormSelectionCardProps) {
+export function MetaFormSelectionCard({ isConnectedPage }: MetaFormSelectionCardProps) {
     const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
-    const [syncing, setSyncing] = useState(false);
+    const [wizardOpen, setWizardOpen] = useState(false);
     const [forms, setForms] = useState<any[]>([]);
 
     const [filterName, setFilterName] = useState('');
+    const [selectedPageName, setSelectedPageName] = useState('');
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
 
@@ -76,21 +77,6 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
         loadForms();
     }, [loadForms]);
 
-    const handleSyncForms = async () => {
-        setSyncing(true);
-        try {
-            const res = await fetchMetaFormsFromGraphAPI(selectedPageName || undefined);
-            if (res?.forms) {
-                setForms(res.forms);
-                enqueueSnackbar(`Discovered ${res.total_forms} Lead Ad Instant Forms`, { variant: 'success' });
-            }
-        } catch (err: any) {
-            console.error('Sync failed:', err);
-            enqueueSnackbar(err?.message || 'Failed to sync Lead Forms', { variant: 'error' });
-        } finally {
-            setSyncing(false);
-        }
-    };
 
     const handleToggleForm = async (formName: string, currentStatus: boolean) => {
         const nextStatus = !currentStatus;
@@ -143,9 +129,8 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
 
                 <Button
                     variant="contained"
-                    onClick={handleSyncForms}
-                    disabled={syncing}
-                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }}/>}
+                    onClick={() => setWizardOpen(true)}
+                    startIcon={<Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }}/>}
                     sx={{
                         bgcolor: '#1877F2',
                         color: '#ffffff',
@@ -157,7 +142,7 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                         '&:hover': { bgcolor: '#166fe5' },
                     }}
                 >
-                    {syncing ? 'Syncing Forms...' : 'Sync Lead Forms'}
+                    Sync Lead Forms
                 </Button>
             </Stack>
 
@@ -376,6 +361,13 @@ export function MetaFormSelectionCard({ selectedPageName, isConnectedPage }: Met
                     />
                 </>
             )}
+
+            <MetaSyncWizardDialog
+                open={wizardOpen}
+                initialStep={2}
+                onClose={() => setWizardOpen(false)}
+                onSuccess={() => loadForms()}
+            />
         </Card>
     );
 }
