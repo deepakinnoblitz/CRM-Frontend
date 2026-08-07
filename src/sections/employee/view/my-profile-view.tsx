@@ -19,6 +19,7 @@ import {
     FaGhost,
     FaGlobeAmericas,
     FaHeartbeat,
+    FaIdCard,
     FaInfoCircle,
     FaMapMarkerAlt,
     FaMedal,
@@ -307,6 +308,7 @@ export function MyProfileView() {
                                     <DetailItem label="Personal Phone" value={employee.phone} icon={IoCall} />
                                     <DetailItem label="Office Phone" value={employee.office_phone_number} icon={IoCall} />
                                     <DetailItem label="User Login" value={employee.user} icon={FaUser} />
+                                    <DetailItem label="Employee ID" value={employee.employee_id || employee.employeeId} icon={FaIdCard} />
                                 </Box>
                             </Box>
 

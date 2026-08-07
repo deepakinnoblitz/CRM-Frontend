@@ -446,6 +446,7 @@ export function EmployeeReportDetailsDialog({ open, onClose, employeeId }: Props
                     <ProfileDetailItem label="Personal Phone" value={employee.phone} icon="solar:phone-bold" />
                     <ProfileDetailItem label="Office Phone" value={employee.office_phone_number} icon="solar:phone-bold" />
                     <ProfileDetailItem label="User Login" value={employee.user} icon="solar:user-bold" />
+                    <ProfileDetailItem label="Employee ID" value={employee.employee_id || employee.employeeId} icon="solar:user-id-bold" />
                   </Box>
                 </Box>
 

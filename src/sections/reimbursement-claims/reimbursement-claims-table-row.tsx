@@ -16,9 +16,27 @@ import IconButton from '@mui/material/IconButton';
 
 import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '16px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 type Props = {
     row: {
@@ -156,7 +174,7 @@ export function ReimbursementClaimTableRow({
 
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{dayjs(row.date_of_expense).format('DD/MM/YYYY')}</TableCell>
 
-                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>₹{row.amount?.toLocaleString() || 0}</TableCell>
+                <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>{renderCurrency(row.amount)}</TableCell>
 
                 <TableCell>
                     <Label
