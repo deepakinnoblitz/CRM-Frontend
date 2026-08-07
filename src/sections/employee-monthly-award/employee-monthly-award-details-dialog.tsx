@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
@@ -21,6 +20,8 @@ import { fDate } from 'src/utils/format-time';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 type Props = {
     open: boolean;
@@ -161,39 +162,42 @@ export function EmployeeMonthlyAwardDetailsDialog({ open, onClose, award, onSave
                     <Divider sx={{ borderStyle: 'dashed' }} />
 
                     {/* Controls */}
-                    <Stack spacing={2} direction="row" sx={{ mt: 2, pl: 1 }}>
+                    <Stack spacing={3} direction="row" sx={{ mt: 2, pl: 1, alignItems: 'center', flexWrap: 'wrap' }}>
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={!!formData.published}
                                     onChange={handleChange}
                                     name="published"
                                     disabled={!isEdit}
                                 />
                             }
-                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Published</Typography>}
+                            label="Published"
+                            sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1.25, typography: 'subtitle2', fontWeight: 700 } }}
                         />
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={!!formData.is_auto_generated}
                                     onChange={handleChange}
                                     name="is_auto_generated"
                                     disabled={!isEdit}
                                 />
                             }
-                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Auto Generated</Typography>}
+                            label="Auto Generated"
+                            sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1.25, typography: 'subtitle2', fontWeight: 700 } }}
                         />
                         <FormControlLabel
                             control={
-                                <Switch
+                                <CustomSwitch
                                     checked={!!formData.manually_selected}
                                     onChange={handleChange}
                                     name="manually_selected"
                                     disabled={!isEdit}
                                 />
                             }
-                            label={<Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Manually Selected</Typography>}
+                            label="Manually Selected"
+                            sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1.25, typography: 'subtitle2', fontWeight: 700 } }}
                         />
                     </Stack>
                 </Stack>

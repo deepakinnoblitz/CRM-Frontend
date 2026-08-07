@@ -12,6 +12,22 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
+const renderCurrency = (amount: any, symbolFontSize: string = '25px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
+
 type Props = {
     stats: {
         total_income: number;
@@ -88,7 +104,7 @@ export default function ExpenseTrackerStatsCards({ stats }: Props) {
                             {item.label}
                         </Typography>
                         <Typography variant="h3">
-                            {fCurrency(item.value)}
+                            {renderCurrency(item.value, '25px')}
                         </Typography>
                     </Box>
                 </Card>
