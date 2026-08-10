@@ -43,6 +43,8 @@ import {
 } from 'src/api/task-manager';
 
 import { Iconify } from 'src/components/iconify';
+
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 // ----------------------------------------------------------------------
 
 const filter = createFilterOptions<any>();
@@ -446,8 +448,9 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                             </Stack>
 
                             <FormControlLabel
-                                control={<Switch checked={Boolean(taskData.fetch_from_department)} onChange={(e) => handleToggleFetch(e.target.checked)} />}
+                                control={<CustomSwitch checked={Boolean(taskData.fetch_from_department)} onChange={(e) => handleToggleFetch(e.target.checked)} />}
                                 label="Fetch All Employees From Department"
+                                sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                             />
 
                             <Stack direction={{ xs: 'column', md: 'row' }} spacing={2.5}>
@@ -644,13 +647,15 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                             <Stack spacing={3}>
                                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4} alignItems="center">
                                     <FormControlLabel
-                                        control={<Switch checked={Boolean(taskData.attachment_required)} onChange={(e) => setTaskData({ ...taskData, attachment_required: e.target.checked ? 1 : 0 })} />}
+                                        control={<CustomSwitch checked={Boolean(taskData.attachment_required)} onChange={(e) => setTaskData({ ...taskData, attachment_required: e.target.checked ? 1 : 0 })} />}
                                         label="Attachment Required To Close"
+                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                                     />
 
                                     <FormControlLabel
-                                        control={<Switch checked={Boolean(taskData.recurring_task)} onChange={(e) => setTaskData({ ...taskData, recurring_task: e.target.checked ? 1 : 0 })} />}
+                                        control={<CustomSwitch checked={Boolean(taskData.recurring_task)} onChange={(e) => setTaskData({ ...taskData, recurring_task: e.target.checked ? 1 : 0 })} />}
                                         label="Recurring Task"
+                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
                                     />
 
                                     {Boolean(taskData.recurring_task) && (

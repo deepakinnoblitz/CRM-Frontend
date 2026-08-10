@@ -42,7 +42,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
                 variant="body2"
                 sx={{
                     fontWeight: 600,
-                    fontSize: mono ? 13 : 'inherit',
+                    fontSize: 'inherit',
                     color: value ? 'text.primary' : 'text.disabled',
                     fontStyle: !value ? 'italic' : 'normal',
                 }}

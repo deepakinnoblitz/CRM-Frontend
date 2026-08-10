@@ -5,7 +5,6 @@ import { IoMdArrowBack, IoMdCreate } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -23,6 +22,7 @@ import { getMetaForm } from 'src/api/meta-form';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchMetaPages, getMetaPage } from 'src/api/meta-page';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -38,7 +38,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
                 variant="body2"
                 sx={{
                     fontWeight: 600,
-                    fontSize: mono ? 13 : 'inherit',
+                    fontSize: 'inherit',
                     color: value ? 'text.primary' : 'text.disabled',
                     fontStyle: !value ? 'italic' : 'normal',
                 }}
@@ -258,8 +258,14 @@ export function MetaFormsDetailsView() {
                                     form.field_mappings.map((row: any, idx: number) => (
                                         <TableRow key={idx} sx={{ '&:not(:last-child) td': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` } }}>
                                             <TableCell>
-                                                <Typography variant="subtitle2">
-                                                    {row.meta_field}
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        color: row.meta_field ? 'text.primary' : 'text.disabled',
+                                                        fontStyle: !row.meta_field ? 'italic' : 'normal',
+                                                    }}
+                                                >
+                                                    {row.meta_field || '—'}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
@@ -268,12 +274,12 @@ export function MetaFormsDetailsView() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell align="center">
-                                                <Chip
-                                                    label={row.required ? 'Yes' : 'No'}
-                                                    size="small"
-                                                    color={row.required ? 'primary' : 'default'}
-                                                    variant="outlined"
-                                                />
+                                                <Label
+                                                    variant="soft"
+                                                    color={row.required ? 'info' : 'default'}
+                                                >
+                                                    {row.required ? 'Yes' : 'No'}
+                                                </Label>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2" sx={{ color: row.default_value ? 'text.primary' : 'text.disabled', fontStyle: row.default_value ? 'normal' : 'italic' }}>
@@ -281,12 +287,12 @@ export function MetaFormsDetailsView() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
-                                                <Chip
-                                                    label={row.transform_function || 'None'}
-                                                    size="small"
-                                                    variant="outlined"
+                                                <Label
+                                                    variant="soft"
                                                     color={row.transform_function && row.transform_function !== 'None' ? 'info' : 'default'}
-                                                />
+                                                >
+                                                    {row.transform_function || 'None'}
+                                                </Label>
                                             </TableCell>
                                         </TableRow>
                                     ))

@@ -323,7 +323,7 @@ export function MetaFormSelectionCard({ isConnectedPage }: MetaFormSelectionCard
                                                     size="small"
                                                     variant="contained"
                                                     startIcon={<Iconify icon={"solar:pen-bold" as any} sx={{ width: 16, height: 16 }}/>}
-                                                    onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`)}
+                                                    onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit?from=account`)}
                                                     sx={{
                                                         bgcolor: '#00ab71',
                                                         color: '#ffffff',

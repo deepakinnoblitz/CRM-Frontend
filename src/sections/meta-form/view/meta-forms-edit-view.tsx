@@ -1,7 +1,7 @@
 import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useParams, useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -109,6 +109,8 @@ const TRANSFORM_OPTIONS = ['None', 'Title Case', 'Upper Case', 'Lower Case', 'Cl
 
 export function MetaFormsEditView() {
     const { id } = useParams();
+    const [searchParams] = useSearchParams();
+    const fromPage = searchParams.get('from');
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -324,18 +326,22 @@ export function MetaFormsEditView() {
                 })),
             });
             sessionStorage.setItem('meta_form_success_message', 'Meta Form updated successfully.');
-            router.push('/lead-integration/meta-forms');
+            if (fromPage === 'account') {
+                router.push('/lead-integration/account');
+            } else {
+                router.push('/lead-integration/meta-forms');
+            }
         } catch (error: any) {
             enqueueSnackbar(error.message || 'Failed to update Meta Form.', { variant: 'error' });
             setIsSaving(false);
         }
     };
-
+    
     const handleGoBack = () => {
-        if (window.history.length > 1 && document.referrer) {
-            router.back();
+        if (fromPage === 'account') {
+            router.push('/lead-integration/account');
         } else {
-            router.push('/lead-integration/meta-account');
+            router.push('/lead-integration/meta-forms');
         }
     };
 
