@@ -1146,13 +1146,43 @@ export function LeadDetailsView() {
                                 </Box>
                             </Box>
 
+                            {/* Notes Section (Outside Additional Info) */}
+                            {lead.notes && (
+                                <Box
+                                    sx={{
+                                        p: 3,
+                                        bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
+                                        borderRadius: 2.5,
+                                        border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
+                                    }}
+                                >
+                                    <SectionHeader title="Notes" icon={<FaFileLines size={18} />} noMargin />
+                                    <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                                        {lead.notes.split('\n\n').map((item: string, idx: number) => {
+                                            const parts = item.split('\n');
+                                            const label = parts[0] || '';
+                                            const value = parts.slice(1).join('\n') || '';
+                                            return (
+                                                <Box key={idx}>
+                                                    <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
+                                                        {label}
+                                                    </Typography>
+                                                    <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-wrap', opacity: 0.8, fontSize: 15 }}>
+                                                        {value}
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        })}
+                                    </Box>
+                                </Box>
+                            )}
+
                             {/* Additional Info */}
                             <Box
                                 sx={{
                                     p: 3,
                                     bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
                                     borderRadius: 2.5,
-                                    margin: 2,
                                     border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
                                 }}
                             >
@@ -1169,7 +1199,7 @@ export function LeadDetailsView() {
                                     <Divider sx={{ borderStyle: 'solid', borderColor:  theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
                                     <Box>
                                         <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
-                                            Remarks / Notes
+                                            Remark
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: lead.remarks ? '#1E293B' : '#64748B', fontWeight: lead.remarks ? 600 : 500, fontStyle: lead.remarks ? 'normal' : 'italic', lineHeight: 1.6 }}>
                                             {lead.remarks || 'No remarks added'}
