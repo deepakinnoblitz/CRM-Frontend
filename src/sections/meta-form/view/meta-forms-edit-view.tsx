@@ -335,7 +335,7 @@ export function MetaFormsEditView() {
         if (window.history.length > 1 && document.referrer) {
             router.back();
         } else {
-            router.push('/lead-integration/meta-account');
+            router.push('/lead-integration/account');
         }
     };
 

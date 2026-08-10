@@ -34,7 +34,6 @@ const TABLE_HEAD = [
     { id: 'form_name', label: 'Form Name' },
     { id: 'form_id', label: 'Form ID', width: 200 },
     { id: 'form_status', label: 'Status', align: 'center' as const },
-    { id: 'questions_count', label: 'Questions', align: 'center' as const },
     { id: 'is_active', label: 'Lead Sync', align: 'center' as const },
     { id: 'action', label: 'Actions', align: 'center' as const, width: 180 },
 ];
@@ -279,13 +278,6 @@ export function MetaFormSelectionCard({ isConnectedPage }: MetaFormSelectionCard
                                                 >
                                                     {row.form_status || 'ACTIVE'}
                                                 </Box>
-                                            </TableCell>
-
-                                            {/* Questions count */}
-                                            <TableCell align="center">
-                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                    {row.questions_count || 0}
-                                                </Typography>
                                             </TableCell>
 
                                             {/* Lead Sync */}
