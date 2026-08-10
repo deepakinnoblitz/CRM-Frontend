@@ -28,6 +28,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { fCurrency } from 'src/utils/format-number';    
+
 import { updateReimbursementClaim, getReimbursementClaimWorkflowActions, applyReimbursementClaimWorkflowAction } from 'src/api/reimbursement-claims';
 
 import { Label } from 'src/components/label';
@@ -37,6 +39,22 @@ import { ConfirmDialog } from 'src/components/confirm-dialog';
 import { useAuth } from 'src/auth/auth-context';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 type Props = {
     open: boolean;
@@ -82,6 +100,11 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
     };
 
     if (!claim) return null;
+
+    const statusText = claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending');
+    const statusColor = (claim.paid === 1 || ['Approved', 'Paid'].includes(claim.workflow_state))
+        ? 'success'
+        : (['Rejected', 'Cancelled'].includes(claim.workflow_state) ? 'error' : 'warning');
 
     const handleActionClick = (action: WorkflowAction) => {
         setSelectedAction(action);
@@ -168,10 +191,10 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
 
             <Stack spacing={1} alignItems="flex-end">
                 <Typography variant="h5" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                    <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>{claim.amount?.toLocaleString() || 0}
+                    {renderCurrency(claim.amount, '20px')}
                 </Typography>
-                <Label variant="soft" color={claim.paid === 1 ? 'success' : 'warning'}>
-                    {claim.workflow_state || (claim.paid === 1 ? 'Paid' : 'Pending')}
+                <Label variant="soft" color={statusColor}>
+                    {statusText}
                 </Label>
             </Stack>
         </Box>
@@ -228,15 +251,10 @@ export function ReimbursementClaimDetailsDialog({ open, onClose, claim, canEdit 
                                 <DetailItem label="Date of Expense" value={dayjs(claim.date_of_expense).format('DD/MM/YYYY')} icon="solar:calendar-bold" />
                                 <DetailItem
                                     label="Amount"
-                                    value={
-                                        <>
-                                            <Box component="span" sx={{ fontFamily: 'Arial' }}>₹</Box>
-                                            {claim.amount?.toLocaleString() || 0}
-                                        </>
-                                    }
+                                    value={renderCurrency(claim.amount)}
                                     icon="solar:wad-of-money-bold"
                                 />
-                                <DetailItem label="Status" value={claim.paid === 1 ? 'Paid' : 'Pending'} icon="solar:info-circle-bold" />
+                                <DetailItem label="Status" value={statusText} icon="solar:info-circle-bold" />
                             </Box>
                         </Box>
 

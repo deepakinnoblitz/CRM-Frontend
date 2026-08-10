@@ -24,9 +24,10 @@ import { Iconify } from 'src/components/iconify';
 type MetaAccountConnectCardProps = {
     connectedAccountName?: string | null;
     onRefresh?: () => void;
+    onConnectSuccess?: () => void;
 };
 
-export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: MetaAccountConnectCardProps) {
+export function MetaAccountConnectCard({ connectedAccountName, onRefresh, onConnectSuccess }: MetaAccountConnectCardProps) {
     const { enqueueSnackbar } = useSnackbar();
     const [connecting, setConnecting] = useState(false);
     const [disconnecting, setDisconnecting] = useState(false);
@@ -53,12 +54,13 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
                         .catch((err) => console.error('Failed to load status after postMessage:', err));
                 }
                 if (onRefresh) onRefresh();
+                if (onConnectSuccess) onConnectSuccess();
             }
         };
 
         window.addEventListener('message', handleMessage);
         return () => window.removeEventListener('message', handleMessage);
-    }, [onRefresh, enqueueSnackbar]);
+    }, [onRefresh, onConnectSuccess, enqueueSnackbar]);
 
     useEffect(() => {
         loadAccountStatus();
@@ -87,6 +89,7 @@ export function MetaAccountConnectCard({ connectedAccountName, onRefresh }: Meta
                             setConnecting(false);
                             loadAccountStatus();
                             if (onRefresh) onRefresh();
+                            if (onConnectSuccess) onConnectSuccess();
                         }
                     }, 1000);
                 } else {

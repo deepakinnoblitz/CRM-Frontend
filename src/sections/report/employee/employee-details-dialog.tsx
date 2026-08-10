@@ -239,6 +239,7 @@ export function EmployeeDetailsDialog({ open, onClose, employeeId }: Props) {
                                             <DetailItem label="Personal Phone" value={employee.phone} icon="solar:phone-bold" />
                                             <DetailItem label="Office Phone" value={employee.office_phone_number} icon="solar:phone-bold" />
                                             <DetailItem label="User Login" value={employee.user} icon="solar:user-bold" />
+                                            <DetailItem label="Employee ID" value={employee.employee_id || employee.employeeId} icon="solar:user-id-bold" />
                                         </Box>
                                     </Box>
 

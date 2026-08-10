@@ -376,6 +376,9 @@ export function ReimbursementClaimsView() {
         if (!isApprovedOrPaid && !receipt && !receiptFile) {
             errors.receipt = 'Receipt is required';
         }
+        if (paid && !paidDate) {
+            errors.paid_date = 'Paid Date is required';
+        }
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -390,6 +393,9 @@ export function ReimbursementClaimsView() {
             if (!amount || parseFloat(amount) <= 0) errors.amount = 'Valid Amount';
             if (!isApprovedOrPaid && !receipt && !receiptFile) {
                 errors.receipt = 'Receipt';
+            }
+            if (paid && !paidDate) {
+                errors.paid_date = 'Paid Date';
             }
 
             const missingFields = Object.values(errors).join(', ');
@@ -416,7 +422,10 @@ export function ReimbursementClaimsView() {
                 setSubmitting(true);
                 await updateReimbursementClaim(currentClaim.name, settlementData);
 
-                if (currentClaim.workflow_state === 'Approved') {
+                const wasAlreadyPaid = currentClaim?.paid === 1 || currentClaim?.workflow_state === 'Paid';
+                const isPaidToggledOn = paid && !wasAlreadyPaid;
+
+                if (currentClaim.workflow_state === 'Approved' && isPaidToggledOn) {
                     setPendingPayClaim(currentClaim);
                     if (!paymentReference) setPaymentReference('');
                     if (!paidDate) setPaidDate(dayjs().format('YYYY-MM-DD'));
@@ -487,8 +496,10 @@ export function ReimbursementClaimsView() {
 
                 // Construct a temporary updated claim object to check status
                 const updatedWorkflowState = currentClaim.workflow_state; // Status doesn't change on simple update usually unless workflow action involved, but here we assume it stays Approved
+                const wasAlreadyPaid = currentClaim?.paid === 1 || currentClaim?.workflow_state === 'Paid';
+                const isPaidToggledOn = paid && !wasAlreadyPaid;
 
-                if (updatedWorkflowState === 'Approved') {
+                if (updatedWorkflowState === 'Approved' && isPaidToggledOn) {
                     setPendingPayClaim({ ...currentClaim, ...claimData });
                     if (!paymentReference) setPaymentReference('');
                     if (!paidDate) setPaidDate(dayjs().format('YYYY-MM-DD'));
@@ -717,6 +728,7 @@ export function ReimbursementClaimsView() {
                                 if (formErrors.dateOfExpense) setFormErrors(prev => ({ ...prev, dateOfExpense: '' }));
                             } else {
                                 setPaidDate(val || null);
+                                if (formErrors.paid_date) setFormErrors(prev => ({ ...prev, paid_date: '' }));
                             }
                         }}
                         slotProps={{
@@ -1157,14 +1169,20 @@ export function ReimbursementClaimsView() {
                                     <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 1, gridColumn: { md: 'span 2' } }}>Settlement Details</Typography>
 
                                     <FormControlLabel
-                                        control={<Android12Switch checked={paid} onChange={(e) => setPaid(e.target.checked)} />}
+                                        control={<Android12Switch checked={paid} onChange={(e) => {
+                                            const isChecked = e.target.checked;
+                                            setPaid(isChecked);
+                                            if (!isChecked && formErrors.paid_date) {
+                                                setFormErrors(prev => ({ ...prev, paid_date: '' }));
+                                            }
+                                        }} />}
                                         label="Paid"
                                         sx={{ gridColumn: { md: 'span 2' } }}
                                     />
 
                                     {paid && (
                                         <>
-                                            {renderField('paid_date', 'Paid Date', 'date', [], {})}
+                                            {renderField('paid_date', 'Paid Date', 'date', [], {}, true)}
 
                                             {renderField('payment_reference', 'Payment Reference', 'text', [], { placeholder: 'Enter payment reference' })}
 
