@@ -5,10 +5,28 @@ import TableRow from '@mui/material/TableRow';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 export type AssetTableRowProps = {
     row: {
@@ -110,7 +128,7 @@ export function AssetTableRow({
             </TableCell>
 
             <TableCell>
-                {row.purchase_cost ? `₹${row.purchase_cost.toLocaleString()}` : '-'}
+                {row.purchase_cost ? renderCurrency(row.purchase_cost) : '-'}
             </TableCell>
 
             <TableCell>

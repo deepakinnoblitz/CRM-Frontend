@@ -7,12 +7,28 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { fNumber } from 'src/utils/format-number';
+import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 type Props = {
     row: {
@@ -123,11 +139,11 @@ export function SalarySlipTableRow({
             <TableCell>{periodLabel}</TableCell>
 
             <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                ₹{fNumber(row.gross_pay)}
+                {renderCurrency(row.gross_pay)}
             </TableCell>
             <TableCell align="right" sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 700 }}>
-                    ₹{fNumber(row.net_pay)}
+                <Typography variant="subtitle2" component="span" sx={{ color: 'success.main', fontWeight: 700 }}>
+                    {renderCurrency(row.net_pay)}
                 </Typography>
             </TableCell>
 
