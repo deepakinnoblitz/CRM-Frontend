@@ -120,7 +120,7 @@ export function MetaFormsEditView() {
     const [metaPage, setMetaPage] = useState('');
     const [formStatus, setFormStatus] = useState('ACTIVE');
     const [locale, setLocale] = useState('');
-    
+
     // Tracking detail fields
     const [campaignId, setCampaignId] = useState('');
     const [campaignName, setCampaignName] = useState('');
@@ -186,7 +186,7 @@ export function MetaFormsEditView() {
                 setMetaPages(pagesRes.data);
                 setMandatoryFields(mandatoryRes || []);
                 setLeadsFromOptions((leadFromRes || []).map((item: any) => item.name || item.label || String(item)));
-                
+
                 // Map API field format to option select values
                 const mappedOptions = fieldsRes.map((f: any) => ({
                     value: f.fieldname,
@@ -222,7 +222,7 @@ export function MetaFormsEditView() {
                     setIsActive(data.is_active !== 0);
                     setAllowDuplicates(data.allow_duplicates !== 0);
                     setDuplicateLimitBy(data.duplicate_limit_by || 'Email or Phone');
-                    
+
                     // Populate mappings child table
                     if (data.field_mappings && data.field_mappings.length > 0) {
                         setFieldMappings(data.field_mappings);
@@ -280,7 +280,7 @@ export function MetaFormsEditView() {
         if (!formName.trim()) newErrors.formName = true;
         if (!formId.trim()) newErrors.formId = true;
         if (!metaPage) newErrors.metaPage = true;
-        
+
         setErrors(newErrors);
         if (Object.keys(newErrors).length > 0) {
             enqueueSnackbar('Please fill in all required fields.', { variant: 'error' });
@@ -336,7 +336,7 @@ export function MetaFormsEditView() {
             setIsSaving(false);
         }
     };
-    
+
     const handleGoBack = () => {
         if (fromPage === 'account') {
             router.push('/lead-integration/account');
@@ -494,19 +494,19 @@ export function MetaFormsEditView() {
                                 sx={{ ml: 0.5 }}
                             />
                             {allowDuplicates && (
-                            <FormControl fullWidth disabled={!allowDuplicates}>
-                                <InputLabel id="dup-limit-label">Duplicate Limit By</InputLabel>
-                                <Select
-                                    labelId="dup-limit-label"
-                                    value={duplicateLimitBy}
-                                    label="Duplicate Limit By"
-                                    onChange={(e) => setDuplicateLimitBy(e.target.value)}
-                                >
-                                    <MenuItem value="Email or Phone">Email or Phone</MenuItem>
-                                    <MenuItem value="Email Only">Email Only</MenuItem>
-                                    <MenuItem value="Phone Only">Phone Only</MenuItem>
-                                </Select>
-                            </FormControl>
+                                <FormControl fullWidth disabled={!allowDuplicates}>
+                                    <InputLabel id="dup-limit-label">Duplicate Limit By</InputLabel>
+                                    <Select
+                                        labelId="dup-limit-label"
+                                        value={duplicateLimitBy}
+                                        label="Duplicate Limit By"
+                                        onChange={(e) => setDuplicateLimitBy(e.target.value)}
+                                    >
+                                        <MenuItem value="Email or Phone">Email or Phone</MenuItem>
+                                        <MenuItem value="Email Only">Email Only</MenuItem>
+                                        <MenuItem value="Phone Only">Phone Only</MenuItem>
+                                    </Select>
+                                </FormControl>
                             )}
                         </Box>
                     </Stack>
@@ -575,6 +575,7 @@ export function MetaFormsEditView() {
                         <Table>
                             <TableHead sx={{ bgcolor: 'background.neutral' }}>
                                 <TableRow>
+                                    <TableCell align="center" sx={{ fontWeight: 700, width: 80 }}>Reorder</TableCell>
                                     <TableCell sx={{ fontWeight: 700 }}>Meta Field (Facebook Key)</TableCell>
                                     <TableCell sx={{ fontWeight: 700 }}>CRM Field (Target Lead column)</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 700 }}>Required</TableCell>
@@ -585,7 +586,35 @@ export function MetaFormsEditView() {
                             </TableHead>
                             <TableBody>
                                 {fieldMappings.map((row, index) => (
-                                    <TableRow key={index}>
+                                    <TableRow
+                                        key={index}
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData('text/plain', String(index));
+                                        }}
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                        }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            const draggedIdx = Number(e.dataTransfer.getData('text/plain'));
+                                            if (draggedIdx !== index) {
+                                                const updated = [...fieldMappings];
+                                                const [draggedItem] = updated.splice(draggedIdx, 1);
+                                                updated.splice(index, 0, draggedItem);
+                                                setFieldMappings(updated);
+                                            }
+                                        }}
+                                        sx={{
+                                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+                                            cursor: 'grab',
+                                        }}
+                                    >
+                                        <TableCell align="center">
+                                            <IconButton size="small" disableRipple sx={{ cursor: 'grab', color: 'text.disabled' }}>
+                                                <Iconify icon={"solar:menu-dots-bold" as any} width={20} />
+                                            </IconButton>
+                                        </TableCell>
                                         <TableCell>
                                             <TextField
                                                 size="small"
@@ -642,7 +671,7 @@ export function MetaFormsEditView() {
                                                         }
                                                     }}
                                                     filterOptions={(options, params) => {
-                                                        const filtered = options.filter(option => 
+                                                        const filtered = options.filter(option =>
                                                             option.toLowerCase().includes(params.inputValue.toLowerCase())
                                                         );
                                                         const { inputValue } = params;
