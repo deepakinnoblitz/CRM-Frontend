@@ -34,7 +34,6 @@ const TABLE_HEAD = [
     { id: 'form_name', label: 'Form Name' },
     { id: 'form_id', label: 'Form ID', width: 200 },
     { id: 'form_status', label: 'Status', align: 'center' as const },
-    { id: 'questions_count', label: 'Questions', align: 'center' as const },
     { id: 'is_active', label: 'Lead Sync', align: 'center' as const },
     { id: 'action', label: 'Actions', align: 'center' as const, width: 180 },
 ];
@@ -281,13 +280,6 @@ export function MetaFormSelectionCard({ isConnectedPage }: MetaFormSelectionCard
                                                 </Box>
                                             </TableCell>
 
-                                            {/* Questions count */}
-                                            <TableCell align="center">
-                                                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                    {row.questions_count || 0}
-                                                </Typography>
-                                            </TableCell>
-
                                             {/* Lead Sync */}
                                             <TableCell align="center">
                                                 <Box
@@ -323,7 +315,7 @@ export function MetaFormSelectionCard({ isConnectedPage }: MetaFormSelectionCard
                                                     size="small"
                                                     variant="contained"
                                                     startIcon={<Iconify icon={"solar:pen-bold" as any} sx={{ width: 16, height: 16 }}/>}
-                                                    onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit`)}
+                                                    onClick={() => router.push(`/lead-integration/meta-forms/${encodeURIComponent(row.name)}/edit?from=account`)}
                                                     sx={{
                                                         bgcolor: '#00ab71',
                                                         color: '#ffffff',

@@ -521,7 +521,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
                                         <Divider sx={{ borderStyle: 'solid', borderColor: (theme) => theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
                                         <Box>
                                             <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
-                                                Remarks / Notes
+                                                Remarks
                                             </Typography>
                                             <Typography variant="body2" sx={{ color: lead.remarks ? '#1E293B' : '#64748B', fontWeight: lead.remarks ? 600 : 500, fontStyle: lead.remarks ? 'normal' : 'italic', lineHeight: 1.6 }}>
                                                 {lead.remarks || 'No remarks added'}

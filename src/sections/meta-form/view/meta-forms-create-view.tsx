@@ -529,6 +529,7 @@ export function MetaFormsCreateView() {
                         <Table>
                             <TableHead sx={{ bgcolor: 'background.neutral' }}>
                                 <TableRow>
+                                    <TableCell align="center" sx={{ fontWeight: 700, width: 80 }}>Reorder</TableCell>
                                     <TableCell sx={{ fontWeight: 700 }}>Meta Field (Facebook Key)</TableCell>
                                     <TableCell sx={{ fontWeight: 700 }}>CRM Field (Target Lead column)</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 700 }}>Required</TableCell>
@@ -539,7 +540,35 @@ export function MetaFormsCreateView() {
                             </TableHead>
                             <TableBody>
                                 {fieldMappings.map((row, index) => (
-                                    <TableRow key={index}>
+                                    <TableRow
+                                        key={index}
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.dataTransfer.setData('text/plain', String(index));
+                                        }}
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                        }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            const draggedIdx = Number(e.dataTransfer.getData('text/plain'));
+                                            if (draggedIdx !== index) {
+                                                const updated = [...fieldMappings];
+                                                const [draggedItem] = updated.splice(draggedIdx, 1);
+                                                updated.splice(index, 0, draggedItem);
+                                                setFieldMappings(updated);
+                                            }
+                                        }}
+                                        sx={{
+                                            '&:hover': { bgcolor: (theme) => alpha(theme.palette.primary.main, 0.04) },
+                                            cursor: 'grab',
+                                        }}
+                                    >
+                                        <TableCell align="center">
+                                            <IconButton size="small" disableRipple sx={{ cursor: 'grab', color: 'text.disabled' }}>
+                                                <Iconify icon={"solar:menu-dots-bold" as any} width={20} />
+                                            </IconButton>
+                                        </TableCell>
                                         <TableCell>
                                             <TextField
                                                 size="small"
