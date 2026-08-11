@@ -1,4 +1,5 @@
 import { MdInfo } from "react-icons/md";
+import { CgNotes } from "react-icons/cg";
 import { IoMdArrowBack } from "react-icons/io";
 import { RiMailSendLine } from "react-icons/ri";
 import { useState, useEffect, useCallback } from 'react';
@@ -1156,7 +1157,7 @@ export function LeadDetailsView() {
                                         border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
                                     }}
                                 >
-                                    <SectionHeader title="Notes" icon={<FaFileLines size={18} />} noMargin />
+                                    <SectionHeader title="Notes" icon={<CgNotes size={18} />} noMargin />
                                     <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
                                         {lead.notes.split('\n\n').map((item: string, idx: number) => {
                                             const parts = item.split('\n');
