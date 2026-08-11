@@ -453,25 +453,29 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
     if (user?.permissions?.custom_permissions_assigned) {
       const getFormattedKey = (title: string) => {
         const lower = title.trim().toLowerCase();
+        if (lower === 'connect account') return 'meta_account';
         if (lower === 'company expenses') return 'expense_tracker';
         if (lower === 'expense tracker') return 'crm_expenses';
         if (lower === 'expenses') return 'expense_tracker'; // HR parent fallback
         if (lower === 'document generator') return 'hr_document_templates'; // HR parent fallback
-        if (lower === 'asset list') return 'asset_list';
+        if (lower === 'document templates') return 'hr_document_templates';
+        if (lower === 'document generation') return 'document_generation';
+        if (lower === 'asset list' || lower === 'my asset list') return 'asset_list';
         if (lower === 'asset assignments') return 'asset_assignments';
-        if (lower === 'asset requests') return 'asset_requests';
-        if (lower === 'reimbursement claim list') return 'reimbursement_claims';
+        if (lower === 'asset requests' || lower === 'my asset requests') return 'asset_requests';
+        if (lower === 'reimbursement claim list' || lower === 'my reimbursement claim') return 'reimbursement_claims';
         if (lower === 'employee evaluation') return 'employee_evaluation';
         if (lower === 'badges') return 'badges';
         if (lower === 'employee monthly award') return 'employee_monthly_award';
         if (lower === 'job opening list') return 'job_openings';
         if (lower === 'job applicant list') return 'job_applicants';
         if (lower === 'interview list') return 'interviews';
-        if (lower === 'employee referral list') return 'employee_referrals';
-        if (lower === 'attendance list') return 'attendance_list';
-        if (lower === 'daily log') return 'daily_log';
-        if (lower === 'wfh attendance') return 'wfh_attendance';
+        if (lower === 'employee referral list' || lower === 'refer a friend') return 'employee_referrals';
+        if (lower === 'attendance list' || lower === 'my attendance') return 'attendance_list';
+        if (lower === 'daily log' || lower === 'my daily log') return 'daily_log';
+        if (lower === 'wfh attendance' || lower === 'my wfh attendance') return 'wfh_attendance';
         if (lower === 'sales target entry') return 'sales_target_entry';
+        if (lower === 'calendar') return 'events';
         return lower.replace(/\s+/g, '_');
       };
 
@@ -480,9 +484,13 @@ export function getNavData(user: any = null, view?: 'HR' | 'CRM', settings?: any
       const checkKey = menuMapping[moduleKey] || moduleKey;
 
       const menus = user?.permissions?.menus || {};
+      const actions = user?.permissions?.actions || {};
 
-      // If we explicitly set this menu to false, block it
-      if (menus[moduleKey] === false || menus[checkKey] === false) {
+      // If explicitly set menu to false or action view to false, block it
+      const isMenuFalse = menus[moduleKey] === false || menus[checkKey] === false;
+      const isActionFalse = (actions[moduleKey] && actions[moduleKey].view === false) || (actions[checkKey] && actions[checkKey].view === false);
+
+      if (isMenuFalse || isActionFalse) {
         return null;
       }
     }

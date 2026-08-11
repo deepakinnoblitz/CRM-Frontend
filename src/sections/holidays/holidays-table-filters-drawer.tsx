@@ -112,6 +112,8 @@ export function HolidayTableFiltersDrawer({
                 <DatePicker
                     label="Select Year"
                     views={['year']}
+                    openTo="year"
+                    format="YYYY"
                     value={filters.year ? dayjs(`${filters.year}-01-01`) : null}
                     onChange={(newValue) => {
                         handleFilterChange('year', newValue ? newValue.format('YYYY') : null);
@@ -120,7 +122,7 @@ export function HolidayTableFiltersDrawer({
                         textField: {
                             fullWidth: true,
                             size: 'small',
-                            placeholder: 'All Years',
+                            InputLabelProps: { shrink: true },
                             sx: {
                                 '& .MuiOutlinedInput-root': {
                                     borderRadius: 1.5,
