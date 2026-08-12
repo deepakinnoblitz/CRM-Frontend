@@ -44,6 +44,7 @@ import CardContent from '@mui/material/CardContent';
 import { fDate } from 'src/utils/format-time';
 import { frappeRequest } from 'src/utils/csrf';
 import { fNumber } from 'src/utils/format-number';
+import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getHRDoc, getHRSettings } from 'src/api/hr-management';
@@ -192,11 +193,7 @@ export function MyProfileView() {
                                             justifyContent: 'center',
                                             bgcolor: (theme) => {
                                                 if (employee.profile_picture) return 'transparent';
-                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                                let hash = 0;
-                                                const name = employee.employee_name || '';
-                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                return colors[Math.abs(hash) % colors.length];
+                                                return stringToColor(employee.employee_name || '');
                                             },
                                             overflow: 'hidden',
                                             border: (theme) => `4px solid ${theme.palette.background.paper}`,
@@ -209,13 +206,7 @@ export function MyProfileView() {
                                         ) : (
                                             <Typography variant="h2" sx={{
                                                 fontWeight: 800,
-                                                color: (theme) => {
-                                                    const name = employee.employee_name || '';
-                                                    let hash = 0;
-                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                                    return textColors[Math.abs(hash) % textColors.length];
-                                                }
+                                                color: (theme) => stringToDarkColor(employee.employee_name || '')
                                             }}>
                                                 {(employee.employee_name || '?').charAt(0).toUpperCase()}
                                             </Typography>

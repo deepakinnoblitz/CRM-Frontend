@@ -24,6 +24,7 @@ import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { frappeRequest } from 'src/utils/csrf';
+import { stringToColor, stringToDarkColor } from 'src/utils/color-utils';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 
@@ -224,11 +225,7 @@ export function ProfileView() {
                                             boxShadow: (theme) => theme.customShadows.z12,
                                             bgcolor: (theme) => {
                                                 if (user.user_image) return 'transparent';
-                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                                let hash = 0;
-                                                const name = user.full_name || '';
-                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                return colors[Math.abs(hash) % colors.length];
+                                                return stringToColor(user.full_name || '');
                                             }
                                         }}
                                     >
@@ -236,13 +233,7 @@ export function ProfileView() {
                                             <Typography sx={{
                                                 fontSize: { xs: 20, md: 28 },
                                                 fontWeight: 800,
-                                                color: (theme) => {
-                                                    const name = user.full_name || '';
-                                                    let hash = 0;
-                                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                                    return textColors[Math.abs(hash) % textColors.length];
-                                                }
+                                                color: (theme) => stringToDarkColor(user.full_name || '')
                                             }}>
                                                 {(user.full_name || '?').charAt(0).toUpperCase()}
                                             </Typography>

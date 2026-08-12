@@ -620,28 +620,16 @@ export function UserStatusBar() {
                                 height: 48,
                                 bgcolor: (t) => {
                                     if (userAvatar) return 'common.white';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                    return colors[Math.abs(hash) % colors.length];
+                                    return stringToColor(userName || '');
                                 },
                                 color: (t) => {
                                     if (userAvatar) return 'inherit';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return textColors[Math.abs(hash) % textColors.length];
+                                    return stringToDarkColor(userName || '');
                                 },
                                 fontWeight: 'bold',
                                 border: (t) => {
                                     if (userAvatar) return `2px solid ${t.palette.divider}`;
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return `2px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+                                    return `2px solid ${alpha(stringToDarkColor(userName || ''), 0.5)}`;
                                 },
                             }}
                         >
