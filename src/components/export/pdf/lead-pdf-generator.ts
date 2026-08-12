@@ -30,7 +30,7 @@ export async function generateLeadPdf({ reportData, selected = [], summary }: Ge
     row.service || '-',
     row.leads_type || '-',
     row.leads_from || '-',
-    row.owner_name || '-'
+    row.owner_full_name || row.owner_name || '-'
   ]);
 
   await exportToPdf({

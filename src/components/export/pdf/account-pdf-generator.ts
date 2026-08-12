@@ -26,7 +26,7 @@ export async function generateAccountPdf({ reportData, selected = [], summary }:
     row.website || '-',
     row.gstin || '-',
     [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
-    row.owner_name || '-'
+    row.owner_full_name || row.owner_name || '-'
   ]);
 
   await exportToPdf({

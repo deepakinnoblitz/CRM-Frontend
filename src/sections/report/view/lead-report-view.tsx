@@ -650,7 +650,16 @@ export function LeadReportView() {
                                                             </Label>
                                                         </TableCell>
                                                         <TableCell>{row.leads_from || '-'}</TableCell>
-                                                        <TableCell>{row.owner_name || '-'}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.owner_full_name || row.owner_name || '-'}
+                                                                </Typography>
+                                                                <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                    {row.owner_name || row.owner || '-'}
+                                                                </Typography>
+                                                            </Stack>
+                                                        </TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewLead(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />

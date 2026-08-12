@@ -585,8 +585,8 @@ export function MeetingReportView() {
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Title</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Meet For</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead/Contact</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Account</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead/Client</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Company</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Time & Venue</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
@@ -621,14 +621,70 @@ export function MeetingReportView() {
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
                                                         <TableCell>{row.meet_for}</TableCell>
-                                                        <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
-                                                        <TableCell>{row.accounts_name || '-'}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            {(() => {
+                                                                const title = row.lead_title || row.contact_title;
+                                                                const id = row.lead_name || row.contact_name;
+                                                                const mainText = title || id;
+                                                                if (!mainText) return '-';
+                                                                return (
+                                                                    <Stack spacing={0.5}>
+                                                                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                            {mainText}
+                                                                        </Typography>
+                                                                        {id && title && id !== title && (
+                                                                            <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                                {id}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            {(() => {
+                                                                if (!row.accounts_name) return '-';
+                                                                const title = row.account_title || row.accounts_name;
+                                                                const id = row.accounts_name;
+                                                                return (
+                                                                    <Stack spacing={0.5}>
+                                                                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                            {title}
+                                                                        </Typography>
+                                                                        {id && title && id !== title && (
+                                                                            <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                                {id}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
                                                         <TableCell>{row.outgoing_call_status}</TableCell>
                                                         <TableCell>
                                                             <Typography variant="body2" sx={{ fontWeight: 600 }}>{row.from_time ? dayjs(row.from_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
                                                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>{row.meeting_venue || row.location || '-'}</Typography>
                                                         </TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell>
+                                                            {(() => {
+                                                                if (!row.owner_name) return '-';
+                                                                const fullName = row.owner_full_name || row.owner_name;
+                                                                const userId = row.owner_name;
+
+                                                                return (
+                                                                    <Stack spacing={0.2}>
+                                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                                            {fullName}
+                                                                        </Typography>
+                                                                        {userId && userId !== fullName && (
+                                                                            <Typography variant="caption" color="text.secondary">
+                                                                                ID: {userId}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewMeeting(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
