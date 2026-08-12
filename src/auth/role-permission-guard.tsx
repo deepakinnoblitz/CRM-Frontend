@@ -54,13 +54,13 @@ export function RolePermissionGuard({ children, actionKey }: RolePermissionGuard
             const hasCRMRole = roles.includes('CRM And Sales');
             const hasEmployeeRole = roles.includes('Employee');
 
-            if (isHRPath && !hasHRRole) {
+            if (isEmployeePath && (hasEmployeeRole || hasHRRole || hasCRMRole)) {
+                // Allowed - employee path accessed by user with valid module role
+            } else if (isHRPath && !hasHRRole) {
                 return <Navigate to="/access-denied" replace />;
-            }
-            if (isCRMPath && !hasCRMRole) {
+            } else if (isCRMPath && !hasCRMRole) {
                 return <Navigate to="/access-denied" replace />;
-            }
-            if (isEmployeePath && !hasEmployeeRole && !hasHRRole && !hasCRMRole) {
+            } else if (isEmployeePath && !hasEmployeeRole && !hasHRRole && !hasCRMRole) {
                 return <Navigate to="/access-denied" replace />;
             }
         }
