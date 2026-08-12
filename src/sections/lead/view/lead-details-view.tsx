@@ -175,26 +175,26 @@ export function LeadDetailsView() {
 
     const handleSaveNote = useCallback(async (title: string, description: string) => {
         if (!lead) return;
-        
+
         let updatedNotes = [];
         if (selectedNote && selectedNote.name) {
             // Edit mode
-            updatedNotes = (lead.lead_notes || []).map((n: any) => 
+            updatedNotes = (lead.lead_notes || []).map((n: any) =>
                 n.name === selectedNote.name ? { ...n, title, description } : n
             );
         } else {
             // Create mode
             updatedNotes = [...(lead.lead_notes || []), { title, description }];
         }
-        
+
         await saveLead({ ...lead, lead_notes: updatedNotes });
-        
+
         setSnackbar({
             open: true,
             message: selectedNote ? 'Note updated successfully' : 'Note added successfully',
             severity: 'success'
         });
-        
+
         // Refresh lead details
         const refreshedLead = await getLead(lead.name);
         setLead(refreshedLead);
@@ -208,18 +208,18 @@ export function LeadDetailsView() {
 
     const handleConfirmDeleteNote = useCallback(async () => {
         if (!lead || !noteToDelete) return;
-        
+
         setOpenNoteDeleteConfirm(false);
         try {
             const updatedNotes = (lead.lead_notes || []).filter((n: any) => n.name !== noteToDelete.name);
             await saveLead({ ...lead, lead_notes: updatedNotes });
-            
+
             setSnackbar({
                 open: true,
                 message: 'Note deleted successfully',
                 severity: 'success'
             });
-            
+
             const refreshedLead = await getLead(lead.name);
             setLead(refreshedLead);
         } catch (err: any) {
@@ -477,7 +477,7 @@ export function LeadDetailsView() {
         }
     }, [lead, selectedStage, allWorkflowData]);
 
-    const handleSendAutomationMessage = useCallback( async (proposalName: string | null) => {
+    const handleSendAutomationMessage = useCallback(async (proposalName: string | null) => {
         if (!lead || !automationData) return;
         try {
             await sendAutomationMessage(
@@ -519,7 +519,7 @@ export function LeadDetailsView() {
         }
     }, [lead, automationData]);
 
-        const handleSendEmailAutomation = useCallback(
+    const handleSendEmailAutomation = useCallback(
         async (proposalName: string | null, attachments?: { file_url: string }[] | null) => {
             if (!lead || !emailAutomationData) return;
 
@@ -759,90 +759,90 @@ export function LeadDetailsView() {
             </Stack>
 
             {/* Stage Tracker Bar */}
-                <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
-                    <Box sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        overflowX: 'auto',
-                        flexGrow: 1,
-                        py: 0.5,
-                        px: 0.5,
-                        scrollbarWidth: 'none',
-                        msOverflowStyle: 'none',
-                        '&::-webkit-scrollbar': {
-                            display: 'none',
-                        },
-                    }}>
-                        {(() => {
-                            const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
-                            const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
-                            const currentActiveStage = selectedStage || effectiveLeadStage;
-                            const activeIndex = stages.findIndex(s => s === currentActiveStage);
+            <Card sx={{ mb: 3, p: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: { xs: 'wrap', md: 'nowrap' }, gap: 2, borderRadius: 2 }}>
+                <Box sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    overflowX: 'auto',
+                    flexGrow: 1,
+                    py: 0.5,
+                    px: 0.5,
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    '&::-webkit-scrollbar': {
+                        display: 'none',
+                    },
+                }}>
+                    {(() => {
+                        const stages = allWorkflowData.states.length > 0 ? allWorkflowData.states : ['New Lead'];
+                        const effectiveLeadStage = lead.workflow_state || lead.status || 'New Lead';
+                        const currentActiveStage = selectedStage || effectiveLeadStage;
+                        const activeIndex = stages.findIndex(s => s === currentActiveStage);
 
-                            return stages.map((stage: string, index: number) => {
-                                const isCompletedOrActive = index <= activeIndex;
-                                const isActive = stage === currentActiveStage;
+                        return stages.map((stage: string, index: number) => {
+                            const isCompletedOrActive = index <= activeIndex;
+                            const isActive = stage === currentActiveStage;
 
-                                return (
-                                    <Box
-                                        key={stage}
-                                        onClick={() => setSelectedStage(stage)}
-                                        sx={{
-                                            height: 46,
-                                            display: 'flex',
-                                            flex: '1 1 0',
-                                            minWidth: { xs: 100, md: 92 },
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            px: 1,
-                                            ml: index === 0 ? 0 : '-10px',
-                                            cursor: 'pointer',
-                                            userSelect: 'none',
-                                            clipPath: getClipPath(index, stages.length),
-                                            bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
-                                            color: isCompletedOrActive ? 'common.white' : '#4c545a',
-                                            fontWeight: isActive ? 800 : 600,
-                                            fontSize: { xs: 11, md: 11.5 },
-                                            lineHeight: 1.15,
-                                            textAlign: 'center',
-                                            transition: 'all 0.2s',
-                                            whiteSpace: 'pre-line',
-                                            position: 'relative',
-                                            zIndex: stages.length - index,
-                                            '&:hover': {
-                                                opacity: 0.88,
-                                            }
-                                        }}
-                                    >
-                                        <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
-                                            {stage}
-                                        </Typography>
-                                    </Box>
-                                );
-                            });
-                        })()}
-                    </Box>
-                    {canEditLead &&(
-                        <Button
-                            variant="contained"
-                            disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
-                            onClick={handleStageUpdateClick}
-                            sx={{
-                                height: 36,
-                                borderRadius: 1.5,
-                                fontWeight: 700,
-                                textTransform: 'none',
-                                bgcolor: '#2081C3',
-                                color: 'common.white',
-                                minWidth: 130,
-                                '&:hover': { bgcolor: '#1a699f' },
-                                '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
-                            }}
-                        >
-                            {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
-                        </Button>
-                    )}
-                </Card>
+                            return (
+                                <Box
+                                    key={stage}
+                                    onClick={() => setSelectedStage(stage)}
+                                    sx={{
+                                        height: 46,
+                                        display: 'flex',
+                                        flex: '1 1 0',
+                                        minWidth: { xs: 100, md: 92 },
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        px: 1,
+                                        ml: index === 0 ? 0 : '-10px',
+                                        cursor: 'pointer',
+                                        userSelect: 'none',
+                                        clipPath: getClipPath(index, stages.length),
+                                        bgcolor: isCompletedOrActive ? '#2081C3' : '#e0e0e0b5',
+                                        color: isCompletedOrActive ? 'common.white' : '#4c545a',
+                                        fontWeight: isActive ? 800 : 600,
+                                        fontSize: { xs: 11, md: 11.5 },
+                                        lineHeight: 1.15,
+                                        textAlign: 'center',
+                                        transition: 'all 0.2s',
+                                        whiteSpace: 'pre-line',
+                                        position: 'relative',
+                                        zIndex: stages.length - index,
+                                        '&:hover': {
+                                            opacity: 0.88,
+                                        }
+                                    }}
+                                >
+                                    <Typography variant="body2" sx={{ fontWeight: 'inherit', fontSize: 'inherit', lineHeight: 'inherit', textAlign: 'inherit', zIndex: 1, pl: index === 0 ? 0 : 1, pr: index === stages.length - 1 ? 0 : 1 }}>
+                                        {stage}
+                                    </Typography>
+                                </Box>
+                            );
+                        });
+                    })()}
+                </Box>
+                {canEditLead && (
+                    <Button
+                        variant="contained"
+                        disabled={!selectedStage || selectedStage === (lead.workflow_state || lead.status || 'New Lead') || updatingStage}
+                        onClick={handleStageUpdateClick}
+                        sx={{
+                            height: 36,
+                            borderRadius: 1.5,
+                            fontWeight: 700,
+                            textTransform: 'none',
+                            bgcolor: '#2081C3',
+                            color: 'common.white',
+                            minWidth: 130,
+                            '&:hover': { bgcolor: '#1a699f' },
+                            '&:disabled': { bgcolor: 'action.disabledBackground', color: 'text.disabled' }
+                        }}
+                    >
+                        {updatingStage ? <CircularProgress size={20} color="inherit" /> : 'Edit Status'}
+                    </Button>
+                )}
+            </Card>
 
             {/* Premium Header Banner */}
             <Box
@@ -860,7 +860,7 @@ export function LeadDetailsView() {
                         theme.palette.mode === 'light'
                             ? `linear-gradient(135deg, #F6FAFE 0%, #EDF4FB 100%)`
                             : alpha(theme.palette.primary.main, 0.08),
-                    border: 
+                    border:
                         `1px solid ${theme.palette.mode === 'light' ? '#E2EAF5' : alpha(theme.palette.primary.main, 0.16)}`,
                 }}
             >
@@ -1007,9 +1007,9 @@ export function LeadDetailsView() {
 
             {/* Grid layout containing left column (details & tabs) and right column (notes) */}
             <Grid container spacing={3}>
-                <Grid 
+                <Grid
                     size={{ xs: 12, md: showNotes ? 8.4 : 12 }}
-                    sx={{ 
+                    sx={{
                         transition: (themeVar) => themeVar.transitions.create(['width', 'flex-basis', 'max-width'], {
                             duration: themeVar.transitions.duration.shorter,
                         })
@@ -1033,461 +1033,461 @@ export function LeadDetailsView() {
                                 borderColor: 'divider',
                             }}
                         >
-                        <Tabs
-                            value={currentTab}
-                            onChange={(e, newValue) => {
-                                setCurrentTab(newValue);
-                                setShowNotes(newValue === 'notes');
+                            <Tabs
+                                value={currentTab}
+                                onChange={(e, newValue) => {
+                                    setCurrentTab(newValue);
+                                    setShowNotes(newValue === 'notes');
+                                }}
+                                sx={{ px: 2.5 }}
+                            >
+                                {TABS.map((tab) => (
+                                    <Tab
+                                        key={tab.value}
+                                        value={tab.value}
+                                        label={tab.label}
+                                        iconPosition="start"
+                                        sx={{ minHeight: 48, fontWeight: 700 }}
+                                    />
+                                ))}
+                            </Tabs>
+                        </Box>
+
+                        {/* Tab Content */}
+                        <Box
+                            sx={{
+                                p: 4,
+                                flexGrow: 1,
                             }}
-                            sx={{ px: 2.5 }}
                         >
-                            {TABS.map((tab) => (
-                                <Tab
-                                    key={tab.value}
-                                    value={tab.value}
-                                    label={tab.label}
-                                    iconPosition="start"
-                                    sx={{ minHeight: 48, fontWeight: 700 }}
-                                />
-                            ))}
-                        </Tabs>
-                    </Box>
-
-            {/* Tab Content */}
-            <Box
-                sx={{
-                    p: 4,
-                    flexGrow: 1,
-                }}
-            >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    {(currentTab === 'general' || currentTab === 'notes') && (
-                        <>
-                            {/* General Information */}
-                            <Box sx={{ margin: 2 }}>
-                                <SectionHeader title="Contact & Service" icon={<FaPhone size={15} />} />
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 3,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                    }}
-                                >
-                                    <DetailItem
-                                        label="Phone"
-                                        value={
-                                            lead.phone_numbers?.length
-                                                ? lead.phone_numbers.map((p: any) => p.phone).join(", ")
-                                                : lead.phone_number
-                                        }
-                                        icon={<FaPhone size={13} />}
-                                    />
-                                    <DetailItem
-                                        label="Email"
-                                        value={
-                                            lead.emails?.length
-                                                ? lead.emails.map((e: any) => e.email).join(", ")
-                                                : lead.email
-                                        }
-                                        icon={<FaEnvelope size={13} />}
-                                    />
-                                    <DetailItem label="Service" value={lead.service} icon={<FaLightbulb size={13} />} color="info.main" />
-                                    <DetailItem label="Leads Type" value={lead.leads_type} icon={<FaTag size={13} />} />
-                                    <DetailItem label="Leads From" value={lead.leads_from} icon={<FaGlobe size={13} />} />
-                                    <DetailItem label="GSTIN" value={lead.gstin} icon={<FaListCheck size={13} />} />
-                                </Box>
-                            </Box>
-
-                            {/* Location & Status */}
-                            <Box sx={{ margin: 2 }}>
-                                <SectionHeader title="Location & Preferences" icon={<FaLocationDot size={15} />} />
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 3,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                    }}
-                                >
-                                    <DetailItem label="Country" value={lead.country} icon={<FaGlobe size={13} />} />
-                                    <DetailItem label="State" value={lead.state} icon={<FaLocationDot size={13} />} />
-                                    <DetailItem label="City" value={lead.city} icon={<FaCity size={13} />} />
-                                </Box>
-                            </Box>
-
-                            {/* System Information */}
-                            <Box sx={{ margin: 2 }}>
-                                <SectionHeader title="System Information" icon={<MdInfo size={18} />} />
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gap: 3,
-                                        gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
-                                            Owner
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-                                            <Box sx={{ color: 'text.disabled', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <FaUser size={13} />
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                                                    {ownerDetails?.full_name || lead.owner_name || lead.owner || '-'}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block' }}>
-                                                    {ownerDetails?.email || (lead.owner && lead.owner.includes('@') ? lead.owner : '')}
-                                                </Typography>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {(currentTab === 'general' || currentTab === 'notes') && (
+                                    <>
+                                        {/* General Information */}
+                                        <Box sx={{ margin: 2 }}>
+                                            <SectionHeader title="Contact & Service" icon={<FaPhone size={15} />} />
+                                            <Box
+                                                sx={{
+                                                    display: 'grid',
+                                                    gap: 3,
+                                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                                }}
+                                            >
+                                                <DetailItem
+                                                    label="Phone"
+                                                    value={
+                                                        lead.phone_numbers?.length
+                                                            ? lead.phone_numbers.map((p: any) => p.phone).join(", ")
+                                                            : lead.phone_number
+                                                    }
+                                                    icon={<FaPhone size={13} />}
+                                                />
+                                                <DetailItem
+                                                    label="Email"
+                                                    value={
+                                                        lead.emails?.length
+                                                            ? lead.emails.map((e: any) => e.email).join(", ")
+                                                            : lead.email
+                                                    }
+                                                    icon={<FaEnvelope size={13} />}
+                                                />
+                                                <DetailItem label="Service" value={lead.service} icon={<FaLightbulb size={13} />} color="info.main" />
+                                                <DetailItem label="Leads Type" value={lead.leads_type} icon={<FaTag size={13} />} />
+                                                <DetailItem label="Leads From" value={lead.leads_from} icon={<FaGlobe size={13} />} />
+                                                <DetailItem label="GSTIN" value={lead.gstin} icon={<FaListCheck size={13} />} />
                                             </Box>
                                         </Box>
-                                    </Box>
-                                    <DetailItem label="Creation" value={`${new Date(lead.creation).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.creation).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
-                                    <DetailItem label="Modified" value={`${new Date(lead.modified).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.modified).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
-                                </Box>
-                            </Box>
 
-                            {/* Notes Section (Outside Additional Info) */}
-                            {lead.notes && (
-                                <Box
-                                    sx={{
-                                        p: 3,
-                                        bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
-                                        borderRadius: 2.5,
-                                        border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
-                                    }}
-                                >
-                                    <SectionHeader title="Notes" icon={<CgNotes size={18} />} noMargin />
-                                    <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-                                        {lead.notes.split('\n\n').map((item: string, idx: number) => {
-                                            const parts = item.split('\n');
-                                            const label = parts[0] || '';
-                                            const value = parts.slice(1).join('\n') || '';
-                                            return (
-                                                <Box key={idx}>
-                                                    <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
-                                                        {label}
-                                                    </Typography>
-                                                    <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-wrap', opacity: 0.8, fontSize: 15 }}>
-                                                        {value}
-                                                    </Typography>
-                                                </Box>
-                                            );
-                                        })}
-                                    </Box>
-                                </Box>
-                            )}
-
-                            {/* Additional Info */}
-                            <Box
-                                sx={{
-                                    p: 3,
-                                    bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
-                                    borderRadius: 2.5,
-                                    border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
-                                }}
-                            >
-                                <SectionHeader title="Additional Information" icon={<FaFileLines size={18} />} noMargin />
-                                <Box sx={{ mt: 3.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.2 }}>
-                                            Billing Address
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: '#1E293B', fontWeight: 600, lineHeight: 1.6 }}>
-                                            {lead.billing_address || 'No address provided'}
-                                        </Typography>
-                                    </Box>
-                                    <Divider sx={{ borderStyle: 'solid', borderColor:  theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
-                                    <Box>
-                                        <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
-                                            Remark
-                                        </Typography>
-                                        <Typography variant="body2" sx={{ color: lead.remarks ? '#1E293B' : '#64748B', fontWeight: lead.remarks ? 600 : 500, fontStyle: lead.remarks ? 'normal' : 'italic', lineHeight: 1.6 }}>
-                                            {lead.remarks || 'No remarks added'}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-                            </Box>
-                        </>
-                    )}
-
-                    {currentTab === 'pipeline' && (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            <LeadPipelineTimeline
-                                title="Stage History"
-                                list={lead.converted_pipeline_timeline || []}
-                            />
-                        </Box>
-                    )}
-
-                    {currentTab === 'followups' && canViewFollowups && (
-                        <LeadFollowupDetails
-                            title="Followup History"
-                            list={followupHistory}
-                            onView={handleViewFollowup}
-                        />
-                    )}
-
-                    {currentTab === 'proposal' && canViewProposals && (
-                        <LeadProposalDetails
-                            title="Proposal List"
-                            list={proposalHistory}
-                        />
-                    )}
-
-                    {currentTab === 'convert' && (
-                        <Box sx={{ py: 3 }}>
-                            {lead.converted_account || lead.converted_contact ? (
-                                <Box>
-                                    <Box sx={{ padding: 5, bgcolor:  theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border:  `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`, }}>
-                                        <Stack spacing={2.5}>
-                                            <Box>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                        Converted Company
-                                                    </Typography>
-                                                </Box>
-                                                <Typography
-                                                    variant="h6"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        color: 'text.primary',
-                                                        lineHeight: 1.3,
-                                                    }}
-                                                >
-                                                    {convertedAccountName || 'NA'}
-                                                </Typography>
-
-                                                {lead.converted_contact && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            color: 'primary.main',
-                                                            fontWeight: 700,
-                                                            mt: 0.5,
-                                                        }}
-                                                    >
-                                                        {lead.converted_account}
-                                                    </Typography>
-                                                )}
-                                            </Box>
-                                            <Divider sx={{ borderStyle: 'dashed' }} />
-                                            <Box>
-                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
-                                                        Converted Client
-                                                    </Typography>
-                                                </Box>
-                                                <Typography
-                                                    variant="h6"
-                                                    sx={{
-                                                        fontWeight: 800,
-                                                        color: 'text.primary',
-                                                        lineHeight: 1.3,
-                                                    }}
-                                                >
-                                                    {convertedContactName || 'NA'}
-                                                </Typography>
-
-                                                {lead.converted_contact && (
-                                                    <Typography
-                                                        variant="body2"
-                                                        sx={{
-                                                            color: 'primary.main',
-                                                            fontWeight: 700,
-                                                            mt: 0.5,
-                                                        }}
-                                                    >
-                                                        {lead.converted_contact}
-                                                    </Typography>
-                                                )}
-
-                                            </Box>
-                                        </Stack>
-                                    </Box>
-                                </Box>
-                            ) : (
-                                <Box sx={{ py: 5, textAlign: 'center' }}>
-                                    <Box
-                                        sx={{
-                                            width: 120,
-                                            height: 120,
-                                            borderRadius: '50%',
-                                            bgcolor: alpha('#1877F2', 0.08),
-                                            color: '#1877F2',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            mx: 'auto',
-                                            mb: 3
-                                        }}
-                                    >
-                                        <Iconify icon={"solar:user-plus-bold-duotone" as any} width={64} />
-                                    </Box>
-                                    <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, maxWidth: 400, mx: 'auto' }}>
-                                        Convert this lead into a permanent Client and Company record in the CRM.
-                                    </Typography>
-                                    {canCreateClient && canCreateCompany &&(
-                                        <Button
-                                            variant="contained"
-                                            size="large"
-                                            color="primary"
-                                            startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
-                                            onClick={() => setOpenConvertDialog(true)}
-                                            disabled={converting}
-                                            sx={{ px: 4, height: 48, fontWeight: 800 }}
-                                        >
-                                            {converting ? 'Converting...' : 'Convert Lead Now'}
-                                        </Button>
-                                    )}
-                                    {!canCreateClient && !canCreateCompany &&(
-                                        <Typography variant="body1" sx={{ color: '#ff0010', mb: 4, maxWidth: 400, mx: 'auto', fontWeight: 600 }}>
-                                            Permission denied. You cannot convert this lead.
-                                        </Typography>
-                                    )}
-                                </Box>
-                            )}
-                        </Box>
-                    )}
-                </Box>
-            </Box>
-            </Card>
-            </Grid>
-
-            {showNotes && (
-                <Grid size={{ xs: 12, md: 3.6 }}>
-                    <Card
-                        sx={{
-                            p: 3,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            height: '100%',
-                            minHeight: 400,
-                            borderRadius: 2.5,
-                            border: (themeVar) => `1px solid ${themeVar.palette.mode === 'light' ? '#E2EAF5' : alpha(themeVar.palette.primary.main, 0.16)}`,
-                            bgcolor: 'background.paper',
-                            boxShadow: 'none',
-                        }}
-                    >
-                        <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-                            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                                Lead Notes
-                            </Typography>
-                            {canEditLead &&(
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        setSelectedNote(null);
-                                        setOpenNoteDialog(true);
-                                    }}
-                                    sx={{
-                                        borderRadius: 5.5,
-                                        fontWeight: 700,
-                                        textTransform: 'none',
-                                        px: 2.1,
-                                        height: 32,
-                                        bgcolor: '#2081C3',
-                                        color: '#fff',
-                                        fontSize: '0.8125rem',
-                                        letterSpacing: 0.2,
-                                        '&:hover': { bgcolor: '#1a699f' },
-                                        boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
-                                    }}
-                                >
-                                    Add Note
-                                </Button>
-                            )}
-
-                        </Stack>
-
-                        <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 800, pr: 0.5 }}>
-                            {!lead.lead_notes || lead.lead_notes.length === 0 ? (
-                                <Box sx={{ py: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                                    <Iconify icon="solar:notes-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 2, opacity: 0.24 }} />
-                                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                                        No notes added yet
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.disabled', mt: 0.5 }}>
-                                        Click &quot;Add Note&quot; to create a note.
-                                    </Typography>
-                                </Box>
-                            ) : (
-                                <Stack spacing={2}>
-                                    {[...lead.lead_notes].reverse().map((note: any, index: number) => (
-                                        <Card 
-                                            key={note.name || index} 
-                                        sx={(() => {
-                                                const palettes = [
-                                                    { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },  // yellow
-                                                    { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },  // blue
-                                                    { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },  // green
-                                                    { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },  // purple
-                                                ];
-                                                const p = palettes[index % palettes.length];
-                                                return {
-                                                    p: 2.5,
-                                                    borderRadius: 1.5,
-                                                    position: 'relative',
-                                                    boxShadow: 'none',
-                                                    border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
-                                                    bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
-                                                };
-                                            })()}
-                                        >
-                                            <IconButton
-                                                size="small"
-                                                onClick={(e) => handleOpenNoteMenu(e, note)}
-                                                sx={{ position: 'absolute', top: 12, right: 12, color: 'text.disabled' }}
+                                        {/* Location & Status */}
+                                        <Box sx={{ margin: 2 }}>
+                                            <SectionHeader title="Location & Preferences" icon={<FaLocationDot size={15} />} />
+                                            <Box
+                                                sx={{
+                                                    display: 'grid',
+                                                    gap: 3,
+                                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                                }}
                                             >
-                                                <Iconify icon="eva:more-vertical-fill" width={18} />
-                                            </IconButton>
+                                                <DetailItem label="Country" value={lead.country} icon={<FaGlobe size={13} />} />
+                                                <DetailItem label="State" value={lead.state} icon={<FaLocationDot size={13} />} />
+                                                <DetailItem label="City" value={lead.city} icon={<FaCity size={13} />} />
+                                            </Box>
+                                        </Box>
 
-                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, pr: 4, color: 'text.primary' }}>
-                                                {note.title}
-                                            </Typography>
-                                            
-                                            {note.description && (
-                                                <Box 
-                                                    dangerouslySetInnerHTML={{ __html: note.description }} 
-                                                    sx={{ 
-                                                        typography: 'body2', 
-                                                        color: 'text.secondary', 
-                                                        mt: 1,
-                                                        wordBreak: 'break-word',
-                                                        '& p': { margin: 0 },
-                                                        '& ul, & ol': { pl: 2, my: 0.5 }
-                                                    }} 
-                                                />
-                                            )}
-                                            
-                                            {(note.creation || note.owner) && (
-                                                <Stack
-                                                    direction="row"
-                                                    alignItems="center"
-                                                    justifyContent="space-between"
-                                                    mt={1.5}
+                                        {/* System Information */}
+                                        <Box sx={{ margin: 2 }}>
+                                            <SectionHeader title="System Information" icon={<MdInfo size={18} />} />
+                                            <Box
+                                                sx={{
+                                                    display: 'grid',
+                                                    gap: 3,
+                                                    gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' },
+                                                }}
+                                            >
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block' }}>
+                                                        Owner
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                                                        <Box sx={{ color: 'text.disabled', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <FaUser size={13} />
+                                                        </Box>
+                                                        <Box>
+                                                            <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                                                {ownerDetails?.full_name || lead.owner_name || lead.owner || '-'}
+                                                            </Typography>
+                                                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block' }}>
+                                                                {ownerDetails?.email || (lead.owner && lead.owner.includes('@') ? lead.owner : '')}
+                                                            </Typography>
+                                                        </Box>
+                                                    </Box>
+                                                </Box>
+                                                <DetailItem label="Creation" value={`${new Date(lead.creation).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.creation).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
+                                                <DetailItem label="Modified" value={`${new Date(lead.modified).toLocaleDateString('en-GB').replace(/\//g, '-')} ${new Date(lead.modified).toLocaleTimeString('en-GB')}`} icon={<FaCalendarDays size={13} />} />
+                                            </Box>
+                                        </Box>
+
+                                        {/* Notes Section (Outside Additional Info) */}
+                                        {lead.notes && (
+                                            <Box
+                                                sx={{
+                                                    p: 3,
+                                                    bgcolor: theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
+                                                    borderRadius: 2.5,
+                                                    border: `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
+                                                }}
+                                            >
+                                                <SectionHeader title="Notes" icon={<CgNotes size={18} />} noMargin />
+                                                <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                                                    {lead.notes.split('\n\n').map((item: string, idx: number) => {
+                                                        const parts = item.split('\n');
+                                                        const label = parts[0] || '';
+                                                        const value = parts.slice(1).join('\n') || '';
+                                                        return (
+                                                            <Box key={idx}>
+                                                                <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
+                                                                    {label}
+                                                                </Typography>
+                                                                <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-wrap', opacity: 0.8, fontSize: 15 }}>
+                                                                    {value}
+                                                                </Typography>
+                                                            </Box>
+                                                        );
+                                                    })}
+                                                </Box>
+                                            </Box>
+                                        )}
+
+                                        {/* Additional Info */}
+                                        <Box
+                                            sx={{
+                                                p: 3,
+                                                bgcolor: theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
+                                                borderRadius: 2.5,
+                                                border: `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
+                                            }}
+                                        >
+                                            <SectionHeader title="Additional Information" icon={<FaFileLines size={18} />} noMargin />
+                                            <Box sx={{ mt: 3.5, display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.2 }}>
+                                                        Billing Address
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: '#1E293B', fontWeight: 600, lineHeight: 1.6 }}>
+                                                        {lead.billing_address || 'No address provided'}
+                                                    </Typography>
+                                                </Box>
+                                                <Divider sx={{ borderStyle: 'solid', borderColor: theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
+                                                <Box>
+                                                    <Typography variant="caption" sx={{ color: '#68707bff', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block', letterSpacing: 0.8 }}>
+                                                        Remark
+                                                    </Typography>
+                                                    <Typography variant="body2" sx={{ color: lead.remarks ? '#1E293B' : '#64748B', fontWeight: lead.remarks ? 600 : 500, fontStyle: lead.remarks ? 'normal' : 'italic', lineHeight: 1.6 }}>
+                                                        {lead.remarks || 'No remarks added'}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+
+                                {currentTab === 'pipeline' && (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                        <LeadPipelineTimeline
+                                            title="Stage History"
+                                            list={lead.converted_pipeline_timeline || []}
+                                        />
+                                    </Box>
+                                )}
+
+                                {currentTab === 'followups' && canViewFollowups && (
+                                    <LeadFollowupDetails
+                                        title="Followup History"
+                                        list={followupHistory}
+                                        onView={handleViewFollowup}
+                                    />
+                                )}
+
+                                {currentTab === 'proposal' && canViewProposals && (
+                                    <LeadProposalDetails
+                                        title="Proposal List"
+                                        list={proposalHistory}
+                                    />
+                                )}
+
+                                {currentTab === 'convert' && (
+                                    <Box sx={{ py: 3 }}>
+                                        {lead.converted_account || lead.converted_contact ? (
+                                            <Box>
+                                                <Box sx={{ padding: 5, bgcolor: theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04), borderRadius: 2.5, border: `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`, }}>
+                                                    <Stack spacing={2.5}>
+                                                        <Box>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                                    Converted Company
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography
+                                                                variant="h6"
+                                                                sx={{
+                                                                    fontWeight: 800,
+                                                                    color: 'text.primary',
+                                                                    lineHeight: 1.3,
+                                                                }}
+                                                            >
+                                                                {convertedAccountName || 'NA'}
+                                                            </Typography>
+
+                                                            {lead.converted_contact && (
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        color: 'primary.main',
+                                                                        fontWeight: 700,
+                                                                        mt: 0.5,
+                                                                    }}
+                                                                >
+                                                                    {lead.converted_account}
+                                                                </Typography>
+                                                            )}
+                                                        </Box>
+                                                        <Divider sx={{ borderStyle: 'dashed' }} />
+                                                        <Box>
+                                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 1, display: 'block' }}>
+                                                                    Converted Client
+                                                                </Typography>
+                                                            </Box>
+                                                            <Typography
+                                                                variant="h6"
+                                                                sx={{
+                                                                    fontWeight: 800,
+                                                                    color: 'text.primary',
+                                                                    lineHeight: 1.3,
+                                                                }}
+                                                            >
+                                                                {convertedContactName || 'NA'}
+                                                            </Typography>
+
+                                                            {lead.converted_contact && (
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    sx={{
+                                                                        color: 'primary.main',
+                                                                        fontWeight: 700,
+                                                                        mt: 0.5,
+                                                                    }}
+                                                                >
+                                                                    {lead.converted_contact}
+                                                                </Typography>
+                                                            )}
+
+                                                        </Box>
+                                                    </Stack>
+                                                </Box>
+                                            </Box>
+                                        ) : (
+                                            <Box sx={{ py: 5, textAlign: 'center' }}>
+                                                <Box
+                                                    sx={{
+                                                        width: 120,
+                                                        height: 120,
+                                                        borderRadius: '50%',
+                                                        bgcolor: alpha('#1877F2', 0.08),
+                                                        color: '#1877F2',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        mx: 'auto',
+                                                        mb: 3
+                                                    }}
                                                 >
-                                                    {note.creation ? (
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                                            {fDateTime(note.creation)}
-                                                        </Typography>
-                                                    ) : <span />}
-
-                                                    {note.owner && (
-                                                        <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
-                                                            {note.owner}
-                                                        </Typography>
-                                                    )}
-                                                </Stack>
-                                            )}
-                                        </Card>
-                                    ))}
-                                </Stack>
-                            )}
+                                                    <Iconify icon={"solar:user-plus-bold-duotone" as any} width={64} />
+                                                </Box>
+                                                <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, maxWidth: 400, mx: 'auto' }}>
+                                                    Convert this lead into a permanent Client and Company record in the CRM.
+                                                </Typography>
+                                                {canCreateClient && canCreateCompany && (
+                                                    <Button
+                                                        variant="contained"
+                                                        size="large"
+                                                        color="primary"
+                                                        startIcon={converting ? <Iconify icon={"svg-spinners:18-dots-indicator" as any} /> : <Iconify icon={"solar:refresh-bold" as any} />}
+                                                        onClick={() => setOpenConvertDialog(true)}
+                                                        disabled={converting}
+                                                        sx={{ px: 4, height: 48, fontWeight: 800 }}
+                                                    >
+                                                        {converting ? 'Converting...' : 'Convert Lead Now'}
+                                                    </Button>
+                                                )}
+                                                {!canCreateClient && !canCreateCompany && (
+                                                    <Typography variant="body1" sx={{ color: '#ff0010', mb: 4, maxWidth: 400, mx: 'auto', fontWeight: 600 }}>
+                                                        Permission denied. You cannot convert this lead.
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
+                            </Box>
                         </Box>
                     </Card>
                 </Grid>
-            )}
+
+                {showNotes && (
+                    <Grid size={{ xs: 12, md: 3.6 }}>
+                        <Card
+                            sx={{
+                                p: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                height: '100%',
+                                minHeight: 400,
+                                borderRadius: 2.5,
+                                border: (themeVar) => `1px solid ${themeVar.palette.mode === 'light' ? '#E2EAF5' : alpha(themeVar.palette.primary.main, 0.16)}`,
+                                bgcolor: 'background.paper',
+                                boxShadow: 'none',
+                            }}
+                        >
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                                    Lead Notes
+                                </Typography>
+                                {canEditLead && (
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => {
+                                            setSelectedNote(null);
+                                            setOpenNoteDialog(true);
+                                        }}
+                                        sx={{
+                                            borderRadius: 5.5,
+                                            fontWeight: 700,
+                                            textTransform: 'none',
+                                            px: 2.1,
+                                            height: 32,
+                                            bgcolor: '#2081C3',
+                                            color: '#fff',
+                                            fontSize: '0.8125rem',
+                                            letterSpacing: 0.2,
+                                            '&:hover': { bgcolor: '#1a699f' },
+                                            boxShadow: '0 2px 8px rgba(32,129,195,0.25)',
+                                        }}
+                                    >
+                                        Add Note
+                                    </Button>
+                                )}
+
+                            </Stack>
+
+                            <Box sx={{ flexGrow: 1, overflowY: 'auto', maxHeight: 800, pr: 0.5 }}>
+                                {!lead.lead_notes || lead.lead_notes.length === 0 ? (
+                                    <Box sx={{ py: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                                        <Iconify icon="solar:notes-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 2, opacity: 0.24 }} />
+                                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                                            No notes added yet
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.disabled', mt: 0.5 }}>
+                                            Click &quot;Add Note&quot; to create a note.
+                                        </Typography>
+                                    </Box>
+                                ) : (
+                                    <Stack spacing={2}>
+                                        {[...lead.lead_notes].reverse().map((note: any, index: number) => (
+                                            <Card
+                                                key={note.name || index}
+                                                sx={(() => {
+                                                    const palettes = [
+                                                        { light: '#FFFBEB', dark: 'rgba(251,191,36,0.10)', border: '#FDE68A' },  // yellow
+                                                        { light: '#EFF6FF', dark: 'rgba(96,165,250,0.10)', border: '#BFDBFE' },  // blue
+                                                        { light: '#F0FDF4', dark: 'rgba(74,222,128,0.10)', border: '#BBF7D0' },  // green
+                                                        { light: '#FAF5FF', dark: 'rgba(192,132,252,0.10)', border: '#E9D5FF' },  // purple
+                                                    ];
+                                                    const p = palettes[index % palettes.length];
+                                                    return {
+                                                        p: 2.5,
+                                                        borderRadius: 1.5,
+                                                        position: 'relative',
+                                                        boxShadow: 'none',
+                                                        border: (themeVar: any) => `1px solid ${themeVar.palette.mode === 'light' ? p.border : 'rgba(255,255,255,0.08)'}`,
+                                                        bgcolor: (themeVar: any) => themeVar.palette.mode === 'light' ? p.light : p.dark,
+                                                    };
+                                                })()}
+                                            >
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={(e) => handleOpenNoteMenu(e, note)}
+                                                    sx={{ position: 'absolute', top: 12, right: 12, color: 'text.disabled' }}
+                                                >
+                                                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                                                </IconButton>
+
+                                                <Typography variant="subtitle2" sx={{ fontWeight: 700, pr: 4, color: 'text.primary' }}>
+                                                    {note.title}
+                                                </Typography>
+
+                                                {note.description && (
+                                                    <Box
+                                                        dangerouslySetInnerHTML={{ __html: note.description }}
+                                                        sx={{
+                                                            typography: 'body2',
+                                                            color: 'text.secondary',
+                                                            mt: 1,
+                                                            wordBreak: 'break-word',
+                                                            '& p': { margin: 0 },
+                                                            '& ul, & ol': { pl: 2, my: 0.5 }
+                                                        }}
+                                                    />
+                                                )}
+
+                                                {(note.creation || note.owner) && (
+                                                    <Stack
+                                                        direction="row"
+                                                        alignItems="center"
+                                                        justifyContent="space-between"
+                                                        mt={1.5}
+                                                    >
+                                                        {note.creation ? (
+                                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                                {fDateTime(note.creation)}
+                                                            </Typography>
+                                                        ) : <span />}
+
+                                                        {note.owner && (
+                                                            <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                                {note.owner}
+                                                            </Typography>
+                                                        )}
+                                                    </Stack>
+                                                )}
+                                            </Card>
+                                        ))}
+                                    </Stack>
+                                )}
+                            </Box>
+                        </Card>
+                    </Grid>
+                )}
             </Grid>
 
             <AccountDetailsDialog
