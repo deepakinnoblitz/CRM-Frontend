@@ -249,9 +249,16 @@ export function MetaFormsEditView() {
     }, [id, enqueueSnackbar, mandatoryFields]);
 
     const handleAddMappingRow = () => {
+        const usedFields = fieldMappings.map((m) => m.crm_field);
+        const optionsList = crmFieldOptions.length ? crmFieldOptions : CRM_FIELD_OPTIONS;
+        const firstAvailable = optionsList.find(
+            (opt) => opt.value === 'notes' || opt.value === 'remarks' || !usedFields.includes(opt.value)
+        );
+        const defaultCrmField = firstAvailable ? firstAvailable.value : '';
+
         setFieldMappings(prev => [
             ...prev,
-            { meta_field: '', crm_field: 'lead_name', required: 0, default_value: '', transform_function: 'None' }
+            { meta_field: '', crm_field: defaultCrmField, required: 0, default_value: '', transform_function: 'None' }
         ]);
     };
 
@@ -288,15 +295,19 @@ export function MetaFormsEditView() {
         }
 
         // Validate field mapping list
-        const invalidMappings = fieldMappings.some(m => {
-            const isFallbackField = m.crm_field === 'leads_type' || m.crm_field === 'leads_from';
-            if (isFallbackField) {
-                return !m.crm_field;
+        const processedMappings = fieldMappings.map(m => {
+            const copy = { ...m };
+            if (copy.crm_field === 'leads_type' && !copy.default_value) {
+                copy.default_value = 'Incoming';
             }
-            return !(m.meta_field || '').trim() || !m.crm_field;
+            return copy;
         });
+
+        const invalidMappings = processedMappings.some(m => 
+            !m.crm_field || (!(m.meta_field || '').trim() && !(m.default_value || '').trim())
+        );
         if (invalidMappings) {
-            enqueueSnackbar('Please ensure all mapping rows have a Meta Field value and CRM Field selected.', { variant: 'error' });
+            enqueueSnackbar('Please ensure all mapping rows have a CRM Field selected and either a Meta Field value or Default Value.', { variant: 'error' });
             return;
         }
 
@@ -317,7 +328,7 @@ export function MetaFormsEditView() {
                 is_active: isActive ? 1 : 0,
                 allow_duplicates: allowDuplicates ? 1 : 0,
                 duplicate_limit_by: duplicateLimitBy,
-                field_mappings: fieldMappings.map(m => ({
+                field_mappings: processedMappings.map(m => ({
                     meta_field: (m.meta_field || '').trim(),
                     crm_field: m.crm_field,
                     required: m.required ? 1 : 0,
@@ -630,11 +641,17 @@ export function MetaFormsEditView() {
                                                     value={row.crm_field}
                                                     onChange={(e) => handleMappingChange(index, 'crm_field', e.target.value)}
                                                 >
-                                                    {crmFieldOptions.map((opt) => (
-                                                        <MenuItem key={opt.value} value={opt.value}>
-                                                            {opt.label}
-                                                        </MenuItem>
-                                                    ))}
+                                                    {crmFieldOptions
+                                                        .filter((opt) => {
+                                                            if (opt.value === row.crm_field) return true;
+                                                            if (opt.value === 'notes' || opt.value === 'remarks') return true;
+                                                            return !fieldMappings.some((m, idx) => idx !== index && m.crm_field === opt.value);
+                                                        })
+                                                        .map((opt) => (
+                                                            <MenuItem key={opt.value} value={opt.value}>
+                                                                {opt.label}
+                                                            </MenuItem>
+                                                        ))}
                                                 </Select>
                                             </FormControl>
                                         </TableCell>

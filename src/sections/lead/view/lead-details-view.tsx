@@ -51,7 +51,7 @@ import { getCall } from 'src/api/calls';
 import { CONFIG } from 'src/config-global';
 import { getMeeting } from 'src/api/meetings';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getDoc, getLead, saveLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage } from 'src/api/leads';
+import { getDoc, getLead, saveLead, convertLead, getWorkflowStates, getWorkflowActions, getFollowupHistory, applyWorkflowAction, getProposalByLeadId, getAutomationPreview, sendAutomationMessage, getLatestWhatsAppMessage, getEmailAutomationPreview, sendEmailAutomationMessage, getMetaLeadInfo } from 'src/api/leads';
 
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/confirm-dialog';
@@ -379,6 +379,8 @@ export function LeadDetailsView() {
         setSnackbar((prev) => ({ ...prev, open: false }));
     }, []);
 
+    const [metaInfo, setMetaInfo] = useState<any>(null);
+
     useEffect(() => {
         if (id) {
             setLoading(true);
@@ -386,6 +388,10 @@ export function LeadDetailsView() {
                 .then(setLead)
                 .catch((err) => console.error('Failed to fetch lead details:', err))
                 .finally(() => setLoading(false));
+
+            getMetaLeadInfo(id)
+                .then(setMetaInfo)
+                .catch((err) => console.error('Failed to fetch meta lead info:', err));
         }
     }, [id]);
 
@@ -1147,36 +1153,75 @@ export function LeadDetailsView() {
                                             </Box>
                                         </Box>
 
-                                        {/* Notes Section (Outside Additional Info) */}
-                                        {lead.notes && (
-                                            <Box
-                                                sx={{
-                                                    p: 3,
-                                                    bgcolor: theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
-                                                    borderRadius: 2.5,
-                                                    border: `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
-                                                }}
-                                            >
-                                                <SectionHeader title="Notes" icon={<CgNotes size={18} />} noMargin />
-                                                <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
-                                                    {lead.notes.split('\n\n').map((item: string, idx: number) => {
-                                                        const parts = item.split('\n');
-                                                        const label = parts[0] || '';
-                                                        const value = parts.slice(1).join('\n') || '';
-                                                        return (
-                                                            <Box key={idx}>
-                                                                <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
-                                                                    {label}
-                                                                </Typography>
-                                                                <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-wrap', opacity: 0.8, fontSize: 15 }}>
-                                                                    {value}
-                                                                </Typography>
-                                                            </Box>
-                                                        );
-                                                    })}
-                                                </Box>
-                                            </Box>
-                                        )}
+                                         {/* Notes Section (Outside Additional Info) */}
+                                         {(lead.notes || (metaInfo && (metaInfo.form_name || metaInfo.page_name))) && (
+                                             <Box
+                                                 sx={{
+                                                     p: 3,
+                                                     bgcolor: theme.palette.mode === 'light' ? '#F4F7FB' : alpha(theme.palette.primary.main, 0.04),
+                                                     borderRadius: 2.5,
+                                                     border: `1px solid ${theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.primary.main, 0.12)}`,
+                                                 }}
+                                             >
+                                                 <SectionHeader title="Notes" icon={<CgNotes size={18} />} noMargin />
+                                                 {lead.notes && (
+                                                     <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+                                                         {lead.notes.split('\n\n').map((item: string, idx: number) => {
+                                                             const parts = item.split('\n');
+                                                             const label = parts[0] || '';
+                                                             const value = parts.slice(1).join('\n') || '';
+                                                             return (
+                                                                 <Box key={idx}>
+                                                                     <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
+                                                                         {label}
+                                                                     </Typography>
+                                                                     <Typography variant="body1" sx={{ color: 'text.primary', fontWeight: 500, lineHeight: 1.6, whiteSpace: 'pre-wrap', opacity: 0.8, fontSize: 15 }}>
+                                                                         {value}
+                                                                     </Typography>
+                                                                 </Box>
+                                                             );
+                                                         })}
+                                                     </Box>
+                                                 )}
+
+                                                 {metaInfo && (metaInfo.form_name || metaInfo.page_name) && (
+                                                     <>
+                                                         {lead.notes && (
+                                                             <Divider sx={{ my: 3, borderStyle: 'solid', borderColor: theme.palette.mode === 'light' ? '#E8EEF5' : alpha(theme.palette.divider, 0.5) }} />
+                                                         )}
+                                                         <Box
+                                                             sx={{
+                                                                 mt: lead.notes ? 0 : 3,
+                                                                 display: 'grid',
+                                                                 gap: 3,
+                                                                 gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' },
+                                                             }}
+                                                         >
+                                                             {metaInfo.form_name && (
+                                                                 <Box>
+                                                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', letterSpacing: 0.2 }}>
+                                                                         Form Details
+                                                                     </Typography>
+                                                                     <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: 14 }}>
+                                                                         {metaInfo.form_name} {metaInfo.form_id ? `(${metaInfo.form_id})` : ''}
+                                                                     </Typography>
+                                                                 </Box>
+                                                             )}
+                                                             {metaInfo.page_name && (
+                                                                 <Box>
+                                                                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, textTransform: 'uppercase', mb: 0.5, display: 'block', letterSpacing: 0.2 }}>
+                                                                         Page Details
+                                                                     </Typography>
+                                                                     <Typography variant="body2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: 14 }}>
+                                                                         {metaInfo.page_name} {metaInfo.page_id ? `(${metaInfo.page_id})` : ''}
+                                                                     </Typography>
+                                                                 </Box>
+                                                             )}
+                                                         </Box>
+                                                     </>
+                                                 )}
+                                             </Box>
+                                         )}
 
                                         {/* Additional Info */}
                                         <Box
