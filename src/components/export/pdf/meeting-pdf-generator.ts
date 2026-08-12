@@ -16,8 +16,8 @@ export async function generateMeetingPdf({ reportData, selected = [], summary }:
   const headers = [
     'Title',
     'Meet For',
-    'Lead/Contact',
-    'Account',
+    'Lead/Client',
+    'Company',
     'Status',
     'Time',
     'Venue',
@@ -27,12 +27,12 @@ export async function generateMeetingPdf({ reportData, selected = [], summary }:
   const body = dataToExport.map((row) => [
     row.title || '-',
     row.meet_for || '-',
-    row.lead_name || row.contact_name || '-',
-    row.accounts_name || '-',
+    row.lead_title || row.contact_title ? `${row.lead_title || row.contact_title} (${row.lead_name || row.contact_name})` : (row.lead_name || row.contact_name || '-'),
+    row.account_title ? `${row.account_title} (${row.accounts_name})` : (row.accounts_name || '-'),
     row.outgoing_call_status || '-',
     row.from_time ? dayjs(row.from_time).format('DD MMM YYYY HH:mm') : '-',
     row.meeting_venue || row.location || '-',
-    row.owner_name || '-'
+    row.owner_full_name || row.owner_name || '-'
   ]);
 
   await exportToPdf({
