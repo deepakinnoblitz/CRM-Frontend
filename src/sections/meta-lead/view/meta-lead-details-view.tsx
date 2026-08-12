@@ -17,11 +17,11 @@ import ToggleButton from '@mui/material/ToggleButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import { getMetaLeadItem } from 'src/api/meta-lead';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { fetchMetaApps, getMetaApp } from 'src/api/meta-app';
 import { fetchMetaPages, getMetaPage } from 'src/api/meta-page';
 import { fetchMetaForms, getMetaForm } from 'src/api/meta-form';
+import { getMetaLeadItem, retryMetaLead } from 'src/api/meta-lead';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -186,7 +186,7 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
         if (isLeadJson && parsed.field_data && Array.isArray(parsed.field_data)) {
             // Facebook specific payload field mapping extraction
             rows = rows.concat(parsed.field_data.map((item: any) => ({
-                key: item.name || '—',
+                key: formatKeyLabel(item.name || '—'),
                 value: Array.isArray(item.values) ? item.values.join(', ') : String(item.values || '—')
             })));
             
@@ -194,7 +194,7 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
             Object.keys(parsed).forEach(k => {
                 if (k !== 'field_data') {
                     rows.push({
-                        key: k,
+                        key: formatKeyLabel(k),
                         value: typeof parsed[k] === 'object' ? JSON.stringify(parsed[k]) : String(parsed[k] ?? '—')
                     });
                 }
@@ -203,8 +203,9 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
             rows = rows.concat(extract(parsed));
         }
     } catch {
-        rows = [{ key: 'Error Message', value: jsonString }];
+        rows = [{ key: formatKeyLabel('Error Message'), value: jsonString }];
     }
+
 
     return (
         <Card sx={{ p: 3 }}>
@@ -318,11 +319,13 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
 }
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; color: string }> = {
+    Success:    { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.35)',   color: '#15803d' },
     Completed:  { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.35)',   color: '#15803d' },
     Failed:     { bg: 'rgba(239,68,68,0.15)',    border: 'rgba(239,68,68,0.35)',   color: '#b91c1c' },
     Processing: { bg: 'rgba(59,130,246,0.15)',   border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
     Pending:    { bg: 'rgba(156,163,175,0.15)',  border: 'rgba(156,163,175,0.35)', color: '#374151' },
 };
+
 
 function formatDatetime(val?: string) {
     if (!val) return undefined;
@@ -338,9 +341,11 @@ export function MetaLeadDetailsView() {
 
     const [item, setItem] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
+    const [retrying, setRetrying] = useState(false);
     const [appName, setAppName] = useState<string>('');
     const [pageName, setPageName] = useState<string>('');
     const [formName, setFormName] = useState<string>('');
+    const [reloadTrigger, setReloadTrigger] = useState(0);
 
     useEffect(() => {
         if (id) {
@@ -407,7 +412,21 @@ export function MetaLeadDetailsView() {
                 .catch(() => enqueueSnackbar('Failed to load Meta Lead details.', { variant: 'error' }))
                 .finally(() => setFetching(false));
         }
-    }, [id, enqueueSnackbar]);
+    }, [id, reloadTrigger, enqueueSnackbar]);
+
+    const handleRetry = async () => {
+        if (!item?.name) return;
+        setRetrying(true);
+        try {
+            await retryMetaLead(item.name);
+            enqueueSnackbar('Meta Lead processing retried successfully', { variant: 'success' });
+            setReloadTrigger((prev) => prev + 1);
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to retry Meta Lead', { variant: 'error' });
+        } finally {
+            setRetrying(false);
+        }
+    };
 
     if (fetching) {
         return (
@@ -449,15 +468,29 @@ export function MetaLeadDetailsView() {
                         </Stack>
                     </Stack>
                 </Stack>
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={() => navigate('/lead-integration/meta-leads')}
-                    startIcon={<IoMdArrowBack size={20} />}
-                    sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
-                >
-                    Back to List
-                </Button>
+                <Stack direction="row" spacing={1.5}>
+                    {item.processing_status === 'Failed' && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={retrying}
+                            onClick={handleRetry}
+                            startIcon={retrying ? <CircularProgress size={18} color="inherit" /> : <Iconify icon="solar:refresh-bold" />}
+                            sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', px: 2.5 }}
+                        >
+                            {retrying ? 'Retrying...' : 'Retry Processing'}
+                        </Button>
+                    )}
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => navigate('/lead-integration/meta-leads')}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
+                    >
+                        Back to List
+                    </Button>
+                </Stack>
             </Stack>
 
             <Stack spacing={3}>

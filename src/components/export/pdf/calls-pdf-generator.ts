@@ -16,8 +16,8 @@ export async function generateCallsPdf({ reportData, selected = [], summary }: G
   const headers = [
     'Title',
     'Call For',
-    'Lead/Contact',
-    'Account',
+    'Lead/Client',
+    'Company',
     'Status',
     'Time',
     'Owner'
@@ -26,11 +26,11 @@ export async function generateCallsPdf({ reportData, selected = [], summary }: G
   const body = dataToExport.map((row) => [
     row.title || '-',
     row.call_for || '-',
-    row.lead_name || row.contact_name || '-',
-    row.account_name || '-',
+    row.lead_title || row.contact_title ? `${row.lead_title || row.contact_title} (${row.lead_name || row.contact_name})` : (row.lead_name || row.contact_name || '-'),
+    row.account_title ? `${row.account_title} (${row.account_name})` : (row.account_name || '-'),
     row.outgoing_call_status || '-',
     row.call_start_time ? dayjs(row.call_start_time).format('DD MMM YYYY HH:mm') : '-',
-    row.owner_name || '-'
+    row.owner_full_name || row.owner_name || '-'
   ]);
 
   await exportToPdf({
