@@ -668,25 +668,15 @@ export function CallsReportView() {
                                                         <TableCell>
                                                             <Typography variant="body2">{row.call_start_time ? dayjs(row.call_start_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
                                                         </TableCell>
-                                                        <TableCell>
-                                                            {(() => {
-                                                                if (!row.owner_name) return '-';
-                                                                const fullName = row.owner_full_name || row.owner_name;
-                                                                const userId = row.owner_name;
-
-                                                                return (
-                                                                    <Stack spacing={0.2}>
-                                                                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                                                            {fullName}
-                                                                        </Typography>
-                                                                        {userId && userId !== fullName && (
-                                                                            <Typography variant="caption" color="text.secondary">
-                                                                                ID: {userId}
-                                                                            </Typography>
-                                                                        )}
-                                                                    </Stack>
-                                                                );
-                                                            })()}
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.owner_full_name || row.owner_name || '-'}
+                                                                </Typography>
+                                                                <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                    {row.owner_name || row.owner || '-'}
+                                                                </Typography>
+                                                            </Stack>
                                                         </TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewCall(row.name)} sx={{ color: 'info.main' }}>
