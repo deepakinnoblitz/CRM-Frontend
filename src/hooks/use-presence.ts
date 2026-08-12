@@ -287,6 +287,20 @@ export function usePresence() {
           // Dialog is already opened inside validateLocationForStatusChange()
           return false;
         }
+      } else {
+        // If logging out, check if location tracking is enabled for logout
+        if (enableLocationTrackingRef.current && trackOnLogoutRef.current) {
+          try {
+            const position = await requestCurrentLocation();
+            const { latitude, longitude, accuracy } = position.coords;
+            // Log location first
+            await logLocation(latitude, longitude, accuracy, newStatus, 'Logout');
+          } catch (err) {
+            console.error('Location logging failed during logout:', err);
+            setLocationDialogOpen(true);
+            return false;
+          }
+        }
       }
 
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
@@ -301,17 +315,16 @@ export function usePresence() {
           window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
         }
 
-        // Trigger Geo Location Tracking
-        let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
-        if (newStatus === 'Offline') {
-          trackingSource = 'Logout';
-          await logLocationIfAllowed(trackingSource, newStatus);
-        } else if (oldStatus === 'Offline') {
-          trackingSource = 'Login';
-          await logLocationIfAllowed(trackingSource, newStatus);
-        } else {
-          trackingSource = 'Status Change';
-          await logLocationIfAllowed(trackingSource, newStatus);
+        // Trigger Geo Location Tracking for non-Offline status changes
+        if (newStatus !== 'Offline') {
+          let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
+          if (oldStatus === 'Offline') {
+            trackingSource = 'Login';
+            await logLocationIfAllowed(trackingSource, newStatus);
+          } else {
+            trackingSource = 'Status Change';
+            await logLocationIfAllowed(trackingSource, newStatus);
+          }
         }
       }
       localStorage.setItem('user_presence_status', newStatus);

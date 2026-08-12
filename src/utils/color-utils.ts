@@ -1,4 +1,3 @@
-
 // ----------------------------------------------------------------------
 
 export function stringToColor(string: string) {
