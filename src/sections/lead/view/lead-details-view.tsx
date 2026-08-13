@@ -1169,7 +1169,19 @@ export function LeadDetailsView() {
                                                          {lead.notes.split('\n\n').map((item: string, idx: number) => {
                                                              const parts = item.split('\n');
                                                              const label = parts[0] || '';
-                                                             const value = parts.slice(1).join('\n') || '';
+                                                             let value = parts.slice(1).join('\n') || '';
+
+                                                             // Format raw option key strings like '1000_(starter)' -> '1000 (Starter)'
+                                                             if (value && value.includes('_') && value.includes('(') && value.includes(')')) {
+                                                                 const cleanedVal = value.replace(/_/g, ' ');
+                                                                 const vParts = cleanedVal.split('(');
+                                                                 if (vParts.length === 2 && vParts[1].endsWith(')')) {
+                                                                     const inner = vParts[1].slice(0, -1).trim();
+                                                                     const capitalizedInner = inner.charAt(0).toUpperCase() + inner.slice(1);
+                                                                     value = `${vParts[0].trim()} (${capitalizedInner})`;
+                                                                 }
+                                                             }
+
                                                              return (
                                                                  <Box key={idx}>
                                                                      <Typography variant="subtitle1" sx={{ color: 'text.primary', fontWeight: 800, mb: 0.5, fontSize: 15 }}>
