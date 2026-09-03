@@ -751,23 +751,7 @@ export function EventsView() {
         });
     }, [events, theme, eventTypeFilter]);
 
-    if (initialLoading) {
-        return (
-            <DashboardContent maxWidth="xl">
-                <Box
-                    sx={{
-                        height: '70vh',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column',
-                    }}
-                >
-                    <Loader />
-                </Box>
-            </DashboardContent>
-        );
-    }
+
 
     return (
         <>
@@ -1047,96 +1031,27 @@ export function EventsView() {
                 </Stack>
 
                 {/* 1. Full width Event Types Legend */}
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'end',
-                        justifyContent: 'flex-end',
-                        mb: 2,
-                    }}
-                >
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            p: 0.5,
-                            bgcolor: '#F4F6F8',
-                            border: '1px solid #E5E7EB',
-                            borderRadius: '999px',
-                            gap: 0.5,
-                        }}
-                    >
-                        {[
-                            { label: 'All', icon: <LuFilter size={16} /> },
-                            { label: 'Calls', icon: <FiPhoneCall size={16} /> },
-                            { label: 'Meetings', icon: <FiCalendar size={16} /> },
-                            { label: 'To-Do', icon: <FiCheckSquare size={16} /> },
-                        ].map((item) => (
-                            <Box
-                                key={item.label}
-                                onClick={() => setEventTypeFilter(item.label)}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                    px: 2.5,
-                                    py: 0.5,
-                                    borderRadius: '999px',
-                                    cursor: 'pointer',
-                                    transition: 'all 0.25s ease',
 
-                                    bgcolor:
-                                        eventTypeFilter === item.label
-                                            ? '#12A8D6'
-                                            : 'transparent',
-
-                                    color:
-                                        eventTypeFilter === item.label
-                                            ? '#fff'
-                                            : '#637381',
-
-                                    boxShadow:
-                                        eventTypeFilter === item.label
-                                            ? '0 4px 12px rgba(18,168,214,0.25)'
-                                            : 'none',
-
-                                    '&:hover': {
-                                        bgcolor:
-                                            eventTypeFilter === item.label
-                                                ? '#12A8D6'
-                                                : 'rgba(18,168,214,0.08)',
-                                    },
-                                }}
-                            >
-                                {item.icon}
-
-                                <Typography
-                                    variant="body2"
-                                    sx={{
-                                        fontWeight:
-                                            eventTypeFilter === item.label
-                                                ? 700
-                                                : 600,
-                                    }}
-                                >
-                                    {item.label}
-                                </Typography>
-                            </Box>
-                        ))}
-                    </Box>
-                </Box>
 
                 {/* Calendar Layout: custom sidebar + Bryntum calendar */}
-                <Card sx={{ mb: 3, overflow: 'hidden', position: 'relative', height: 720 }}>
+                <Card sx={{
+                    mb: 3,
+                    overflow: 'hidden',
+                    position: 'relative',
+                    height: 850,
+                    borderRadius: 2,
+                    boxShadow: '0 8px 24px -4px rgba(145, 158, 171, 0.2), 0 0 2px 0 rgba(145, 158, 171, 0.24)',
+                    border: '1px solid rgba(145, 158, 171, 0.12)',
+                }}>
 
                     {/* ---- Custom Left Sidebar ---- */}
                     <Box
                         sx={{
                             position: 'absolute',
-                            top: 0, // starts from top of card
+                            top: 60, // starts below full-width toolbar
                             left: 0,
                             bottom: 0,
-                            width: 260,
+                            width: 290,
                             display: 'flex',
                             flexDirection: 'column',
                             borderRight: `1px solid ${theme.palette.divider}`,
@@ -1149,28 +1064,37 @@ export function EventsView() {
                         <Box
                             sx={{
                                 '& .MuiDateCalendar-root': {
-                                    width: '90%', // full width
-                                    maxHeight: 240,
-                                    minHeight: 'unset',
-                                    mt: 3 // removed extra empty gap
+                                    width: '100%',
+                                    height: 'auto',
+                                    maxHeight: 'none',
+                                    minHeight: 285,
+                                    mt: 0.5,
+                                    px: 1,
                                 },
                                 '& .MuiPickersCalendarHeader-root': {
-                                    pl: 1, pr: 0.5, mt: 0.5, mb: 0,
+                                    pl: 1.5, pr: 1, mt: 0.5, mb: 0.5,
                                 },
                                 '& .MuiPickersCalendarHeader-label': {
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.9rem',
                                     fontWeight: 700,
                                 },
+                                '& .MuiDayCalendar-header': {
+                                    justifyContent: 'space-around',
+                                },
+                                '& .MuiDayCalendar-weekContainer': {
+                                    justifyContent: 'space-around',
+                                    my: 0.25,
+                                },
                                 '& .MuiDayCalendar-weekDayLabel': {
-                                    fontSize: '0.7rem',
+                                    fontSize: '0.75rem',
                                     fontWeight: 600,
-                                    width: 30,
-                                    height: 24,
+                                    width: 32,
+                                    height: 28,
                                 },
                                 '& .MuiPickersDay-root': {
-                                    width: 28,
-                                    height: 28,
-                                    fontSize: '0.78rem',
+                                    width: 32,
+                                    height: 32,
+                                    fontSize: '0.82rem',
                                     '&.Mui-selected': {
                                         bgcolor: '#08a3cd',
                                         color: '#fff',
@@ -1181,7 +1105,20 @@ export function EventsView() {
                                     },
                                 },
                                 '& .MuiDayCalendar-slideTransition': {
-                                    minHeight: 170,
+                                    minHeight: 235,
+                                    overflowY: 'hidden',
+                                },
+                                '& .MuiYearCalendar-root': {
+                                    width: '100%',
+                                    maxHeight: 240,
+                                    px: 1,
+                                },
+                                '& .MuiPickersYear-yearButton': {
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    px: 1,
+                                    py: 0.5,
+                                    height: 32,
                                 },
                             }}
                         >
@@ -1412,11 +1349,13 @@ export function EventsView() {
                     </Box>
 
                         {/* ---- Custom Calendar grid ---- */}
-                        <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', pl: '260px' }}>
+                        <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                             <CustomCalendar
                                 events={bryntumEvents}
                                 loading={loadingEvents}
                                 selectedDate={miniCalDate}
+                                eventTypeFilter={eventTypeFilter}
+                                onFilterChange={(newFilter) => setEventTypeFilter(newFilter)}
                                 onDateChange={(newDate) => setMiniCalDate(newDate)}
                                 onEventClick={(evt) => handleOpenEditDialog(evt)}
                                 onDateSelect={(selectInfo) => {
@@ -1432,8 +1371,7 @@ export function EventsView() {
                                             color: '#08a3cd',
                                             description: '',
                                         });
-                                        setSelectedEvent(null);
-                                        setOpenDialog(true);
+                                        handleOpenTypeDialog();
                                     }
                                 }}
                                 onEventDrop={async (dropInfo) => {

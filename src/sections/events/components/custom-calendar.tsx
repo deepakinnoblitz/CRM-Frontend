@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { LuFilter } from 'react-icons/lu';
 import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
@@ -19,6 +20,8 @@ interface CustomCalendarProps {
     onEventResize?: (resizeInfo: any) => void;
     selectedDate?: dayjs.Dayjs;
     onDateChange?: (date: dayjs.Dayjs) => void;
+    eventTypeFilter?: string;
+    onFilterChange?: (filter: string) => void;
 }
 
 export function CustomCalendar({
@@ -30,6 +33,8 @@ export function CustomCalendar({
     onEventResize,
     selectedDate,
     onDateChange,
+    eventTypeFilter = 'All',
+    onFilterChange,
 }: CustomCalendarProps) {
     const calendarRef = useRef<FullCalendar>(null);
     const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listMonth'>('dayGridMonth');
@@ -204,78 +209,124 @@ export function CustomCalendar({
                             <FiChevronRight size={24} />
                         </IconButton>
                     </Box>
-                    <Typography variant="h5" sx={{ fontWeight: 700, ml: 1, color: '#1E293B', fontSize: '1.35rem' }}>
+                    <Typography variant="h5" sx={{ fontWeight: 700, ml: 1, color: '#1E293B', fontSize: '1.55rem' }}>
                         {title}
                     </Typography>
                 </Box>
 
-                {/* Right controls: View switchers */}
-                <ButtonGroup
-                    size="small"
-                    sx={{
-                        bgcolor: '#CBD5E1',
-                        p: '4px',
-                        borderRadius: '12px',
-                        '& .MuiButton-root': {
-                            border: 'none !important',
-                            borderRadius: '8px',
-                            px: 2.2,
-                            py: 0.5,
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            textTransform: 'none',
-                            color: '#475569',
-                        },
-                    }}
-                >
-                    <Button
-                        onClick={() => handleViewChange('timeGridDay')}
+                {/* Right controls: View switchers & Event type filter pills */}
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {/* Event Type Filter Pills */}
+                    <Box
                         sx={{
-                            bgcolor: currentView === 'timeGridDay' ? '#FFFFFF !important' : 'transparent',
-                            color: currentView === 'timeGridDay' ? '#0F172A !important' : '#475569',
-                            boxShadow: currentView === 'timeGridDay' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            p: 0.5,
+                            bgcolor: '#F4F6F8',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '999px',
+                            gap: 0.5,
                         }}
                     >
-                        Day
-                    </Button>
-                    <Button
-                        onClick={() => handleViewChange('timeGridWeek')}
+                        {[
+                            { label: 'All', icon: <LuFilter size={15} /> },
+                            { label: 'Calls', icon: <FiPhoneCall size={15} /> },
+                            { label: 'Meetings', icon: <FiCalendar size={15} /> },
+                            { label: 'To-Do', icon: <FiCheckSquare size={15} /> },
+                        ].map((item) => (
+                            <Box
+                                key={item.label}
+                                onClick={() => onFilterChange && onFilterChange(item.label)}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    px: 2,
+                                    py: 0.5,
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.25s ease',
+                                    bgcolor: eventTypeFilter === item.label ? '#12A8D6' : 'transparent',
+                                    color: eventTypeFilter === item.label ? '#fff' : '#637381',
+                                    boxShadow: eventTypeFilter === item.label ? '0 4px 12px rgba(18,168,214,0.25)' : 'none',
+                                    '&:hover': {
+                                        bgcolor: eventTypeFilter === item.label ? '#12A8D6' : 'rgba(18,168,214,0.08)',
+                                    },
+                                }}
+                            >
+                                {item.icon}
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontSize: '0.8125rem',
+                                        fontWeight: eventTypeFilter === item.label ? 700 : 600,
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+
+                    {/* View Switcher Buttons */}
+                    <Box
                         sx={{
-                            bgcolor: currentView === 'timeGridWeek' ? '#FFFFFF !important' : 'transparent',
-                            color: currentView === 'timeGridWeek' ? '#0F172A !important' : '#475569',
-                            boxShadow: currentView === 'timeGridWeek' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            p: 0.5,
+                            bgcolor: '#F4F6F8',
+                            border: '1px solid #E5E7EB',
+                            borderRadius: '999px',
+                            gap: 0.5,
                         }}
                     >
-                        Week
-                    </Button>
-                    <Button
-                        onClick={() => handleViewChange('dayGridMonth')}
-                        sx={{
-                            bgcolor: currentView === 'dayGridMonth' ? '#FFFFFF !important' : 'transparent',
-                            color: currentView === 'dayGridMonth' ? '#0F172A !important' : '#475569',
-                            boxShadow: currentView === 'dayGridMonth' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                        }}
-                    >
-                        Month
-                    </Button>
-                    <Button
-                        onClick={() => handleViewChange('listMonth')}
-                        sx={{
-                            bgcolor: currentView === 'listMonth' ? '#FFFFFF !important' : 'transparent',
-                            color: currentView === 'listMonth' ? '#0F172A !important' : '#475569',
-                            boxShadow: currentView === 'listMonth' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-                        }}
-                    >
-                        Agenda
-                    </Button>
-                </ButtonGroup>
+                        {[
+                            { label: 'Day', view: 'timeGridDay' },
+                            { label: 'Week', view: 'timeGridWeek' },
+                            { label: 'Month', view: 'dayGridMonth' },
+                            { label: 'Agenda', view: 'listMonth' },
+                        ].map((item) => (
+                            <Box
+                                key={item.label}
+                                onClick={() => handleViewChange(item.view as any)}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    px: 2.5,
+                                    py: 0.5,
+                                    borderRadius: '999px',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.25s ease',
+                                    bgcolor: currentView === item.view ? '#105782' : 'transparent',
+                                    color: currentView === item.view ? '#fff' : '#637381',
+                                    boxShadow: currentView === item.view ? '0 4px 12px rgba(16,87,130,0.25)' : 'none',
+                                    '&:hover': {
+                                        bgcolor: currentView === item.view ? '#105782' : 'rgba(16,87,130,0.08)',
+                                    },
+                                }}
+                            >
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: currentView === item.view ? 700 : 600,
+                                        fontSize: '0.8125rem',
+                                    }}
+                                >
+                                    {item.label}
+                                </Typography>
+                            </Box>
+                        ))}
+                    </Box>
+                </Box>
             </Box>
 
             {/* Calendar Container */}
             <Box
                 sx={{
                     flex: 1,
-                    p: 2,
+                    p: 0,
+                    pl: '290px', // grid starts after 290px sidebar
                     position: 'relative',
                     overflow: 'hidden',
                     '& .fc': {
@@ -285,16 +336,25 @@ export function CustomCalendar({
                     '& .fc-header-toolbar': {
                         display: 'none',
                     },
+                    '& .fc-theme-standard, & .fc-scrollgrid': {
+                        border: 'none !important',
+                    },
                     '& .fc-theme-standard td, & .fc-theme-standard th': {
                         borderColor: '#E2E8F0',
                     },
                     '& .fc-col-header-cell': {
-                        py: 1,
+                        py: 1.75, // Increased height
                         bgcolor: '#FAFAFA',
-                        color: '#E11D48',
+                        color: '#303538', // Default Blue color for MON, TUE, WED, THU, FRI, SAT
                         fontWeight: 700,
                         fontSize: '0.75rem',
                         textTransform: 'uppercase',
+                        borderTop: 'none !important',
+                        borderLeft: 'none !important',
+                        borderRight: 'none !important',
+                    },
+                    '& .fc-col-header-cell.fc-day-sun': {
+                        color: '#E11D48', // Red color for SUN only
                     },
                     '& .fc-daygrid-day-number': {
                         color: '#475569',
@@ -367,6 +427,26 @@ export function CustomCalendar({
                         }
                     }}
                 />
+
+                {loading && (
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            bgcolor: 'rgba(255, 255, 255, 0.65)',
+                            backdropFilter: 'blur(2px)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 10,
+                        }}
+                    >
+                        <CircularProgress size={36} sx={{ color: '#105782' }} />
+                    </Box>
+                )}
             </Box>
         </Box>
     );
