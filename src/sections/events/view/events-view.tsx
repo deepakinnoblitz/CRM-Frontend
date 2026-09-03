@@ -198,8 +198,8 @@ export function EventsView() {
     }, [loadEvents]);
 
     useEffect(() => {
-        if (!miniCalDate) return () => {};
-        
+        if (!miniCalDate) return () => { };
+
         const dateStr = miniCalDate.format('YYYY-MM-DD');
 
         const applyHighlight = () => {
@@ -647,7 +647,7 @@ export function EventsView() {
                 const type = event.reference_doctype;
                 const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
                 const subjectLower = (event.subject || '').toLowerCase();
-                
+
                 if (eventTypeFilter === 'Calls') {
                     return type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call');
                 } else if (eventTypeFilter === 'Meetings') {
@@ -1030,7 +1030,7 @@ export function EventsView() {
                 {/* Calendar Layout: custom sidebar + Bryntum calendar */}
                 <Card sx={{
                     mb: 3,
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     position: 'relative',
                     height: 850,
                     borderRadius: 2,
@@ -1042,7 +1042,7 @@ export function EventsView() {
                     <Box
                         sx={{
                             position: 'absolute',
-                            top: 60, // starts below full-width toolbar
+                            top: 72, // starts below 72px full-width toolbar
                             left: 0,
                             bottom: 0,
                             width: 290,
@@ -1224,16 +1224,6 @@ export function EventsView() {
                                     const type = getEventType(evt);
                                     const status = getEventStatus(evt);
                                     const chipColor = getEventChipColor(type, status, evt.color);
-                                    const subjectLower = (evt.subject || '').toLowerCase();
-
-                                    let IconComp = null;
-                                    if (type === 'Call' || type === 'Calls' || subjectLower.includes('call')) {
-                                        IconComp = <FiPhoneCall size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
-                                    } else if (type === 'Meeting' || subjectLower.includes('meeting')) {
-                                        IconComp = <FiCalendar size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
-                                    } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do' || subjectLower.includes('todo') || subjectLower.includes('to-do')) {
-                                        IconComp = <FiCheckSquare size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
-                                    }
 
                                     return (
                                         <Box
@@ -1242,39 +1232,48 @@ export function EventsView() {
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 1,
-                                                px: '10px',
-                                                py: '6px',
-                                                borderRadius: '6px',
-                                                bgcolor: chipColor,
-                                                color: '#ffffff',
+                                                px: 1.5,
+                                                py: 1,
+                                                mx: 0.5,
+                                                borderRadius: '8px',
+                                                bgcolor: '#FFFFFF',
+                                                border: '1px solid #E2E8F0',
+                                                borderLeft: `4px solid ${chipColor}`,
+                                                color: '#1E293B',
+                                                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.04)',
                                                 cursor: 'pointer',
-                                                transition: 'transform 0.15s ease',
-                                                '&:hover': { transform: 'translateY(-1px)', opacity: 0.95 },
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    bgcolor: '#F8FAFC',
+                                                    borderColor: '#CBD5E1',
+                                                    borderLeftColor: chipColor,
+                                                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)',
+                                                    transform: 'translateY(-1px)',
+                                                },
                                             }}
                                             onClick={(e) => {
                                                 setClickedEvent(evt);
                                                 setPopoverAnchorEl(e.currentTarget);
                                             }}
                                         >
-                                            {IconComp}
                                             <Box sx={{ minWidth: 0, width: '100%', display: 'flex', flexDirection: 'column' }}>
                                                 <Typography
                                                     variant="body2"
                                                     sx={{
-                                                        fontWeight: 700,
+                                                        fontWeight: 600,
                                                         fontSize: '0.8125rem',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap',
-                                                        lineHeight: 1.3,
-                                                        color: '#ffffff',
+                                                        lineHeight: 1.35,
+                                                        color: '#1E293B',
                                                     }}
                                                 >
                                                     {evt.subject.replace(/\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$/i, '')}
                                                 </Typography>
                                                 <Typography
                                                     variant="caption"
-                                                    sx={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.75rem', fontWeight: 500 }}
+                                                    sx={{ color: '#637381', fontSize: '0.75rem', fontWeight: 500, mt: 0.25 }}
                                                 >
                                                     {(() => {
                                                         if (!evt.starts_on) return '';
@@ -1298,44 +1297,49 @@ export function EventsView() {
 
                                 const renderSection = (title: string, icon: any, color: string, items: any[], emptyMsg: string) => (
                                     <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, px: 0.5 }}>
-                                            <Box sx={{ color, display: 'flex' }}>{icon}</Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25, px: 0.75 }}>
+                                            <Box sx={{ color, display: 'flex', alignItems: 'center' }}>{icon}</Box>
                                             <Typography
-                                                variant="overline"
                                                 sx={{
-                                                    fontWeight: 700,
-                                                    fontSize: '0.7rem',
-                                                    color: 'text.secondary',
+                                                    fontWeight: 800,
+                                                    fontSize: '0.78125rem',
+                                                    color: '#39444eff',
+                                                    letterSpacing: '0.5px',
+                                                    textTransform: 'uppercase',
+                                                    lineHeight: 1,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
                                                 }}
                                             >
                                                 {title}
                                             </Typography>
                                         </Box>
                                         {items.length === 0 ? (
-                                        <Box
-                                            sx={{
-                                                px: 3,
-                                                py: 2,
-                                                textAlign: 'center',
-                                                borderRadius: 2,
-                                                bgcolor:  theme.palette.grey[100],
-                                                border: `1px dashed ${theme.palette.divider}`,
-                                            }}
-                                        >
-                                            <Typography
-                                                variant="body2"
+                                            <Box
                                                 sx={{
-                                                    color: 'text.secondary',
-                                                    fontSize: '0.9rem',
-                                                    fontWeight: 500,
-                                                    lineHeight: 1.6,
+                                                    mx: 0.5,
+                                                    px: 2,
+                                                    py: 1.5,
+                                                    textAlign: 'center',
+                                                    borderRadius: 2,
+                                                    bgcolor: theme.palette.grey[100],
+                                                    border: `1px dashed ${theme.palette.divider}`,
                                                 }}
                                             >
-                                                {emptyMsg}
-                                            </Typography>
-                                        </Box>
+                                                <Typography
+                                                    variant="body2"
+                                                    sx={{
+                                                        color: 'text.secondary',
+                                                        fontSize: '0.825rem',
+                                                        fontWeight: 500,
+                                                        lineHeight: 1.5,
+                                                    }}
+                                                >
+                                                    {emptyMsg}
+                                                </Typography>
+                                            </Box>
                                         ) : (
-                                            <Stack spacing={0.75}>
+                                            <Stack spacing={1}>
                                                 {items.map(renderCard)}
                                             </Stack>
                                         )}
@@ -1344,98 +1348,104 @@ export function EventsView() {
 
                                 return (
                                     <Box sx={{ mt: 2 }}>
-                                        {renderSection('TODAY CALLS', <Iconify icon={"solar:phone-calling-bold" as any} width={16} />, '#ff9800', calls, 'No Calls Today')}
-                                        <Box sx={{ height: 16 }} />
-                                        {renderSection('TODAY MEETINGS', <Iconify icon={"solar:calendar-bold" as any} width={16} />, '#4caf50', meetings, 'No Meetings Today')}
-                                        <Box sx={{ height: 16 }} />
-                                        {renderSection('TODAY TO-DOS', <Iconify icon={"solar:check-square-bold" as any} width={16} />, '#f44336', todos, 'No To-Dos Today')}
+                                        {renderSection('TODAY CALLS', <Iconify icon={"solar:phone-calling-bold" as any} width={16} />, '#12A8D6', calls, 'No Calls Today')}
+                                        <Divider sx={{ my: 2.25 }} />
+                                        {renderSection('TODAY MEETINGS', <Iconify icon={"solar:calendar-bold" as any} width={16} />, '#12A8D6', meetings, 'No Meetings Today')}
+                                        <Divider sx={{ my: 2.25 }} />
+                                        {renderSection('TODAY TO-DOS', <Iconify icon={"solar:check-square-bold" as any} width={16} />, '#12A8D6', todos, 'No To-Dos Today')}
                                     </Box>
                                 );
                             })()}
                         </Box>
                     </Box>
 
-                        {/* ---- Custom Calendar grid ---- */}
-                        <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                            <CustomCalendar
-                                events={bryntumEvents}
-                                loading={loadingEvents}
-                                selectedDate={miniCalDate}
-                                eventTypeFilter={eventTypeFilter}
-                                onFilterChange={(newFilter) => setEventTypeFilter(newFilter)}
-                                onDateChange={(newDate) => setMiniCalDate(newDate)}
-                                onEventClick={(evt, el, jsEvent) => {
-                                    setClickedEvent(evt);
-                                    setPopoverAnchorEl(el || (jsEvent?.currentTarget as HTMLElement) || (jsEvent?.target as HTMLElement) || null);
-                                }}
-                                onDateSelect={(selectInfo) => {
-                                    if (canCreateEvent) {
-                                        let startDate = dayjs(selectInfo.startStr || selectInfo.start);
-                                        if (selectInfo.allDay) {
-                                            const now = dayjs();
-                                            startDate = startDate.hour(now.hour()).minute(now.minute()).second(0);
-                                        }
-                                        const startStr = startDate.format('YYYY-MM-DDTHH:mm');
-                                        let endDate = selectInfo.end ? dayjs(selectInfo.endStr || selectInfo.end) : startDate.add(1, 'hour');
-                                        if (selectInfo.allDay) {
-                                            endDate = startDate.add(1, 'hour');
-                                        }
-                                        const endStr = endDate.format('YYYY-MM-DDTHH:mm');
+                    {/* ---- Custom Calendar grid ---- */}
+                    <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                        <CustomCalendar
+                            events={bryntumEvents}
+                            loading={loadingEvents}
+                            selectedDate={miniCalDate}
+                            eventTypeFilter={eventTypeFilter}
+                            onFilterChange={(newFilter) => setEventTypeFilter(newFilter)}
+                            onDateChange={(newDate) => setMiniCalDate(newDate)}
+                            onEventClick={(evt, el, jsEvent) => {
+                                setClickedEvent(evt);
+                                setPopoverAnchorEl(el || (jsEvent?.currentTarget as HTMLElement) || (jsEvent?.target as HTMLElement) || null);
+                            }}
+                            onDateSelect={(selectInfo) => {
+                                if (canCreateEvent) {
+                                    let startDate = dayjs(selectInfo.startStr || selectInfo.start);
+                                    if (selectInfo.allDay) {
+                                        const now = dayjs();
+                                        startDate = startDate.hour(now.hour()).minute(now.minute()).second(0);
+                                    }
+                                    const startStr = startDate.format('YYYY-MM-DDTHH:mm');
+                                    let endDate = selectInfo.end ? dayjs(selectInfo.endStr || selectInfo.end) : startDate.add(1, 'hour');
+                                    if (selectInfo.allDay) {
+                                        endDate = startDate.add(1, 'hour');
+                                    }
+                                    const endStr = endDate.format('YYYY-MM-DDTHH:mm');
 
-                                        setEventData({
-                                            subject: '',
-                                            starts_on: startStr,
-                                            ends_on: endStr,
-                                            status: 'Open',
-                                            event_category: 'Event',
-                                            color: '#08a3cd',
-                                            description: '',
-                                        });
-                                        handleOpenTypeDialog(startStr);
+                                    setEventData({
+                                        subject: '',
+                                        starts_on: startStr,
+                                        ends_on: endStr,
+                                        status: 'Open',
+                                        event_category: 'Event',
+                                        color: '#08a3cd',
+                                        description: '',
+                                    });
+                                    handleOpenTypeDialog(startStr);
+                                }
+                            }}
+                            onEventDrop={async (dropInfo) => {
+                                setLoadingEvents(true);
+                                try {
+                                    if (!canEditEvent) {
+                                        setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                        await loadEvents();
+                                        return;
                                     }
-                                }}
-                                onEventDrop={async (dropInfo) => {
-                                    try {
-                                        if (!canEditEvent) {
-                                            setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
-                                            loadEvents();
-                                            return;
-                                        }
-                                        const evt = dropInfo.event;
-                                        const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
-                                        await updateEvent(eventId, {
-                                            starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
-                                            ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
-                                        });
-                                        loadEvents();
-                                    } catch (err: any) {
-                                        console.error('Failed to update event position', err);
-                                        setSnackbar({ open: true, message: err.message || 'Failed to update event', severity: 'error' });
-                                        loadEvents();
+                                    const evt = dropInfo.event;
+                                    const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
+                                    await updateEvent(eventId, {
+                                        starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
+                                        ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
+                                    });
+                                    await loadEvents();
+                                } catch (err: any) {
+                                    console.error('Failed to update event position', err);
+                                    setSnackbar({ open: true, message: err.message || 'Failed to update event', severity: 'error' });
+                                    await loadEvents();
+                                } finally {
+                                    setLoadingEvents(false);
+                                }
+                            }}
+                            onEventResize={async (resizeInfo) => {
+                                setLoadingEvents(true);
+                                try {
+                                    if (!canEditEvent) {
+                                        setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                        await loadEvents();
+                                        return;
                                     }
-                                }}
-                                onEventResize={async (resizeInfo) => {
-                                    try {
-                                        if (!canEditEvent) {
-                                            setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
-                                            loadEvents();
-                                            return;
-                                        }
-                                        const evt = resizeInfo.event;
-                                        const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
-                                        await updateEvent(eventId, {
-                                            starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
-                                            ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
-                                        });
-                                        loadEvents();
-                                    } catch (err: any) {
-                                        console.error('Failed to update event duration', err);
-                                        setSnackbar({ open: true, message: err.message || 'Failed to update event duration', severity: 'error' });
-                                        loadEvents();
-                                    }
-                                }}
-                            />
-                        </Box>
+                                    const evt = resizeInfo.event;
+                                    const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
+                                    await updateEvent(eventId, {
+                                        starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
+                                        ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
+                                    });
+                                    await loadEvents();
+                                } catch (err: any) {
+                                    console.error('Failed to update event duration', err);
+                                    setSnackbar({ open: true, message: err.message || 'Failed to update event duration', severity: 'error' });
+                                    await loadEvents();
+                                } finally {
+                                    setLoadingEvents(false);
+                                }
+                            }}
+                        />
+                    </Box>
 
                 </Card>
 
@@ -1768,40 +1778,40 @@ export function EventsView() {
                             <Stack spacing={2}>
                                 {/* Header */}
                                 <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-                                    <Typography variant="subtitle1" sx={{ 
-                                        fontWeight: 700, 
+                                    <Typography variant="subtitle1" sx={{
+                                        fontWeight: 700,
                                         flexGrow: 1,
                                         wordBreak: 'break-word'
                                     }}>
                                         {clickedEvent.subject}
                                     </Typography>
-                                     <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
-                                         <IconButton size="small" onClick={() => {
-                                             if (calendarRef.current?.instance) {
-                                                 const calendar = calendarRef.current.instance;
-                                                 const dateObj = calendar.date instanceof Date ? calendar.date : new Date(calendar.date);
-                                                 sessionStorage.setItem('calendar_saved_date', dateObj.toISOString());
-                                                 sessionStorage.setItem('calendar_saved_mode', calendar.mode || 'month');
-                                             }
-                                             sessionStorage.setItem('calendar_saved_filter', eventTypeFilter || 'All');
-                                             sessionStorage.setItem('calendar_reopen_event_id', clickedEvent?.name || '');
+                                    <Stack direction="row" alignItems="center" spacing={0.5} sx={{ pt: 0.25 }}>
+                                        <IconButton size="small" onClick={() => {
+                                            if (calendarRef.current?.instance) {
+                                                const calendar = calendarRef.current.instance;
+                                                const dateObj = calendar.date instanceof Date ? calendar.date : new Date(calendar.date);
+                                                sessionStorage.setItem('calendar_saved_date', dateObj.toISOString());
+                                                sessionStorage.setItem('calendar_saved_mode', calendar.mode || 'month');
+                                            }
+                                            sessionStorage.setItem('calendar_saved_filter', eventTypeFilter || 'All');
+                                            sessionStorage.setItem('calendar_reopen_event_id', clickedEvent?.name || '');
 
-                                             setPopoverAnchorEl(null);
-                                             setSelectedDetailsEvent(clickedEvent);
-                                             setOpenDetailsDialog(true);
-                                         }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                             <Iconify icon="solar:eye-bold" width={20} />
-                                         </IconButton>
-                                       {canEditEvent && (
-                                        <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
-                                            <Iconify icon="solar:pen-bold" width={20} />
+                                            setPopoverAnchorEl(null);
+                                            setSelectedDetailsEvent(clickedEvent);
+                                            setOpenDetailsDialog(true);
+                                        }} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                            <Iconify icon="solar:eye-bold" width={20} />
                                         </IconButton>
+                                        {canEditEvent && (
+                                            <IconButton size="small" onClick={() => handleOpenEditDialog(clickedEvent)} sx={{ color: 'text.secondary', '&:hover': { color: 'primary.main' } }}>
+                                                <Iconify icon="solar:pen-bold" width={20} />
+                                            </IconButton>
                                         )}
-                                       {canDeleteEvent && (
-                                        <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
-                                            <Iconify icon="solar:trash-bin-trash-bold" width={20} />
-                                        </IconButton>
-                                       )}
+                                        {canDeleteEvent && (
+                                            <IconButton size="small" onClick={handleDeleteClick} sx={{ color: 'text.secondary', '&:hover': { color: 'error.main' } }}>
+                                                <Iconify icon="solar:trash-bin-trash-bold" width={20} />
+                                            </IconButton>
+                                        )}
                                         <IconButton size="small" onClick={handleClosePopover} sx={{ color: 'text.secondary', '&:hover': { bgcolor: 'action.hover' } }}>
                                             <Iconify icon="mingcute:close-line" width={20} />
                                         </IconButton>
