@@ -4,23 +4,8 @@ import utc from 'dayjs/plugin/utc';
 
 dayjs.extend(utc);
 
-import '@bryntum/core-thin/fontawesome/css/fontawesome.css';
-import '@bryntum/core-thin/fontawesome/css/solid.css';
-import '@bryntum/core-thin/core.css';
-import '@bryntum/grid-thin/grid.css';
-import '@bryntum/scheduler-thin/scheduler.css';
-import '@bryntum/calendar-thin/calendar.css';
-import '@bryntum/core-thin/svalbard-light.css';
-
 import { LuFilter } from "react-icons/lu";
-import listPlugin from '@fullcalendar/list';
-import { createRoot } from 'react-dom/client';
 import { useNavigate } from 'react-router-dom';
-import FullCalendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import interactionPlugin from '@fullcalendar/interaction';
-import { BryntumCalendar } from '@bryntum/calendar-react-thin';
 import { FiPhoneCall, FiCalendar, FiCheckSquare } from 'react-icons/fi';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
@@ -61,6 +46,7 @@ import { EventDetailsDialog } from 'src/sections/events/event-details-dialog';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { CustomCalendar } from '../components/custom-calendar';
 // ----------------------------------------------------------------------
 
 const INITIAL_EVENT_STATE: Partial<CalendarEvent> = {
@@ -412,8 +398,8 @@ export function EventsView() {
         };
     });
 
-    // Bryntum Calendar configuration and logic (New Calendar UI)
-    const calendarRef = useRef<BryntumCalendar>(null);
+    // Calendar ref (New Custom Calendar UI)
+    const calendarRef = useRef<any>(null);
     const initialDateRef = useRef(new Date());
 
     useEffect(() => {
@@ -641,54 +627,7 @@ export function EventsView() {
         }
     }, [loadingEvents]);
 
-    useEffect(() => {
-        const injectIcons = () => {
-            const eventNodes = document.querySelectorAll('.b-cal-event-wrap');
-            eventNodes.forEach(node => {
-                const eventId = node.getAttribute('data-event-id');
-                if (!eventId) return;
 
-                const descNode = node.querySelector('.b-cal-event-desc') || node.querySelector('.b-cal-event-body');
-                if (!descNode) return;
-
-                if (descNode.querySelector('.crm-inline-event-icon')) return;
-
-                const event = events?.find((e: any) => String(e.name) === String(eventId));
-                if (!event) return;
-
-                const type = event.reference_doctype;
-                const evCat = event.event_category;
-                const subjectLower = (event.subject || '').toLowerCase();
-
-                let IconComponent = null;
-                if (type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call')) {
-                    IconComponent = <FiPhoneCall size={12} />;
-                } else if (type === 'Meeting') {
-                    IconComponent = <FiCalendar size={12} />;
-                } else if (type === 'ToDo' || type === 'Todo') {
-                    IconComponent = <FiCheckSquare size={12} />;
-                }
-
-                if (IconComponent) {
-                    const span = document.createElement('span');
-                    span.className = 'crm-inline-event-icon';
-                    span.style.display = 'inline-flex';
-                    span.style.alignItems = 'center';
-                    span.style.marginRight = '4px';
-                    span.style.verticalAlign = 'middle';
-                    span.style.flexShrink = '0';
-
-                    descNode.insertBefore(span, descNode.firstChild);
-
-                    const root = createRoot(span);
-                    root.render(IconComponent);
-                }
-            });
-        };
-
-        const timer = setInterval(injectIcons, 300);
-        return () => clearInterval(timer);
-    }, [events]);
 
     const bryntumEvents = useMemo(() => {
         console.log('BRYNTUM EVENTS USEMEMO RUNNING', events?.length);
@@ -1194,7 +1133,7 @@ export function EventsView() {
                     <Box
                         sx={{
                             position: 'absolute',
-                            top: 64, // starts immediately below toolbar
+                            top: 0, // starts from top of card
                             left: 0,
                             bottom: 0,
                             width: 260,
@@ -1472,32 +1411,72 @@ export function EventsView() {
                         </Box>
                     </Box>
 
-                    {/* ---- Bryntum Calendar grid ---- */}
-                    <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
-                        <Box sx={{ flex: 1, position: 'relative' }}>
-                            {loadingEvents && (
-                                <Box sx={{
-                                    position: 'absolute',
-                                    top: 0, left: 0, right: 0, bottom: 0,
-                                    bgcolor: 'rgba(255, 255, 255, 0.6)',
-                                    zIndex: 10,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                }}>
-                                    <CircularProgress color="info" />
-                                </Box>
-                            )}
-                            <BryntumCalendar
-                                ref={calendarRef}
-                                {...calendarPropsRef.current}
-                                eventTooltipFeature={false}
-                                eventEditFeature={false}
-                                eventMenuFeature={false}
+                        {/* ---- Custom Calendar grid ---- */}
+                        <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column', pl: '260px' }}>
+                            <CustomCalendar
                                 events={bryntumEvents}
+                                loading={loadingEvents}
+                                selectedDate={miniCalDate}
+                                onDateChange={(newDate) => setMiniCalDate(newDate)}
+                                onEventClick={(evt) => handleOpenEditDialog(evt)}
+                                onDateSelect={(selectInfo) => {
+                                    if (canCreateEvent) {
+                                        const startStr = dayjs(selectInfo.start).format('YYYY-MM-DDTHH:mm');
+                                        const endStr = dayjs(selectInfo.end).format('YYYY-MM-DDTHH:mm');
+                                        setEventData({
+                                            subject: '',
+                                            starts_on: startStr,
+                                            ends_on: endStr,
+                                            status: 'Open',
+                                            event_category: 'Event',
+                                            color: '#08a3cd',
+                                            description: '',
+                                        });
+                                        setSelectedEvent(null);
+                                        setOpenDialog(true);
+                                    }
+                                }}
+                                onEventDrop={async (dropInfo) => {
+                                    try {
+                                        if (!canEditEvent) {
+                                            setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                            loadEvents();
+                                            return;
+                                        }
+                                        const evt = dropInfo.event;
+                                        await updateEvent(evt.id, {
+                                            starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
+                                            ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
+                                        });
+                                        loadEvents();
+                                    } catch (err: any) {
+                                        console.error('Failed to update event position', err);
+                                        setSnackbar({ open: true, message: err.message || 'Failed to update event', severity: 'error' });
+                                        loadEvents();
+                                    }
+                                }}
+                                onEventResize={async (resizeInfo) => {
+                                    try {
+                                        if (!canEditEvent) {
+                                            setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                            loadEvents();
+                                            return;
+                                        }
+                                        const evt = resizeInfo.event;
+                                        await updateEvent(evt.id, {
+                                            starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
+                                            ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
+                                        });
+                                        loadEvents();
+                                    } catch (err: any) {
+                                        console.error('Failed to update event duration', err);
+                                        setSnackbar({ open: true, message: err.message || 'Failed to update event duration', severity: 'error' });
+                                        loadEvents();
+                                    }
+                                }}
                             />
                         </Box>
-                    </Box>
+
                 </Card>
 
                 {/* Old Events Calendar Component (Hidden / Commented out safely) */}
