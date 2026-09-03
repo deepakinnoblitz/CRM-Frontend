@@ -159,7 +159,7 @@ export function CustomCalendar({
                 }}
             >
                 {IconComp}
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#ffffff' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#ffffff', minWidth: 0, flex: 1 }}>
                     {eventInfo.event.title}
                 </span>
             </Box>
@@ -175,11 +175,13 @@ export function CustomCalendar({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     px: 2.5,
-                    py: 1.25,
+                    py: 2,
                     bgcolor: '#FFFFFF', // Clean white background
                     borderTopLeftRadius: '16px',
                     borderTopRightRadius: '16px',
                     borderBottom: '1px solid #E2E8F0',
+                    height: 72,
+                    boxSizing: 'border-box',
                 }}
             >
                 {/* Left controls: Today button, < >, Title */}
@@ -224,24 +226,24 @@ export function CustomCalendar({
                 </Box>
 
                 {/* Right controls: View switchers & Event type filter pills */}
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexShrink: 0, flexWrap: 'nowrap' }}>
                     {/* Event Type Filter Pills */}
                     <Box
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            p: 0.5,
+                            p: 0.45,
                             bgcolor: '#F4F6F8',
                             border: '1px solid #E5E7EB',
                             borderRadius: '999px',
-                            gap: 0.5,
+                            gap: 0.35,
                         }}
                     >
                         {[
-                            { label: 'All', icon: <LuFilter size={15} /> },
-                            { label: 'Calls', icon: <FiPhoneCall size={15} /> },
-                            { label: 'Meetings', icon: <FiCalendar size={15} /> },
-                            { label: 'To-Do', icon: <FiCheckSquare size={15} /> },
+                            { label: 'All', icon: <LuFilter size={14.5} /> },
+                            { label: 'Calls', icon: <FiPhoneCall size={14.5} /> },
+                            { label: 'Meetings', icon: <FiCalendar size={14.5} /> },
+                            { label: 'To-Do', icon: <FiCheckSquare size={14.5} /> },
                         ].map((item) => (
                             <Box
                                 key={item.label}
@@ -249,15 +251,15 @@ export function CustomCalendar({
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 0.75,
-                                    px: 2,
-                                    py: 0.5,
+                                    gap: 0.65,
+                                    px: 1.9,
+                                    py: 0.45,
                                     borderRadius: '999px',
                                     cursor: 'pointer',
                                     transition: 'all 0.25s ease',
                                     bgcolor: eventTypeFilter === item.label ? '#12A8D6' : 'transparent',
                                     color: eventTypeFilter === item.label ? '#fff' : '#637381',
-                                    boxShadow: eventTypeFilter === item.label ? '0 4px 12px rgba(18,168,214,0.25)' : 'none',
+                                    boxShadow: eventTypeFilter === item.label ? '0 3px 10px rgba(18,168,214,0.25)' : 'none',
                                     '&:hover': {
                                         bgcolor: eventTypeFilter === item.label ? '#12A8D6' : 'rgba(18,168,214,0.08)',
                                     },
@@ -267,7 +269,7 @@ export function CustomCalendar({
                                 <Typography
                                     variant="body2"
                                     sx={{
-                                        fontSize: '0.8125rem',
+                                        fontSize: '0.8rem',
                                         fontWeight: eventTypeFilter === item.label ? 700 : 600,
                                     }}
                                 >
@@ -282,11 +284,11 @@ export function CustomCalendar({
                         sx={{
                             display: 'flex',
                             alignItems: 'center',
-                            p: 0.5,
+                            p: 0.45,
                             bgcolor: '#F4F6F8',
                             border: '1px solid #E5E7EB',
                             borderRadius: '999px',
-                            gap: 0.5,
+                            gap: 0.35,
                         }}
                     >
                         {[
@@ -302,14 +304,14 @@ export function CustomCalendar({
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    px: 2.5,
-                                    py: 0.5,
+                                    px: 2.15,
+                                    py: 0.45,
                                     borderRadius: '999px',
                                     cursor: 'pointer',
                                     transition: 'all 0.25s ease',
                                     bgcolor: currentView === item.view ? '#105782' : 'transparent',
                                     color: currentView === item.view ? '#fff' : '#637381',
-                                    boxShadow: currentView === item.view ? '0 4px 12px rgba(16,87,130,0.25)' : 'none',
+                                    boxShadow: currentView === item.view ? '0 3px 10px rgba(16,87,130,0.25)' : 'none',
                                     '&:hover': {
                                         bgcolor: currentView === item.view ? '#105782' : 'rgba(16,87,130,0.08)',
                                     },
@@ -319,7 +321,7 @@ export function CustomCalendar({
                                     variant="body2"
                                     sx={{
                                         fontWeight: currentView === item.view ? 700 : 600,
-                                        fontSize: '0.8125rem',
+                                        fontSize: '0.8rem',
                                     }}
                                 >
                                     {item.label}
@@ -337,7 +339,7 @@ export function CustomCalendar({
                     p: 0,
                     pl: '290px', // grid starts after 290px sidebar
                     position: 'relative',
-                    overflow: 'hidden',
+                    overflow: 'visible',
                     '& .fc': {
                         height: '100%',
                         fontFamily: 'inherit',
@@ -412,21 +414,54 @@ export function CustomCalendar({
                             textDecoration: 'underline',
                         },
                     },
+                    '& .fc-popover, & .fc-more-popover': {
+                        borderRadius: '12px !important',
+                        border: '1px solid #E2E8F0 !important',
+                        boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1) !important',
+                        overflow: 'hidden !important',
+                        zIndex: '999999 !important',
+                        minWidth: '220px !important',
+                        maxWidth: '290px !important',
+                        bgcolor: '#FFFFFF !important',
+                    },
+                    '& .fc-popover-header': {
+                        bgcolor: '#F8FAFC !important',
+                        p: '8px 12px !important',
+                        fontWeight: '700 !important',
+                        color: '#1E293B !important',
+                        fontSize: '0.85rem !important',
+                        borderBottom: '1px solid #E2E8F0 !important',
+                    },
+                    '& .fc-popover-body': {
+                        p: '8px !important',
+                        maxHeight: '260px',
+                        overflowY: 'auto',
+                        boxSizing: 'border-box !important',
+                        width: '100% !important',
+                        '& .fc-daygrid-event-harness': {
+                            width: '100% !important',
+                            mb: '6px',
+                        },
+                    },
                 }}
             >
                 {loading && (
                     <Box
                         sx={{
                             position: 'absolute',
-                            top: 0, left: 0, right: 0, bottom: 0,
-                            bgcolor: 'rgba(255, 255, 255, 0.65)',
-                            zIndex: 10,
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            bgcolor: 'rgba(255, 255, 255, 0.7)',
+                            backdropFilter: 'blur(2px)',
+                            zIndex: 99,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                         }}
                     >
-                        <CircularProgress color="info" />
+                        <CircularProgress color="info" size={44} thickness={4} />
                     </Box>
                 )}
 
