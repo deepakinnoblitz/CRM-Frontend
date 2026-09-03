@@ -47,6 +47,7 @@ import { EventDetailsDialog } from 'src/sections/events/event-details-dialog';
 import { useAuth } from 'src/auth/auth-context';
 
 import { CustomCalendar } from '../components/custom-calendar';
+import { getEventChipColor, getEventStatus, getEventType } from '../utils/event-color';
 // ----------------------------------------------------------------------
 
 const INITIAL_EVENT_STATE: Partial<CalendarEvent> = {
@@ -248,7 +249,7 @@ export function EventsView() {
         setEventData({
             ...INITIAL_EVENT_STATE,
             starts_on: selectedDate ? selectedDate.replace(' ', 'T') : dayjs().format('YYYY-MM-DDTHH:mm:ss'),
-            ends_on: selectedDate ? selectedDate.replace(' ', 'T') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
+            ends_on: selectedDate ? dayjs(selectedDate).add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss') : dayjs().add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss'),
         });
         setOpenDialog(true);
     };
@@ -256,16 +257,19 @@ export function EventsView() {
     const handleCloseCallDialog = () => {
         setOpenCallDialog(false);
         setSelectedCallDoc(null);
+        setSelectedDate(null);
     };
 
     const handleCloseMeetingDialog = () => {
         setOpenMeetingDialog(false);
         setSelectedMeetingDoc(null);
+        setSelectedDate(null);
     };
 
     const handleCloseTodoDialog = () => {
         setOpenTodoDialog(false);
         setSelectedTodoDoc(null);
+        setSelectedDate(null);
     };
 
     const handleEventClick = async (info: any) => {
@@ -275,8 +279,9 @@ export function EventsView() {
 
     const handleEventDrop = async (info: any) => {
         const { event } = info;
+        const eventId = event.extendedProps?.realDocName || event.extendedProps?.originalEventName || event.id || event.name;
         try {
-            await updateEvent(event.id, {
+            await updateEvent(eventId, {
                 starts_on: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
                 ends_on: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
@@ -291,8 +296,9 @@ export function EventsView() {
 
     const handleEventResize = async (info: any) => {
         const { event } = info;
+        const eventId = event.extendedProps?.realDocName || event.extendedProps?.originalEventName || event.id || event.name;
         try {
-            await updateEvent(event.id, {
+            await updateEvent(eventId, {
                 starts_on: dayjs(event.start).format('YYYY-MM-DD HH:mm:ss'),
                 ends_on: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
@@ -315,7 +321,8 @@ export function EventsView() {
         setLoadingEvents(true);
         try {
             if (selectedEvent) {
-                const response = await updateEvent(selectedEvent.name, formattedData);
+                const eventId = (selectedEvent.realDocName || selectedEvent.originalEventName || selectedEvent.name || selectedEvent.id || '') as string;
+                const response = await updateEvent(eventId, formattedData);
                 console.log('Updated event response:', response);
                 setSnackbar({ open: true, message: 'Event updated successfully', severity: 'success' });
             } else {
@@ -344,7 +351,8 @@ export function EventsView() {
             } else if (selectedEvent.reference_doctype === 'ToDo' && selectedEvent.reference_docname) {
                 await deleteToDo(selectedEvent.reference_docname);
             } else {
-                await deleteEvent(selectedEvent.name);
+                const eventId = (selectedEvent.realDocName || selectedEvent.originalEventName || selectedEvent.name || selectedEvent.id || '') as string;
+                await deleteEvent(eventId);
             }
             console.log('Deleted event response:', selectedEvent.name);
             setOpenDialog(false);
@@ -652,27 +660,9 @@ export function EventsView() {
         }
 
         return filtered.map((event) => {
-            let eventColor = event.color || '#08a3cd';
-
-            if (!event.color) {
-                switch (event.status) {
-                    case 'Completed':
-                    case 'Closed':
-                        eventColor = theme.palette.success.main;
-                        break;
-                    case 'Cancelled':
-                        eventColor = theme.palette.error.main;
-                        break;
-                    case 'Scheduled':
-                        eventColor = '#08a3cd';
-                        break;
-                    case 'Open':
-                        eventColor = theme.palette.warning.main;
-                        break;
-                    default:
-                        eventColor = '#08a3cd';
-                }
-            }
+            const type = getEventType(event);
+            const status = getEventStatus(event);
+            const eventColor = getEventChipColor(type, status, event.color);
 
             const rawStatus = String(
                 (event as any).status ||
@@ -696,9 +686,13 @@ export function EventsView() {
                 endDate = dayjs(startDate).add(1, 'hour').toDate();
             }
 
+            const realDocName = event.name || (event as any).id || (event as any).originalEventName;
+
             const finalBryntumEvent = {
-                id: event.name,
-                name: event.subject,
+                id: realDocName,
+                name: realDocName,
+                realDocName,
+                subject: event.subject,
                 title: event.subject,
                 start: event.starts_on,
                 end: event.ends_on || event.starts_on,
@@ -719,7 +713,7 @@ export function EventsView() {
                 event_type: (event as any).event_type,
                 isCompletedLocked,
                 rawStatus,
-                originalEventName: event.name,
+                originalEventName: realDocName,
             };
 
             if (
@@ -1142,18 +1136,9 @@ export function EventsView() {
 
                                             // Determine dots (max 3)
                                             const dots = dayEvents.slice(0, 3).map((event, index) => {
-                                                const type = event.reference_doctype;
-                                                const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
-                                                const subjectLower = (event.subject || '').toLowerCase();
-
-                                                let bgColor = '#08a3cd'; // default
-                                                if (type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call')) {
-                                                    bgColor = '#ff9800'; // orange
-                                                } else if (type === 'Meeting') {
-                                                    bgColor = '#4caf50'; // green
-                                                } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do') {
-                                                    bgColor = '#f44336'; // red
-                                                }
+                                                const type = getEventType(event);
+                                                const status = getEventStatus(event);
+                                                const bgColor = getEventChipColor(type, status, event.color);
                                                 return <Box key={`${event.name || index}-${index}`} sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: bgColor }} />;
                                             });
 
@@ -1235,40 +1220,61 @@ export function EventsView() {
                                     return !isCall && !isMeeting && (t === 'ToDo' || t === 'Todo' || t === 'To-do' || ec === 'ToDo' || ec === 'Todo');
                                 });
 
-                                const renderCard = (evt: any) => (
+                                const renderCard = (evt: any) => {
+                                    const type = getEventType(evt);
+                                    const status = getEventStatus(evt);
+                                    const chipColor = getEventChipColor(type, status, evt.color);
+                                    const subjectLower = (evt.subject || '').toLowerCase();
+
+                                    let IconComp = null;
+                                    if (type === 'Call' || type === 'Calls' || subjectLower.includes('call')) {
+                                        IconComp = <FiPhoneCall size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
+                                    } else if (type === 'Meeting' || subjectLower.includes('meeting')) {
+                                        IconComp = <FiCalendar size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
+                                    } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do' || subjectLower.includes('todo') || subjectLower.includes('to-do')) {
+                                        IconComp = <FiCheckSquare size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
+                                    }
+
+                                    return (
                                         <Box
                                             key={evt.name}
                                             sx={{
                                                 display: 'flex',
-                                                alignItems: 'flex-start',
+                                                alignItems: 'center',
                                                 gap: 1,
-                                                px: 1.25,
-                                                py: 1,
-                                                borderRadius: 1.5,
-                                                bgcolor: 'background.neutral',
+                                                px: '10px',
+                                                py: '6px',
+                                                borderRadius: '6px',
+                                                bgcolor: chipColor,
+                                                color: '#ffffff',
                                                 cursor: 'pointer',
-                                                transition: 'background-color 0.2s',
-                                                '&:hover': { bgcolor: 'action.hover' },
+                                                transition: 'transform 0.15s ease',
+                                                '&:hover': { transform: 'translateY(-1px)', opacity: 0.95 },
                                             }}
-                                            onClick={() => handleOpenEditDialog(evt)}
+                                            onClick={(e) => {
+                                                setClickedEvent(evt);
+                                                setPopoverAnchorEl(e.currentTarget);
+                                            }}
                                         >
-                                            <Box sx={{ minWidth: 0, width: '100%' }}>
+                                            {IconComp}
+                                            <Box sx={{ minWidth: 0, width: '100%', display: 'flex', flexDirection: 'column' }}>
                                                 <Typography
                                                     variant="body2"
                                                     sx={{
-                                                        fontWeight: 600,
+                                                        fontWeight: 700,
                                                         fontSize: '0.8125rem',
                                                         overflow: 'hidden',
                                                         textOverflow: 'ellipsis',
                                                         whiteSpace: 'nowrap',
-                                                        lineHeight: 1.4,
+                                                        lineHeight: 1.3,
+                                                        color: '#ffffff',
                                                     }}
                                                 >
                                                     {evt.subject.replace(/\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM|am|pm)?\s*$/i, '')}
                                                 </Typography>
                                                 <Typography
                                                     variant="caption"
-                                                    sx={{ color: 'text.secondary', fontSize: '0.75rem' }}
+                                                    sx={{ color: 'rgba(255, 255, 255, 0.85)', fontSize: '0.75rem', fontWeight: 500 }}
                                                 >
                                                     {(() => {
                                                         if (!evt.starts_on) return '';
@@ -1288,6 +1294,7 @@ export function EventsView() {
                                             </Box>
                                         </Box>
                                     );
+                                };
 
                                 const renderSection = (title: string, icon: any, color: string, items: any[], emptyMsg: string) => (
                                     <Box>
@@ -1357,11 +1364,24 @@ export function EventsView() {
                                 eventTypeFilter={eventTypeFilter}
                                 onFilterChange={(newFilter) => setEventTypeFilter(newFilter)}
                                 onDateChange={(newDate) => setMiniCalDate(newDate)}
-                                onEventClick={(evt) => handleOpenEditDialog(evt)}
+                                onEventClick={(evt, el, jsEvent) => {
+                                    setClickedEvent(evt);
+                                    setPopoverAnchorEl(el || (jsEvent?.currentTarget as HTMLElement) || (jsEvent?.target as HTMLElement) || null);
+                                }}
                                 onDateSelect={(selectInfo) => {
                                     if (canCreateEvent) {
-                                        const startStr = dayjs(selectInfo.start).format('YYYY-MM-DDTHH:mm');
-                                        const endStr = dayjs(selectInfo.end).format('YYYY-MM-DDTHH:mm');
+                                        let startDate = dayjs(selectInfo.startStr || selectInfo.start);
+                                        if (selectInfo.allDay) {
+                                            const now = dayjs();
+                                            startDate = startDate.hour(now.hour()).minute(now.minute()).second(0);
+                                        }
+                                        const startStr = startDate.format('YYYY-MM-DDTHH:mm');
+                                        let endDate = selectInfo.end ? dayjs(selectInfo.endStr || selectInfo.end) : startDate.add(1, 'hour');
+                                        if (selectInfo.allDay) {
+                                            endDate = startDate.add(1, 'hour');
+                                        }
+                                        const endStr = endDate.format('YYYY-MM-DDTHH:mm');
+
                                         setEventData({
                                             subject: '',
                                             starts_on: startStr,
@@ -1371,7 +1391,7 @@ export function EventsView() {
                                             color: '#08a3cd',
                                             description: '',
                                         });
-                                        handleOpenTypeDialog();
+                                        handleOpenTypeDialog(startStr);
                                     }
                                 }}
                                 onEventDrop={async (dropInfo) => {
@@ -1382,7 +1402,8 @@ export function EventsView() {
                                             return;
                                         }
                                         const evt = dropInfo.event;
-                                        await updateEvent(evt.id, {
+                                        const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
+                                        await updateEvent(eventId, {
                                             starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
                                             ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
                                         });
@@ -1401,7 +1422,8 @@ export function EventsView() {
                                             return;
                                         }
                                         const evt = resizeInfo.event;
-                                        await updateEvent(evt.id, {
+                                        const eventId = evt.extendedProps?.realDocName || evt.extendedProps?.originalEventName || evt.id;
+                                        await updateEvent(eventId, {
                                             starts_on: dayjs(evt.start).format('YYYY-MM-DD HH:mm:ss'),
                                             ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
                                         });
@@ -1679,7 +1701,7 @@ export function EventsView() {
                     open={openMeetingDialog}
                     onClose={handleCloseMeetingDialog}
                     selectedMeeting={selectedMeetingDoc}
-                    initialData={selectedDate ? { from: selectedDate } : undefined}
+                    initialData={selectedDate ? { from: selectedDate, to: dayjs(selectedDate).add(1, 'hour').format('YYYY-MM-DDTHH:mm') } : undefined}
                     onSuccess={loadEvents}
                     canEdit={canEditEvent}
                     canDelete={canDeleteEvent}
