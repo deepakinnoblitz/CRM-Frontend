@@ -5,6 +5,9 @@ import { handleResponse } from './utils';
 
 export interface CalendarEvent {
     name: string;
+    id?: string;
+    realDocName?: string;
+    originalEventName?: string;
     subject: string;
     starts_on: string;
     ends_on?: string;

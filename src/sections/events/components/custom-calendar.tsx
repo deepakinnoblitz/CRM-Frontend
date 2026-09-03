@@ -10,11 +10,13 @@ import { FiChevronLeft, FiChevronRight, FiCalendar, FiPhoneCall, FiCheckSquare }
 
 import { Box, Button, Typography, ButtonGroup, IconButton, CircularProgress } from '@mui/material';
 
+import { getEventChipColor, getEventStatus, getEventType } from '../utils/event-color';
+
 
 interface CustomCalendarProps {
     events: any[];
     loading?: boolean;
-    onEventClick?: (event: any) => void;
+    onEventClick?: (event: any, el?: HTMLElement, jsEvent?: any) => void;
     onDateSelect?: (selectInfo: any) => void;
     onEventDrop?: (dropInfo: any) => void;
     onEventResize?: (resizeInfo: any) => void;
@@ -93,27 +95,27 @@ export function CustomCalendar({
 
     // Format events for FullCalendar
     const formattedEvents = events.map((event) => {
-        const type = event.reference_doctype;
-        const evCat = event.event_category || (event as any).eventOriginalData?.event_category;
-        const subjectLower = (event.subject || '').toLowerCase();
+        const type = getEventType(event);
+        const status = getEventStatus(event);
+        const backgroundColor = getEventChipColor(type, status, event.color);
 
-        let backgroundColor = event.color || '#08a3cd';
+        const subjectLower = (event.subject || '').toLowerCase();
         let iconType: 'call' | 'meeting' | 'todo' | 'other' = 'other';
 
-        if (type === 'Call' || type === 'Calls' || evCat === 'Call' || evCat === 'Calls' || subjectLower.includes('call')) {
-            backgroundColor = '#ff9800';
+        if (type === 'Call' || type === 'Calls' || subjectLower.includes('call')) {
             iconType = 'call';
-        } else if (type === 'Meeting' || evCat === 'Meeting') {
-            backgroundColor = '#4caf50';
+        } else if (type === 'Meeting' || subjectLower.includes('meeting')) {
             iconType = 'meeting';
-        } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do' || evCat === 'Todo' || evCat === 'ToDo') {
-            backgroundColor = '#f44336';
+        } else if (type === 'ToDo' || type === 'Todo' || type === 'To-do' || subjectLower.includes('todo') || subjectLower.includes('to-do')) {
             iconType = 'todo';
         }
 
+        const realDocName = event.realDocName || event.originalEventName || event.docname || event.id || event.name;
+        const displayTitle = event.title || event.subject || event.name;
+
         return {
-            id: String(event.name || event.id),
-            title: event.subject || event.name,
+            id: String(realDocName),
+            title: displayTitle,
             start: event.starts_on || event.start,
             end: event.ends_on || event.end,
             backgroundColor,
@@ -121,36 +123,43 @@ export function CustomCalendar({
             textColor: '#ffffff',
             extendedProps: {
                 ...event,
+                realDocName,
                 iconType,
+                chipColor: backgroundColor,
             },
         };
     });
 
     const renderEventContent = (eventInfo: any) => {
         const iconType = eventInfo.event.extendedProps.iconType;
+        const chipColor = eventInfo.event.backgroundColor || eventInfo.event.extendedProps?.chipColor || '#F5A623';
 
         let IconComp = null;
-        if (iconType === 'call') IconComp = <FiPhoneCall size={12} style={{ marginRight: 4, flexShrink: 0 }} />;
-        else if (iconType === 'meeting') IconComp = <FiCalendar size={12} style={{ marginRight: 4, flexShrink: 0 }} />;
-        else if (iconType === 'todo') IconComp = <FiCheckSquare size={12} style={{ marginRight: 4, flexShrink: 0 }} />;
+        if (iconType === 'call') IconComp = <FiPhoneCall size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
+        else if (iconType === 'meeting') IconComp = <FiCalendar size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
+        else if (iconType === 'todo') IconComp = <FiCheckSquare size={13} style={{ marginRight: 6, flexShrink: 0, color: '#ffffff' }} />;
 
         return (
             <Box
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
-                    px: 0.75,
-                    py: 0.25,
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
+                    px: '10px',
+                    py: '4px',
+                    fontSize: '12px',
+                    fontWeight: 700,
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
                     textOverflow: 'ellipsis',
                     width: '100%',
+                    borderRadius: '6px',
+                    bgcolor: chipColor,
+                    color: '#ffffff',
+                    boxSizing: 'border-box',
                 }}
             >
                 {IconComp}
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#ffffff' }}>
                     {eventInfo.event.title}
                 </span>
             </Box>
@@ -373,10 +382,34 @@ export function CustomCalendar({
                         borderRadius: '6px',
                         border: 'none',
                         cursor: 'pointer',
-                        boxShadow: '0 1px 2px rgba(0,0,0,0.06)',
+                        boxShadow: 'none',
+                        bgcolor: 'transparent !important',
+                        p: 0,
+                        mb: '4px',
                         transition: 'transform 0.15s ease',
                         '&:hover': {
                             transform: 'translateY(-1px)',
+                        },
+                    },
+                    '& .fc-daygrid-event-harness': {
+                        mb: '4px',
+                    },
+                    '& .fc-h-event, & .fc-v-event': {
+                        bgcolor: 'transparent !important',
+                        border: 'none !important',
+                    },
+                    '& .fc-daygrid-more-link': {
+                        color: '#637381',
+                        fontWeight: 600,
+                        fontSize: '0.8125rem',
+                        textDecoration: 'none',
+                        mt: 0.5,
+                        display: 'block',
+                        textAlign: 'center',
+                        cursor: 'pointer',
+                        '&:hover': {
+                            color: '#105782',
+                            textDecoration: 'underline',
                         },
                     },
                 }}
@@ -403,12 +436,13 @@ export function CustomCalendar({
                     initialView={currentView}
                     headerToolbar={false}
                     events={formattedEvents}
+                    dayMaxEvents={2}
                     editable
                     selectable
                     eventContent={renderEventContent}
                     eventClick={(info) => {
                         if (onEventClick) {
-                            onEventClick(info.event.extendedProps);
+                            onEventClick(info.event.extendedProps, info.el, info.jsEvent);
                         }
                     }}
                     select={(selectInfo) => {
