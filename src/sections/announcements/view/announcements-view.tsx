@@ -4,7 +4,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Alert from '@mui/material/Alert';
-import Switch from '@mui/material/Switch';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Snackbar from '@mui/material/Snackbar';
@@ -19,6 +18,7 @@ import { styled, Theme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
+import Switch, { SwitchProps } from '@mui/material/Switch';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
@@ -52,36 +52,51 @@ import { AnnouncementsTableFiltersDrawer } from '../announcements-table-filters-
 
 // ----------------------------------------------------------------------
 
-const Android12Switch = styled(Switch)(({ theme }: { theme: Theme }) => ({
-    padding: 8,
-    '& .MuiSwitch-track': {
-        borderRadius: 22 / 2,
-        '&::before, &::after': {
-            content: '""',
-            position: 'absolute',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            width: 16,
-            height: 16,
+export const CustomSwitch = styled((props: SwitchProps) => (
+    <Switch focusVisibleClassName=".Mui-focusVisible" disableRipple {...props} />
+))(({ theme }) => ({
+    width: 38,
+    height: 22,
+    padding: 0,
+    '& .MuiSwitch-switchBase': {
+        padding: 0,
+        margin: 2,
+        transitionDuration: '300ms',
+        '&.Mui-checked': {
+            transform: 'translateX(16px)',
+            color: '#fff',
+            '& + .MuiSwitch-track': {
+                backgroundColor: '#08a3cd',
+                opacity: 1,
+                border: 0,
+            },
+            '&.Mui-disabled + .MuiSwitch-track': {
+                opacity: 0.5,
+            },
         },
-        '&::before': {
-            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
-                theme.palette.getContrastText(theme.palette.primary.main)
-            )}" d="M21,7L9,19L3.5,13.5L4.91,12.09L9,16.17L19.59,5.59L21,7Z"/></svg>')`,
-            left: 12,
+        '&.Mui-focusVisible .MuiSwitch-thumb': {
+            color: '#08a3cd',
+            border: '6px solid #fff',
         },
-        '&::after': {
-            backgroundImage: `url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" height="16" width="16" viewBox="0 0 24 24"><path fill="${encodeURIComponent(
-                theme.palette.getContrastText(theme.palette.primary.main)
-            )}" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/></svg>')`,
-            right: 12,
+        '&.Mui-disabled .MuiSwitch-thumb': {
+            color: theme.palette.mode === 'light' ? theme.palette.grey[100] : theme.palette.grey[600],
+        },
+        '&.Mui-disabled + .MuiSwitch-track': {
+            opacity: theme.palette.mode === 'light' ? 0.7 : 0.3,
         },
     },
     '& .MuiSwitch-thumb': {
-        boxShadow: 'none',
-        width: 16,
-        height: 16,
-        margin: 2,
+        boxSizing: 'border-box',
+        width: 18,
+        height: 18,
+    },
+    '& .MuiSwitch-track': {
+        borderRadius: 26 / 2,
+        backgroundColor: theme.palette.mode === 'light' ? '#E9E9EA' : '#39393D',
+        opacity: 1,
+        transition: theme.transitions.create(['background-color'], {
+            duration: 500,
+        }),
     },
 }));
 
@@ -458,13 +473,14 @@ export function AnnouncementsView() {
 
                             <FormControlLabel
                                 control={
-                                    <Android12Switch
+                                    <CustomSwitch
                                         checked={isActive}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIsActive(e.target.checked)}
+                                        sx={{ mr: 1.5 }}
                                     />
                                 }
                                 label="Is Active"
-                                sx={{ mb: 1 }}
+                                sx={{ mb: 1, ml: 0, display: 'inline-flex', alignItems: 'center' }}
                             />
 
                             <TextField
