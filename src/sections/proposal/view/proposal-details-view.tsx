@@ -81,7 +81,11 @@ export function ProposalDetailsView() {
     const theme = useTheme();
 
     const backUrl = location.state?.from || '/proposals';
-    const backState = location.state?.filters ? { filters: location.state.filters } : undefined;
+    const backState = location.state?.filters
+        ? { filters: location.state.filters }
+        : (location.state?.parentState
+            ? { ...location.state.parentState, leadTab: location.state.leadTab }
+            : (location.state?.leadTab ? { leadTab: location.state.leadTab } : undefined));
 
     const [proposal, setProposal] = useState<any>(null);
     const [ownerDetails, setOwnerDetails] = useState<{ full_name: string; email: string } | null>(null);

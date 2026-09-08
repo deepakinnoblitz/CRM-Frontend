@@ -5,7 +5,7 @@ import utc from 'dayjs/plugin/utc';
 dayjs.extend(utc);
 
 import { LuFilter } from "react-icons/lu";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { FiPhoneCall, FiCalendar, FiCheckSquare } from 'react-icons/fi';
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
@@ -106,10 +106,71 @@ export function EventsView() {
     const [selectedMeetingDoc, setSelectedMeetingDoc] = useState<Meeting | null>(null);
     const [selectedTodoDoc, setSelectedTodoDoc] = useState<ToDo | null>(null);
 
+    const location = useLocation();
     const [popoverAnchorEl, setPopoverAnchorEl] = useState<HTMLElement | null>(null);
     const [clickedEvent, setClickedEvent] = useState<CalendarEvent | null>(null);
     const [miniCalDate, setMiniCalDate] = useState<any>(dayjs());
     const [eventTypeFilter, setEventTypeFilter] = useState<string>('All');
+    const [calendarKey, setCalendarKey] = useState(0);
+
+    const [restoreNavState, setRestoreNavState] = useState<{
+        openContactId?: string | null;
+        activeTab?: string;
+        openEventDetails?: boolean;
+        eventId: string | null;
+        eventRefType: string | null;
+        eventRefName: string | null;
+    } | null>(null);
+
+    useEffect(() => {
+        let navState: any = null;
+        if (location.state?.openContactId || location.state?.openEventDetails || location.state?.eventId) {
+            navState = location.state;
+        } else {
+            const saved = sessionStorage.getItem('calendar_nav_state');
+            if (saved) {
+                try {
+                    navState = JSON.parse(saved);
+                } catch (e) {
+                    // ignore
+                }
+            }
+        }
+
+        if (navState && (navState.openContactId || navState.openEventDetails || navState.eventId)) {
+            sessionStorage.removeItem('calendar_nav_state');
+            window.history.replaceState({}, document.title);
+
+            setRestoreNavState({
+                openContactId: navState.openContactId || null,
+                activeTab: navState.activeTab || 'deals',
+                openEventDetails: Boolean(navState.openEventDetails),
+                eventId: navState.eventId || null,
+                eventRefType: navState.eventRefType || null,
+                eventRefName: navState.eventRefName || null,
+            });
+
+            const targetEvent = {
+                name: navState.eventId || null,
+                reference_doctype: navState.eventRefType || null,
+                reference_docname: navState.eventRefName || null,
+            } as any;
+
+            setSelectedDetailsEvent(targetEvent);
+            setClickedEvent(targetEvent);
+            setOpenDetailsDialog(true);
+        }
+    }, [location.state]);
+
+    useEffect(() => {
+        if (restoreNavState?.eventId && events.length > 0) {
+            const foundEvent = events.find((e) => e.name === restoreNavState.eventId);
+            if (foundEvent) {
+                setClickedEvent(foundEvent);
+                setSelectedDetailsEvent(foundEvent);
+            }
+        }
+    }, [events, restoreNavState]);
 
     const handleClosePopover = () => {
         setPopoverAnchorEl(null);
@@ -286,11 +347,14 @@ export function EventsView() {
                 ends_on: event.end ? dayjs(event.end).format('YYYY-MM-DD HH:mm:ss') : undefined
             });
             // Refresh events
-            loadEvents();
+            await loadEvents();
+            setCalendarKey((prev) => prev + 1);
         } catch (error: any) {
             console.error('Failed to update event position:', error);
             setSnackbar({ open: true, message: error.message || 'Failed to update event position', severity: 'error' });
             info.revert();
+            await loadEvents();
+            setCalendarKey((prev) => prev + 1);
         }
     };
 
@@ -440,13 +504,15 @@ export function EventsView() {
         if (reopenEventId && events.length > 0) {
             const foundEvent = events.find(e => e.name === reopenEventId);
             if (foundEvent) {
-                setTimeout(() => {
-                    const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${reopenEventId}"]`) || document.querySelector(`[data-event-id="${reopenEventId}"]`);
-                    if (element) {
-                        setClickedEvent(foundEvent);
-                        setPopoverAnchorEl(element as HTMLElement);
-                    }
-                }, 300);
+                setClickedEvent(foundEvent);
+                if (!restoreNavState && !location.state?.openContactId && !location.state?.openEventDetails && !location.state?.eventId && !sessionStorage.getItem('calendar_nav_state')) {
+                    setTimeout(() => {
+                        const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${reopenEventId}"]`) || document.querySelector(`[data-event-id="${reopenEventId}"]`);
+                        if (element) {
+                            setPopoverAnchorEl(element as HTMLElement);
+                        }
+                    }, 300);
+                }
             }
             sessionStorage.removeItem('calendar_reopen_event_id');
         }
@@ -1362,6 +1428,7 @@ export function EventsView() {
                     {/* ---- Custom Calendar grid ---- */}
                     <Box sx={{ width: '100%', height: '100%', position: 'relative', display: 'flex', flexDirection: 'column' }}>
                         <CustomCalendar
+                            calendarKey={calendarKey}
                             events={bryntumEvents}
                             loading={loadingEvents}
                             selectedDate={miniCalDate}
@@ -1403,7 +1470,9 @@ export function EventsView() {
                                 try {
                                     if (!canEditEvent) {
                                         setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                        dropInfo.revert();
                                         await loadEvents();
+                                        setCalendarKey((prev) => prev + 1);
                                         return;
                                     }
                                     const evt = dropInfo.event;
@@ -1413,10 +1482,13 @@ export function EventsView() {
                                         ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
                                     });
                                     await loadEvents();
+                                    setCalendarKey((prev) => prev + 1);
                                 } catch (err: any) {
                                     console.error('Failed to update event position', err);
+                                    dropInfo.revert();
                                     setSnackbar({ open: true, message: err.message || 'Failed to update event', severity: 'error' });
                                     await loadEvents();
+                                    setCalendarKey((prev) => prev + 1);
                                 } finally {
                                     setLoadingEvents(false);
                                 }
@@ -1426,7 +1498,9 @@ export function EventsView() {
                                 try {
                                     if (!canEditEvent) {
                                         setSnackbar({ open: true, message: 'You do not have permission to edit events.', severity: 'error' });
+                                        resizeInfo.revert();
                                         await loadEvents();
+                                        setCalendarKey((prev) => prev + 1);
                                         return;
                                     }
                                     const evt = resizeInfo.event;
@@ -1436,10 +1510,13 @@ export function EventsView() {
                                         ends_on: evt.end ? dayjs(evt.end).format('YYYY-MM-DD HH:mm:ss') : undefined,
                                     });
                                     await loadEvents();
+                                    setCalendarKey((prev) => prev + 1);
                                 } catch (err: any) {
                                     console.error('Failed to update event duration', err);
+                                    resizeInfo.revert();
                                     setSnackbar({ open: true, message: err.message || 'Failed to update event duration', severity: 'error' });
                                     await loadEvents();
+                                    setCalendarKey((prev) => prev + 1);
                                 } finally {
                                     setLoadingEvents(false);
                                 }
@@ -1596,13 +1673,17 @@ export function EventsView() {
                 <Snackbar
                     open={snackbar.open}
                     autoHideDuration={6000}
-                    onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
+                    onClose={(event, reason) => {
+                        if (reason === 'clickaway') return;
+                        setSnackbar((prev) => ({ ...prev, open: false }));
+                    }}
                     anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    sx={{ pointerEvents: 'none' }}
                 >
                     <Alert
                         onClose={() => setSnackbar((prev) => ({ ...prev, open: false }))}
                         severity={snackbar.severity}
-                        sx={{ width: '100%' }}
+                        sx={{ width: '100%', pointerEvents: 'auto' }}
                     >
                         {snackbar.message}
                     </Alert>
@@ -1731,12 +1812,21 @@ export function EventsView() {
                     open={openDetailsDialog}
                     onClose={() => {
                         setOpenDetailsDialog(false);
+                        const eventIdToReopen = clickedEvent?.name || selectedDetailsEvent?.name || restoreNavState?.eventId;
                         setSelectedDetailsEvent(null);
-                        if (clickedEvent) {
+                        setRestoreNavState(null);
+                        if (eventIdToReopen) {
                             setTimeout(() => {
-                                const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${clickedEvent.name}"]`) || document.querySelector(`[data-event-id="${clickedEvent.name}"]`);
+                                const element = document.querySelector(`.b-cal-event-wrap[data-event-id="${eventIdToReopen}"]`) || document.querySelector(`[data-event-id="${eventIdToReopen}"]`);
                                 if (element) {
                                     setPopoverAnchorEl(element as HTMLElement);
+                                } else {
+                                    setTimeout(() => {
+                                        const retryEl = document.querySelector(`.b-cal-event-wrap[data-event-id="${eventIdToReopen}"]`) || document.querySelector(`[data-event-id="${eventIdToReopen}"]`);
+                                        if (retryEl) {
+                                            setPopoverAnchorEl(retryEl as HTMLElement);
+                                        }
+                                    }, 200);
                                 }
                             }, 100);
                         }
@@ -1744,6 +1834,9 @@ export function EventsView() {
                     eventId={selectedDetailsEvent ? selectedDetailsEvent.name : null}
                     eventRefType={selectedDetailsEvent ? selectedDetailsEvent.reference_doctype : null}
                     eventRefName={selectedDetailsEvent ? selectedDetailsEvent.reference_docname : null}
+                    initialOpenClientDetails={Boolean(restoreNavState?.openContactId)}
+                    initialClientTab={restoreNavState?.activeTab}
+                    initialContactId={restoreNavState?.openContactId}
                 />
 
                 <Popover

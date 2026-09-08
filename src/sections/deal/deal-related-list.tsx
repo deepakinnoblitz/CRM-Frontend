@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -57,6 +58,7 @@ type Props = {
 export function DealRelatedList({ dealId, type, deal }: Props) {
     const theme = useTheme();
     const router = useRouter();
+    const location = useLocation();
     const [data, setData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [total, setTotal] = useState(0);
@@ -240,7 +242,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`)}
+                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, parentState: location.state })}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -258,7 +260,7 @@ export function DealRelatedList({ dealId, type, deal }: Props) {
                 <TableCell align="right">
                     <IconButton
                         color="primary"
-                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`)}
+                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, parentState: location.state })}
                         size="small"
                     >
                         <Iconify icon="solar:eye-bold" />

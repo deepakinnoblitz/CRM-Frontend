@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 
 import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
@@ -41,6 +42,15 @@ type Props = {
 
 export function LeadProposalDetails({ title, subheader, list }: Props) {
   const router = useRouter();
+  const location = useLocation();
+
+  const handleViewProposal = (name: string) => {
+    router.push(`/proposals/${encodeURIComponent(name)}/view`, {
+      from: location.pathname + location.search,
+      leadTab: 'proposal',
+      parentState: location.state,
+    });
+  };
 
   const [page, setPage] = useState(0);
 
@@ -161,7 +171,7 @@ export function LeadProposalDetails({ title, subheader, list }: Props) {
                     </TableCell>
                     <TableCell>
                         <Typography
-                            onClick={() => router.push(`/proposals/${encodeURIComponent(row.name)}/view`)}
+                            onClick={() => handleViewProposal(row.name)}
                             sx={{
                                 fontWeight: 700,
                                 color: 'primary.main',
@@ -225,9 +235,7 @@ export function LeadProposalDetails({ title, subheader, list }: Props) {
                     <TableCell align="center">
                       <IconButton
                         color="primary"
-                        onClick={() =>
-                          router.push(`/proposals/${encodeURIComponent(row.name)}/view`)
-                        }
+                        onClick={() => handleViewProposal(row.name)}
                       >
                         <Iconify icon="solar:eye-bold" width={20} />
                       </IconButton>
