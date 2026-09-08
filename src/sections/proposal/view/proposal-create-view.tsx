@@ -2,9 +2,9 @@ import dayjs from 'dayjs';
 import { useSnackbar } from 'notistack';
 import { FaFileUpload } from "react-icons/fa";
 import { IoMdArrowBack } from 'react-icons/io';
-import { useSearchParams } from 'react-router-dom';
 import { RiUploadCloud2Line } from "react-icons/ri";
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -74,6 +74,7 @@ function createEmptyAttachment(): AttachmentRow {
 
 export function ProposalCreateView() {
     const router = useRouter();
+    const location = useLocation();
     const { enqueueSnackbar } = useSnackbar();
     const [searchParams] = useSearchParams();
     const leadParam = searchParams.get('lead');
@@ -359,7 +360,13 @@ export function ProposalCreateView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => router.push('/proposals')}
+                        onClick={() => {
+                            if (location.state?.from) {
+                                router.push(location.state.from, location.state?.parentState ? { ...location.state.parentState, leadTab: location.state.leadTab } : (location.state?.leadTab ? { leadTab: location.state.leadTab } : undefined));
+                            } else {
+                                router.push('/proposals');
+                            }
+                        }}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,

@@ -3,7 +3,7 @@ import { CgNotes } from "react-icons/cg";
 import { IoMdArrowBack } from "react-icons/io";
 import { RiMailSendLine } from "react-icons/ri";
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { HiOutlineTag, HiOutlineMapPin, HiOutlineCalendarDays, HiOutlineBuildingOffice2 } from "react-icons/hi2";
 import {
     FaTag,
@@ -90,6 +90,7 @@ export function LeadDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const leadPerms = user?.permissions?.actions?.lead;
     const hasCustomLead = !!user?.permissions?.custom_permissions_assigned && !!leadPerms;
@@ -122,7 +123,13 @@ export function LeadDetailsView() {
 
     const [lead, setLead] = useState<any>(null);
     const [loading, setLoading] = useState(true);
-    const [currentTab, setCurrentTab] = useState('general');
+    const [currentTab, setCurrentTab] = useState(location.state?.leadTab || 'general');
+
+    useEffect(() => {
+        if (location.state?.leadTab) {
+            setCurrentTab(location.state.leadTab);
+        }
+    }, [location.state?.leadTab]);
     const [allWorkflowData, setAllWorkflowData] = useState<{ states: string[]; actions: { action: string; next_state: string }[] }>({ states: [], actions: [] });
 
     // Convert Lead State
@@ -684,7 +691,13 @@ export function LeadDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            if (location.state?.from) {
+                                navigate(location.state.from, { state: location.state?.parentState || location.state });
+                            } else {
+                                navigate(-1);
+                            }
+                        }}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
@@ -716,7 +729,11 @@ export function LeadDetailsView() {
                             variant="contained"
                             color="success"
                             onClick={() => {
-                                router.push(`/proposals/new?lead=${lead.name}`);
+                                router.push(`/proposals/new?lead=${lead.name}`, {
+                                    from: location.pathname + location.search,
+                                    leadTab: 'proposal',
+                                    parentState: location.state,
+                                });
                             }}
                             startIcon={
                                 <RiMailSendLine />

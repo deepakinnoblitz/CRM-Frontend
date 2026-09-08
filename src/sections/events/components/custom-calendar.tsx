@@ -24,6 +24,7 @@ interface CustomCalendarProps {
     onDateChange?: (date: dayjs.Dayjs) => void;
     eventTypeFilter?: string;
     onFilterChange?: (filter: string) => void;
+    calendarKey?: number | string;
 }
 
 export function CustomCalendar({
@@ -37,6 +38,7 @@ export function CustomCalendar({
     onDateChange,
     eventTypeFilter = 'All',
     onFilterChange,
+    calendarKey,
 }: CustomCalendarProps) {
     const calendarRef = useRef<FullCalendar>(null);
     const [currentView, setCurrentView] = useState<'dayGridMonth' | 'timeGridWeek' | 'timeGridDay' | 'listMonth'>('dayGridMonth');
@@ -47,7 +49,7 @@ export function CustomCalendar({
             const api = calendarRef.current.getApi();
             setTitle(api.view.title);
         }
-    }, [currentView]);
+    }, [currentView, calendarKey]);
 
     useEffect(() => {
         if (selectedDate && calendarRef.current) {
@@ -55,7 +57,7 @@ export function CustomCalendar({
             api.gotoDate(selectedDate.toDate());
             setTitle(api.view.title);
         }
-    }, [selectedDate]);
+    }, [selectedDate, calendarKey]);
 
     const handlePrev = () => {
         if (calendarRef.current) {
@@ -466,9 +468,11 @@ export function CustomCalendar({
                 )}
 
                 <FullCalendar
+                    key={calendarKey}
                     ref={calendarRef}
                     plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
                     initialView={currentView}
+                    initialDate={selectedDate ? selectedDate.toDate() : undefined}
                     headerToolbar={false}
                     events={formattedEvents}
                     dayMaxEvents={2}

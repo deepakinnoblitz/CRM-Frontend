@@ -45,9 +45,10 @@ type Props = {
     contactId: string | null;
     onEdit?: (contactId: string) => void;
     initialTab?: string;
+    extraState?: Record<string, any>;
 };
 
-export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initialTab }: Props) {
+export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initialTab, extraState }: Props) {
     const theme = useTheme();
     const router = useRouter();
     const { user } = useAuth();
@@ -414,7 +415,7 @@ export function ContactDetailsDialog({ open, onClose, contactId, onEdit, initial
 
                             <Box sx={{ flexGrow: 1, p: 4, bgcolor: 'background.paper', overflow: 'auto', display: 'flex', flexDirection: 'column', height: '100%' }}>
                                 {TABS.length > 0 ? (
-                                    <ContactRelatedList contactId={contactId || ''} type={currentTab as any} />
+                                    <ContactRelatedList contactId={contactId || ''} type={currentTab as any} extraState={extraState} />
                                 ) : (
                                     <Box sx={{ flexGrow: 1, py: 10, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
                                         <Iconify icon={"solar:shield-keyhole-bold-duotone" as any} width={84} sx={{ color: 'text.disabled', mb: 2, opacity: 0.3 }} />

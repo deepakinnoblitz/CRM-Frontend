@@ -247,7 +247,7 @@ export function InvoiceDetailsView() {
                         color="inherit"
                         onClick={() => {
                             if (location.state?.from) {
-                                navigate(location.state.from, { state: location.state });
+                                navigate(location.state.from, { state: location.state?.parentState || location.state });
                             } else {
                                 navigate(-1);
                             }

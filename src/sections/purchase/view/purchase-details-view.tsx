@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
     IoMdArrowBack, IoMdCube, IoMdListBox, IoMdCalculator, IoMdPricetags, 
     IoMdWallet, IoMdPrint, IoMdTrash, IoMdCreate, IoMdPerson, 
@@ -56,6 +56,7 @@ export function PurchaseDetailsView() {
     const { id } = useParams();
     const router = useRouter();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const { user } = useAuth();
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned && user?.permissions?.actions?.purchase;
@@ -205,7 +206,13 @@ export function PurchaseDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(-1)}
+                        onClick={() => {
+                            if (location.state?.from) {
+                                navigate(location.state.from, { state: location.state });
+                            } else {
+                                navigate(-1);
+                            }
+                        }}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
