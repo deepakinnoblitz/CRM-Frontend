@@ -357,8 +357,12 @@ export function DailyLogReportView() {
         }
 
         const totalHours = logs.reduce((sum, log) => sum + (log.total_work_hours || 0), 0);
-        const presentThreshold = hrmsSettings?.present_threshold ?? 6.0;
-        const halfDayThreshold = hrmsSettings?.half_day_threshold ?? 4.0;
+        const presentThreshold = hrmsSettings?.salary_slip_present_threshold != null && hrmsSettings?.salary_slip_present_threshold !== ''
+            ? Number(hrmsSettings.salary_slip_present_threshold)
+            : (Number(hrmsSettings?.present_threshold) || 5.0);
+        const halfDayThreshold = hrmsSettings?.salary_slip_half_day_threshold != null && hrmsSettings?.salary_slip_half_day_threshold !== ''
+            ? Number(hrmsSettings.salary_slip_half_day_threshold)
+            : (Number(hrmsSettings?.half_day_threshold) || 3.0);
 
         if (totalHours >= presentThreshold) return 'P';
         if (totalHours >= halfDayThreshold) return 'HD';
@@ -1450,7 +1454,15 @@ export function DailyLogReportView() {
                         employee={employee[0]}
                         fromDate={fromDate}
                         toDate={toDate}
+                        leaveApplications={leaveApplications}
+                        holidays={holidays}
                         onEventClick={handleViewDetails}
+                        onLeaveClick={(leave) => {
+                            if (leave?.name) {
+                                setSelectedLeaveId(leave.name);
+                                setOpenLeaveDetails(true);
+                            }
+                        }}
                     />
                 )}
 
