@@ -129,7 +129,9 @@ export function TimesheetsView() {
     const [openEntryDialog, setOpenEntryDialog] = useState(false);
     const [editingEntryIndex, setEditingEntryIndex] = useState<number | null>(null);
     const [entryProject, setEntryProject] = useState('');
+    const [projectInputValue, setProjectInputValue] = useState('');
     const [entryActivityType, setEntryActivityType] = useState('');
+    const [activityTypeInputValue, setActivityTypeInputValue] = useState('');
     const [entryHours, setEntryHours] = useState('');
     const [entryDescription, setEntryDescription] = useState('');
 
@@ -183,10 +185,10 @@ export function TimesheetsView() {
         fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
             setEmployees(res.data || []);
         });
-        fetchProjects({ page: 1, page_size: 5 }).then((res: any) => {
+        fetchProjects({ page: 1, page_size: 1000 }).then((res: any) => {
             setProjects(res.data || []);
         });
-        fetchActivityTypes({ page: 1, page_size: 5 }).then((res: any) => {
+        fetchActivityTypes({ page: 1, page_size: 1000 }).then((res: any) => {
             setActivityTypes(res.data || []);
         });
         fetchMonthHolidays().then((res) => {
@@ -393,10 +395,10 @@ export function TimesheetsView() {
     };
 
     // Entry management functions
-    const handleSearchProjects = useCallback(async (inputValue: string) => {
+    const loadProjects = useCallback(async () => {
         setLoadingProjects(true);
         try {
-            const res = await fetchProjects({ page: 1, page_size: 5, search: inputValue });
+            const res = await fetchProjects({ page: 1, page_size: 1000 });
             setProjects(res.data || []);
         } catch (error) {
             console.error('Failed to fetch projects:', error);
@@ -405,10 +407,10 @@ export function TimesheetsView() {
         }
     }, []);
 
-    const handleSearchActivityTypes = useCallback(async (inputValue: string) => {
+    const loadActivityTypes = useCallback(async () => {
         setLoadingActivityTypes(true);
         try {
-            const res = await fetchActivityTypes({ page: 1, page_size: 5, search: inputValue });
+            const res = await fetchActivityTypes({ page: 1, page_size: 1000 });
             setActivityTypes(res.data || []);
         } catch (error) {
             console.error('Failed to fetch activity types:', error);
@@ -420,9 +422,13 @@ export function TimesheetsView() {
     const handleOpenEntryDialog = () => {
         setEditingEntryIndex(null);
         setEntryProject('');
+        setProjectInputValue('');
         setEntryActivityType('');
+        setActivityTypeInputValue('');
         setEntryHours('');
         setEntryDescription('');
+        loadProjects();
+        loadActivityTypes();
         setOpenEntryDialog(true);
     };
 
@@ -430,9 +436,13 @@ export function TimesheetsView() {
         const entry = entries[index];
         setEditingEntryIndex(index);
         setEntryProject(entry.project);
+        setProjectInputValue(entry.project);
         setEntryActivityType(entry.activity_type);
+        setActivityTypeInputValue(entry.activity_type);
         setEntryHours(entry.hours.toString());
         setEntryDescription(entry.description);
+        loadProjects();
+        loadActivityTypes();
         setOpenEntryDialog(true);
     };
 
@@ -1041,6 +1051,7 @@ export function TimesheetsView() {
                                 projects.find((p) => p.name === entryProject) ||
                                 (entryProject ? { name: entryProject, project: entryProject } : null)
                             }
+                            inputValue={projectInputValue}
                             isOptionEqualToValue={(option, value) =>
                                 option?.name === value?.name
                             }
@@ -1089,15 +1100,24 @@ export function TimesheetsView() {
                                     )}
                                 </Box>
                             )}
-                            onInputChange={(event, newInputValue) => {
-                                handleSearchProjects(newInputValue);
+                            onInputChange={(event, newInputValue, reason) => {
+                                if (reason === 'input') {
+                                    setProjectInputValue(newInputValue);
+                                    setEntryProject('');
+                                } else if (reason === 'clear') {
+                                    setProjectInputValue('');
+                                    setEntryProject('');
+                                }
                             }}
                             onChange={(event, newValue: any) => {
                                 if (newValue?.isNew) {
-                                    setNewProjectName(newValue.inputValue || '');
+                                    setNewProjectName(newValue.inputValue || projectInputValue || '');
                                     setOpenProjectCreate(true);
                                 } else {
-                                    setEntryProject(newValue?.name || '');
+                                    const projName = newValue?.name || newValue?.project || '';
+                                    const projLabel = newValue?.project || newValue?.name || '';
+                                    setEntryProject(projName);
+                                    setProjectInputValue(projLabel);
                                 }
                             }}
                             renderInput={(params) => (
@@ -1119,6 +1139,7 @@ export function TimesheetsView() {
                                     ? { name: entryActivityType, activity_type: entryActivityType }
                                     : null)
                             }
+                            inputValue={activityTypeInputValue}
                             isOptionEqualToValue={(option, value) =>
                                 option?.name === value?.name
                             }
@@ -1167,15 +1188,24 @@ export function TimesheetsView() {
                                     )}
                                 </Box>
                             )}
-                            onInputChange={(event, newInputValue) => {
-                                handleSearchActivityTypes(newInputValue);
+                            onInputChange={(event, newInputValue, reason) => {
+                                if (reason === 'input') {
+                                    setActivityTypeInputValue(newInputValue);
+                                    setEntryActivityType('');
+                                } else if (reason === 'clear') {
+                                    setActivityTypeInputValue('');
+                                    setEntryActivityType('');
+                                }
                             }}
                             onChange={(event, newValue: any) => {
                                 if (newValue?.isNew) {
-                                    setNewActivityTypeName(newValue.inputValue || '');
+                                    setNewActivityTypeName(newValue.inputValue || activityTypeInputValue || '');
                                     setOpenActivityTypeCreate(true);
                                 } else {
-                                    setEntryActivityType(newValue?.name || '');
+                                    const actName = newValue?.name || newValue?.activity_type || '';
+                                    const actLabel = newValue?.activity_type || newValue?.name || '';
+                                    setEntryActivityType(actName);
+                                    setActivityTypeInputValue(actLabel);
                                 }
                             }}
                             renderInput={(params) => (
@@ -1264,10 +1294,10 @@ export function TimesheetsView() {
                             try {
                                 setCreatingProject(true);
                                 const created = await createProject(newProjectName.trim());
-                                // Refresh projects list and select the new one
-                                const res = await fetchProjects({ page: 1, page_size: 5 });
-                                setProjects(res.data || []);
-                                setEntryProject(created?.name || newProjectName.trim());
+                                await loadProjects();
+                                const createdProj = created?.name || newProjectName.trim();
+                                setEntryProject(createdProj);
+                                setProjectInputValue(createdProj);
                                 setOpenProjectCreate(false);
                                 setNewProjectName('');
                                 setSnackbar({ open: true, message: 'Project created successfully', severity: 'success' });
@@ -1331,9 +1361,10 @@ export function TimesheetsView() {
                             try {
                                 setCreatingActivityType(true);
                                 const created = await createActivityType(newActivityTypeName.trim());
-                                const res = await fetchActivityTypes({ page: 1, page_size: 5 });
-                                setActivityTypes(res.data || []);
-                                setEntryActivityType(created?.name || newActivityTypeName.trim());
+                                await loadActivityTypes();
+                                const createdAct = created?.name || newActivityTypeName.trim();
+                                setEntryActivityType(createdAct);
+                                setActivityTypeInputValue(createdAct);
                                 setOpenActivityTypeCreate(false);
                                 setNewActivityTypeName('');
                                 setSnackbar({ open: true, message: 'Activity type created successfully', severity: 'success' });

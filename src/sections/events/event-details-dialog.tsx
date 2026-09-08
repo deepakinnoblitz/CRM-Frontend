@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
@@ -34,17 +35,35 @@ type Props = {
     eventId: string | null;
     eventRefName?: string | null;
     eventRefType?: string | null;
+    initialOpenClientDetails?: boolean;
+    initialClientTab?: string;
+    initialContactId?: string | null;
 };
 
-export function EventDetailsDialog({ open, onClose, eventId, eventRefName, eventRefType }: Props) {
+export function EventDetailsDialog({
+    open,
+    onClose,
+    eventId,
+    eventRefName,
+    eventRefType,
+    initialOpenClientDetails,
+    initialClientTab,
+    initialContactId
+}: Props) {
     const [event, setEvent] = useState<any>(null);
     const [leadData, setLeadData] = useState<any>(null);
     const [clientData, setClientData] = useState<any>(null);
     const [companyData, setCompanyData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
     const [openLeadDetails, setOpenLeadDetails] = useState(false);
-    const [openClientDetails, setOpenClientDetails] = useState(false);
+    const [openClientDetails, setOpenClientDetails] = useState(Boolean(initialOpenClientDetails));
     const [openCompanyDetails, setOpenCompanyDetails] = useState(false);
+
+    useEffect(() => {
+        if (open && initialOpenClientDetails) {
+            setOpenClientDetails(true);
+        }
+    }, [open, initialOpenClientDetails]);
 
     useEffect(() => {
         async function fetchDetails() {
@@ -177,6 +196,10 @@ export function EventDetailsDialog({ open, onClose, eventId, eventRefName, event
                 open={open}
                 onClose={handleClose}
                 callId={resolvedName}
+                eventId={eventId}
+                initialOpenClientDetails={initialOpenClientDetails}
+                initialClientTab={initialClientTab}
+                initialContactId={initialContactId}
             />
         );
     }
@@ -187,6 +210,10 @@ export function EventDetailsDialog({ open, onClose, eventId, eventRefName, event
                 open={open}
                 onClose={handleClose}
                 meetingId={resolvedName}
+                eventId={eventId}
+                initialOpenClientDetails={initialOpenClientDetails}
+                initialClientTab={initialClientTab}
+                initialContactId={initialContactId}
             />
         );
     }
@@ -446,11 +473,17 @@ export function EventDetailsDialog({ open, onClose, eventId, eventRefName, event
                 />
             )}
 
-            {clientData && (
+            {(clientData || initialContactId) && (
                 <ContactDetailsDialog
                     open={openClientDetails}
                     onClose={() => setOpenClientDetails(false)}
-                    contactId={clientData.name}
+                    contactId={clientData?.name || initialContactId}
+                    initialTab={initialClientTab}
+                    extraState={{
+                        eventId: eventId || undefined,
+                        eventRefType: resolvedType,
+                        eventRefName: resolvedName,
+                    }}
                 />
             )}
 

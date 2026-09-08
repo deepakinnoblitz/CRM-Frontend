@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -32,17 +32,28 @@ type Props = {
     open: boolean;
     onClose: () => void;
     meetingId: string | null;
+    eventId?: string | null;
+    initialOpenClientDetails?: boolean;
+    initialClientTab?: string;
+    initialContactId?: string | null;
 };
 
-export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
+export function MeetingDetailsDialog({ open, onClose, meetingId, eventId, initialOpenClientDetails, initialClientTab, initialContactId }: Props) {
     const navigate = useNavigate();
+    const location = useLocation();
     const [meeting, setMeeting] = useState<any>(null);
     const [leadData, setLeadData] = useState<any>(null);
     const [clientData, setClientData] = useState<any>(null);
     const [companyData, setCompanyData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [openClientDetails, setOpenClientDetails] = useState(false);
+    const [openClientDetails, setOpenClientDetails] = useState(Boolean(initialOpenClientDetails));
     const [openCompanyDetails, setOpenCompanyDetails] = useState(false);
+
+    useEffect(() => {
+        if (open && initialOpenClientDetails) {
+            setOpenClientDetails(true);
+        }
+    }, [open, initialOpenClientDetails]);
 
     useEffect(() => {
         if (open && meetingId) {
@@ -102,6 +113,26 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
             case 'Cancelled': return 'warning';
             default: return 'default';
         }
+    };
+
+    const handleOpenLead = () => {
+        if (!leadData?.name) return;
+        const navState = {
+            from: location.pathname + location.search,
+            eventId: eventId || undefined,
+            eventRefType: 'Meeting',
+            eventRefName: meetingId,
+            openEventDetails: true,
+        };
+        if (location.pathname.includes('/calendar') || location.pathname.includes('/events') || eventId) {
+            sessionStorage.setItem('calendar_nav_state', JSON.stringify(navState));
+            if (eventId) {
+                sessionStorage.setItem('calendar_reopen_event_id', eventId);
+            }
+        }
+        navigate(`/leads/${leadData.name}/view`, {
+            state: navState,
+        });
     };
 
     return (
@@ -165,7 +196,7 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                 <Box>
                                     <SectionHeader title="Lead Details" />
                                     <Box
-                                        onClick={() => navigate(`/leads/${leadData.name}/view`)}
+                                        onClick={handleOpenLead}
                                         sx={{
                                             p: 3,
                                             bgcolor: 'rgb(222 242 255 / 20%)',
@@ -218,7 +249,7 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                                                     ) : null;
                                                 })()}
                                         </Box>
-                                        <IconButton color="primary">
+                                        <IconButton color="primary" onClick={(e) => { e.stopPropagation(); handleOpenLead(); }}>
                                             <Iconify icon="solar:eye-bold" width={20} />
                                         </IconButton>
                                     </Box>
@@ -407,14 +438,19 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                     </Box>
                 )}
             </DialogContent>
-            {clientData && (
+            {(clientData || initialContactId) && (
                 <ContactDetailsDialog
                     open={openClientDetails}
                     onClose={() => {
                         setOpenClientDetails(false);
-                        onClose();
                     }}
-                    contactId={clientData.name}
+                    contactId={clientData?.name || initialContactId}
+                    initialTab={initialClientTab}
+                    extraState={{
+                        eventId: eventId || undefined,
+                        eventRefType: 'Meeting',
+                        eventRefName: meetingId,
+                    }}
                 />
             )}
 
@@ -423,7 +459,6 @@ export function MeetingDetailsDialog({ open, onClose, meetingId }: Props) {
                     open={openCompanyDetails}
                     onClose={() => {
                         setOpenCompanyDetails(false);
-                        onClose();
                     }}
                     accountId={companyData.name}
                 />

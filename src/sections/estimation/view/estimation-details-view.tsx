@@ -254,7 +254,7 @@ export function EstimationDetailsView() {
                     <Button
                         variant="outlined"
                         color="inherit"
-                        onClick={() => navigate(backUrl, { state: location.state })}
+                        onClick={() => navigate(backUrl, { state: location.state?.parentState || location.state })}
                         startIcon={<IoMdArrowBack size={20} />}
                         sx={{
                             borderRadius: 1.5,
