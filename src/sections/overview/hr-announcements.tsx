@@ -2,7 +2,7 @@ import type { CardProps } from '@mui/material/Card';
 
 import { LuCalendarCheck2 } from "react-icons/lu";
 import { useEffect, useRef, useState } from 'react';
-import { BsBell, BsBellFill  } from "react-icons/bs";
+import { BsBell, BsBellFill } from "react-icons/bs";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -42,6 +42,19 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
     const [open, setOpen] = useState(false);
     const [pinned, setPinned] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const contentRef = useRef<HTMLDivElement | null>(null);
+    const [duration, setDuration] = useState(28);
+
+    useEffect(() => {
+        if (contentRef.current) {
+            const width = contentRef.current.offsetWidth;
+            const pixelsPerSecond = 120; // Faster speed: 110 pixels per second
+            if (width > 0) {
+                setDuration(Math.max(10, width / pixelsPerSecond));
+            }
+        }
+    }, [list]);
 
     if (list.length === 0) return null;
 
@@ -237,14 +250,14 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                     display: 'flex',
                                     width: 'max-content',
                                     minWidth: '200%',
-                                    animation: `${marqueeAnimation} 28s linear infinite`,
+                                    animation: `${marqueeAnimation} ${duration}s linear infinite`,
                                     '&:hover': {
                                         animationPlayState: 'paused',
                                     },
                                 }}
                             >
                                 {[0, 1].map((copy) => (
-                                    <Stack key={copy} direction="row" alignItems="center">
+                                    <Stack key={copy} ref={copy === 0 ? contentRef : null} direction="row" alignItems="center">
                                         {list.map((item, index) => (
                                             <Typography
                                                 key={index}
@@ -356,7 +369,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                 bgcolor: alpha(theme.palette.primary.main, 0.08),
                             }}
                         >
-                            <BsBellFill  size={16} />
+                            <BsBellFill size={16} />
                         </Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>
                             Announcements
@@ -401,7 +414,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                             color: 'primary.main',
                                         }}
                                     >
-                                        <BsBellFill  size={14} />
+                                        <BsBellFill size={14} />
                                     </Box>
 
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
