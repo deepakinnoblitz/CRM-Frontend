@@ -72,6 +72,8 @@ export function UserStatusBar() {
         ['HR', 'System Manager', 'Administrator'].includes(role)
     );
 
+    const isEmployee = user?.roles?.some((role: string) => role.toLowerCase() === 'employee');
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
@@ -414,7 +416,7 @@ export function UserStatusBar() {
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
 
-    if (isHR) {
+    if (isHR || !isEmployee) {
         return null;
     }
 
