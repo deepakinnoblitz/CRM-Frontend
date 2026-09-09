@@ -695,10 +695,20 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
                           <TimelineConnector />
                         </TimelineSeparator>
                         <TimelineContent sx={{ pb: 2 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
-                            {log.source} ({STATUS_DISPLAY_MAP[log.status || ''] || log.status})
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
+                              {log.source} ({STATUS_DISPLAY_MAP[log.status || ''] || log.status})
+                            </Typography>
+                            {!!log.accuracy && log.accuracy > 100 && (
+                              <Chip
+                                label={`±${Math.round(log.accuracy)}m`}
+                                size="small"
+                                color="warning"
+                                sx={{ height: 18, fontSize: '0.6875rem', fontWeight: 700, px: 0.5 }}
+                              />
+                            )}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                             {fDateTime(log.logged_at)}
                           </Typography>
                           <TimelineItemAddress log={log} />
