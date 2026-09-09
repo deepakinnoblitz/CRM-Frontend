@@ -3,12 +3,12 @@ import listPlugin from '@fullcalendar/list';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
-import { useRef, useState, useEffect } from 'react';
 import interactionPlugin from '@fullcalendar/interaction';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
 import Card from '@mui/material/Card';
 import { alpha } from '@mui/material/styles';
-import { Box, Stack, Button, Typography, IconButton, useTheme } from '@mui/material';
+import { Box, Stack, Button, Tooltip, useTheme, IconButton, Typography } from '@mui/material';
 
 import { getDoctypeList } from 'src/api/leads';
 import { getHRSettings } from 'src/api/hr-management';
@@ -18,6 +18,30 @@ import { Iconify } from 'src/components/iconify';
 
 
 // ----------------------------------------------------------------------
+
+function getLeaveStyle(leaveType: string) {
+    const lower = (leaveType || '').toLowerCase();
+    if (lower.includes('sick')) {
+        return {
+            bgColor: 'rgba(219, 39, 119, 0.14)',
+            textColor: '#9d174d',
+            borderColor: '#db2777',
+        };
+    }
+    if (lower.includes('casual')) {
+        return {
+            bgColor: 'rgba(13, 148, 136, 0.14)',
+            textColor: '#115e59',
+            borderColor: '#0d9488',
+        };
+    }
+    // Default for Unpaid Leave, Paid Leave, Permission, Leave, etc.
+    return {
+        bgColor: '#EEEDFE',
+        textColor: '#26215C',
+        borderColor: '#7C3AED',
+    };
+}
 
 function applyHolidayStylesToCell(cellEl: HTMLElement, holidayRow: any) {
     cellEl.style.backgroundColor = 'rgba(244, 63, 94, 0.05)';
@@ -88,17 +112,35 @@ interface DailyLogCalendarProps {
     employee: string;
     fromDate?: any;
     toDate?: any;
+    leaveApplications?: any[];
+    holidays?: any[];
     onEventClick?: (session: any) => void;
+    onLeaveClick?: (leave: any) => void;
 }
 
-export function DailyLogCalendar({ reportData, employee, fromDate, toDate, onEventClick }: DailyLogCalendarProps) {
+export function DailyLogCalendar({
+    reportData,
+    employee,
+    fromDate,
+    toDate,
+    leaveApplications,
+    holidays: holidaysProp,
+    onEventClick,
+    onLeaveClick,
+}: DailyLogCalendarProps) {
     const theme = useTheme();
     const calendarRef = useRef<FullCalendar>(null);
 
     const [title, setTitle] = useState('');
     const [activeView, setActiveView] = useState('dayGridMonth');
     const [hrmsSettings, setHrmsSettings] = useState<any>(null);
-    const [holidays, setHolidays] = useState<any[]>([]);
+    const [holidays, setHolidays] = useState<any[]>(holidaysProp || []);
+
+    useEffect(() => {
+        if (holidaysProp && holidaysProp.length > 0) {
+            setHolidays(holidaysProp);
+        }
+    }, [holidaysProp]);
 
     useEffect(() => {
         async function loadSettings() {
@@ -139,35 +181,158 @@ export function DailyLogCalendar({ reportData, employee, fromDate, toDate, onEve
         });
     }, [holidays]);
 
-    // Map logs to calendar events
-    const calendarEvents = reportData.map((session, index) => {
-        const start = session.login_time
-            ? dayjs(session.login_time).toDate()
-            : dayjs(session.login_date).startOf('day').toDate();
-
-        const end = session.logout_time
-            ? dayjs(session.logout_time).toDate()
-            : (session.status === 'Active' ? new Date() : dayjs(session.login_date).endOf('day').toDate());
-
-        const loginStr = session.login_time ? dayjs(session.login_time).format('hh:mm A') : '---';
-        const logoutStr = session.logout_time ? dayjs(session.logout_time).format('hh:mm A') : (session.status === 'Active' ? 'Active' : '---');
-        const workHoursStr = session.total_work_hours ? `${session.total_work_hours.toFixed(2)}h` : '0.00h';
-
-        return {
-            id: session.name || index.toString(),
-            title: session.status === 'Active' ? 'Active Session' : `Session (${workHoursStr})`,
-            start,
-            end,
-            allDay: false, // timed events for timegrid vertical display
-            extendedProps: {
-                status: session.status,
-                loginStr,
-                logoutStr,
-                workHoursStr,
-                rawSession: session
-            }
-        };
+    const [calendarRange, setCalendarRange] = useState<{ start: dayjs.Dayjs; end: dayjs.Dayjs } | null>(() => {
+        const start = fromDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((min: string, p: any) => p.login_date < min ? p.login_date : min, reportData[0].login_date)).startOf('month')
+            : dayjs().startOf('month'));
+        const end = toDate || (reportData.length > 0
+            ? dayjs(reportData.reduce((max: string, p: any) => p.login_date > max ? p.login_date : max, reportData[0].login_date)).endOf('month')
+            : dayjs().endOf('month'));
+        return { start, end };
     });
+
+    useEffect(() => {
+        if (fromDate || toDate) {
+            setCalendarRange({
+                start: fromDate ? dayjs(fromDate) : dayjs().startOf('month'),
+                end: toDate ? dayjs(toDate) : dayjs().endOf('month')
+            });
+        }
+    }, [fromDate, toDate]);
+
+    const activeHolidays = holidaysProp && holidaysProp.length > 0 ? holidaysProp : holidays;
+
+    // Map logs, approved leaves, and absent days to calendar events
+    const calendarEvents = useMemo(() => {
+        const events: any[] = [];
+
+        // 1. Map work sessions
+        (reportData || []).forEach((session, index) => {
+            const start = session.login_time
+                ? dayjs(session.login_time).toDate()
+                : dayjs(session.login_date).startOf('day').toDate();
+
+            const end = session.logout_time
+                ? dayjs(session.logout_time).toDate()
+                : (session.status === 'Active' ? new Date() : dayjs(session.login_date).endOf('day').toDate());
+
+            const loginStr = session.login_time ? dayjs(session.login_time).format('hh:mm A') : '---';
+            const logoutStr = session.logout_time ? dayjs(session.logout_time).format('hh:mm A') : (session.status === 'Active' ? 'Active' : '---');
+            const workHoursStr = session.total_work_hours ? `${session.total_work_hours.toFixed(2)}h` : '0.00h';
+
+            events.push({
+                id: session.name || `session-${index}`,
+                title: session.status === 'Active' ? 'Active Session' : `Session (${workHoursStr})`,
+                start,
+                end,
+                allDay: false, // timed events for timegrid vertical display
+                extendedProps: {
+                    status: session.status,
+                    loginStr,
+                    logoutStr,
+                    workHoursStr,
+                    rawSession: session,
+                    isLeave: false,
+                }
+            });
+        });
+
+        // 2. Map approved leave applications for this employee
+        (leaveApplications || []).forEach((leave) => {
+            if (leave.employee !== employee) return;
+            const isApproved = (leave.workflow_state === 'Approved' || leave.status === 'Approved');
+            if (!isApproved) return;
+
+            if (!leave.from_date || !leave.to_date) return;
+
+            const from = dayjs(leave.from_date);
+            const to = dayjs(leave.to_date);
+            if (!from.isValid() || !to.isValid()) return;
+
+            let current = from;
+            while (current.isBefore(to, 'day') || current.isSame(to, 'day')) {
+                const dateStr = current.format('YYYY-MM-DD');
+
+                // Check if this date is a non-working holiday (e.g., Sunday)
+                const isHoliday = activeHolidays.some(
+                    (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+                );
+
+                if (!isHoliday) {
+                    const leaveType = leave.leave_type || 'Leave';
+                    const isHalfDay = !!leave.half_day && (!leave.half_day_date || dayjs(leave.half_day_date).isSame(current, 'day'));
+                    const leaveTitle = isHalfDay ? `${leaveType} (Half Day)` : leaveType;
+
+                    events.push({
+                        id: `leave-${leave.name || leave.id}-${dateStr}`,
+                        title: leaveTitle,
+                        start: dateStr,
+                        allDay: true,
+                        extendedProps: {
+                            isLeave: true,
+                            leaveType,
+                            halfDay: isHalfDay,
+                            leaveRecord: leave,
+                            dateStr,
+                        }
+                    });
+                }
+
+                current = current.add(1, 'day');
+            }
+        });
+
+        // 3. Map Absent events for dates in active range that have no sessions, no holidays, and no approved leave
+        if (calendarRange) {
+            let cur = calendarRange.start;
+            const end = calendarRange.end;
+            const maxDays = 366;
+            let count = 0;
+
+            while ((cur.isBefore(end, 'day') || cur.isSame(end, 'day')) && count < maxDays) {
+                const dateStr = cur.format('YYYY-MM-DD');
+
+                // Check if date has sessions
+                const hasSession = (reportData || []).some(
+                    (s) => s.employee === employee && s.login_date === dateStr
+                );
+
+                // Check if date is a holiday
+                const isHoliday = activeHolidays.some(
+                    (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+                );
+
+                // Check if date is an approved leave
+                const isLeave = (leaveApplications || []).some((l) => {
+                    if (l.employee !== employee) return false;
+                    const isApproved = (l.workflow_state === 'Approved' || l.status === 'Approved');
+                    if (!isApproved) return false;
+                    const from = dayjs(l.from_date);
+                    const to = dayjs(l.to_date);
+                    return (cur.isSame(from, 'day') || cur.isAfter(from, 'day')) &&
+                           (cur.isSame(to, 'day') || cur.isBefore(to, 'day'));
+                });
+
+                if (!hasSession && !isHoliday && !isLeave) {
+                    events.push({
+                        id: `absent-${employee}-${dateStr}`,
+                        title: 'Absent',
+                        start: dateStr,
+                        allDay: true,
+                        extendedProps: {
+                            isAbsent: true,
+                            dateStr,
+                        }
+                    });
+                }
+
+                cur = cur.add(1, 'day');
+                count++;
+            }
+        }
+
+        return events;
+    }, [reportData, leaveApplications, employee, activeHolidays, calendarRange]);
 
     const handleToday = () => {
         calendarRef.current?.getApi().today();
@@ -410,13 +575,20 @@ export function DailyLogCalendar({ reportData, employee, fromDate, toDate, onEve
                     headerToolbar={false} // Hidden as we use our custom React controls
                     height="100%"
                     stickyHeaderDates
-                    displayEventTime={false}
                     datesSet={async (arg) => {
                         setTitle(arg.view.title);
                         setActiveView(arg.view.type);
                         const viewDate = dayjs(arg.view.currentStart);
                         const month = viewDate.format('M');
                         const year = viewDate.format('YYYY');
+
+                        // Keep calendarRange in sync with current view if fromDate/toDate not explicitly specified
+                        if (!fromDate && !toDate) {
+                            const vStart = dayjs(arg.view.currentStart);
+                            const vEnd = dayjs(arg.view.currentEnd).subtract(1, 'day');
+                            setCalendarRange({ start: vStart, end: vEnd });
+                        }
+
                         try {
                             const lists = await getDoctypeList('Holiday List', ['name'], {
                                 year: parseInt(year, 10),
@@ -451,17 +623,195 @@ export function DailyLogCalendar({ reportData, employee, fromDate, toDate, onEve
                         }
                     }}
                     eventClick={(info) => {
-                        if (onEventClick) {
+                        if (info.event.extendedProps.isAbsent) {
+                            return;
+                        }
+                        if (info.event.extendedProps.isLeave) {
+                            if (onLeaveClick) {
+                                onLeaveClick(info.event.extendedProps.leaveRecord);
+                            }
+                        } else if (onEventClick) {
                             onEventClick(info.event.extendedProps.rawSession);
                         }
                     }}
                     eventContent={(arg) => {
+                        if (arg.event.extendedProps.isAbsent) {
+                            if (arg.view.type === 'dayGridMonth') {
+                                return (
+                                    <Tooltip title="Absent" arrow>
+                                        <Box
+                                            sx={{
+                                                width: '100%',
+                                                py: 0.5,
+                                                px: 1,
+                                                borderRadius: '4px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                color: '#991b1b',
+                                                backgroundColor: 'rgba(239, 68, 68, 0.14)',
+                                                borderLeft: '3px solid #ef4444',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                cursor: 'default',
+                                                transition: (t) => t.transitions.create(['opacity', 'transform'], {
+                                                    duration: t.transitions.duration.shorter,
+                                                }),
+                                                '&:hover': {
+                                                    opacity: 0.85,
+                                                }
+                                            }}
+                                        >
+                                            Absent
+                                        </Box>
+                                    </Tooltip>
+                                );
+                            }
+
+                            // TimeGrid Week / Day views (All-Day slot or card)
+                            return (
+                                <Tooltip title="Absent" arrow>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            height: '100%',
+                                            width: '100%',
+                                            py: 0.5,
+                                            px: 1,
+                                            borderRadius: '4px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 700,
+                                            color: '#991b1b',
+                                            backgroundColor: 'rgba(239, 68, 68, 0.14)',
+                                            borderLeft: '3px solid #ef4444',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            cursor: 'default',
+                                            boxSizing: 'border-box',
+                                            transition: (t) => t.transitions.create(['opacity', 'transform'], {
+                                                duration: t.transitions.duration.shorter,
+                                            }),
+                                            '&:hover': {
+                                                opacity: 0.85,
+                                            }
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontWeight: 700,
+                                                fontSize: '0.7rem',
+                                                color: '#991b1b',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            Absent
+                                        </Typography>
+                                    </Box>
+                                </Tooltip>
+                            );
+                        }
+
+                        if (arg.event.extendedProps.isLeave) {
+                            const leaveType = arg.event.extendedProps.leaveType || 'Leave';
+                            const isHalfDay = arg.event.extendedProps.halfDay;
+                            const displayText = isHalfDay ? `${leaveType} (Half Day)` : leaveType;
+                            const style = getLeaveStyle(leaveType);
+
+                            if (arg.view.type === 'dayGridMonth') {
+                                return (
+                                    <Tooltip title={displayText} arrow>
+                                        <Box
+                                            sx={{
+                                                width: '100%',
+                                                py: 0.5,
+                                                px: 1,
+                                                borderRadius: '4px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 700,
+                                                color: style.textColor,
+                                                backgroundColor: style.bgColor,
+                                                borderLeft: `3px solid ${style.borderColor}`,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                cursor: 'pointer',
+                                                transition: (t) => t.transitions.create(['opacity', 'transform'], {
+                                                    duration: t.transitions.duration.shorter,
+                                                }),
+                                                '&:hover': {
+                                                    opacity: 0.85,
+                                                }
+                                            }}
+                                        >
+                                            {displayText}
+                                        </Box>
+                                    </Tooltip>
+                                );
+                            }
+
+                            // TimeGrid Week / Day views (All-Day slot or card)
+                            return (
+                                <Tooltip title={displayText} arrow>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            height: '100%',
+                                            width: '100%',
+                                            py: 0.5,
+                                            px: 1,
+                                            borderRadius: '4px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 700,
+                                            color: style.textColor,
+                                            backgroundColor: style.bgColor,
+                                            borderLeft: `3px solid ${style.borderColor}`,
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            cursor: 'pointer',
+                                            boxSizing: 'border-box',
+                                            transition: (t) => t.transitions.create(['opacity', 'transform'], {
+                                                duration: t.transitions.duration.shorter,
+                                            }),
+                                            '&:hover': {
+                                                opacity: 0.85,
+                                            }
+                                        }}
+                                    >
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontWeight: 700,
+                                                fontSize: '0.7rem',
+                                                color: style.textColor,
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
+                                            {displayText}
+                                        </Typography>
+                                    </Box>
+                                </Tooltip>
+                            );
+                        }
+
                         const status = arg.event.extendedProps.status;
                         const workHours = arg.event.extendedProps.rawSession?.total_work_hours || 0;
 
-                        // Load thresholds from HRMS Settings
-                        const presentThreshold = hrmsSettings?.present_threshold ?? 6.0;
-                        const halfDayThreshold = hrmsSettings?.half_day_threshold ?? 4.0;
+                        // Load thresholds from HRMS Settings (Salary Slip -> Daily Log Thresholds)
+                        const presentThreshold = hrmsSettings?.salary_slip_present_threshold != null && hrmsSettings?.salary_slip_present_threshold !== ''
+                            ? Number(hrmsSettings.salary_slip_present_threshold)
+                            : (Number(hrmsSettings?.present_threshold) || 5.0);
+                        const halfDayThreshold = hrmsSettings?.salary_slip_half_day_threshold != null && hrmsSettings?.salary_slip_half_day_threshold !== ''
+                            ? Number(hrmsSettings.salary_slip_half_day_threshold)
+                            : (Number(hrmsSettings?.half_day_threshold) || 3.0);
 
                         let borderColor = '#22c55e'; // Green (Present)
                         let bgColor = 'rgba(34, 197, 94, 0.08)';
