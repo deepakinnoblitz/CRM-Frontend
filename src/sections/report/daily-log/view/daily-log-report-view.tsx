@@ -1168,6 +1168,9 @@ export function DailyLogReportView() {
         return daysBreakdown;
     }, [daysBreakdown, daysTab]);
 
+    const [presentAnchorEl, setPresentAnchorEl] = useState<HTMLElement | null>(null);
+    const [presentTab, setPresentTab] = useState<'all' | 'present' | 'holiday'>('all');
+
     const targetEmployeeIds = useMemo(() => {
         if (!isFilterApplied) return [];
         if (employee && employee.length > 0) {
@@ -1175,6 +1178,87 @@ export function DailyLogReportView() {
         }
         return uniqueEmployees.map((e) => e.id);
     }, [isFilterApplied, employee, uniqueEmployees]);
+
+    const presentBreakdownList = useMemo(() => {
+        if (!isFilterApplied || targetEmployeeIds.length === 0 || dates.length === 0) {
+            return [];
+        }
+
+        const items: {
+            dateStr: string;
+            type: 'present' | 'half_day' | 'paid_leave' | 'holiday';
+            label: string;
+            value: number;
+        }[] = [];
+
+        const empId = targetEmployeeIds[0];
+
+        dates.forEach((date) => {
+            const dateStr = date.format('YYYY-MM-DD');
+            const formattedDate = date.format('DD-MM-YYYY — dddd');
+            const holidayMatch = holidays.find(
+                (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+            );
+
+            if (holidayMatch) {
+                items.push({
+                    dateStr: formattedDate,
+                    type: 'holiday',
+                    label: holidayMatch.description || 'Holiday',
+                    value: 1,
+                });
+                return;
+            }
+
+            const attStatus = getAttendanceStatus(empId, date);
+            if (attStatus === 'P') {
+                items.push({
+                    dateStr: formattedDate,
+                    type: 'present',
+                    label: 'Present',
+                    value: 1,
+                });
+            } else if (attStatus === 'HD') {
+                items.push({
+                    dateStr: formattedDate,
+                    type: 'half_day',
+                    label: 'Half Day',
+                    value: 0.5,
+                });
+            } else if (isLeaveStatus(attStatus)) {
+                const leave = getApprovedLeaveForDate(empId, date);
+                const isUnpaid = leave && (
+                    leave.is_paid === 0 ||
+                    leave.is_paid === false ||
+                    (leave.leave_type || '').toLowerCase().includes('unpaid') ||
+                    (leave.leave_type || '').toLowerCase().includes('lop')
+                );
+                const isHalf = !!leave?.half_day;
+                if (!isUnpaid) {
+                    items.push({
+                        dateStr: formattedDate,
+                        type: 'paid_leave',
+                        label: `${leave?.leave_type || 'Paid Leave'}${isHalf ? ' (Half Day)' : ''}`,
+                        value: isHalf ? 0.5 : 1,
+                    });
+                }
+            }
+        });
+
+        return items;
+    }, [isFilterApplied, targetEmployeeIds, dates, holidays, getAttendanceStatus, isLeaveStatus, getApprovedLeaveForDate]);
+
+    const filteredPresentBreakdown = useMemo(() => {
+        if (presentTab === 'present') {
+            return presentBreakdownList.filter((item) => item.type === 'present' || item.type === 'half_day' || item.type === 'paid_leave');
+        }
+        if (presentTab === 'holiday') {
+            return presentBreakdownList.filter((item) => item.type === 'holiday');
+        }
+        return presentBreakdownList;
+    }, [presentBreakdownList, presentTab]);
+
+
 
     const { presentCount, absentCount } = useMemo(() => {
         if (!isFilterApplied || targetEmployeeIds.length === 0 || dates.length === 0) {
@@ -1427,7 +1511,31 @@ export function DailyLogReportView() {
                             ),
                         }}
                     />
-                    <SummaryCard item={{ label: 'Present', value: presentCount, indicator: 'green' }} />
+                    <SummaryCard
+                        item={{
+                            label: 'Present',
+                            value: presentCount,
+                            indicator: 'green',
+                            action: (
+                                <IconButton
+                                    size="small"
+                                    disabled={!isFilterApplied}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPresentAnchorEl(e.currentTarget);
+                                    }}
+                                    sx={{
+                                        p: 0.25,
+                                        color: 'success.main',
+                                        '&:hover': { bgcolor: alpha(theme.palette.success.main, 0.1) },
+                                    }}
+                                    title="View Present Days & Holidays Breakdown"
+                                >
+                                    <Iconify icon={"eva:info-outline" as any} width={16} />
+                                </IconButton>
+                            ),
+                        }}
+                    />
                     <SummaryCard item={{ label: 'Absent', value: absentCount, indicator: 'red' }} />
                     <SummaryCard item={{ label: 'Work Hours', value: totalWorkHours.toFixed(1), suffix: 'Hrs', indicator: 'green' }} />
                     <SummaryCard item={{ label: 'Break Hours', value: totalBreakHours.toFixed(1), suffix: 'Hrs', indicator: 'orange' }} />
@@ -2195,6 +2303,190 @@ export function DailyLogReportView() {
                         ) : (
                             <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center', py: 2 }}>
                                 No days found
+                            </Typography>
+                        )}
+                    </Stack>
+                </Scrollbar>
+            </Popover>
+
+            {/* Present Days Breakdown Popover */}
+            <Popover
+                open={Boolean(presentAnchorEl)}
+                anchorEl={presentAnchorEl}
+                onClose={() => setPresentAnchorEl(null)}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+                PaperProps={{
+                    sx: {
+                        p: 2,
+                        width: 400,
+                        maxHeight: 460,
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z20,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    },
+                }}
+                disableScrollLock
+            >
+                {/* Header */}
+                <Box sx={{ mb: 1.5 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                            Present Days Breakdown
+                        </Typography>
+                        <IconButton size="small" onClick={() => setPresentAnchorEl(null)} sx={{ color: 'text.secondary' }}>
+                            <Iconify icon={"mingcute:close-line" as any} width={18} />
+                        </IconButton>
+                    </Stack>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                        {fromDate && toDate
+                            ? `${fromDate.format('DD MMM YYYY')} — ${toDate.format('DD MMM YYYY')}`
+                            : `${presentBreakdownList.length} items in selected period`}
+                    </Typography>
+                </Box>
+
+                {/* Summary Chips */}
+                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                    <Box
+                        onClick={() => setPresentTab('present')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: presentTab === 'present' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${presentTab === 'present' ? theme.palette.success.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Present
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>
+                            {presentCount}
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        onClick={() => setPresentTab('holiday')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: presentTab === 'holiday' ? alpha(theme.palette.warning.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${presentTab === 'holiday' ? theme.palette.warning.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Holidays
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'warning.main' }}>
+                            {holidaysCount}
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        onClick={() => setPresentTab('all')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: presentTab === 'all' ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${presentTab === 'all' ? theme.palette.primary.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Present + Holidays
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'primary.main' }}>
+                            {Number((presentCount + holidaysCount).toFixed(1))}
+                        </Typography>
+                    </Box>
+                </Stack>
+
+                <Divider sx={{ mb: 1, borderStyle: 'dashed' }} />
+
+                {/* Days List */}
+                <Scrollbar sx={{ flexGrow: 1, maxHeight: 260, pr: 0.5 }}>
+                    <Stack spacing={1}>
+                        {filteredPresentBreakdown.length > 0 ? (
+                            filteredPresentBreakdown.map((item, idx) => {
+                                const isHol = item.type === 'holiday';
+                                const isHalf = item.type === 'half_day';
+                                const isPaidL = item.type === 'paid_leave';
+
+                                let badgeColor = 'success.darker';
+                                let badgeBg = alpha(theme.palette.success.main, 0.14);
+                                if (isHol) {
+                                    badgeColor = 'warning.darker';
+                                    badgeBg = alpha(theme.palette.warning.main, 0.14);
+                                } else if (isHalf) {
+                                    badgeColor = 'info.darker';
+                                    badgeBg = alpha(theme.palette.info.main, 0.14);
+                                } else if (isPaidL) {
+                                    badgeColor = 'secondary.darker';
+                                    badgeBg = alpha(theme.palette.secondary.main, 0.14);
+                                }
+
+                                return (
+                                    <Box
+                                        key={item.dateStr}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            py: 0.75,
+                                            px: 1.25,
+                                            borderRadius: 1,
+                                            bgcolor: isHol ? alpha(theme.palette.warning.main, 0.04) : alpha(theme.palette.success.main, 0.04),
+                                            ...(idx !== filteredPresentBreakdown.length - 1 && {
+                                                borderBottom: `1px dashed ${theme.palette.divider}`,
+                                            }),
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                                            {item.dateStr}
+                                        </Typography>
+
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 0.75,
+                                                fontSize: '0.725rem',
+                                                fontWeight: 700,
+                                                color: badgeColor,
+                                                bgcolor: badgeBg,
+                                                maxWidth: 150,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                            title={item.label}
+                                        >
+                                            {item.label}
+                                        </Box>
+                                    </Box>
+                                );
+                            })
+                        ) : (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                No items found
                             </Typography>
                         )}
                     </Stack>
