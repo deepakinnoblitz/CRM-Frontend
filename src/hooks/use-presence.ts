@@ -173,7 +173,11 @@ export function usePresence() {
       setBreakThreshold(settings.break_threshold || 900);
       setEnableAutoResumeBreak(!!settings.enable_auto_resume_break);
 
-      setEnableLocationTracking(!!settings.enable_location_tracking);
+      const target = settings.location_tracking_target || 'All Employees';
+      const isEmployeeTracked = target === 'All Employees' || 
+        (target === 'Selected Employees' && Array.isArray(settings.tracked_employees) && !!employeeId && settings.tracked_employees.includes(employeeId));
+
+      setEnableLocationTracking(!!settings.enable_location_tracking && isEmployeeTracked);
       setTrackOnLogin(!!settings.track_on_login);
       setTrackOnLogout(!!settings.track_on_logout);
       setTrackOnStatusChange(!!settings.track_on_status_change);

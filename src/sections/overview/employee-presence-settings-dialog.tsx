@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -12,6 +13,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import { useTheme, alpha } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
@@ -20,6 +22,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { usePresence } from 'src/hooks/use-presence';
 
 import { getPresenceSettings, updatePresenceSettings } from 'src/api/presence';
+import { fetchEmployeesList, type EmployeeOption } from 'src/api/hr-document-generation';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -55,11 +58,14 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
   });
   // Location states
   const [enableLocationTracking, setEnableLocationTracking] = useState(false);
-  const [trackOnLogin, setTrackOnLogin] = useState(false);
-  const [trackOnLogout, setTrackOnLogout] = useState(false);
-  const [trackOnStatusChange, setTrackOnStatusChange] = useState(false);
+  const [trackOnLogin, setTrackOnLogin] = useState(true);
+  const [trackOnLogout, setTrackOnLogout] = useState(true);
+  const [trackOnStatusChange, setTrackOnStatusChange] = useState(true);
   const [trackingIntervalMinutes, setTrackingIntervalMinutes] = useState(15);
   const [minimumGpsAccuracy, setMinimumGpsAccuracy] = useState(100);
+  const [locationTrackingTarget, setLocationTrackingTarget] = useState<'All Employees' | 'Selected Employees'>('All Employees');
+  const [trackedEmployees, setTrackedEmployees] = useState<string[]>([]);
+  const [employeeOptions, setEmployeeOptions] = useState<EmployeeOption[]>([]);
   // Threshold unit ('sec' | 'min')
   const [unit, setUnit] = useState<'sec' | 'min'>('sec');
 
@@ -87,7 +93,10 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
   const fetchSettings = async () => {
     setLoading(true);
     try {
-      const settings = await getPresenceSettings();
+      const [settings, employeesList] = await Promise.all([
+        getPresenceSettings(),
+        fetchEmployeesList(),
+      ]);
       setEnableAutoStatus(!!settings.enable_auto_status);
       setIdleThreshold(settings.idle_threshold || 60);
       setAwayThreshold(settings.away_threshold || 300);
@@ -107,6 +116,9 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
       setTrackOnStatusChange(!!settings.track_on_status_change);
       setTrackingIntervalMinutes(settings.tracking_interval_minutes || 15);
       setMinimumGpsAccuracy(settings.minimum_gps_accuracy || 100);
+      setLocationTrackingTarget((settings.location_tracking_target as any) || 'All Employees');
+      setTrackedEmployees(settings.tracked_employees || []);
+      setEmployeeOptions(employeesList || []);
     } catch (error) {
       console.error('Error fetching presence settings:', error);
     } finally {
@@ -135,6 +147,8 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         track_on_status_change: trackOnStatusChange,
         tracking_interval_minutes: trackingIntervalMinutes,
         minimum_gps_accuracy: minimumGpsAccuracy,
+        location_tracking_target: locationTrackingTarget,
+        tracked_employees: trackedEmployees,
       });
       setSnackbar({ open: true, message: 'Settings saved successfully!', severity: 'success' });
       // Close after a short delay so user sees the success message
@@ -151,16 +165,16 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
   return (
     <>
-      <Dialog 
-        open={open} 
-        onClose={onClose} 
-        fullWidth 
-        maxWidth="sm"
-        PaperProps={{ 
-          sx: { 
-            borderRadius: 2, 
-            boxShadow: (themeVar) => themeVar.customShadows.z24, 
-          } 
+      <Dialog
+        open={open}
+        onClose={onClose}
+        fullWidth
+        maxWidth="md"
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: (themeVar) => themeVar.customShadows.z24,
+          }
         }}
       >
         <DialogTitle sx={{ m: 0, p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: (t) => `1px solid ${t.palette.divider}` }}>
@@ -173,9 +187,6 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
         </DialogTitle>
 
         <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto', mt: 2 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 3 }}>
-            Configure global presence behavior for all employees.
-          </Typography>
 
           {loading ? (
             <Box sx={{ py: 10, textAlign: 'center' }}>
@@ -188,7 +199,7 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  bgcolor: 'background.neutral',
+                  bgcolor: '#f4f6f896',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
@@ -210,150 +221,246 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                 />
               </Box>
 
-              {/* Threshold Fields Grid */}
-              <Box>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-                  <Typography variant="subtitle2" sx={{ color: 'text.primary' }}>
-                    Inactivity Thresholds
-                  </Typography>
-                  <Select
-                    value={unit}
-                    onChange={(e) => setUnit(e.target.value as any)}
-                    size="small"
+              {/* Threshold Fields Grid & Auto Resume Toggle (Only when Enable Auto Status is ON) */}
+              {enableAutoStatus && (
+                <>
+                  <Box
                     sx={{
-                      typography: 'caption',
-                      fontWeight: 700,
-                      minWidth: 100,
-                      bgcolor: 'background.neutral',
+                      p: 2.5,
+                      borderRadius: 2,
+                      bgcolor: '#f4f6f896',
+                      border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}`,
                     }}
                   >
-                    <MenuItem value="sec">Seconds</MenuItem>
-                    <MenuItem value="min">Minutes</MenuItem>
-                  </Select>
-                </Stack>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                      <Typography variant="subtitle2" sx={{ color: 'text.primary', fontWeight: 800 }}>
+                        Inactivity Thresholds
+                      </Typography>
+                      <Select
+                        value={unit}
+                        onChange={(e) => setUnit(e.target.value as any)}
+                        size="small"
+                        sx={{
+                          typography: 'caption',
+                          fontWeight: 700,
+                          minWidth: 100,
+                          bgcolor: 'background.paper',
+                        }}
+                      >
+                        <MenuItem value="sec">Seconds</MenuItem>
+                        <MenuItem value="min">Minutes</MenuItem>
+                      </Select>
+                    </Stack>
 
-                <Stack spacing={2}>
-                  {(() => {
-                    const multiplier = unit === 'min' ? 60 : 1;
-                    return (
-                      <>
-                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                          <TextField
-                            fullWidth
-                            label="Idle Threshold"
-                            type="number"
-                            value={idleThreshold === 0 ? '' : parseFloat((idleThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setIdleThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
-                            onFocus={(event) => event.target.select()}
-                            helperText="System detects inactivity"
-                            disabled={!enableAutoStatus || loading}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                    {unit === 'min' ? 'mins' : 'secs'}
-                                  </Typography>
-                                </InputAdornment>
-                              ),
-                            }}
-                          />
-                          <TextField
-                            fullWidth
-                            label="Break Threshold"
-                            type="number"
-                            value={awayThreshold === 0 ? '' : parseFloat((awayThreshold / multiplier).toFixed(2))}
-                            onChange={(e) => setAwayThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
-                            onFocus={(event) => event.target.select()}
-                            helperText="Transitions to Break status"
-                            disabled={!enableAutoStatus || loading}
-                            InputProps={{
-                              endAdornment: (
-                                <InputAdornment position="end">
-                                  <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                    {unit === 'min' ? 'mins' : 'secs'}
-                                  </Typography>
-                                </InputAdornment>
-                              ),
-                            }}
-                          />
-                        </Stack>
-                        <TextField
-                          fullWidth
-                          label="Lunch Break Threshold"
-                          type="number"
-                          value={breakThreshold === 0 ? '' : parseFloat((breakThreshold / multiplier).toFixed(2))}
-                          onChange={(e) => setBreakThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
-                          onFocus={(event) => event.target.select()}
-                          helperText="Transitions to Lunch Break status"
-                          disabled={!enableAutoStatus || loading}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                  {unit === 'min' ? 'mins' : 'secs'}
-                                </Typography>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                        <TextField
-                          fullWidth
-                          label="Auto-Offline Threshold"
-                          type="number"
-                          value={offlineThreshold === 0 ? '' : parseFloat((offlineThreshold / multiplier).toFixed(2))}
-                          onChange={(e) => setOfflineThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
-                          onFocus={(event) => event.target.select()}
-                          error={offlineThreshold <= breakThreshold}
-                          helperText={offlineThreshold <= breakThreshold ? "Offline time must be greater than Break time" : "Automatically log out inactive users"}
-                          disabled={!enableAutoStatus || loading}
-                          InputProps={{
-                            endAdornment: (
-                              <InputAdornment position="end">
-                                <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
-                                  {unit === 'min' ? 'mins' : 'secs'}
-                                </Typography>
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      </>
-                    );
-                  })()}
-                </Stack>
-              </Box>
+                    <Stack spacing={2}>
+                      {(() => {
+                        const multiplier = unit === 'min' ? 60 : 1;
+                        return (
+                          <>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <TextField
+                                fullWidth
+                                label="Idle Threshold"
+                                type="number"
+                                value={idleThreshold === 0 ? '' : parseFloat((idleThreshold / multiplier).toFixed(2))}
+                                onChange={(e) => setIdleThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                                onFocus={(event) => event.target.select()}
+                                helperText="System detects inactivity"
+                                disabled={loading}
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">
+                                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                        {unit === 'min' ? 'mins' : 'secs'}
+                                      </Typography>
+                                    </InputAdornment>
+                                  ),
+                                }}
+                              />
+                              <TextField
+                                fullWidth
+                                label="Break Threshold"
+                                type="number"
+                                value={awayThreshold === 0 ? '' : parseFloat((awayThreshold / multiplier).toFixed(2))}
+                                onChange={(e) => setAwayThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                                onFocus={(event) => event.target.select()}
+                                helperText="Transitions to Break status"
+                                disabled={loading}
+                                InputProps={{
+                                  endAdornment: (
+                                    <InputAdornment position="end">
+                                      <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                        {unit === 'min' ? 'mins' : 'secs'}
+                                      </Typography>
+                                    </InputAdornment>
+                                  ),
+                                }}
+                              />
+                            </Stack>
+                            <TextField
+                              fullWidth
+                              label="Lunch Break Threshold"
+                              type="number"
+                              value={breakThreshold === 0 ? '' : parseFloat((breakThreshold / multiplier).toFixed(2))}
+                              onChange={(e) => setBreakThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                              onFocus={(event) => event.target.select()}
+                              helperText="Transitions to Lunch Break status"
+                              disabled={loading}
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                      {unit === 'min' ? 'mins' : 'secs'}
+                                    </Typography>
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                            <TextField
+                              fullWidth
+                              label="Auto-Offline Threshold"
+                              type="number"
+                              value={offlineThreshold === 0 ? '' : parseFloat((offlineThreshold / multiplier).toFixed(2))}
+                              onChange={(e) => setOfflineThreshold(e.target.value === '' ? 0 : Number(e.target.value) * multiplier)}
+                              onFocus={(event) => event.target.select()}
+                              error={offlineThreshold <= breakThreshold}
+                              helperText={offlineThreshold <= breakThreshold ? "Offline time must be greater than Break time" : "Automatically log out inactive users"}
+                              disabled={loading}
+                              InputProps={{
+                                endAdornment: (
+                                  <InputAdornment position="end">
+                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 700 }}>
+                                      {unit === 'min' ? 'mins' : 'secs'}
+                                    </Typography>
+                                  </InputAdornment>
+                                ),
+                              }}
+                            />
+                          </>
+                        );
+                      })()}
+                    </Stack>
+                  </Box>
 
-              {/* Auto Resume Toggle */}
-              <Box
-                sx={{
-                  p: 2.5,
-                  borderRadius: 2,
-                  bgcolor: 'background.neutral',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Stack spacing={0.5}>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
-                    Auto-resume from Lunch Break
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                    If off, users must click &apos;Return&apos; manually after a Lunch Break.
-                  </Typography>
-                </Stack>
-                <CustomSwitch
-                  checked={enableAutoResumeBreak}
-                  onChange={(e) => setEnableAutoResumeBreak(e.target.checked)}
-                  disabled={!enableAutoStatus || loading}
-                />
-              </Box>
+                  {/* Auto Resume Toggle */}
+                  <Box
+                    sx={{
+                      p: 2.5,
+                      borderRadius: 2,
+                      bgcolor: '#f4f6f896',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <Stack spacing={0.5}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>
+                        Auto-resume from Lunch Break
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        If off, users must click &apos;Return&apos; manually after a Lunch Break.
+                      </Typography>
+                    </Stack>
+                    <CustomSwitch
+                      checked={enableAutoResumeBreak}
+                      onChange={(e) => setEnableAutoResumeBreak(e.target.checked)}
+                      disabled={loading}
+                    />
+                  </Box>
+                  {/* Activity Detectors Section */}
+                  <Box>
+                    <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                      Activity Detectors
+                    </Typography>
+
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gap: 1.5,
+                        gridTemplateColumns: {
+                          xs: 'repeat(2, 1fr)',
+                          sm: 'repeat(3, 1fr)',
+                        },
+                      }}
+                    >
+                      {[
+                        { id: 'mousemove', label: 'Mouse', icon: 'ph:mouse-bold' },
+                        { id: 'keydown', label: 'Keyboard', icon: 'ph:keyboard-bold' },
+                        { id: 'scroll', label: 'Scrolling', icon: 'ph:scroll-bold' },
+                        { id: 'click', label: 'Clicks', icon: 'ph:cursor-click-bold' },
+                        { id: 'touchstart', label: 'Touch', icon: 'ph:hand-tap-bold' },
+                      ].map((item) => {
+                        const isActive = events[item.id as keyof typeof events];
+
+                        return (
+                          <Box
+                            key={item.id}
+                            onClick={() => {
+                              if (loading) return;
+                              const nextValue = !isActive;
+                              setEvents({
+                                mousemove: nextValue,
+                                keydown: nextValue,
+                                scroll: nextValue,
+                                click: nextValue,
+                                touchstart: nextValue,
+                              });
+                            }}
+                            sx={{
+                              p: 2,
+                              borderRadius: 2,
+                              cursor: loading ? 'default' : 'pointer',
+                              border: '1px solid',
+                              borderColor: isActive ? 'primary.main' : 'divider',
+                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.04) : '#f4f6f896',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: 1.5,
+                              transition: theme.transitions.create(['all']),
+                              '&:hover': {
+                                borderColor: isActive ? 'primary.main' : 'text.disabled',
+                                bgcolor: isActive ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.grey[500], 0.04),
+                              }
+                            }}
+                          >
+                            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pointerEvents: 'none' }}>
+                              <Box
+                                sx={{
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 1,
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  bgcolor: isActive ? 'primary.main' : 'background.paper',
+                                  color: isActive ? 'common.white' : 'text.secondary',
+                                  boxShadow: theme.customShadows.z1,
+                                }}
+                              >
+                                <Iconify icon={item.icon as any} width={20} />
+                              </Box>
+                              <CustomSwitch
+                                checked={isActive}
+                                disabled={loading}
+                              />
+                            </Stack>
+                            <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                              {item.label}
+                            </Typography>
+                          </Box>
+                        );
+                      })}
+                    </Box>
+                  </Box>
+                </>
+              )}
 
               {/* Location Tracking Section */}
               <Box
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  bgcolor: 'background.neutral',
+                  bgcolor: '#f4f6f896',
                   border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                 }}
               >
@@ -375,7 +482,137 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
 
                 {enableLocationTracking && (
                   <Stack spacing={2.5} sx={{ mt: 3, pt: 2.5, borderTop: `1px dashed ${theme.palette.divider}` }}>
-                    <Box sx={{ mt: 2 }}>
+                    {/* Location Tracking Scope Selection */}
+                    <Box sx={{ p: 2, borderRadius: 1.5, bgcolor: 'background.paper', border: `1px solid ${alpha(theme.palette.grey[500], 0.12)}` }}>
+                      <Typography variant="subtitle2" sx={{ color: 'text.primary', mb: 0.5, fontWeight: 700, fontSize: 14 }}>
+                        Location Tracking Scope
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1.5 }}>
+                        Choose whether location tracking applies globally to all staff or only selected employees.
+                      </Typography>
+                      <Stack direction="row" spacing={1.5} sx={{ mb: locationTrackingTarget === 'Selected Employees' ? 2 : 0 }}>
+                        {[
+                          { value: 'All Employees', label: 'All Employees' },
+                          { value: 'Selected Employees', label: 'Selected Employees Only' },
+                        ].map((target) => {
+                          const isSelected = locationTrackingTarget === target.value;
+                          return (
+                            <Button
+                              key={target.value}
+                              size="small"
+                              onClick={() => setLocationTrackingTarget(target.value as any)}
+                              sx={{
+                                borderRadius: 1.25,
+                                px: 1.75,
+                                py: 0.5,
+                                fontSize: '0.8125rem',
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                bgcolor: isSelected ? '#08a3cd' : 'transparent',
+                                color: isSelected ? '#ffffff' : '#08a3cd',
+                                border: '1px solid #08a3cd',
+                                boxShadow: isSelected ? '0px 2px 6px rgba(8, 163, 205, 0.2)' : 'none',
+                                '&:hover': {
+                                  bgcolor: isSelected ? '#068aa8' : alpha('#08a3cd', 0.08),
+                                  borderColor: '#08a3cd',
+                                },
+                              }}
+                            >
+                              {target.label}
+                            </Button>
+                          );
+                        })}
+                      </Stack>
+
+                      {locationTrackingTarget === 'Selected Employees' && (
+                        <Box sx={{ mt: 3 }}>
+                          <Autocomplete
+                            multiple
+                            disableCloseOnSelect
+                            options={employeeOptions}
+                            getOptionLabel={(option) => `${option.employee_name} (${option.name})`}
+                            value={employeeOptions.filter((opt) => trackedEmployees.includes(opt.name))}
+                            onChange={(_, newValue) => {
+                              setTrackedEmployees(newValue.map((item) => item.name));
+                            }}
+                            renderOption={(props, option, { selected }) => {
+                              const { key, ...otherProps } = props as any;
+                              return (
+                                <Box
+                                  component="li"
+                                  key={key || option.name}
+                                  {...otherProps}
+                                  sx={{
+                                    py: 1.25,
+                                    px: 2,
+                                    borderBottom: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                                    display: 'flex',
+                                    flexDirection: 'row',
+                                    alignItems: 'center !important',
+                                    justifyContent: 'space-between',
+                                    width: '100%',
+                                    bgcolor: selected ? alpha('#1877F2', 0.08) : 'transparent',
+                                  }}
+                                >
+                                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                                      {option.employee_name}
+                                    </Typography>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, fontSize: '0.75rem' }}>
+                                      ID: {option.name}
+                                    </Typography>
+                                  </Box>
+
+                                  {selected && (
+                                    <Box
+                                      sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#1877F2',
+                                        ml: 1.5,
+                                      }}
+                                    >
+                                      <Iconify icon="solar:check-circle-bold" width={22} />
+                                    </Box>
+                                  )}
+                                </Box>
+                              );
+                            }}
+                            renderTags={(value, getTagProps) =>
+                              value.map((option, index) => (
+                                <Chip
+                                  {...getTagProps({ index })}
+                                  key={option.name}
+                                  label={`${option.employee_name} (${option.name})`}
+                                  size="small"
+                                  sx={{
+                                    borderRadius: 1,
+                                    fontWeight: 600,
+                                    bgcolor: '#08a3cd',
+                                    color: '#ffffff',
+                                    '& .MuiChip-deleteIcon': {
+                                      color: 'rgba(255, 255, 255, 0.7)',
+                                      '&:hover': { color: '#ffffff' },
+                                    },
+                                  }}
+                                />
+                              ))
+                            }
+                            renderInput={(params) => (
+                              <TextField
+                                {...params}
+                                label="Select Employees to Track"
+                                placeholder="Search by name or employee ID..."
+                                helperText="Location updates will ONLY be recorded for these selected employees."
+                              />
+                            )}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+
+                    <Box sx={{ mt: 1 }}>
                       <Typography
                         variant="subtitle2"
                         sx={{ color: 'text.primary', mb: 2, fontWeight: 600 }}
@@ -413,32 +650,32 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                               setTrackOnStatusChange(e.target.checked),
                           },
                         ].map((item) => (
-                        <Box
+                          <Box
                             key={item.label}
                             sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 3,
-                                px: 1.5,
-                                py: 2,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 3,
+                              px: 1.5,
+                              py: 2,
                             }}
-                        >
+                          >
                             <Typography
-                                variant="body2"
-                                sx={{
-                                    fontWeight: 600,
-                                    whiteSpace: 'nowrap',
-                                }}
+                              variant="body2"
+                              sx={{
+                                fontWeight: 600,
+                                whiteSpace: 'nowrap',
+                              }}
                             >
-                                {item.label}
+                              {item.label}
                             </Typography>
 
                             <CustomSwitch
-                                checked={item.checked}
-                                onChange={item.onChange}
-                                disabled={loading}
+                              checked={item.checked}
+                              onChange={item.onChange}
+                              disabled={loading}
                             />
-                        </Box>
+                          </Box>
                         ))}
                       </Box>
                     </Box>
@@ -483,137 +720,6 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
                   </Stack>
                 )}
               </Box>
-
-              {/* System Monitoring Action */}
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  border: `1px dashed ${theme.palette.divider}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 1.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: alpha(theme.palette.info.main, 0.08),
-                    color: 'info.main',
-                  }}
-                >
-                  <Iconify icon={"solar:monitor-bold-duotone" as any} width={28} />
-                </Box>
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="subtitle2">System-wide Monitoring</Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    {isSystemMonitoring
-                      ? 'System activity detection is active.'
-                      : 'Detect activity even when the browser is minimized.'}
-                  </Typography>
-                </Box>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color={isSystemMonitoring ? 'success' : 'info'}
-                  onClick={handleRequestPermission}
-                >
-                  {isSystemMonitoring ? 'Active' : 'Enable'}
-                </Button>
-              </Box>
-
-              {/* Activity Detectors Section */}
-              {enableAutoStatus && (
-                <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 2 }}>
-                    Activity Detectors
-                  </Typography>
-
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gap: 1.5,
-                      gridTemplateColumns: {
-                        xs: 'repeat(2, 1fr)',
-                        sm: 'repeat(3, 1fr)',
-                      },
-                    }}
-                  >
-                    {[
-                      { id: 'mousemove', label: 'Mouse', icon: 'ph:mouse-bold' },
-                      { id: 'keydown', label: 'Keyboard', icon: 'ph:keyboard-bold' },
-                      { id: 'scroll', label: 'Scrolling', icon: 'ph:scroll-bold' },
-                      { id: 'click', label: 'Clicks', icon: 'ph:cursor-click-bold' },
-                      { id: 'touchstart', label: 'Touch', icon: 'ph:hand-tap-bold' },
-                    ].map((item) => {
-                      const isActive = events[item.id as keyof typeof events];
-
-                      return (
-                        <Box
-                          key={item.id}
-                          onClick={() => {
-                            if (loading) return;
-                            const nextValue = !isActive;
-                            setEvents({
-                              mousemove: nextValue,
-                              keydown: nextValue,
-                              scroll: nextValue,
-                              click: nextValue,
-                              touchstart: nextValue,
-                            });
-                          }}
-                          sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            cursor: loading ? 'default' : 'pointer',
-                            border: '1px solid',
-                            borderColor: isActive ? 'primary.main' : 'divider',
-                            bgcolor: isActive ? alpha(theme.palette.primary.main, 0.04) : 'background.neutral',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 1.5,
-                            transition: theme.transitions.create(['all']),
-                            '&:hover': {
-                              borderColor: isActive ? 'primary.main' : 'text.disabled',
-                              bgcolor: isActive ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.grey[500], 0.04),
-                            }
-                          }}
-                        >
-                          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ pointerEvents: 'none' }}>
-                            <Box
-                              sx={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                bgcolor: isActive ? 'primary.main' : 'background.paper',
-                                color: isActive ? 'common.white' : 'text.secondary',
-                                boxShadow: theme.customShadows.z1,
-                              }}
-                            >
-                              <Iconify icon={item.icon as any} width={20} />
-                            </Box>
-                            <CustomSwitch
-                              checked={isActive}
-                              disabled={loading}
-                            />
-                          </Stack>
-                          <Typography variant="caption" sx={{ fontWeight: 700, color: 'text.primary' }}>
-                            {item.label}
-                          </Typography>
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                </Box>
-              )}
             </Stack>
           )}
         </DialogContent>
@@ -624,7 +730,15 @@ export function EmployeePresenceSettingsDialog({ open, onClose }: Props) {
             onClick={handleSave}
             loading={saving}
             disabled={loading || offlineThreshold <= breakThreshold || breakThreshold <= awayThreshold || awayThreshold <= idleThreshold}
-            sx={{ fontWeight: 700 }}
+            sx={{
+              fontWeight: 700,
+              bgcolor: '#08a3cd',
+              color: '#ffffff',
+              boxShadow: '0px 4px 10px rgba(8, 163, 205, 0.24)',
+              '&:hover': {
+                bgcolor: '#068aa8',
+              },
+            }}
           >
             Save Changes
           </Button>
