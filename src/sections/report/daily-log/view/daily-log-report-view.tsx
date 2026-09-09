@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import { useSnackbar } from 'notistack';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -14,6 +14,8 @@ import Radio from '@mui/material/Radio';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
+import Popover from '@mui/material/Popover';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Checkbox from '@mui/material/Checkbox';
@@ -121,6 +123,7 @@ export function DailyLogReportView() {
     const [status, setStatus] = useState('all');
     const [sortBy, setSortBy] = useState('login_date_desc');
     const [day, setDay] = useState('all');
+    const isFilterApplied = !!fromDate && !!toDate;
 
     // Options
     const [employeeOptions, setEmployeeOptions] = useState<any[]>([]);
@@ -204,15 +207,12 @@ export function DailyLogReportView() {
     }, []);
 
     useEffect(() => {
-        const start = fromDate || (reportData.length > 0
-            ? dayjs(reportData.reduce((min, p) => p.login_date < min ? p.login_date : min, reportData[0].login_date))
-            : dayjs().startOf('month'));
-        const end = toDate || (reportData.length > 0
-            ? dayjs(reportData.reduce((max, p) => p.login_date > max ? p.login_date : max, reportData[0].login_date))
-            : dayjs().endOf('month'));
-
-        fetchHolidaysForRange(start, end);
-    }, [fromDate, toDate, reportData, fetchHolidaysForRange]);
+        if (!isFilterApplied || !fromDate || !toDate) {
+            setHolidays([]);
+            return;
+        }
+        fetchHolidaysForRange(fromDate, toDate);
+    }, [isFilterApplied, fromDate, toDate, fetchHolidaysForRange]);
 
     useEffect(() => {
         if (user && user.roles) {
@@ -236,8 +236,14 @@ export function DailyLogReportView() {
     }, [employee, currentView]);
 
     const fetchReport = useCallback(async () => {
-        if (fromDate && toDate && toDate.isBefore(fromDate, 'day')) {
+        if (!fromDate || !toDate) {
             setReportData([]);
+            setLeaveApplications([]);
+            return;
+        }
+        if (toDate.isBefore(fromDate, 'day')) {
+            setReportData([]);
+            setLeaveApplications([]);
             return;
         }
         // We fetch a larger limit for the report view, or implement proper backend pagination if needed.
@@ -253,20 +259,13 @@ export function DailyLogReportView() {
                 employee.length > 0 ? JSON.stringify(employee) : 'all',
                 day,
                 '',
-                fromDate?.format('YYYY-MM-DD') || '',
-                toDate?.format('YYYY-MM-DD') || ''
+                fromDate.format('YYYY-MM-DD'),
+                toDate.format('YYYY-MM-DD')
             );
             setReportData(result.data || []);
 
-            const startFallback = fromDate || (result.data && result.data.length > 0
-                ? dayjs(result.data.reduce((min: string, p: any) => p.login_date < min ? p.login_date : min, result.data[0].login_date))
-                : dayjs().startOf('month'));
-            const endFallback = toDate || (result.data && result.data.length > 0
-                ? dayjs(result.data.reduce((max: string, p: any) => p.login_date > max ? p.login_date : max, result.data[0].login_date))
-                : dayjs().endOf('month'));
-
-            const startD = startFallback.subtract(3, 'month').format('YYYY-MM-DD');
-            const endD = endFallback.format('YYYY-MM-DD');
+            const startD = fromDate.subtract(3, 'month').format('YYYY-MM-DD');
+            const endD = toDate.format('YYYY-MM-DD');
 
             const leavesRes = await fetchLeaveApplications({
                 page: 1,
@@ -316,19 +315,16 @@ export function DailyLogReportView() {
         }
     };
 
-    const getApprovedLeaveForDate = useCallback((employeeId: string, date: dayjs.Dayjs) => {
-        const dateStr = date.format('YYYY-MM-DD');
-        return leaveApplications.find((leave) => {
-            if (leave.employee !== employeeId) return false;
-            const isApproved = (leave.workflow_state === 'Approved' || leave.status === 'Approved');
-            if (!isApproved) return false;
-            
-            const from = dayjs(leave.from_date);
-            const to = dayjs(leave.to_date);
-            return (date.isSame(from, 'day') || date.isAfter(from, 'day')) && 
-                   (date.isSame(to, 'day') || date.isBefore(to, 'day'));
-        });
-    }, [leaveApplications]);
+    const getApprovedLeaveForDate = useCallback((employeeId: string, date: dayjs.Dayjs) => leaveApplications.find((leave) => {
+        if (leave.employee !== employeeId) return false;
+        const isApproved = (leave.workflow_state === 'Approved' || leave.status === 'Approved');
+        if (!isApproved) return false;
+        
+        const from = dayjs(leave.from_date);
+        const to = dayjs(leave.to_date);
+        return (date.isSame(from, 'day') || date.isAfter(from, 'day')) && 
+               (date.isSame(to, 'day') || date.isBefore(to, 'day'));
+    }), [leaveApplications]);
 
     const isLeaveStatus = useCallback((val: string) => !['P', 'A', 'HD', 'H'].includes(val), []);
 
@@ -357,8 +353,12 @@ export function DailyLogReportView() {
         }
 
         const totalHours = logs.reduce((sum, log) => sum + (log.total_work_hours || 0), 0);
-        const presentThreshold = hrmsSettings?.present_threshold ?? 6.0;
-        const halfDayThreshold = hrmsSettings?.half_day_threshold ?? 4.0;
+        const presentThreshold = hrmsSettings?.salary_slip_present_threshold != null && hrmsSettings?.salary_slip_present_threshold !== ''
+            ? Number(hrmsSettings.salary_slip_present_threshold)
+            : (Number(hrmsSettings?.present_threshold) || 5.0);
+        const halfDayThreshold = hrmsSettings?.salary_slip_half_day_threshold != null && hrmsSettings?.salary_slip_half_day_threshold !== ''
+            ? Number(hrmsSettings.salary_slip_half_day_threshold)
+            : (Number(hrmsSettings?.half_day_threshold) || 3.0);
 
         if (totalHours >= presentThreshold) return 'P';
         if (totalHours >= halfDayThreshold) return 'HD';
@@ -477,13 +477,10 @@ export function DailyLogReportView() {
         };
     };
 
-    const dates = (() => {
-        const start = fromDate || (reportData.length > 0
-            ? dayjs(reportData.reduce((min, p) => p.login_date < min ? p.login_date : min, reportData[0].login_date))
-            : dayjs().startOf('month'));
-        const end = toDate || (reportData.length > 0
-            ? dayjs(reportData.reduce((max, p) => p.login_date > max ? p.login_date : max, reportData[0].login_date))
-            : dayjs().endOf('month'));
+    const dates = useMemo(() => {
+        if (!isFilterApplied || !fromDate || !toDate) return [];
+        const start = fromDate;
+        const end = toDate;
 
         const dateArray: dayjs.Dayjs[] = [];
         let cur = start;
@@ -495,7 +492,7 @@ export function DailyLogReportView() {
             count++;
         }
         return dateArray;
-    })();
+    }, [isFilterApplied, fromDate, toDate]);
 
     const uniqueEmployees = Array.from(
         new Map(
@@ -1093,12 +1090,136 @@ export function DailyLogReportView() {
         setSelected(newSelected);
     };
 
+    const [totalDaysAnchorEl, setTotalDaysAnchorEl] = useState<HTMLElement | null>(null);
+    const [daysTab, setDaysTab] = useState<'all' | 'working' | 'holiday'>('all');
+
     // Summary stats
-    const totalSessions = reportData.length;
+    const daysBreakdown = useMemo(() => {
+        if (!isFilterApplied || !fromDate || !toDate || toDate.isBefore(fromDate, 'day')) {
+            return [];
+        }
+
+        const list: {
+            date: dayjs.Dayjs;
+            dateStr: string;
+            isHoliday: boolean;
+            status: 'Working Day' | 'Holiday';
+            holidayName?: string;
+        }[] = [];
+
+        let cur = fromDate;
+        const maxDays = 730;
+        let count = 0;
+
+        while ((cur.isBefore(toDate, 'day') || cur.isSame(toDate, 'day')) && count < maxDays) {
+            const dateStr = cur.format('YYYY-MM-DD');
+            const holidayMatch = holidays.find(
+                (h) => h.holiday_date && dayjs(h.holiday_date).format('YYYY-MM-DD') === dateStr && h.is_working_day === 0
+            );
+
+            if (holidayMatch) {
+                list.push({
+                    date: cur,
+                    dateStr,
+                    isHoliday: true,
+                    status: 'Holiday',
+                    holidayName: holidayMatch.description || 'Holiday',
+                });
+            } else {
+                list.push({
+                    date: cur,
+                    dateStr,
+                    isHoliday: false,
+                    status: 'Working Day',
+                });
+            }
+
+            cur = cur.add(1, 'day');
+            count++;
+        }
+
+        return list;
+    }, [isFilterApplied, fromDate, toDate, holidays]);
+
+    const workingDaysCount = useMemo(
+        () => daysBreakdown.filter((d) => !d.isHoliday).length,
+        [daysBreakdown]
+    );
+
+    const holidaysCount = useMemo(
+        () => daysBreakdown.filter((d) => d.isHoliday).length,
+        [daysBreakdown]
+    );
+
+    const totalDaysCount = useMemo(() => {
+        if (!isFilterApplied || !fromDate || !toDate) {
+            return 0;
+        }
+        return Math.max(0, toDate.diff(fromDate, 'day') + 1);
+    }, [isFilterApplied, fromDate, toDate]);
+
+    const filteredDaysBreakdown = useMemo(() => {
+        if (daysTab === 'working') {
+            return daysBreakdown.filter((d) => !d.isHoliday);
+        }
+        if (daysTab === 'holiday') {
+            return daysBreakdown.filter((d) => d.isHoliday);
+        }
+        return daysBreakdown;
+    }, [daysBreakdown, daysTab]);
+
+    const targetEmployeeIds = useMemo(() => {
+        if (!isFilterApplied) return [];
+        if (employee && employee.length > 0) {
+            return employee;
+        }
+        return uniqueEmployees.map((e) => e.id);
+    }, [isFilterApplied, employee, uniqueEmployees]);
+
+    const { presentCount, absentCount } = useMemo(() => {
+        if (!isFilterApplied || targetEmployeeIds.length === 0 || dates.length === 0) {
+            return { presentCount: 0, absentCount: 0 };
+        }
+
+        let present = 0;
+        let absent = 0;
+
+        targetEmployeeIds.forEach((empId) => {
+            dates.forEach((date) => {
+                const attStatus = getAttendanceStatus(empId, date);
+                if (attStatus === 'P') {
+                    present += 1;
+                } else if (attStatus === 'HD') {
+                    present += 0.5;
+                    absent += 0.5;
+                } else if (attStatus === 'A') {
+                    absent += 1;
+                } else if (isLeaveStatus(attStatus)) {
+                    const leave = getApprovedLeaveForDate(empId, date);
+                    const isUnpaid = leave && (
+                        leave.is_paid === 0 ||
+                        leave.is_paid === false ||
+                        (leave.leave_type || '').toLowerCase().includes('unpaid') ||
+                        (leave.leave_type || '').toLowerCase().includes('lop')
+                    );
+                    const isHalf = !!leave?.half_day;
+                    if (isUnpaid) {
+                        absent += isHalf ? 0.5 : 1;
+                    } else {
+                        present += isHalf ? 0.5 : 1;
+                    }
+                }
+            });
+        });
+
+        const formattedPresent = Number.isInteger(present) ? present : Number(present.toFixed(1));
+        const formattedAbsent = Number.isInteger(absent) ? absent : Number(absent.toFixed(1));
+
+        return { presentCount: formattedPresent, absentCount: formattedAbsent };
+    }, [isFilterApplied, targetEmployeeIds, dates, getAttendanceStatus, isLeaveStatus, getApprovedLeaveForDate]);
+
     const totalWorkHours = reportData.reduce((acc, curr) => acc + (curr.total_work_hours || 0), 0);
     const totalBreakHours = reportData.reduce((acc, curr) => acc + (curr.total_break_hours || 0), 0);
-    const activeSessions = reportData.filter(d => d.status === 'Active').length;
-    const inactiveSessions = reportData.filter(d => d.status === 'Inactive').length;
 
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
@@ -1281,11 +1402,35 @@ export function DailyLogReportView() {
                         },
                     }}
                 >
-                    <SummaryCard item={{ label: 'Total Days', value: totalSessions, indicator: 'blue' }} />
+                    <SummaryCard
+                        item={{
+                            label: 'Total Days',
+                            value: totalDaysCount,
+                            indicator: 'blue',
+                            action: (
+                                <IconButton
+                                    size="small"
+                                    disabled={!isFilterApplied}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setTotalDaysAnchorEl(e.currentTarget);
+                                    }}
+                                    sx={{
+                                        p: 0.25,
+                                        color: 'info.main',
+                                        '&:hover': { bgcolor: alpha(theme.palette.info.main, 0.1) },
+                                    }}
+                                    title="View Working Days & Holidays"
+                                >
+                                    <Iconify icon={"eva:info-outline" as any} width={16} />
+                                </IconButton>
+                            ),
+                        }}
+                    />
+                    <SummaryCard item={{ label: 'Present', value: presentCount, indicator: 'green' }} />
+                    <SummaryCard item={{ label: 'Absent', value: absentCount, indicator: 'red' }} />
                     <SummaryCard item={{ label: 'Work Hours', value: totalWorkHours.toFixed(1), suffix: 'Hrs', indicator: 'green' }} />
                     <SummaryCard item={{ label: 'Break Hours', value: totalBreakHours.toFixed(1), suffix: 'Hrs', indicator: 'orange' }} />
-                    <SummaryCard item={{ label: 'Active', value: activeSessions, indicator: 'green' }} />
-                    <SummaryCard item={{ label: 'Inactive', value: inactiveSessions, indicator: 'red' }} />
                 </Box>
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
@@ -1414,12 +1559,21 @@ export function DailyLogReportView() {
                                                 {reportData.length === 0 && (
                                                     <TableRow>
                                                         <TableCell colSpan={9} align="center" sx={{ py: 10 }}>
-                                                            <Stack spacing={1} alignItems="center">
-                                                                <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                                <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                    No data found
-                                                                </Typography>
-                                                            </Stack>
+                                                            {!isFilterApplied ? (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        Please select a date filter to view daily logs
+                                                                    </Typography>
+                                                                </Stack>
+                                                            ) : (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        No data found
+                                                                    </Typography>
+                                                                </Stack>
+                                                            )}
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
@@ -1450,7 +1604,15 @@ export function DailyLogReportView() {
                         employee={employee[0]}
                         fromDate={fromDate}
                         toDate={toDate}
+                        leaveApplications={leaveApplications}
+                        holidays={holidays}
                         onEventClick={handleViewDetails}
+                        onLeaveClick={(leave) => {
+                            if (leave?.name) {
+                                setSelectedLeaveId(leave.name);
+                                setOpenLeaveDetails(true);
+                            }
+                        }}
                     />
                 )}
 
@@ -1675,13 +1837,35 @@ export function DailyLogReportView() {
                                             ))}
                                             {paginatedEmployees.length === 0 && (
                                                 <TableRow>
-                                                    <TableCell colSpan={dates.length + 1} align="center" sx={{ py: 10 }}>
-                                                        <Stack spacing={1} alignItems="center">
-                                                            <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
-                                                            <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
-                                                                No data found
-                                                            </Typography>
-                                                        </Stack>
+                                                    <TableCell colSpan={Math.max(1, dates.length + 1)} sx={{ py: 10, position: 'relative', border: 0 }}>
+                                                        <Box
+                                                            sx={{
+                                                                position: 'sticky',
+                                                                left: '50%',
+                                                                transform: 'translateX(-50%)',
+                                                                display: 'flex',
+                                                                justifyContent: 'center',
+                                                                alignItems: 'center',
+                                                                width: 'max-content',
+                                                                maxWidth: '100%',
+                                                            }}
+                                                        >
+                                                            {!isFilterApplied ? (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:calendar-date-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        Please select a date filter to view daily logs
+                                                                    </Typography>
+                                                                </Stack>
+                                                            ) : (
+                                                                <Stack spacing={1} alignItems="center">
+                                                                    <Iconify icon={"solar:filter-bold-duotone" as any} width={48} sx={{ color: 'text.disabled' }} />
+                                                                    <Typography variant="body2" sx={{ color: 'text.disabled', fontWeight: 'bold' }}>
+                                                                        No data found
+                                                                    </Typography>
+                                                                </Stack>
+                                                            )}
+                                                        </Box>
                                                     </TableCell>
                                                 </TableRow>
                                             )}
@@ -1848,6 +2032,174 @@ export function DailyLogReportView() {
                     )}
                 </DialogActions>
             </Dialog>
+
+            {/* Total Days Breakdown Popover */}
+            <Popover
+                open={Boolean(totalDaysAnchorEl)}
+                anchorEl={totalDaysAnchorEl}
+                onClose={() => setTotalDaysAnchorEl(null)}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'left',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+                PaperProps={{
+                    sx: {
+                        p: 2,
+                        width: 380,
+                        maxHeight: 460,
+                        borderRadius: 2,
+                        boxShadow: (themeVar) => themeVar.customShadows.z20,
+                        display: 'flex',
+                        flexDirection: 'column',
+                    },
+                }}
+                disableScrollLock
+            >
+                {/* Header */}
+                <Box sx={{ mb: 1.5 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                            Total Days Breakdown
+                        </Typography>
+                        <IconButton size="small" onClick={() => setTotalDaysAnchorEl(null)} sx={{ color: 'text.secondary' }}>
+                            <Iconify icon={"mingcute:close-line" as any} width={18} />
+                        </IconButton>
+                    </Stack>
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                        {fromDate && toDate
+                            ? `${fromDate.format('DD MMM YYYY')} — ${toDate.format('DD MMM YYYY')}`
+                            : `${daysBreakdown.length} days in selected period`}
+                    </Typography>
+                </Box>
+
+                {/* Summary Chips */}
+                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                    <Box
+                        onClick={() => setDaysTab('all')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: daysTab === 'all' ? alpha(theme.palette.info.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${daysTab === 'all' ? theme.palette.info.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Total Days
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'info.main' }}>
+                            {totalDaysCount}
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        onClick={() => setDaysTab('working')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: daysTab === 'working' ? alpha(theme.palette.success.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${daysTab === 'working' ? theme.palette.success.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Working Days
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'success.main' }}>
+                            {workingDaysCount}
+                        </Typography>
+                    </Box>
+
+                    <Box
+                        onClick={() => setDaysTab('holiday')}
+                        sx={{
+                            flex: 1,
+                            p: 1,
+                            borderRadius: 1.5,
+                            textAlign: 'center',
+                            cursor: 'pointer',
+                            bgcolor: daysTab === 'holiday' ? alpha(theme.palette.error.main, 0.12) : alpha(theme.palette.grey[500], 0.08),
+                            border: `1px solid ${daysTab === 'holiday' ? theme.palette.error.main : 'transparent'}`,
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', fontWeight: 600 }}>
+                            Holidays
+                        </Typography>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: 'error.main' }}>
+                            {holidaysCount}
+                        </Typography>
+                    </Box>
+                </Stack>
+
+                <Divider sx={{ mb: 1, borderStyle: 'dashed' }} />
+
+                {/* Days List */}
+                <Scrollbar sx={{ flexGrow: 1, maxHeight: 260, pr: 0.5 }}>
+                    <Stack spacing={1}>
+                        {filteredDaysBreakdown.length > 0 ? (
+                            filteredDaysBreakdown.map((item, idx) => {
+                                const isHol = item.isHoliday;
+                                return (
+                                    <Box
+                                        key={item.dateStr}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            py: 0.75,
+                                            px: 1.25,
+                                            borderRadius: 1,
+                                            bgcolor: isHol ? alpha(theme.palette.error.main, 0.04) : alpha(theme.palette.success.main, 0.04),
+                                            ...(idx !== filteredDaysBreakdown.length - 1 && {
+                                                borderBottom: `1px dashed ${theme.palette.divider}`,
+                                            }),
+                                        }}
+                                    >
+                                        <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
+                                            {item.date.format('DD-MM-YYYY — dddd')}
+                                        </Typography>
+
+                                        <Box
+                                            component="span"
+                                            sx={{
+                                                px: 1,
+                                                py: 0.25,
+                                                borderRadius: 0.75,
+                                                fontSize: '0.725rem',
+                                                fontWeight: 700,
+                                                color: isHol ? 'info.darker' : 'success.darker',
+                                                bgcolor: isHol ? alpha(theme.palette.info.main, 0.14) : alpha(theme.palette.success.main, 0.14),
+                                                maxWidth: 130,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                            title={isHol ? item.holidayName || 'Holiday' : 'Working Day'}
+                                        >
+                                            {isHol ? (item.holidayName || 'Holiday') : 'Working Day'}
+                                        </Box>
+                                    </Box>
+                                );
+                            })
+                        ) : (
+                            <Typography variant="caption" sx={{ color: 'text.disabled', fontStyle: 'italic', textAlign: 'center', py: 2 }}>
+                                No days found
+                            </Typography>
+                        )}
+                    </Stack>
+                </Scrollbar>
+            </Popover>
         </DashboardContent>
     );
 }
@@ -1871,8 +2223,8 @@ function SummaryCard({ item }: { item: any }) {
         const t = label.toLowerCase();
         if (t.includes('work')) return 'solar:clock-circle-bold-duotone';
         if (t.includes('break')) return 'solar:cup-hot-bold-duotone';
-        if (t.includes('active')) return 'solar:check-circle-bold-duotone';
-        if (t.includes('inactive')) return 'solar:danger-circle-bold-duotone';
+        if (t.includes('present') || t.includes('active')) return 'solar:check-circle-bold-duotone';
+        if (t.includes('absent') || t.includes('inactive')) return 'solar:danger-circle-bold-duotone';
         if (t.includes('days')) return 'solar:calendar-date-bold-duotone';
         if (t.includes('sessions')) return 'solar:list-bold-duotone';
         return 'solar:chart-2-bold-duotone';
@@ -1913,10 +2265,13 @@ function SummaryCard({ item }: { item: any }) {
                     <Iconify icon={getIcon(item.label) as any} width={18} />
                 </Box>
 
-                <Box sx={{ flexGrow: 1, pl: 1, }}>
-                    <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.2 }}>
-                        {item.label}
-                    </Typography>
+                <Box sx={{ flexGrow: 1, pl: 1 }}>
+                    <Stack direction="row" alignItems="center" spacing={0.5}>
+                        <Typography variant="subtitle2" sx={{ color: 'text.secondary', fontWeight: 700, mb: 0.2 }}>
+                            {item.label}
+                        </Typography>
+                        {item.action}
+                    </Stack>
                     <Typography variant="h4" sx={{ color: 'text.primary', fontWeight: 800 }}>
                         {item.value?.toLocaleString()}{item.suffix ? ` ${item.suffix}` : ''}
                     </Typography>
