@@ -484,11 +484,19 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
 
     // Draw route path
     if (points.length > 1) {
+      // Add white outline casing line for maximum contrast over map tiles
+      L.polyline(points, {
+        color: '#FFFFFF',
+        weight: 8,
+        opacity: 0.9,
+      }).addTo(markersGroupRef.current);
+
+      // Main prominent route line
       polylineRef.current = L.polyline(points, {
-        color: '#2196F3',
-        weight: 3,
-        opacity: 0.7,
-        dashArray: '5, 5'
+        color: '#0062FF',
+        weight: 5,
+        opacity: 1,
+        dashArray: '8, 6',
       }).addTo(mapRef.current);
     }
 
