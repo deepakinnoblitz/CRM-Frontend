@@ -1351,11 +1351,62 @@ export function UserStatusBar() {
                         color="text.secondary"
                         sx={{
                             lineHeight: 1.8,
+                            mb: 2,
                         }}
                     >
                         Please turn on your device location services and allow GPS
                         permission to change your work status.
                     </Typography>
+
+                    <Box
+                        sx={{
+                            p: 2.25,
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            border: `1px dashed ${alpha(theme.palette.primary.main, 0.25)}`,
+                            textAlign: 'left',
+                            mt: 1,
+                        }}
+                    >
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                            <Iconify icon={"solar:lock-keyhole-minimalistic-bold-duotone" as any} width={20} sx={{ color: 'primary.main' }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.875rem' }}>
+                                How to enable location in your browser:
+                            </Typography>
+                        </Stack>
+
+                        <Stack spacing={1.25}>
+                            {[
+                                { step: '1', text: <>Click the <b>Lock 🔒</b> or <b>Site Settings ⚙️</b> icon next to the URL address bar.</> },
+                                { step: '2', text: <>Change <b>Location</b> permission from <i>Block</i> to <b>Allow</b>.</> },
+                                { step: '3', text: <>Click <b>Try Again</b> below to proceed.</> },
+                            ].map((item) => (
+                                <Stack key={item.step} direction="row" alignItems="flex-start" spacing={1.25}>
+                                    <Box
+                                        sx={{
+                                            width: 20,
+                                            height: 20,
+                                            borderRadius: '50%',
+                                            bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                            color: 'primary.main',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0,
+                                            mt: 0.1,
+                                        }}
+                                    >
+                                        {item.step}
+                                    </Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.5, fontWeight: 500, fontSize: '0.8125rem' }}>
+                                        {item.text}
+                                    </Typography>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
                 </DialogContent>
 
                 <DialogActions
@@ -1378,14 +1429,25 @@ export function UserStatusBar() {
                         onClick={() => {
                             setLocationDialogOpen(false);
 
-                            navigator.geolocation.getCurrentPosition(
-                                () => {
-                                    // Permission granted
-                                },
-                                () => {
-                                    // Still denied
-                                }
-                            );
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        console.log('[Location] Permission granted via Try Again:', position);
+                                        if (pendingStatus) {
+                                            handleStatusClick(pendingStatus);
+                                        }
+                                    },
+                                    (error) => {
+                                        console.error('[Location] Permission error on Try Again:', error);
+                                        setTimeout(() => setLocationDialogOpen(true), 300);
+                                    },
+                                    {
+                                        enableHighAccuracy: true,
+                                        timeout: 10000,
+                                        maximumAge: 0,
+                                    }
+                                );
+                            }
                         }}
                     >
                         Try Again

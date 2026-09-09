@@ -102,41 +102,118 @@ function TimelineItemAddress({ log }: { log: LocationLog }) {
 
   useEffect(() => {
     let active = true;
-    
-    // Reverse geocode with Nominatim (zoom=16 targets road level detail)
-    fetch(`https://nominatim.openstreetmap.org/reverse?lat=${log.latitude}&lon=${log.longitude}&format=jsonv2&zoom=16`, {
-      headers: {
-        'Accept-Language': 'en'
-      }
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (!active) return;
-        if (data && data.address) {
-          const addr = data.address;
-          const road = addr.road || addr.pedestrian || addr.footway || addr.cycleway || '';
-          const area = addr.suburb || addr.neighbourhood || addr.city_district || '';
-          const city = addr.city || addr.town || addr.village || addr.hamlet || '';
-          
-          const parts = [road, area, city].filter(Boolean);
-          const formatted = parts.length > 0 
-            ? parts.slice(0, 2).join(', ') 
-            : (data.display_name ? data.display_name.split(',').slice(0, 2).join(',') : '');
-            
-          setAddress(formatted || 'Unknown Location');
-        } else if (data && data.display_name) {
-          setAddress(data.display_name.split(',').slice(0, 2).join(','));
-        } else {
-          setAddress('Unknown Location');
+
+    const fetchAddress = async () => {
+      // 1. Primary: ArcGIS World Geocoder (High-Precision Street Level Address)
+      try {
+        const res = await fetch(
+          `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?location=${log.longitude},${log.latitude}&f=json`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data && data.address) {
+            const a = data.address;
+            const streetOrPlace = a.Address || a.PlaceName || a.ShortLabel || '';
+            const area = a.District || a.Neighborhood || a.Sector || '';
+            const city = a.MetroArea || a.City || a.Subregion || '';
+
+            let formatted = '';
+            if (streetOrPlace && area && streetOrPlace !== area) {
+              formatted = `${streetOrPlace}, ${area}`;
+            } else if (streetOrPlace && city && streetOrPlace !== city) {
+              formatted = `${streetOrPlace}, ${city}`;
+            } else if (streetOrPlace) {
+              formatted = streetOrPlace;
+            } else if (a.Match_addr) {
+              formatted = a.Match_addr.split(',').slice(0, 2).join(', ');
+            }
+
+            if (formatted) {
+              setAddress(formatted);
+              setLoading(false);
+              return;
+            }
+          }
         }
-      })
-      .catch(() => {
-        if (!active) return;
-        setAddress('Address unavailable');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+      } catch (e) {
+        // Fallback to secondary APIs
+      }
+
+      // 2. Secondary: Nominatim (OpenStreetMap)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${log.latitude}&lon=${log.longitude}&format=jsonv2&zoom=18&addressdetails=1`,
+          {
+            headers: {
+              'Accept-Language': 'en',
+            },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data && (data.address || data.display_name)) {
+            const addr = data.address || {};
+            const street = addr.road || addr.street || addr.pedestrian || addr.footway || addr.path || addr.amenity || addr.building || '';
+            const area = addr.suburb || addr.neighbourhood || addr.city_district || addr.quarter || addr.residential || '';
+            const city = addr.city || addr.town || addr.village || addr.county || '';
+
+            let formatted = '';
+            if (street && area && street !== area) {
+              formatted = `${street}, ${area}`;
+            } else if (street && city && street !== city) {
+              formatted = `${street}, ${city}`;
+            } else if (street) {
+              formatted = street;
+            } else if (data.display_name) {
+              const parts = data.display_name.split(',').map((s: string) => s.trim());
+              formatted = parts.slice(0, 2).join(', ');
+            }
+
+            if (formatted) {
+              setAddress(formatted);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // Fallback to tertiary API
+      }
+
+      // 3. Tertiary: BigDataCloud Free Reverse Geocoding Client API
+      try {
+        const res = await fetch(
+          `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${log.latitude}&longitude=${log.longitude}&localityLanguage=en`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (active && data) {
+            const informatives = data.localityInfo?.informative || [];
+            const roadObj = informatives.find((i: any) => i.description === 'road' || i.order >= 8);
+            const roadName = roadObj?.name || '';
+            const locality = data.locality || '';
+            const city = data.city || data.principalSubdivision || '';
+
+            const parts = Array.from(new Set([roadName, locality, city])).filter(Boolean);
+            if (parts.length > 0) {
+              setAddress(parts.slice(0, 2).join(', '));
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        // Ignore
+      }
+
+      // 3. Fallback to clean coordinates display if providers unavailable
+      if (active) {
+        setAddress(`${log.latitude.toFixed(4)}°, ${log.longitude.toFixed(4)}°`);
+        setLoading(false);
+      }
+    };
+
+    fetchAddress();
 
     return () => {
       active = false;
@@ -346,10 +423,9 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
         maxZoom: 20
       }).addTo(mapRef.current);
     } else {
-      // Add Streets View Base Layer
-      tileLayerRef.current = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
+      // Add Clean Google Roadmap Base Layer (Clean streets without red POI icons)
+      tileLayerRef.current = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+        attribution: '&copy; Google Maps',
         maxZoom: 20
       }).addTo(mapRef.current);
     }
@@ -408,24 +484,35 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
 
     // Draw route path
     if (points.length > 1) {
+      // Add white outline casing line for maximum contrast over map tiles
+      L.polyline(points, {
+        color: '#FFFFFF',
+        weight: 8,
+        opacity: 0.9,
+      }).addTo(markersGroupRef.current);
+
+      // Main prominent route line
       polylineRef.current = L.polyline(points, {
-        color: '#2196F3',
-        weight: 3,
-        opacity: 0.7,
-        dashArray: '5, 5'
+        color: '#0062FF',
+        weight: 5,
+        opacity: 1,
+        dashArray: '8, 6',
       }).addTo(mapRef.current);
     }
 
-    // Set view to selected log, or fit bounds
+    // Set view to selected log, or fit bounds with close zoom
     if (selectedLog) {
-      mapRef.current.setView([selectedLog.latitude, selectedLog.longitude], 15);
+      mapRef.current.setView([selectedLog.latitude, selectedLog.longitude], 17);
     } else {
-      mapRef.current.fitBounds(markersGroupRef.current.getBounds(), { padding: [50, 50] });
+      mapRef.current.fitBounds(markersGroupRef.current.getBounds(), { padding: [50, 50], maxZoom: 17 });
     }
   }, [filteredLogs, selectedLog, leafletLoaded]);
 
   const handleSelectLog = (log: LocationLog) => {
     setSelectedLog(log);
+    if (mapRef.current) {
+      mapRef.current.setView([log.latitude, log.longitude], 17, { animate: true });
+    }
   };
 
   return (
@@ -547,7 +634,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
                   <IconButton
                     onClick={() => {
                       if (mapRef.current) {
-                        mapRef.current.setView([selectedLog.latitude, selectedLog.longitude], 16, { animate: true });
+                        mapRef.current.setView([selectedLog.latitude, selectedLog.longitude], 17, { animate: true });
                       }
                     }}
                     sx={{
@@ -600,7 +687,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
                     p: 0
                   }}
                 >
-                  {filteredLogs.map((log) => {
+                  {[...filteredLogs].reverse().map((log) => {
                     const isSelected = selectedLog && selectedLog.name === log.name;
                     return (
                       <TimelineItem
@@ -616,10 +703,20 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
                           <TimelineConnector />
                         </TimelineSeparator>
                         <TimelineContent sx={{ pb: 2 }}>
-                          <Typography variant="subtitle2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
-                            {log.source} ({STATUS_DISPLAY_MAP[log.status || ''] || log.status})
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Stack direction="row" alignItems="center" spacing={1}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: isSelected ? 800 : 600 }}>
+                              {log.source} ({STATUS_DISPLAY_MAP[log.status || ''] || log.status})
+                            </Typography>
+                            {!!log.accuracy && log.accuracy > 100 && (
+                              <Chip
+                                label={`±${Math.round(log.accuracy)}m`}
+                                size="small"
+                                color="warning"
+                                sx={{ height: 18, fontSize: '0.6875rem', fontWeight: 700, px: 0.5 }}
+                              />
+                            )}
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
                             {fDateTime(log.logged_at)}
                           </Typography>
                           <TimelineItemAddress log={log} />
