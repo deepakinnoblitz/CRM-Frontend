@@ -165,7 +165,8 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
 
         const statusColors = {
             present: '#36B37E',
-            absent: '#FF5630',
+            on_leave: '#f59e0b',
+            absent: '#F1373A',
             missing: '#FFAB00',
             half_day: '#FFAB00',
             holiday: '#8E33FF',
@@ -177,12 +178,13 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
         // Labels to show
         const labelItems = [
             { id: 'present', label: 'Present', value: breakdown.present, color: statusColors.present },
+            { id: 'on_leave', label: 'On Leave', value: breakdown.on_leave, color: statusColors.on_leave },
             { id: 'absent', label: 'Absent', value: breakdown.absent, color: statusColors.absent },
             { id: 'missing', label: 'Missing', value: breakdown.missing, color: statusColors.missing },
             { id: 'half_day', label: 'Half Day', value: breakdown.half_day, color: statusColors.half_day },
         ].filter(item => item.value > 0 && !(item.id === 'missing' && hideMissing));
 
-        const total = breakdown.present + breakdown.absent + breakdown.missing + breakdown.half_day || 1;
+        const total = breakdown.present + breakdown.on_leave + breakdown.absent + breakdown.missing + breakdown.half_day || 1;
         const cx = 250;
         const cy = 200;
         const radius = 105;
@@ -404,14 +406,15 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
 
     // Dynamic Label Calculations for JSX
     const dynamicLabels = useMemo(() => {
-        const total = breakdown.present + breakdown.absent + breakdown.missing + breakdown.half_day || 1;
+        const total = breakdown.present + breakdown.on_leave + breakdown.absent + breakdown.missing + breakdown.half_day || 1;
         const cy = 200;
         const radius = 105;
         const startAngle = -Math.PI / 2;
 
         const labelItems = [
             { id: 'present', label: 'Present', value: breakdown.present, color: '#36B37E' },
-            { id: 'absent', label: 'Absent', value: breakdown.absent, color: '#FF5630' },
+            { id: 'on_leave', label: 'On Leave', value: breakdown.on_leave, color: '#f59e0b' },
+            { id: 'absent', label: 'Absent', value: breakdown.absent, color: '#F1373A' },
             { id: 'half_day', label: 'Half Day', value: breakdown.half_day, color: '#FFAB00' },
             { id: 'missing', label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
         ].filter(item => item.value > 0 && !(item.id === 'missing' && hideMissing));
@@ -531,7 +534,8 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
                         >
                             {[
                                 { label: 'Present', value: breakdown.present, color: '#36B37E' },
-                                { label: 'Absent', value: breakdown.absent, color: '#FF5630' },
+                                { label: 'On Leave', value: breakdown.on_leave, color: '#f59e0b' },
+                                { label: 'Absent', value: breakdown.absent, color: '#F1373A' },
                                 { label: 'Half Day', value: breakdown.half_day, color: '#FFAB00' },
                                 { label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
                             ].filter(kpi => !(kpi.label === 'Missing' && hideMissing)).map((kpi) => (

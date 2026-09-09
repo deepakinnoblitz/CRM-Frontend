@@ -29,9 +29,9 @@ type Props = CardProps & {
 };
 
 const shouldShowRedDayNumber = (title?: string) => {
-    const status = title?.trim().toLowerCase();
+    const status = title?.trim().toLowerCase() || '';
 
-    return status === 'absent' || status === 'holiday';
+    return status === 'absent' || status === 'holiday' || status.includes('leave') || status.includes('permission');
 };
 
 const isHoliday = (title?: string) => {
@@ -45,10 +45,14 @@ const isHoliday = (title?: string) => {
         'leave',
         'half day',
         'unmarked',
+        'not marked',
         'available',
         'missing'
     ];
-    return !attendanceStatuses.includes(status);
+    if (attendanceStatuses.includes(status) || status.includes('leave') || status.includes('permission')) {
+        return false;
+    }
+    return true;
 };
 
 export function EmployeeCalendar({ title, subheader, events, onDateChange, ...other }: Props) {

@@ -220,7 +220,7 @@ export function EmployeeDashboardView() {
                                         const hasOutTime = !!record.check_out;
                                         const isIncomplete = (hasInTime && !hasOutTime) || (!hasInTime && hasOutTime);
 
-                                        if (isToday && currentStatus !== 'Offline') {
+                                        if (isToday && currentStatus !== 'Offline' && data.weekly_chart_source === 'Daily Log') {
                                             eventTitle = currentStatus === 'Available' ? 'Available' : currentStatus;
                                             if (currentStatus === 'Available') {
                                                 bgColor = '#22C55E'; // Green
@@ -232,18 +232,15 @@ export function EmployeeDashboardView() {
                                         } else if (isIncomplete && (isPast || isToday) && !data.hide_missing) {
                                             eventTitle = 'Missing';
                                             bgColor = '#FFC107'; // Amber/Yellow for Missing
+                                        } else if (record.status === 'On Leave' || record.status === 'Leave' || record.leave_type) {
+                                            eventTitle = record.leave_type || 'On Leave';
+                                            bgColor = '#FF5630'; // Red for all leave types
                                         } else if (record.status === 'Present') {
                                             eventTitle = 'Present';
                                             bgColor = '#22C55E'; // Green
-                                        } else if (record.status === 'Absent' && isPast) {
+                                        } else if (record.status === 'Absent') {
                                             eventTitle = 'Absent';
                                             bgColor = '#FF5630'; // Red
-                                        } else if (record.status === 'Absent' && isToday) {
-                                            eventTitle = 'Offline';
-                                            bgColor = '#9E9E9E'; // Gray for Offline today
-                                        } else if (record.status === 'On Leave' || record.status === 'Leave') {
-                                            eventTitle = 'On Leave';
-                                            bgColor = '#00B8D9'; // Blue/Cyan for Leave
                                         } else if (record.status === 'Half Day') {
                                             eventTitle = 'Half Day';
                                             bgColor = '#FFAB00'; // Orange
@@ -253,20 +250,23 @@ export function EmployeeDashboardView() {
                                             joiningDate &&
                                             record.date >= joiningDate
                                         ) {
-                                            // Working day after joining with no attendance entry
-                                            eventTitle = 'Unmarked';
-                                            bgColor = '#9E9E9E'; // Gray for Unmarked
+                                            // Working day after joining with no log entry
+                                            eventTitle = data.hide_missing ? 'Absent' : 'Unmarked';
+                                            bgColor = data.hide_missing ? '#FF5630' : '#9E9E9E';
                                         } else if (isPast) {
                                             // Default for past unmarked days (legacy logic)
                                             eventTitle = 'Absent';
                                             bgColor = '#FF5630';
                                         } else if (isToday) {
-                                            if (record.check_in) {
+                                            if (record.status === 'Present' || record.check_in) {
                                                 eventTitle = 'Present';
                                                 bgColor = '#22C55E';
+                                            } else if (record.status === 'Absent') {
+                                                eventTitle = 'Absent';
+                                                bgColor = '#FF5630';
                                             } else {
-                                                // Today unmarked/offline
-                                                eventTitle = 'Offline';
+                                                // Today not marked yet
+                                                eventTitle = 'Not Marked';
                                                 bgColor = '#9E9E9E';
                                             }
                                         } else if (isHoliday) {
@@ -280,6 +280,8 @@ export function EmployeeDashboardView() {
 
                                     return {
                                         title: eventTitle,
+                                        subTitle: record.leave_type || '',
+                                        extendedProps: { subTitle: record.leave_type || '' },
                                         start: record.date,
                                         color: bgColor,
                                         textColor: '#FFFFFF',
