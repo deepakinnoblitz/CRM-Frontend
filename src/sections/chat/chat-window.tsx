@@ -377,7 +377,7 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                 </Stack>
 
                 {(channel.type === 'Direct' || channel.type === 'Group') && (
-                    <Stack direction="row" spacing={1.5} sx={{ mr: 1 }}>
+                    <Stack direction="row" spacing={1} sx={{ mr: 0.5, flexShrink: 0 }}>
                         <Button
                             variant="contained"
                             onClick={(e) => {
@@ -387,9 +387,10 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             startIcon={<BsTelephoneForwardFill size={14} />}
                             sx={{
                                 borderRadius: 5,
-                                px: 2,
+                                px: { xs: 1.25, sm: 2 },
                                 py: 0.75,
-                                fontSize: '0.9rem',
+                                minWidth: { xs: 'auto', sm: 64 },
+                                fontSize: { xs: '0.75rem', sm: '0.9rem' },
                                 fontWeight: 'bold',
                                 textTransform: 'none',
                                 background: 'linear-gradient(135deg, #42d392 0%, #359d73 100%)',
@@ -400,6 +401,10 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                                     boxShadow: '0 6px 16px rgba(66, 211, 146, 0.35)',
                                     transform: 'translateY(-1px)',
                                 },
+                                '& .MuiButton-startIcon': {
+                                    mr: { xs: 0.5, sm: 1 },
+                                    ml: 0,
+                                }
                             }}
                         >
                             Audio
@@ -413,9 +418,10 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                             startIcon={<TbVideoFilled size={18} />}
                             sx={{
                                 borderRadius: 5,
-                                px: 2,
+                                px: { xs: 1.25, sm: 2 },
                                 py: 0.75,
-                                fontSize: '0.9rem',
+                                minWidth: { xs: 'auto', sm: 64 },
+                                fontSize: { xs: '0.75rem', sm: '0.9rem' },
                                 fontWeight: 'bold',
                                 textTransform: 'none',
                                 background: 'linear-gradient(135deg, #3d8aff 0%, #1c5fd1 100%)',
@@ -426,6 +432,10 @@ export default function ChatWindow({ user, channel, socket, isConnected, onRefre
                                     boxShadow: '0 6px 16px rgba(61, 138, 255, 0.35)',
                                     transform: 'translateY(-1px)',
                                 },
+                                '& .MuiButton-startIcon': {
+                                    mr: { xs: 0.5, sm: 1 },
+                                    ml: 0,
+                                }
                             }}
                         >
                             Video

@@ -43,25 +43,43 @@ export function JobOpeningDetailsDialog({ open, onClose, onRefer, job }: Props) 
     const renderHeader = (
 
         <Box sx={{ p: 3, bgcolor: alpha(theme.palette.primary.main, 0.04), borderRadius: 2, border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`, my: 3 }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Box>
-                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, fontSize: '22px' }}>
+            <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} justifyContent="space-between" gap={2}>
+                <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700, fontSize: { xs: '18px', sm: '22px' }, wordBreak: 'break-word' }}>
                         {job.job_title}
                     </Typography>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                        <Typography variant="subtitle2" color="text.secondary">
-                            {job.designation}
-                        </Typography>
-                        <Divider orientation="vertical" flexItem sx={{ height: 12, my: 'auto' }} />
-                        <Typography variant="subtitle2" color="text.secondary">
-                            {job.location}
-                        </Typography>
+                    <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        spacing={{ xs: 0.5, sm: 1 }}
+                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    >
+                        {job.designation && (
+                            <Typography variant="subtitle2" color="text.secondary">
+                                {job.designation}
+                            </Typography>
+                        )}
+                        {job.designation && job.location && (
+                            <Divider
+                                orientation="vertical"
+                                flexItem
+                                sx={{
+                                    height: 12,
+                                    my: 'auto',
+                                    display: { xs: 'none', sm: 'block' }
+                                }}
+                            />
+                        )}
+                        {job.location && (
+                            <Typography variant="subtitle2" color="text.secondary">
+                                {job.location}
+                            </Typography>
+                        )}
                     </Stack>
                 </Box>
                 <Label
                     variant="soft"
                     color={(job.status === 'Open' && 'success') || (job.status === 'Closed' && 'error') || 'default'}
-                    sx={{ height: 32, px: 2, borderRadius: 1 }}
+                    sx={{ height: 32, px: 2, borderRadius: 1, alignSelf: { xs: 'flex-start', sm: 'center' }, flexShrink: 0 }}
                 >
                     {job.status}
                 </Label>

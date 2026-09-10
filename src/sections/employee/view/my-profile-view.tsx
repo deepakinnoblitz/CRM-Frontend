@@ -173,7 +173,13 @@ export function MyProfileView() {
                     ) : employee ? (
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                             {/* Header Info */}
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <Box sx={{
+                                display: 'flex',
+                                flexDirection: { xs: 'column', sm: 'row' },
+                                alignItems: 'center',
+                                textAlign: { xs: 'center', sm: 'left' },
+                                gap: 3
+                            }}>
                                 <Box
                                     sx={{
                                         position: 'relative',
@@ -260,25 +266,36 @@ export function MyProfileView() {
                                         </Tooltip>
                                     )}
                                 </Box>
-                                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
-                                    {(() => {
-                                        const des = (employee.designation || '').trim();
-                                        const dep = (employee.department || '').trim();
-                                        const validDes = des && des !== '-';
-                                        const validDep = dep && dep !== '-';
+                                <Box sx={{ flexGrow: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        flexDirection: { xs: 'column', sm: 'row' },
+                                        alignItems: { xs: 'center', sm: 'center' },
+                                        justifyContent: 'space-between',
+                                        gap: 1.5,
+                                        flexWrap: 'wrap'
+                                    }}>
+                                        <Box sx={{ textAlign: { xs: 'center', sm: 'left' } }}>
+                                            <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>{employee.employee_name}</Typography>
+                                            {(() => {
+                                                const des = (employee.designation || '').trim();
+                                                const dep = (employee.department || '').trim();
+                                                const validDes = des && des !== '-';
+                                                const validDep = dep && dep !== '-';
 
-                                        if (!validDes && !validDep) return null;
+                                                if (!validDes && !validDep) return null;
 
-                                        const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
-                                        return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
-                                    })()}
-                                </Box>
-                                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
-                                    {renderStatus(employee.status)}
-                                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.disabled', fontWeight: 700 }}>
-                                        ID: {employee.name}
-                                    </Typography>
+                                                const text = validDes && validDep ? `${des} at ${dep}` : (validDes ? des : dep);
+                                                return <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>{text}</Typography>;
+                                            })()}
+                                        </Box>
+                                        <Box sx={{ textAlign: { xs: 'center', sm: 'right' }, flexShrink: 0 }}>
+                                            {renderStatus(employee.status)}
+                                            <Typography variant="caption" sx={{ display: 'block', mt: 0.5, color: 'text.disabled', fontWeight: 700, marginTop: 2 }}>
+                                                ID: {employee.name}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
                                 </Box>
                             </Box>
 
@@ -482,7 +499,7 @@ export function MyProfileView() {
                                     bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
                                     border: (theme) => `1px dashed ${alpha(theme.palette.primary.main, 0.3)}`
                                 }}>
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} gap={2}>
                                         <Box>
                                             <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>Net Salary (Monthly)</Typography>
                                             <Typography variant="h4" sx={{ color: 'primary.main', fontWeight: 800, display: 'flex', alignItems: 'center' }}>
@@ -490,15 +507,15 @@ export function MyProfileView() {
                                                 {fNumber(employee.net_salary || 0, { locale: hrSettings.default_locale })}
                                             </Typography>
                                         </Box>
-                                        <Stack direction="row" spacing={4}>
-                                            <Box sx={{ textAlign: 'right' }}>
+                                        <Stack direction="row" spacing={{ xs: 2, sm: 4 }} sx={{ width: { xs: '100%', sm: 'auto' }, justifyContent: { xs: 'space-between', sm: 'flex-end' }, flexWrap: 'wrap' }}>
+                                            <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Earnings</Typography>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'success.main', display: 'flex', alignItems: 'center' }}>
                                                     + <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'success.main' }}>{hrSettings.currency_symbol}</Box>
                                                     {fNumber(employee.total_earnings || 0, { locale: hrSettings.default_locale })}
                                                 </Typography>
                                             </Box>
-                                            <Box sx={{ textAlign: 'right' }}>
+                                            <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
                                                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Total Deductions</Typography>
                                                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'error.main', display: 'flex', alignItems: 'center' }}>
                                                     - <Box component="span" sx={{ fontFamily: "Arial, 'sans-serif'", mx: 0.5, color: 'error.main' }}>{hrSettings.currency_symbol}</Box>
