@@ -20,6 +20,7 @@ import { Loader } from 'src/components/loader';
 
 import { useAuth } from 'src/auth/auth-context';
 
+import { UserStatusBar } from '../user-status-bar';
 import { HRAnnouncements } from '../hr-announcements';
 import { EmployeeCalendar } from '../employee-calendar';
 import { HRDashboardTable } from '../hr-dashboard-table';
@@ -115,9 +116,18 @@ export function EmployeeDashboardView() {
 
     return (
         <DashboardContent maxWidth="xl">
+            <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                alignItems="center"
+                spacing={{ xs: 1.5, md: 2 }}
+                sx={{ display: { xs: 'flex', md: 'none' }, mb: 2 }}
+            >
+                <UserStatusBar />
+            </Stack>
             <Typography variant="h4" sx={{ mb: { xs: 3, md: 2 } }}>
                 Hi, {data.employee_name || user?.full_name || 'Employee'}, Welcome back 👋
             </Typography>
+
 
             <DashboardEomCard />
 
