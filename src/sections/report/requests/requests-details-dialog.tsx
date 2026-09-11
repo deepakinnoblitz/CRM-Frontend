@@ -88,7 +88,11 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
         return () => socket.off('request_updated', handleUpdate);
     }, [socket, open, internalRequest?.name]);
 
-    const isEmployee = user?.email === internalRequest?.owner;
+    const userRoles = user?.roles || [];
+    const isHR = userRoles.some((role: string) =>
+        ['HR Manager', 'HR', 'System Manager', 'Administrator'].includes(role)
+    );
+    const isEmployee = user?.email === internalRequest?.owner && !isHR;
 
     const handleUpdateStatus = async (status: string, message?: string) => {
         if (!internalRequest?.name) return;
@@ -321,41 +325,49 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                                             boxShadow: (theme) => theme.customShadows?.z4
                                         }}
                                     >
-                                        <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
-                                            <Avatar
-                                                src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
-                                                sx={{
-                                                    width: 72,
-                                                    height: 72,
-                                                    borderRadius: '50%',
-                                                    border: '3px solid #FFFFFF',
-                                                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
-                                                    bgcolor: (theme: any) => {
-                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
-                                                        if (img) return 'transparent';
-                                                        const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                                        let hash = 0;
-                                                        const name = internalRequest?.employee_name || '';
-                                                        for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                                        return colors[Math.abs(hash) % colors.length];
-                                                    },
-                                                    color: (theme: any) => {
-                                                        const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
-                                                        return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
-                                                    },
-                                                    fontSize: '1.75rem',
-                                                    fontWeight: 900,
-                                                }}
-                                            >
-                                                {internalRequest?.employee_name?.charAt(0) || 'U'}
-                                            </Avatar>
-                                            <Box sx={{ flexGrow: 1 }}>
-                                                <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
-                                                    {internalRequest?.employee_name}
-                                                </Typography>
-                                                <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                                                    Employee ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
-                                                </Typography>
+                                        <Stack
+                                            direction={{ xs: 'column', sm: 'row' }}
+                                            alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                            spacing={2}
+                                            sx={{ position: 'relative', zIndex: 1 }}
+                                        >
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}>
+                                                <Avatar
+                                                    src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image}
+                                                    sx={{
+                                                        width: 76,
+                                                        height: 76,
+                                                        borderRadius: '50%',
+                                                        border: '3px solid #FFFFFF',
+                                                        boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+                                                        bgcolor: (theme: any) => {
+                                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                            if (img) return 'transparent';
+                                                            const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                            let hash = 0;
+                                                            const name = internalRequest?.employee_name || '';
+                                                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                            return colors[Math.abs(hash) % colors.length];
+                                                        },
+                                                        color: (theme: any) => {
+                                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || internalRequest?.profile_picture || internalRequest?.image || internalRequest?.employee_image;
+                                                            return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                                        },
+                                                        fontSize: '1.75rem',
+                                                        fontWeight: 900,
+                                                        flexShrink: 0
+                                                    }}
+                                                >
+                                                    {internalRequest?.employee_name?.charAt(0) || 'U'}
+                                                </Avatar>
+                                                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                                    <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary', wordBreak: 'break-word' }}>
+                                                        {internalRequest?.employee_name}
+                                                    </Typography>
+                                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                                        Employee ID: {internalRequest?.employee || internalRequest?.employee_id || '-'}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
                                             <Label
                                                 color={
@@ -372,7 +384,9 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                                                     px: 1.5,
                                                     py: 2,
                                                     borderRadius: 1,
-                                                    fontSize: '0.75rem'
+                                                    fontSize: '0.75rem',
+                                                    alignSelf: { xs: 'flex-start', sm: 'center' },
+                                                    flexShrink: 0
                                                 }}
                                             >
                                                 {internalRequest.workflow_state || 'Pending'}
@@ -470,7 +484,7 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                     <Divider />
                     <DialogActions sx={{ p: 2, justifyContent: 'flex-end', gap: 1.5 }}>
                         {/* HR Actions */}
-                        {!isEmployee && canEdit && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
+                        {isHR && canEdit && (internalRequest.workflow_state === 'Pending' || internalRequest.workflow_state === 'Clarification Requested' || !internalRequest.workflow_state) && (
                             <>
                                 <LoadingButton
                                     color="success"

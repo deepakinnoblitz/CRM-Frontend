@@ -297,8 +297,8 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
                 currentAngle += angle;
             });
 
-            // Draw Leader Lines after donut reaches certain progress
-            if (progress > 0.8) {
+            // Draw Leader Lines after donut reaches certain progress (Desktop only)
+            if (progress > 0.8 && window.innerWidth >= 1200) {
                 finalLabels.forEach(label => {
                     const pointX = cx + Math.cos(label.midAngle) * (radius + 10);
                     const pointY = cy + Math.sin(label.midAngle) * (radius + 10);
@@ -496,29 +496,20 @@ export function CalendarAttendanceChart({ title, subheader, calendarData, joinin
                     flex: 1,
                     position: 'relative',
                     overflow: 'visible',
-                    minHeight: 400
+                    minHeight: { xs: 260, lg: 400 },
+                    width: '100%',
                 }}
             >
-                <Box sx={{ position: 'relative', width: 500, height: 400, display: 'flex', justifyContent: 'center' }}>
-                    {/* Corner Labels (Desktop) */}
+                <Box sx={{ position: 'relative', width: '100%', maxWidth: 500, height: { xs: 260, lg: 400 }, display: 'flex', justifyContent: 'center' }}>
+                    {/* Corner Labels (Desktop Only) */}
                     <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
                         {dynamicLabels.leftLabels.map(label => renderLabel(label, label.actualY, 'left'))}
                     </Box>
 
-                    <canvas ref={canvasRef} />
+                    <canvas ref={canvasRef} style={{ maxWidth: '100%', maxHeight: '100%' }} />
 
                     <Box sx={{ display: { xs: 'none', lg: 'block' } }}>
                         {dynamicLabels.rightLabels.map(label => renderLabel(label, label.actualY, 'right'))}
-                    </Box>
-
-                    {/* Mobile Legend */}
-                    <Box sx={{ display: { xs: 'flex', lg: 'none' }, flexWrap: 'wrap', gap: 1, justifyContent: 'center', mt: 2, position: 'absolute', bottom: -50 }}>
-                        {[
-                            { label: 'Present', value: breakdown.present, color: '#36B37E' },
-                            { label: 'Absent', value: breakdown.absent, color: '#FF5630' },
-                            { label: 'Half Day', value: breakdown.half_day, color: '#FFAB00' },
-                            { label: 'Missing', value: breakdown.missing, color: '#FFAB00' },
-                        ].filter(i => i.value > 0).map(i => renderLabel(i, 0, 'left'))}
                     </Box>
                 </Box>
 
