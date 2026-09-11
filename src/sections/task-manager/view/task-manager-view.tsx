@@ -298,7 +298,7 @@ export default function TaskManagerView() {
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {canSeeAll || canCreateTask && (
+                        {(canSeeAll || canCreateTask) && (
                             <Button
                                 variant="contained"
                                 startIcon={<Iconify icon="mingcute:add-line" />}
