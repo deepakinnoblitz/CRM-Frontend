@@ -239,12 +239,18 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                 onClose={onClose}
                 fullWidth
                 maxWidth="lg"
-                PaperProps={{ sx: { borderRadius: 2 } }}
+                PaperProps={{
+                    sx: {
+                        borderRadius: 2,
+                        m: { xs: 1.5, sm: 2 },
+                        maxHeight: { xs: 'calc(100% - 32px)', sm: 'calc(100% - 64px)' }
+                    }
+                }}
             >
                 <DialogTitle
                     sx={{
                         m: 0,
-                        p: 2,
+                        p: { xs: 2, sm: 2.5 },
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
@@ -265,7 +271,7 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                     </IconButton>
                 </DialogTitle>
 
-                <DialogContent dividers sx={{ p: 4 }}>
+                <DialogContent dividers sx={{ p: { xs: 2, sm: 4 } }}>
                     <LocalizationProvider dateAdapter={AdapterDayjs}>
                         <Stack spacing={3.5}>
                             <TextField
@@ -645,17 +651,17 @@ export function TaskNewEditForm({ open, onClose, currentTask, onSuccess }: Props
                         <Box sx={{ mt: 3.5 }}>
                             <Typography variant="overline" sx={{ color: 'text.disabled', mb: 2, display: 'block' }}>Additional Settings</Typography>
                             <Stack spacing={3}>
-                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={4} alignItems="center">
+                                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 4 }} alignItems={{ xs: 'flex-start', sm: 'center' }}>
                                     <FormControlLabel
                                         control={<CustomSwitch checked={Boolean(taskData.attachment_required)} onChange={(e) => setTaskData({ ...taskData, attachment_required: e.target.checked ? 1 : 0 })} />}
                                         label="Attachment Required To Close"
-                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                        sx={{ margin: 0, '& .MuiFormControlLabel-label': { ml: 1.5, typography: 'body2', fontWeight: 600 } }}
                                     />
 
                                     <FormControlLabel
                                         control={<CustomSwitch checked={Boolean(taskData.recurring_task)} onChange={(e) => setTaskData({ ...taskData, recurring_task: e.target.checked ? 1 : 0 })} />}
                                         label="Recurring Task"
-                                        sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
+                                        sx={{ margin: 0, '& .MuiFormControlLabel-label': { ml: 1.5, typography: 'body2', fontWeight: 600 } }}
                                     />
 
                                     {Boolean(taskData.recurring_task) && (

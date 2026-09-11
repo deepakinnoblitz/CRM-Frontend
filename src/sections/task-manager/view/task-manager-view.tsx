@@ -240,12 +240,18 @@ export default function TaskManagerView() {
     return (
         <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
             <Container maxWidth="xl" sx={{ height: 1, display: 'flex', flexDirection: 'column', px: { xs: 2, md: 1 } }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+                <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    justifyContent="space-between"
+                    spacing={{ xs: 2, sm: 0 }}
+                    mb={3}
+                >
                     <Box>
                         <Typography variant="h4" gutterBottom>{pageTitle}</Typography>
                     </Box>
 
-                    <Stack direction="row" spacing={1.5} alignItems="center">
+                    <Stack direction="row" spacing={{ xs: 1, sm: 1.5 }} alignItems="center" flexWrap="wrap" gap={1}>
                         <ToggleButtonGroup
                             size="small"
                             value={view}
@@ -258,14 +264,15 @@ export default function TaskManagerView() {
                                 bgcolor: alpha(theme.palette.grey[500], 0.06),
                                 border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
                                 '& .MuiToggleButton-root': {
-                                    px: 2.5,
-                                    height: 30,
+                                    px: { xs: 1.25, sm: 2.5 },
+                                    height: { xs: 36, sm: 30 },
                                     border: '0 !important',
                                     borderRadius: '20px !important',
                                     typography: 'subtitle2',
                                     color: theme.palette.text.secondary,
                                     textTransform: 'capitalize',
                                     transition: 'all 0.2s ease-in-out',
+                                    whiteSpace: 'nowrap',
                                     '&:hover': {
                                         bgcolor: alpha(theme.palette.grey[500], 0.08),
                                     },
@@ -282,16 +289,16 @@ export default function TaskManagerView() {
                             }}
                         >
                             <ToggleButton value="list">
-                                <Iconify icon="solar:list-bold-duotone" width={18} sx={{ mr: 1 }} />
+                                <Iconify icon="solar:list-bold-duotone" width={18} sx={{ mr: { xs: 0.5, sm: 1 } }} />
                                 List View
                             </ToggleButton>
                             <ToggleButton value="kanban">
-                                <Iconify icon="solar:widget-5-bold-duotone" width={18} sx={{ mr: 1 }} />
+                                <Iconify icon="solar:widget-5-bold-duotone" width={18} sx={{ mr: { xs: 0.5, sm: 1 } }} />
                                 Kanban View
                             </ToggleButton>
                         </ToggleButtonGroup>
 
-                        {canSeeAll || canCreateTask && (
+                        {(canSeeAll || canCreateTask) && (
                             <Button
                                 variant="contained"
                                 startIcon={<Iconify icon="mingcute:add-line" />}

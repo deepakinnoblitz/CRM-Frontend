@@ -518,8 +518,14 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
   return (
     <Box sx={{ mt: 1 }}>
       {/* Top Filter Bar */}
-      <Stack direction="row" spacing={2} justifyContent="flex-start" sx={{ mb: 2.5 }}>
-        <FormControl size="medium" sx={{ minWidth: 220 }}>
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'stretch', md: 'center' }}
+        justifyContent="flex-start"
+        sx={{ mb: 2.5, width: '100%', flexWrap: 'wrap' }}
+      >
+        <FormControl size="medium" sx={{ width: { xs: '100%', sm: 220 } }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter}
@@ -536,7 +542,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
           </Select>
         </FormControl>
 
-        <FormControl size="medium" sx={{ minWidth: 200 }}>
+        <FormControl size="medium" sx={{ width: { xs: '100%', sm: 200 } }}>
           <InputLabel>Source</InputLabel>
           <Select
             value={sourceFilter}
@@ -559,7 +565,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
           slotProps={{ 
             textField: { 
               size: 'medium',
-              sx: { minWidth: 200 }
+              sx: { width: { xs: '100%', sm: 180 } }
             } 
           }}
         />
@@ -572,7 +578,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
           slotProps={{ 
             textField: { 
               size: 'medium',
-              sx: { minWidth: 200 }
+              sx: { width: { xs: '100%', sm: 180 } }
             } 
           }}
         />
@@ -584,7 +590,7 @@ export default function EmployeeLocationTab({ employeeId, sessionId }: { employe
             onClick={handleClearAllFilters}
             startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
             sx={{
-              alignSelf: 'center',
+              alignSelf: { xs: 'stretch', md: 'center' },
               fontWeight: 700,
               px: 2.5,
               borderRadius: 1.5,

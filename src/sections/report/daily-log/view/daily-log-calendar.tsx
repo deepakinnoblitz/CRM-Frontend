@@ -46,7 +46,7 @@ function getLeaveStyle(leaveType: string) {
 function applyHolidayStylesToCell(cellEl: HTMLElement, holidayRow: any) {
     cellEl.style.backgroundColor = 'rgba(244, 63, 94, 0.05)';
     cellEl.title = holidayRow.description || 'Holiday';
-    
+
     const dayNumberEl = cellEl.querySelector('.fc-daygrid-day-number') as HTMLElement;
     if (dayNumberEl) {
         dayNumberEl.style.color = '#f43f5e';
@@ -310,7 +310,7 @@ export function DailyLogCalendar({
                     const from = dayjs(l.from_date);
                     const to = dayjs(l.to_date);
                     return (cur.isSame(from, 'day') || cur.isAfter(from, 'day')) &&
-                           (cur.isSame(to, 'day') || cur.isBefore(to, 'day'));
+                        (cur.isSame(to, 'day') || cur.isBefore(to, 'day'));
                 });
 
                 if (!hasSession && !isHoliday && !isLeave) {
@@ -490,7 +490,7 @@ export function DailyLogCalendar({
                     '& .fc-col-header': {
                         border: 'none !important',
                     },
-                     '& .fc-col-header-cell': {
+                    '& .fc-col-header-cell': {
                         border: 'none !important',
                         borderBottom: `1px solid ${alpha(theme.palette.grey[500], 0.12)} !important`,
                         bgcolor: `${theme.palette.background.neutral} !important`,
@@ -594,7 +594,7 @@ export function DailyLogCalendar({
                                 year: parseInt(year, 10),
                                 month_year: month,
                             });
-                            
+
                             if (lists && lists.length > 0) {
                                 const fullList = await getHolidayList(lists[0].name);
                                 if (fullList && fullList.holidays) {

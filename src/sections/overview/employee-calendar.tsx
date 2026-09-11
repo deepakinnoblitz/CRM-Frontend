@@ -237,7 +237,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         }
                     },
                     '& .fc .fc-daygrid-day-frame': {
-                        minHeight: 80,
+                        minHeight: { xs: 55, sm: 80 },
                         padding: '4px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -277,9 +277,15 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                 }}
             >
                 {/* Custom Header Controls matching Report Calendar Style */}
-                <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
-                    {/* Left side: Today Button */}
-                    <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    alignItems="center"
+                    justifyContent="space-between"
+                    spacing={{ xs: 1.5, sm: 2 }}
+                    sx={{ mb: 2.5, flexWrap: 'wrap', gap: 1.5 }}
+                >
+                    {/* Left side: Today Button & Navigation */}
+                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ width: { xs: '100%', sm: 'auto' } }}>
                         <Button
                             variant="outlined"
                             onClick={handleToday}
@@ -300,10 +306,53 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         >
                             Today
                         </Button>
+
+                        {/* Right side switcher (on mobile top row) */}
+                        <Box
+                            sx={{
+                                display: { xs: 'inline-flex', sm: 'none' },
+                                bgcolor: alpha(theme.palette.grey[500], 0.06),
+                                p: 0.5,
+                                borderRadius: '24px',
+                                border: `1px solid ${alpha(theme.palette.grey[500], 0.08)}`,
+                            }}
+                        >
+                            {[
+                                { value: 'dayGridMonth', label: 'Month' },
+                                { value: 'listMonth', label: 'List' }
+                            ].map((tab) => {
+                                const isActive = activeView === tab.value;
+                                return (
+                                    <Button
+                                        key={tab.value}
+                                        onClick={() => handleChangeView(tab.value)}
+                                        sx={{
+                                            borderRadius: '20px',
+                                            px: 1.5,
+                                            height: 28,
+                                            fontSize: '0.75rem',
+                                            fontWeight: isActive ? 700 : 600,
+                                            color: isActive ? '#fff' : theme.palette.text.secondary,
+                                            bgcolor: isActive ? '#08a3cd' : 'transparent',
+                                            boxShadow: isActive ? `0 2px 8px ${alpha('#08a3cd', 0.3)}` : 'none',
+                                            textTransform: 'capitalize',
+                                            transition: theme.transitions.create(['background-color', 'color', 'box-shadow'], {
+                                                duration: theme.transitions.duration.shorter,
+                                            }),
+                                            '&:hover': {
+                                                bgcolor: isActive ? '#08a3cd' : alpha(theme.palette.grey[500], 0.08),
+                                            }
+                                        }}
+                                    >
+                                        {tab.label}
+                                    </Button>
+                                );
+                            })}
+                        </Box>
                     </Stack>
 
                     {/* Center: Prev Arrow + Title + Next Arrow */}
-                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                         <IconButton
                             onClick={handlePrev}
                             size="small"
@@ -314,6 +363,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                                 borderRadius: '8px',
                                 bgcolor: 'background.paper',
                                 color: 'text.secondary',
+                                flexShrink: 0,
                                 transition: theme.transitions.create(['background-color', 'color', 'border-color', 'box-shadow'], {
                                     duration: theme.transitions.duration.shorter,
                                 }),
@@ -327,7 +377,17 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                             <Iconify icon="solar:alt-arrow-left-bold" width={16} />
                         </IconButton>
 
-                        <Typography variant="h5" sx={{ fontWeight: 800, color: 'text.primary', letterSpacing: -0.5, minWidth: 180, textAlign: 'center' }}>
+                        <Typography
+                            variant="h6"
+                            sx={{
+                                fontWeight: 800,
+                                color: 'text.primary',
+                                letterSpacing: -0.5,
+                                fontSize: { xs: '1.05rem', sm: '1.25rem' },
+                                textAlign: 'center',
+                                px: 1,
+                            }}
+                        >
                             {calendarTitle}
                         </Typography>
 
@@ -341,6 +401,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                                 borderRadius: '8px',
                                 bgcolor: 'background.paper',
                                 color: 'text.secondary',
+                                flexShrink: 0,
                                 transition: theme.transitions.create(['background-color', 'color', 'border-color', 'box-shadow'], {
                                     duration: theme.transitions.duration.shorter,
                                 }),
@@ -355,10 +416,10 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         </IconButton>
                     </Stack>
 
-                    {/* Right side: Month / List Switcher */}
+                    {/* Right side: Month / List Switcher (Desktop) */}
                     <Box
                         sx={{
-                            display: 'inline-flex',
+                            display: { xs: 'none', sm: 'inline-flex' },
                             bgcolor: alpha(theme.palette.grey[500], 0.06),
                             p: 0.5,
                             borderRadius: '24px',
@@ -405,7 +466,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                     initialView="dayGridMonth"
                     events={events}
                     headerToolbar={false}
-                    height={600}
+                    height="auto"
                     stickyHeaderDates
                     displayEventTime={false}
                     datesSet={(arg) => {

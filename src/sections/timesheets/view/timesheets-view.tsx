@@ -1004,7 +1004,7 @@ export function TimesheetsView() {
                     </Box>
                 </DialogContent>
 
-                <DialogActions sx={{p:1.5}}>
+                <DialogActions sx={{ p: 1.5 }}>
                     <Button
                         onClick={handleCreate}
                         variant="contained"
