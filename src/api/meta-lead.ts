@@ -125,3 +125,20 @@ export async function getMetaLeadItem(name: string): Promise<MetaLead> {
     const json = await res.json();
     return json.message as MetaLead;
 }
+
+// ----------------------------------------------------------------------
+// Retry processing Meta Lead
+// ----------------------------------------------------------------------
+
+export async function retryMetaLead(name: string) {
+    const res = await frappeRequest('/api/method/company.company.crm_meta_api.retry_meta_lead', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ meta_lead_name: name }),
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.message || 'Failed to retry Meta Lead');
+    return json.message;
+}

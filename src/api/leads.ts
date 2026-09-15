@@ -565,3 +565,12 @@ export async function saveLead(doc: any) {
     if (!res.ok) throw new Error(handleFrappeError(json, "Failed to save lead"));
     return json.message;
 }
+
+export async function getMetaLeadInfo(leadId: string) {
+    const res = await frappeRequest(
+        `/api/method/company.company.frontend_api.get_meta_lead_info?lead_id=${encodeURIComponent(leadId)}`
+    );
+    if (!res.ok) return null;
+    const json = await res.json();
+    return json.message || null;
+}

@@ -33,7 +33,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
                 variant="body2"
                 sx={{
                     fontWeight: 600,
-                    fontSize: mono ? 13 : 'inherit',
+                    fontSize: 'inherit',
                     color: value ? 'text.primary' : 'text.disabled',
                     fontStyle: !value ? 'italic' : 'normal',
                 }}
@@ -198,7 +198,6 @@ export function MetaAppsDetailsView() {
                         <DetailRow label="App Secret" value={app.app_secret ? '••••••••••••' : undefined} />
                         <DetailRow label="Verify Token" value={app.verify_token ? '••••••••••••' : undefined} />
                         <DetailRow label="Webhook Secret" value={app.webhook_secret ? '••••••••••••' : undefined} />
-                        <DetailRow label="OAuth Redirect URI" value={app.oauth_redirect_uri} mono />
                     </Box>
                 </Card>
 
@@ -225,7 +224,7 @@ export function MetaAppsDetailsView() {
                             <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                                 <Typography
                                     variant="body2"
-                                    sx={{ fontSize: 14, wordBreak: 'break-all' }}
+                                    sx={{ fontSize: 16, wordBreak: 'break-all' }}
                                 >
                                     {app.oauth_redirect_uri}
                                 </Typography>
@@ -268,7 +267,7 @@ export function MetaAppsDetailsView() {
                             <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
                                 <Typography
                                     variant="body2"
-                                    sx={{ fontSize: 14, wordBreak: 'break-all' }}
+                                    sx={{ fontSize: 16, wordBreak: 'break-all' }}
                                 >
                                     {app.webhook_url}
                                 </Typography>

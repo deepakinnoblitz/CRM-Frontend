@@ -76,7 +76,9 @@ export async function updatePresenceSettings(settings: {
   track_on_logout?: boolean,
   track_on_status_change?: boolean,
   tracking_interval_minutes?: number,
-  minimum_gps_accuracy?: number
+  minimum_gps_accuracy?: number,
+  location_tracking_target?: string,
+  tracked_employees?: string[]
 }) {
   const res = await frappeRequest('/api/method/company.company.doctype.employee_presence_settings.employee_presence_settings.set_presence_settings', {
     method: 'POST',

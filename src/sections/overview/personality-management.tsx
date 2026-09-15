@@ -373,9 +373,12 @@ export function PersonalityManagement() {
 
                     {/* Headings */}
                     <Box
-                        display="grid"
-                        gridTemplateColumns="180px 1fr 90px 70px"
-                        mb={1}
+                        sx={{
+                            display: "grid",
+                            gridTemplateColumns: { xs: "120px 1fr 60px 50px", sm: "180px 1fr 90px 70px" },
+                            mb: 1,
+                            gap: { xs: 1, sm: 2 },
+                        }}
                     >
                         <Box />
                         <Box />
@@ -405,29 +408,40 @@ export function PersonalityManagement() {
                             return (
                                 <Box
                                     key={item.trait}
-                                    display="grid"
-                                    gridTemplateColumns="250px minmax(320px,1fr) 90px 70px"
-                                    alignItems="center"
-                                    gap={2}
+                                    sx={{
+                                        display: "grid",
+                                        gridTemplateColumns: { xs: "120px 1fr 60px 50px", sm: "180px 1fr 90px 70px" },
+                                        alignItems: "center",
+                                        gap: { xs: 1, sm: 2 },
+                                    }}
                                 >
                                     {/* Left */}
-                                    <Stack direction="row" spacing={1.5} alignItems="center">
+                                    <Stack direction="row" spacing={1} alignItems="center" sx={{ overflow: 'hidden' }}>
                                         <Box
                                             sx={{
-                                                width: 42,
-                                                height: 42,
+                                                width: { xs: 32, sm: 42 },
+                                                height: { xs: 32, sm: 42 },
                                                 borderRadius: "50%",
                                                 bgcolor: config.bg,
                                                 display: "flex",
                                                 alignItems: "center",
                                                 justifyContent: "center",
                                                 color: config.color,
+                                                flexShrink: 0,
                                             }}
                                         >
                                             {config.icon}
                                         </Box>
 
-                                        <Typography fontWeight={600} fontSize={14}>
+                                        <Typography
+                                            fontWeight={600}
+                                            fontSize={{ xs: 12, sm: 14 }}
+                                            sx={{
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}
+                                        >
                                             {item.trait}
                                         </Typography>
                                     </Stack>
@@ -437,7 +451,7 @@ export function PersonalityManagement() {
                                         variant="determinate"
                                         value={item.score}
                                         sx={{
-                                            height: 8,
+                                            height: { xs: 6, sm: 8 },
                                             borderRadius: 5,
                                             backgroundColor: "#ECEFF3",
                                             "& .MuiLinearProgress-bar": {
@@ -451,12 +465,12 @@ export function PersonalityManagement() {
                                     <Typography
                                         textAlign="center"
                                         fontWeight={700}
-                                        fontSize={16}
+                                        fontSize={{ xs: 13, sm: 16 }}
                                     >
                                         {item.score}
                                         <Typography
                                             component="span"
-                                            fontSize={13}
+                                            fontSize={{ xs: 10, sm: 13 }}
                                             color="text.secondary"
                                         >
                                             {" "}
@@ -469,7 +483,7 @@ export function PersonalityManagement() {
                                         textAlign="right"
                                         fontWeight={700}
                                         color={item.impact > 0 ? "success.main" : item.impact < 0 ? "error.main" : "text.secondary"}
-                                        fontSize={18}
+                                        fontSize={{ xs: 14, sm: 18 }}
                                     >
                                         {item.impact > 0 ? "+" : ""}
                                         {item.impact}
@@ -751,10 +765,11 @@ export function PersonalityManagement() {
                                             key={item.name}
                                             sx={{
                                                 display: "grid",
-                                                gridTemplateColumns: "56px 110px 1fr 70px",
+                                                gridTemplateColumns: { xs: "40px 85px 1fr 50px", sm: "56px 110px 1fr 70px" },
                                                 alignItems: "center",
                                                 py: 2,
                                                 px: 0.5,
+                                                gap: { xs: 1, sm: 1.5 },
                                                 borderBottom:
                                                     index !== arr.length - 1
                                                         ? "1px solid rgba(145,158,171,0.12)"
@@ -764,14 +779,15 @@ export function PersonalityManagement() {
                                             {/* Icon */}
                                             <Box
                                                 sx={{
-                                                    width: 36,
-                                                    height: 36,
+                                                    width: { xs: 28, sm: 36 },
+                                                    height: { xs: 28, sm: 36 },
                                                     borderRadius: "50%",
                                                     bgcolor: config.bg,
                                                     display: "flex",
                                                     alignItems: "center",
                                                     justifyContent: "center",
                                                     color: config.color,
+                                                    flexShrink: 0,
                                                 }}
                                             >
                                                 {config.icon}
@@ -783,7 +799,7 @@ export function PersonalityManagement() {
                                                     variant="subtitle2"
                                                     sx={{
                                                         fontWeight: 700,
-                                                        fontSize: 14,
+                                                        fontSize: { xs: 11, sm: 14 },
                                                         lineHeight: 1.2,
                                                     }}
                                                 >
@@ -794,7 +810,7 @@ export function PersonalityManagement() {
                                                     variant="caption"
                                                     color="text.secondary"
                                                     sx={{
-                                                        fontSize: 12,
+                                                        fontSize: { xs: 10, sm: 12 },
                                                     }}
                                                 >
                                                     {item.creation ? new Date(item.creation).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }) : ''}
@@ -802,12 +818,15 @@ export function PersonalityManagement() {
                                             </Box>
 
                                             {/* Criteria */}
-                                            <Box>
+                                            <Box sx={{ overflow: 'hidden' }}>
                                                 <Typography
                                                     sx={{
                                                         fontWeight: 700,
-                                                        fontSize: 15,
+                                                        fontSize: { xs: 12, sm: 15 },
                                                         mb: 0.3,
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
                                                     }}
                                                 >
                                                     {item.trait}
@@ -817,7 +836,10 @@ export function PersonalityManagement() {
                                                     variant="body2"
                                                     color="text.secondary"
                                                     sx={{
-                                                        fontSize: 13,
+                                                        fontSize: { xs: 11, sm: 13 },
+                                                        whiteSpace: 'nowrap',
+                                                        overflow: 'hidden',
+                                                        textOverflow: 'ellipsis',
                                                     }}
                                                 >
                                                     {item.remarks || "No comments provided"}
@@ -829,7 +851,7 @@ export function PersonalityManagement() {
                                                 align="right"
                                                 sx={{
                                                     fontWeight: 800,
-                                                    fontSize: 18,
+                                                    fontSize: { xs: 14, sm: 18 },
                                                     color:
                                                         item.score_change > 0
                                                             ? "success.main"

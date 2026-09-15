@@ -22,7 +22,7 @@ export async function generateSalesTargetEntryPdf({
     'Sales Person',
     'Month',
     'In Date',
-    'Contact Name',
+    'Client',
     'Contact Number',
     'Industry',
     'Lead Source',

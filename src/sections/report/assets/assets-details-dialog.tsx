@@ -10,10 +10,28 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 
+import { fCurrency } from 'src/utils/format-number';
+    
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 type Props = {
     open: boolean;
@@ -114,7 +132,7 @@ export function AssetDetailsDialog({ open, onClose, asset }: Props) {
                                 />
                                 <DetailItem
                                     label="Purchase Cost"
-                                    value={asset.purchase_cost ? `₹${asset.purchase_cost.toLocaleString()}` : '-'}
+                                    value={asset.purchase_cost ? renderCurrency(asset.purchase_cost) : '-'}
                                     icon={<FaRupeeSign size={18} />}
                                 />
                             </Box>

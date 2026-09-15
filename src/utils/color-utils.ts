@@ -1,4 +1,3 @@
-
 // ----------------------------------------------------------------------
 
 export function stringToColor(string: string) {
@@ -8,7 +7,8 @@ export function stringToColor(string: string) {
         hash = string.charCodeAt(i) + ((hash << 5) - hash);
     }
     const h = Math.abs(hash % 360);
-    return `hsl(${h}, 70%, 80%)`; // Pastel colors
+    // Dynamic soft pastel hue with moderate saturation and high lightness for clean modern UI
+    return `hsl(${h}, 85%, 88%)`;
 }
 
 export function stringToDarkColor(string: string) {
@@ -18,5 +18,6 @@ export function stringToDarkColor(string: string) {
         hash = string.charCodeAt(i) + ((hash << 5) - hash);
     }
     const h = Math.abs(hash % 360);
-    return `hsl(${h}, 70%, 30%)`; // Darker version for text
+    // Dark contrast styling tailored to match the matching pastel base perfectly
+    return `hsl(${h}, 70%, 35%)`;
 }

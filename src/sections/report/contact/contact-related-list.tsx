@@ -53,9 +53,10 @@ const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
 type Props = {
     contactId: string;
     type: 'invoices' | 'purchases' | 'deals' | 'estimations';
+    extraState?: Record<string, any>;
 };
 
-export function ContactRelatedList({ contactId, type }: Props) {
+export function ContactRelatedList({ contactId, type, extraState }: Props) {
     const theme = useTheme();
     const router = useRouter();
     const location = useLocation();
@@ -235,7 +236,22 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/invoices/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openContactId: contactId, activeTab: 'invoices' })}
+                            onClick={() => {
+                                if (location.pathname.includes('/calendar') || extraState?.eventId || extraState?.eventRefName) {
+                                    sessionStorage.setItem('calendar_nav_state', JSON.stringify({
+                                        from: location.pathname + location.search,
+                                        openContactId: contactId,
+                                        activeTab: 'invoices',
+                                        ...extraState,
+                                    }));
+                                }
+                                router.push(`/invoices/${encodeURIComponent(row.name)}/view`, {
+                                    from: location.pathname + location.search,
+                                    openContactId: contactId,
+                                    activeTab: 'invoices',
+                                    ...extraState,
+                                });
+                            }}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -256,7 +272,22 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/purchase/${encodeURIComponent(row.name)}`)}
+                            onClick={() => {
+                                if (location.pathname.includes('/calendar') || extraState?.eventId || extraState?.eventRefName) {
+                                    sessionStorage.setItem('calendar_nav_state', JSON.stringify({
+                                        from: location.pathname + location.search,
+                                        openContactId: contactId,
+                                        activeTab: 'purchases',
+                                        ...extraState,
+                                    }));
+                                }
+                                router.push(`/purchase/${encodeURIComponent(row.name)}`, {
+                                    from: location.pathname + location.search,
+                                    openContactId: contactId,
+                                    activeTab: 'purchases',
+                                    ...extraState,
+                                });
+                            }}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -275,7 +306,22 @@ export function ContactRelatedList({ contactId, type }: Props) {
                     <TableCell align="right">
                         <IconButton
                             color="primary"
-                            onClick={() => router.push(`/deals/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openContactId: contactId, activeTab: 'deals' })}
+                            onClick={() => {
+                                if (location.pathname.includes('/calendar') || extraState?.eventId || extraState?.eventRefName) {
+                                    sessionStorage.setItem('calendar_nav_state', JSON.stringify({
+                                        from: location.pathname + location.search,
+                                        openContactId: contactId,
+                                        activeTab: 'deals',
+                                        ...extraState,
+                                    }));
+                                }
+                                router.push(`/deals/${encodeURIComponent(row.name)}/view`, {
+                                    from: location.pathname + location.search,
+                                    openContactId: contactId,
+                                    activeTab: 'deals',
+                                    ...extraState,
+                                });
+                            }}
                             size="small"
                         >
                             <Iconify icon="solar:eye-bold" />
@@ -293,7 +339,22 @@ export function ContactRelatedList({ contactId, type }: Props) {
                 <TableCell align="right">
                     <IconButton
                         color="primary"
-                        onClick={() => router.push(`/estimations/${encodeURIComponent(row.name)}/view`, { from: location.pathname + location.search, openContactId: contactId, activeTab: 'estimations' })}
+                        onClick={() => {
+                            if (location.pathname.includes('/calendar') || extraState?.eventId || extraState?.eventRefName) {
+                                sessionStorage.setItem('calendar_nav_state', JSON.stringify({
+                                    from: location.pathname + location.search,
+                                    openContactId: contactId,
+                                    activeTab: 'estimations',
+                                    ...extraState,
+                                }));
+                            }
+                            router.push(`/estimations/${encodeURIComponent(row.name)}/view`, {
+                                from: location.pathname + location.search,
+                                openContactId: contactId,
+                                activeTab: 'estimations',
+                                ...extraState,
+                            });
+                        }}
                         size="small"
                     >
                         <Iconify icon="solar:eye-bold" />

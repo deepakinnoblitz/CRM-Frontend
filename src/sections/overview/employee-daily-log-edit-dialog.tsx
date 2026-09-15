@@ -50,7 +50,7 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
         if (!d.isValid() && typeof dateStr === 'string' && dateStr.includes(':')) {
             d = dayjs(`2000-01-01 ${dateStr}`);
         }
-        return d.hour() * 3600 + d.minute() * 60 + d.second();
+        return d.isValid() ? d.unix() : 0;
     };
 
     const formatShortDuration = (seconds: number) => {
@@ -61,9 +61,8 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
     };
 
     const formattedTimeFromSec = (sec: number) => {
-        const hrs = Math.floor(sec / 3600);
-        const mins = Math.floor((sec % 3600) / 60);
-        return dayjs().hour(hrs).minute(mins).format('h:mm a');
+        if (!sec) return '';
+        return dayjs.unix(sec).format('h:mm a');
     };
 
     const startSec = parseTime(loginTime || session.login_time);
@@ -72,7 +71,7 @@ const SessionTimelineBar = ({ session, intervals = [], breaks = [], loginTime, l
         const lastInterval = intervals[intervals.length - 1];
         if (lastInterval.to_time) endSec = parseTime(lastInterval.to_time);
     }
-    if (!endSec) endSec = parseTime(new Date().toISOString());
+    if (!endSec) endSec = dayjs().unix();
     if (endSec <= startSec) endSec = startSec + 3600;
 
     const totalDuration = Math.max(endSec - startSec, 1);
@@ -817,9 +816,21 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                             </Box>
                                             <Box sx={{ flexGrow: 1 }}>
                                                 <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fDateTime(interval.from_time, 'h:mm:ss a')} — {interval.to_time ? fDateTime(interval.to_time, 'h:mm:ss a') : (intervalStatus === 'Offline' ? 'Logout' : 'Active')}
-                                                    </Typography>
+                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                         {(() => {
+                                                             const baseDate = dayjs(localLoginTime || session?.login_time);
+                                                             const fromD = dayjs(interval.from_time);
+                                                             const toD = interval.to_time ? dayjs(interval.to_time) : null;
+                                                             const fromIsDiff = fromD.isValid() && baseDate.isValid() && !fromD.isSame(baseDate, 'day');
+                                                             const fromStr = fromD.isValid() ? (fromIsDiff ? `${fromD.format('h:mm a')} (${fromD.format('DD MMM')})` : fromD.format('h:mm a')) : fDateTime(interval.from_time, 'h:mm:ss a');
+                                                             let toStr = intervalStatus === 'Offline' ? 'Logout' : 'Active';
+                                                             if (interval.to_time && toD && toD.isValid()) {
+                                                                 const toIsDiff = baseDate.isValid() && !toD.isSame(baseDate, 'day');
+                                                                 toStr = toIsDiff ? `${toD.format('h:mm a')} (${toD.format('DD MMM')})` : toD.format('h:mm a');
+                                                             }
+                                                             return `${fromStr} — ${toStr}`;
+                                                         })()}
+                                                     </Typography>
                                                     <Box
                                                         sx={{
                                                             px: 0.75,
@@ -998,9 +1009,21 @@ export function EmployeeDailyLogEditDialog({ open, onClose, session, onUpdate }:
                                                     sx={{ color: color }}
                                                 />
                                                 <Box sx={{ flexGrow: 1 }}>
-                                                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                                        {fDateTime(brk.break_start, 'h:mm:ss a')} — {brk.break_end ? fDateTime(brk.break_end, 'h:mm:ss a') : 'Current'}
-                                                    </Typography>
+                                                     <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                                         {(() => {
+                                                             const baseDate = dayjs(localLoginTime || session?.login_time);
+                                                             const fromD = dayjs(brk.break_start);
+                                                             const toD = brk.break_end ? dayjs(brk.break_end) : null;
+                                                             const fromIsDiff = fromD.isValid() && baseDate.isValid() && !fromD.isSame(baseDate, 'day');
+                                                             const fromStr = fromD.isValid() ? (fromIsDiff ? `${fromD.format('h:mm a')} (${fromD.format('DD MMM')})` : fromD.format('h:mm a')) : fDateTime(brk.break_start, 'h:mm:ss a');
+                                                             let toStr = 'Current';
+                                                             if (brk.break_end && toD && toD.isValid()) {
+                                                                 const toIsDiff = baseDate.isValid() && !toD.isSame(baseDate, 'day');
+                                                                 toStr = toIsDiff ? `${toD.format('h:mm a')} (${toD.format('DD MMM')})` : toD.format('h:mm a');
+                                                             }
+                                                             return `${fromStr} — ${toStr}`;
+                                                         })()}
+                                                     </Typography>
                                                     <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mt: 0.25, fontWeight: 600 }}>
                                                         {isAway ? 'Break (Inactivity)' : (brk.reason || 'Manual Break')}
                                                     </Typography>

@@ -589,8 +589,8 @@ export function CallsReportView() {
                                         </TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Title</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Call For</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead/Contact</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Account</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Lead/Client</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Company</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Status</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Time</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Owner</TableCell>
@@ -625,13 +625,59 @@ export function CallsReportView() {
                                                         </TableCell>
                                                         <TableCell sx={{ fontWeight: 600 }}>{row.title}</TableCell>
                                                         <TableCell>{row.call_for}</TableCell>
-                                                        <TableCell>{row.lead_name || row.contact_name || '-'}</TableCell>
-                                                        <TableCell>{row.account_name || '-'}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            {(() => {
+                                                                const title = row.lead_title || row.contact_title;
+                                                                const id = row.lead_name || row.contact_name;
+                                                                const mainText = title || id;
+                                                                if (!mainText) return '-';
+                                                                return (
+                                                                    <Stack spacing={0.5}>
+                                                                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                            {mainText}
+                                                                        </Typography>
+                                                                        {id && title && id !== title && (
+                                                                            <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                                {id}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            {(() => {
+                                                                if (!row.account_name) return '-';
+                                                                const title = row.account_title || row.account_name;
+                                                                const id = row.account_name;
+                                                                return (
+                                                                    <Stack spacing={0.5}>
+                                                                        <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                            {title}
+                                                                        </Typography>
+                                                                        {id && title && id !== title && (
+                                                                            <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                                {id}
+                                                                            </Typography>
+                                                                        )}
+                                                                    </Stack>
+                                                                );
+                                                            })()}
+                                                        </TableCell>
                                                         <TableCell>{row.outgoing_call_status}</TableCell>
                                                         <TableCell>
                                                             <Typography variant="body2">{row.call_start_time ? dayjs(row.call_start_time).format('DD MMM YYYY HH:mm') : '-'}</Typography>
                                                         </TableCell>
-                                                        <TableCell>{row.owner_name}</TableCell>
+                                                        <TableCell sx={{ maxWidth: 180 }}>
+                                                            <Stack spacing={0.5}>
+                                                                <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                    {row.owner_full_name || row.owner_name || '-'}
+                                                                </Typography>
+                                                                <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                    {row.owner_name || row.owner || '-'}
+                                                                </Typography>
+                                                            </Stack>
+                                                        </TableCell>
                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewCall(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />

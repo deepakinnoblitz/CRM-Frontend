@@ -5,7 +5,6 @@ import Card from '@mui/material/Card';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Switch from '@mui/material/Switch';
 import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -16,6 +15,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import { useEmployeeAwardSettings } from 'src/hooks/useEmployeeMonthlyAward';
 
 import { updateEmployeeAwardSettings, EmployeeAwardSettings } from 'src/api/employee-monthly-award';
+
+import { CustomSwitch } from 'src/sections/reminders/reminders-settings-view';
 
 export function EmployeeAwardSettingsForm() {
     const { settings, loading, refetch } = useEmployeeAwardSettings();
@@ -162,13 +163,14 @@ export function EmployeeAwardSettingsForm() {
 
                     <FormControlLabel
                         control={
-                            <Switch
+                            <CustomSwitch
                                 checked={!!formData.auto_publish}
                                 onChange={handleChange}
                                 name="auto_publish"
                             />
                         }
                         label="Auto Publish Awards"
+                        sx={{ m: 0, '& .MuiFormControlLabel-label': { ml: 1.25, typography: 'subtitle2', fontWeight: 700 } }}
                     />
 
                     <Box display="flex" justifyContent="flex-end" pt={2}>

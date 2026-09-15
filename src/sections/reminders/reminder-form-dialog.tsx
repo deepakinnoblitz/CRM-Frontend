@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -24,6 +23,8 @@ import { saveHRRemainder } from 'src/api/reminders';
 import { getForValueOptions } from 'src/api/user-permissions';
 
 import { Iconify } from 'src/components/iconify';
+
+import { CustomSwitch } from './reminders-settings-view';
 
 // ----------------------------------------------------------------------
 
@@ -157,16 +158,16 @@ export function HRReminderFormDialog({ open, onClose, onSuccess, selectedReminde
  
             <FormControlLabel
               control={
-                <Switch 
+                <CustomSwitch 
                   checked={isGlobal} 
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     setIsGlobal(e.target.checked);
                     if (e.target.checked && errors.employees) setErrors({ ...errors, employees: '' });
                   }} 
-                  color="primary"
                 />
               }
               label="Send to All Active Employees"
+              sx={{ '& .MuiFormControlLabel-label': { ml: 1 } }}
             />
  
             {!isGlobal && (

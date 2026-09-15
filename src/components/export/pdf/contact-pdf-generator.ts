@@ -27,8 +27,8 @@ export async function generateContactPdf({ reportData, selected = [], summary }:
     row.email || '-',
     row.phone || '-',
     [row.city, row.state, row.country].filter(Boolean).join(', ') || '-',
-    row.source_lead || '-',
-    row.owner_name || '-'
+    row.source_lead_name ? `${row.source_lead_name} (${row.source_lead})` : (row.source_lead || '-'),
+    row.owner_full_name || row.owner_name || '-'
   ]);
 
   await exportToPdf({

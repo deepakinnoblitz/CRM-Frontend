@@ -26,10 +26,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { fTimeDist } from 'src/utils/format-time';
 
 import { fetchMetaApps } from 'src/api/meta-app';
-import { fetchMetaLeads } from 'src/api/meta-lead';
 import { fetchMetaPages } from 'src/api/meta-page';
 import { fetchMetaForms } from 'src/api/meta-form';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchMetaLeads, retryMetaLead } from 'src/api/meta-lead';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -106,6 +106,7 @@ export function MetaLeadListView() {
     const [apps, setApps] = useState<any[]>([]);
     const [pages, setPages] = useState<any[]>([]);
     const [forms, setForms] = useState<any[]>([]);
+    const [retryingLeads, setRetryingLeads] = useState<Record<string, boolean>>({});
 
     const handleFilters = useCallback((update: Partial<MetaLeadsFilters>) => {
         setFilters((prev) => ({ ...prev, ...update }));
@@ -164,6 +165,19 @@ export function MetaLeadListView() {
     }, [page, rowsPerPage, filterName, sortBy, filters, enqueueSnackbar]);
 
     useEffect(() => { fetchData(); }, [fetchData]);
+
+    const handleRetryRow = async (name: string) => {
+        setRetryingLeads((prev) => ({ ...prev, [name]: true }));
+        try {
+            await retryMetaLead(name);
+            enqueueSnackbar('Meta Lead processing retried successfully', { variant: 'success' });
+            fetchData();
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to retry Meta Lead', { variant: 'error' });
+        } finally {
+            setRetryingLeads((prev) => ({ ...prev, [name]: false }));
+        }
+    };
 
     const notFound = !loading && data.length === 0 && !!filterName;
     const empty = !loading && data.length === 0 && !filterName;
@@ -293,10 +307,24 @@ export function MetaLeadListView() {
                                                     
                                                     {/* Actions */}
                                                     <TableCell align="center">
-                                                        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                                                            <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, whiteSpace: 'nowrap', pt: 1 }}>
+                                                        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0.5 }}>
+                                                            <Box sx={{ typography: 'body2', color: 'text.secondary', fontWeight: 700, mr: 1, fontSize: 12, whiteSpace: 'nowrap' }}>
                                                                 {fTimeDist(row.modified)}
                                                             </Box>
+                                                            {row.processing_status === 'Failed' && (
+                                                                <IconButton
+                                                                    onClick={() => handleRetryRow(row.name)}
+                                                                    disabled={retryingLeads[row.name]}
+                                                                    sx={{ color: 'primary.main' }}
+                                                                    title="Retry Processing"
+                                                                >
+                                                                    {retryingLeads[row.name] ? (
+                                                                        <CircularProgress size={18} color="inherit" />
+                                                                    ) : (
+                                                                        <Iconify icon="solar:refresh-bold" />
+                                                                    )}
+                                                                </IconButton>
+                                                            )}
                                                             <IconButton onClick={() => navigate(`/lead-integration/meta-leads/${encodeURIComponent(row.name)}/view`)} sx={{ color: 'info.main' }} title="View">
                                                                 <Iconify icon="solar:eye-bold" />
                                                             </IconButton>

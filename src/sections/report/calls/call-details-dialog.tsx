@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -32,17 +32,28 @@ type Props = {
     open: boolean;
     onClose: () => void;
     callId: string | null;
+    eventId?: string | null;
+    initialOpenClientDetails?: boolean;
+    initialClientTab?: string;
+    initialContactId?: string | null;
 };
 
-export function CallDetailsDialog({ open, onClose, callId }: Props) {
+export function CallDetailsDialog({ open, onClose, callId, eventId, initialOpenClientDetails, initialClientTab, initialContactId }: Props) {
     const navigate = useNavigate();
+    const location = useLocation();
     const [call, setCall] = useState<any>(null);
     const [leadData, setLeadData] = useState<any>(null);
     const [clientData, setClientData] = useState<any>(null);
     const [companyData, setCompanyData] = useState<any>(null);
     const [loading, setLoading] = useState(false);
-    const [openClientDetails, setOpenClientDetails] = useState(false);
+    const [openClientDetails, setOpenClientDetails] = useState(Boolean(initialOpenClientDetails));
     const [openCompanyDetails, setOpenCompanyDetails] = useState(false);
+
+    useEffect(() => {
+        if (open && initialOpenClientDetails) {
+            setOpenClientDetails(true);
+        }
+    }, [open, initialOpenClientDetails]);
 
     useEffect(() => {
         if (open && callId) {
@@ -116,6 +127,26 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
 
     const hasNotes = !!(call && call.call_notes && call.call_notes.length > 0);
 
+    const handleOpenLead = () => {
+        if (!leadData?.name) return;
+        const navState = {
+            from: location.pathname + location.search,
+            eventId: eventId || undefined,
+            eventRefType: 'Calls',
+            eventRefName: callId,
+            openEventDetails: true,
+        };
+        if (location.pathname.includes('/calendar') || location.pathname.includes('/events') || eventId) {
+            sessionStorage.setItem('calendar_nav_state', JSON.stringify(navState));
+            if (eventId) {
+                sessionStorage.setItem('calendar_reopen_event_id', eventId);
+            }
+        }
+        navigate(`/leads/${leadData.name}/view`, {
+            state: navState,
+        });
+    };
+
     return (
         <Dialog
             open={open}
@@ -148,6 +179,9 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                         color: (theme) => theme.palette.grey[500],
                         bgcolor: 'background.paper',
                         boxShadow: (theme) => theme.customShadows?.z1,
+                        '&:hover': {
+                            bgcolor: (theme) => alpha(theme.palette.grey[500], 0.08),
+                        }
                     }}
                 >
                     <Iconify icon="mingcute:close-line" />
@@ -157,14 +191,14 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
             <DialogContent sx={{ p: 4, m: 2, mt: 4 }}>
                 {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 10 }}>
-                        <Iconify icon="svg-spinners:12-dots-scale-rotate" width={40} sx={{ color: 'primary.main' }} />
+                        <Iconify icon={"svg-spinners:12-dots-scale-rotate" as any} width={40} sx={{ color: 'primary.main' }} />
                     </Box>
                 ) : call ? (
                     <Grid container spacing={4}>
                         <Grid size={{ xs: 12, md: hasNotes ? 8 : 12 }}>
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
                                 {/* Header Info */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2.5 }}>
                                     <Box
                                         sx={{
                                             width: 64,
@@ -173,16 +207,16 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                                            color: 'info.main',
+                                            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+                                            color: 'primary.main',
                                             flexShrink: 0,
                                         }}
                                     >
                                         <Iconify icon="solar:phone-calling-bold" width={32} />
                                     </Box>
-                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                    <Box sx={{ flexGrow: 1 }}>
                                         <Typography variant="h5" sx={{ fontWeight: 800, mb: 0.5 }}>
-                                            {call.title}
+                                            {call.call_type} Call
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 600 }}>
                                             {call.call_for === 'Lead' && `Call for Lead: ${leadData ? `${leadData.lead_name} (${leadData.name})` : call.lead_name}`}
@@ -205,7 +239,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                         <Box>
                                             <SectionHeader title="Lead Details" />
                                             <Box
-                                                onClick={() => navigate(`/leads/${leadData.name}/view`)}
+                                                onClick={handleOpenLead}
                                                 sx={{
                                                     p: 3,
                                                     bgcolor: 'rgb(222 242 255 / 20%)',
@@ -258,7 +292,7 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                                                          ) : null;
                                                      })()}
                                                 </Box>
-                                                <IconButton color="primary">
+                                                <IconButton color="primary" onClick={(e) => { e.stopPropagation(); handleOpenLead(); }}>
                                                     <Iconify icon="solar:eye-bold" width={20} />
                                                 </IconButton>
                                             </Box>
@@ -459,14 +493,19 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                     </Box>
                 )}
             </DialogContent>
-            {clientData && (
+            {(clientData || initialContactId) && (
                 <ContactDetailsDialog
                     open={openClientDetails}
                     onClose={() => {
                         setOpenClientDetails(false);
-                        onClose();
                     }}
-                    contactId={clientData.name}
+                    contactId={clientData?.name || initialContactId}
+                    initialTab={initialClientTab}
+                    extraState={{
+                        eventId: eventId || undefined,
+                        eventRefType: 'Calls',
+                        eventRefName: callId,
+                    }}
                 />
             )}
 
@@ -475,7 +514,6 @@ export function CallDetailsDialog({ open, onClose, callId }: Props) {
                     open={openCompanyDetails}
                     onClose={() => {
                         setOpenCompanyDetails(false);
-                        onClose();
                     }}
                     accountId={companyData.name}
                 />

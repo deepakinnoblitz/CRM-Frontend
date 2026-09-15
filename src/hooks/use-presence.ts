@@ -173,7 +173,11 @@ export function usePresence() {
       setBreakThreshold(settings.break_threshold || 900);
       setEnableAutoResumeBreak(!!settings.enable_auto_resume_break);
 
-      setEnableLocationTracking(!!settings.enable_location_tracking);
+      const target = settings.location_tracking_target || 'All Employees';
+      const isEmployeeTracked = target === 'All Employees' || 
+        (target === 'Selected Employees' && Array.isArray(settings.tracked_employees) && !!employeeId && settings.tracked_employees.includes(employeeId));
+
+      setEnableLocationTracking(!!settings.enable_location_tracking && isEmployeeTracked);
       setTrackOnLogin(!!settings.track_on_login);
       setTrackOnLogout(!!settings.track_on_logout);
       setTrackOnStatusChange(!!settings.track_on_status_change);
@@ -287,6 +291,20 @@ export function usePresence() {
           // Dialog is already opened inside validateLocationForStatusChange()
           return false;
         }
+      } else {
+        // If logging out, check if location tracking is enabled for logout
+        if (enableLocationTrackingRef.current && trackOnLogoutRef.current) {
+          try {
+            const position = await requestCurrentLocation();
+            const { latitude, longitude, accuracy } = position.coords;
+            // Log location first
+            await logLocation(latitude, longitude, accuracy, newStatus, 'Logout');
+          } catch (err) {
+            console.error('Location logging failed during logout:', err);
+            setLocationDialogOpen(true);
+            return false;
+          }
+        }
       }
 
       const res = await apiUpdatePresence(newStatus, employeeId, message, source, startTime);
@@ -301,17 +319,16 @@ export function usePresence() {
           window.dispatchEvent(new Event('REFRESH_CHAT_UNREAD_COUNT'));
         }
 
-        // Trigger Geo Location Tracking
-        let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
-        if (newStatus === 'Offline') {
-          trackingSource = 'Logout';
-          await logLocationIfAllowed(trackingSource, newStatus);
-        } else if (oldStatus === 'Offline') {
-          trackingSource = 'Login';
-          await logLocationIfAllowed(trackingSource, newStatus);
-        } else {
-          trackingSource = 'Status Change';
-          await logLocationIfAllowed(trackingSource, newStatus);
+        // Trigger Geo Location Tracking for non-Offline status changes
+        if (newStatus !== 'Offline') {
+          let trackingSource: 'Login' | 'Logout' | 'Status Change' = 'Status Change';
+          if (oldStatus === 'Offline') {
+            trackingSource = 'Login';
+            await logLocationIfAllowed(trackingSource, newStatus);
+          } else {
+            trackingSource = 'Status Change';
+            await logLocationIfAllowed(trackingSource, newStatus);
+          }
         }
       }
       localStorage.setItem('user_presence_status', newStatus);

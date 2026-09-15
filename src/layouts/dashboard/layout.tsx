@@ -78,8 +78,8 @@ export function DashboardLayout({
   const { navData } = useMemo(() => {
     const result = getNavData(user, view, settings);
     const userRole: "hr" | "admin" | "" = user?.roles?.some(r => ['hr'].includes(r.toLowerCase()))
-        ? 'hr'
-        : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
+      ? 'hr'
+      : (user?.roles?.some(r => ['admin', 'system manager', 'administrator'].includes(r.toLowerCase())) ? 'admin' : '');
     const isHR = userRole === "hr" || userRole === "admin";
 
     // Inject unread counts into navData
@@ -334,7 +334,7 @@ export function DashboardLayout({
               sx={{
                 lineHeight: 0,
                 display: 'inline-flex',
-                mr: 3,
+                mr: { xs: 1, sm: 3 },
                 transition: theme.transitions.create(['all'], {
                   duration: theme.transitions.duration.shorter,
                 }),
@@ -351,7 +351,7 @@ export function DashboardLayout({
                 component="img"
                 src={`${CONFIG.assetsDir}/icons/Innochat_button.png`}
                 sx={{
-                  width: 140, // Increased size as requested by intent
+                  width: { xs: 110, sm: 140 },
                   height: 'auto',
                   display: 'block',
                 }}

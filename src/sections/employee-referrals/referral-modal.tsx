@@ -196,7 +196,8 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
         sx: {
           borderRadius: 2,
           boxShadow: (themeVar) => themeVar.customShadows.z24,
-          maxHeight: '90vh',
+          m: { xs: 1.5, sm: 2 },
+          maxHeight: { xs: 'calc(100% - 32px)', sm: '90vh' },
           display: 'flex',
           flexDirection: 'column',
         }
@@ -205,7 +206,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
       <DialogTitle
         sx={{
           m: 0,
-          p: 2,
+          p: { xs: 2, sm: 2.5 },
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -224,9 +225,9 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 3, flexGrow: 1, overflowY: 'auto' }}>
-        <Stack spacing={3} sx={{ pt: 3 }}>
-          <Box display="grid" gridTemplateColumns="repeat(2, 1fr)" gap={2}>
+      <DialogContent sx={{ p: { xs: 2, sm: 3 }, flexGrow: 1, overflowY: 'auto' }}>
+        <Stack spacing={3} sx={{ pt: { xs: 1, sm: 2 } }}>
+          <Box display="grid" gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }} gap={2}>
           <TextField
             name="candidate_name"
             label="Candidate Name *"
@@ -271,7 +272,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
             ))}
           </TextField>
           
-          <Box gridColumn="span 2">
+          <Box sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Resume (Attachment) <Box component="span" sx={{ color: 'error.main' }}>*</Box>
             </Typography>
@@ -333,7 +334,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
             value={formData.relationship}
             onChange={handleChange}
             fullWidth
-            sx={{ gridColumn: 'span 2' }}
+            sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}
           />
           <TextField
             name="notes"
@@ -343,7 +344,7 @@ export function ReferralModal({ open, onClose, onSuccess, onError, selectedJob, 
             fullWidth
             multiline
             rows={3}
-            sx={{ gridColumn: 'span 2' }}
+            sx={{ gridColumn: { xs: 'span 1', sm: 'span 2' } }}
           />
         </Box>
         </Stack>

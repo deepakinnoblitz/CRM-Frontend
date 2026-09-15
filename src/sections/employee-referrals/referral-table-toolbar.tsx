@@ -59,10 +59,13 @@ export function ReferralTableToolbar({
   return (
     <Toolbar
       sx={{
-        height: 96,
+        minHeight: { xs: 'auto', sm: 96 },
+        py: { xs: 2, sm: 0 },
         display: 'flex',
+        flexDirection: { xs: 'column', sm: 'row' },
         justifyContent: 'space-between',
-        p: (theme) => theme.spacing(0, 1, 0, 3),
+        gap: 2,
+        p: (theme) => theme.spacing(2, 2.5),
       }}
     >
       <TextField
@@ -84,7 +87,7 @@ export function ReferralTableToolbar({
         }}
       />
 
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mr: 2 }}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap', justifyContent: { xs: 'flex-start', sm: 'flex-end' } }}>
         <Button
           disableRipple
           color="inherit"

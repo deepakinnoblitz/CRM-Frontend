@@ -56,13 +56,16 @@ export function TaskTableToolbar({
     return (
         <Toolbar
             sx={{
-                height: 96,
+                minHeight: { xs: 'auto', sm: 96 },
+                py: { xs: 2, sm: 0 },
                 display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
                 justifyContent: 'space-between',
-                p: (theme: Theme) => theme.spacing(0, 1, 0, 3),
+                gap: 2,
+                p: (theme: Theme) => theme.spacing(2, 2.5),
             }}
         >
-            <Stack direction="row" alignItems="center" spacing={2} sx={{ flexGrow: 1 }}>
+            <Stack direction="row" alignItems="center" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' }, flexGrow: 1 }}>
                 <TextField
                     value={filterName}
                     onChange={onFilterName}
@@ -84,7 +87,7 @@ export function TaskTableToolbar({
                 />
             </Stack>
 
-            <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Stack direction="row" alignItems="center" spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' }, flexWrap: 'wrap' }}>
                 <Button
                     disableRipple
                     color="inherit"

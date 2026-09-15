@@ -41,9 +41,18 @@ import { useAuth } from 'src/auth/auth-context';
 import { ReminderDialog } from './reminder-dialog';
 import { MyRemindersDialog } from './my-reminders-dialog';
 
-// ----------------------------------------------------------------------
+// ── Module-level singleton for Auto Check-In Dialog ──
+let autoCheckedCheckInGlobal = false;
 
-export function UserStatusBar() {
+export function resetAutoCheckInState() {
+    autoCheckedCheckInGlobal = false;
+}
+
+interface UserStatusBarProps {
+    disableAutoCheckIn?: boolean;
+}
+
+export function UserStatusBar({ disableAutoCheckIn = false }: UserStatusBarProps = {}) {
     const theme = useTheme();
     const { user } = useAuth();
     const {
@@ -72,6 +81,8 @@ export function UserStatusBar() {
         ['HR', 'System Manager', 'Administrator'].includes(role)
     );
 
+    const isEmployee = user?.roles?.some((role: string) => role.toLowerCase() === 'employee');
+
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [infoDialogOpen, setInfoDialogOpen] = useState(false);
     const [isLogoutDialog, setIsLogoutDialog] = useState(false);
@@ -95,21 +106,19 @@ export function UserStatusBar() {
         severity: 'success',
     });
 
-    const hasAutoChecked = useRef(false);
-
     const open = Boolean(anchorEl);
 
     // Auto-show check-in dialog on load when Offline (one-time only)
     useEffect(() => {
-        if (!loading && !hasAutoChecked.current) {
-            hasAutoChecked.current = true;
+        if (!disableAutoCheckIn && !loading && !autoCheckedCheckInGlobal) {
+            autoCheckedCheckInGlobal = true;
             if (statusName === 'Offline') {
                 const timer = setTimeout(() => setCheckInDialogOpen(true), 800);
                 return () => clearTimeout(timer);
             }
         }
         return undefined;
-    }, [loading, statusName]);
+    }, [loading, statusName, disableAutoCheckIn]);
 
     // Dynamic message rotator for the location logging overlay
     useEffect(() => {
@@ -414,7 +423,7 @@ export function UserStatusBar() {
 
     const currentStatus = statusOptions.find(opt => opt.value === statusName) || statusOptions[5];
 
-    if (isHR) {
+    if (isHR || !isEmployee) {
         return null;
     }
 
@@ -620,28 +629,16 @@ export function UserStatusBar() {
                                 height: 48,
                                 bgcolor: (t) => {
                                     if (userAvatar) return 'common.white';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                    return colors[Math.abs(hash) % colors.length];
+                                    return stringToColor(userName || '');
                                 },
                                 color: (t) => {
                                     if (userAvatar) return 'inherit';
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return textColors[Math.abs(hash) % textColors.length];
+                                    return stringToDarkColor(userName || '');
                                 },
                                 fontWeight: 'bold',
                                 border: (t) => {
                                     if (userAvatar) return `2px solid ${t.palette.divider}`;
-                                    const name = userName || '';
-                                    let hash = 0;
-                                    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                    const textColors = ['#4F7942', '#2D5A27', '#3F51B5', '#BF360C', '#C62828', '#AD1457'];
-                                    return `2px solid ${alpha(textColors[Math.abs(hash) % textColors.length], 0.5)}`;
+                                    return `2px solid ${alpha(stringToDarkColor(userName || ''), 0.5)}`;
                                 },
                             }}
                         >
@@ -1361,11 +1358,62 @@ export function UserStatusBar() {
                         color="text.secondary"
                         sx={{
                             lineHeight: 1.8,
+                            mb: 2,
                         }}
                     >
                         Please turn on your device location services and allow GPS
                         permission to change your work status.
                     </Typography>
+
+                    <Box
+                        sx={{
+                            p: 2.25,
+                            borderRadius: 2,
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            border: `1px dashed ${alpha(theme.palette.primary.main, 0.25)}`,
+                            textAlign: 'left',
+                            mt: 1,
+                        }}
+                    >
+                        <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+                            <Iconify icon={"solar:lock-keyhole-minimalistic-bold-duotone" as any} width={20} sx={{ color: 'primary.main' }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.875rem' }}>
+                                How to enable location in your browser:
+                            </Typography>
+                        </Stack>
+
+                        <Stack spacing={1.25}>
+                            {[
+                                { step: '1', text: <>Click the <b>Lock 🔒</b> or <b>Site Settings ⚙️</b> icon next to the URL address bar.</> },
+                                { step: '2', text: <>Change <b>Location</b> permission from <i>Block</i> to <b>Allow</b>.</> },
+                                { step: '3', text: <>Click <b>Try Again</b> below to proceed.</> },
+                            ].map((item) => (
+                                <Stack key={item.step} direction="row" alignItems="flex-start" spacing={1.25}>
+                                    <Box
+                                        sx={{
+                                            width: 20,
+                                            height: 20,
+                                            borderRadius: '50%',
+                                            bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                            color: 'primary.main',
+                                            fontSize: '0.75rem',
+                                            fontWeight: 800,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            flexShrink: 0,
+                                            mt: 0.1,
+                                        }}
+                                    >
+                                        {item.step}
+                                    </Box>
+                                    <Typography variant="caption" sx={{ color: 'text.secondary', lineHeight: 1.5, fontWeight: 500, fontSize: '0.8125rem' }}>
+                                        {item.text}
+                                    </Typography>
+                                </Stack>
+                            ))}
+                        </Stack>
+                    </Box>
                 </DialogContent>
 
                 <DialogActions
@@ -1388,14 +1436,25 @@ export function UserStatusBar() {
                         onClick={() => {
                             setLocationDialogOpen(false);
 
-                            navigator.geolocation.getCurrentPosition(
-                                () => {
-                                    // Permission granted
-                                },
-                                () => {
-                                    // Still denied
-                                }
-                            );
+                            if (navigator.geolocation) {
+                                navigator.geolocation.getCurrentPosition(
+                                    (position) => {
+                                        console.log('[Location] Permission granted via Try Again:', position);
+                                        if (pendingStatus) {
+                                            handleStatusClick(pendingStatus);
+                                        }
+                                    },
+                                    (error) => {
+                                        console.error('[Location] Permission error on Try Again:', error);
+                                        setTimeout(() => setLocationDialogOpen(true), 300);
+                                    },
+                                    {
+                                        enableHighAccuracy: true,
+                                        timeout: 10000,
+                                        maximumAge: 0,
+                                    }
+                                );
+                            }
                         }}
                     >
                         Try Again

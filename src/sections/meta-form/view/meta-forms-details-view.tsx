@@ -5,7 +5,6 @@ import { IoMdArrowBack, IoMdCreate } from 'react-icons/io';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -21,7 +20,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { getMetaForm } from 'src/api/meta-form';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchMetaPages, getMetaPage } from 'src/api/meta-page';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -37,7 +38,7 @@ function DetailRow({ label, value, mono = false }: { label: string; value?: any;
                 variant="body2"
                 sx={{
                     fontWeight: 600,
-                    fontSize: mono ? 13 : 'inherit',
+                    fontSize: 'inherit',
                     color: value ? 'text.primary' : 'text.disabled',
                     fontStyle: !value ? 'italic' : 'normal',
                 }}
@@ -60,13 +61,34 @@ export function MetaFormsDetailsView() {
     const canEdit = hasCustomPerms && user?.permissions?.actions?.meta_forms ? !!user?.permissions?.actions?.meta_forms?.edit : true;
 
     const [form, setForm] = useState<any>(null);
+    const [pageName, setPageName] = useState<string>('');
     const [fetching, setFetching] = useState(true);
 
     useEffect(() => {
         if (id) {
             setFetching(true);
             getMetaForm(id)
-                .then(setForm)
+                .then(async (formData) => {
+                    setForm(formData);
+                    let resolvedPage = formData.meta_page || '';
+                    if (formData.meta_page) {
+                        try {
+                            const pagesRes = await fetchMetaPages({ page: 1, page_size: 1000 });
+                            const match = pagesRes.data.find(
+                                (p: any) => p.name === formData.meta_page || p.page_id === formData.meta_page || p.page_name === formData.meta_page
+                            );
+                            if (match?.page_name) {
+                                resolvedPage = match.page_name;
+                            } else {
+                                const pageDoc = await getMetaPage(formData.meta_page);
+                                if (pageDoc?.page_name) resolvedPage = pageDoc.page_name;
+                            }
+                        } catch (err) {
+                            console.error('Failed to resolve Meta Page name:', err);
+                        }
+                    }
+                    setPageName(resolvedPage);
+                })
                 .catch((err) => {
                     console.error('Failed to fetch Meta Form details:', err);
                     enqueueSnackbar('Failed to load Meta Form details.', { variant: 'error' });
@@ -180,7 +202,7 @@ export function MetaFormsDetailsView() {
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(3, 1fr)' } }}>
                         <DetailRow label="Form Name" value={form.form_name} />
                         <DetailRow label="Form ID" value={form.form_id} mono />
-                        <DetailRow label="Meta Page" value={form.meta_page} />
+                        <DetailRow label="Meta Page" value={pageName || form.meta_page} />
                         <DetailRow label="Form Status" value={form.form_status} />
                         <DetailRow label="Locale" value={form.locale} />
                         <DetailRow label="Duplicate limits filter" value={form.allow_duplicates ? form.duplicate_limit_by : 'No limits filter'} />
@@ -236,8 +258,14 @@ export function MetaFormsDetailsView() {
                                     form.field_mappings.map((row: any, idx: number) => (
                                         <TableRow key={idx} sx={{ '&:not(:last-child) td': { borderBottom: (theme) => `1px solid ${theme.palette.divider}` } }}>
                                             <TableCell>
-                                                <Typography variant="subtitle2">
-                                                    {row.meta_field}
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        color: row.meta_field ? 'text.primary' : 'text.disabled',
+                                                        fontStyle: !row.meta_field ? 'italic' : 'normal',
+                                                    }}
+                                                >
+                                                    {row.meta_field || '—'}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
@@ -246,12 +274,12 @@ export function MetaFormsDetailsView() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell align="center">
-                                                <Chip
-                                                    label={row.required ? 'Yes' : 'No'}
-                                                    size="small"
-                                                    color={row.required ? 'primary' : 'default'}
-                                                    variant="outlined"
-                                                />
+                                                <Label
+                                                    variant="soft"
+                                                    color={row.required ? 'info' : 'default'}
+                                                >
+                                                    {row.required ? 'Yes' : 'No'}
+                                                </Label>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2" sx={{ color: row.default_value ? 'text.primary' : 'text.disabled', fontStyle: row.default_value ? 'normal' : 'italic' }}>
@@ -259,12 +287,12 @@ export function MetaFormsDetailsView() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
-                                                <Chip
-                                                    label={row.transform_function || 'None'}
-                                                    size="small"
-                                                    variant="outlined"
+                                                <Label
+                                                    variant="soft"
                                                     color={row.transform_function && row.transform_function !== 'None' ? 'info' : 'default'}
-                                                />
+                                                >
+                                                    {row.transform_function || 'None'}
+                                                </Label>
                                             </TableCell>
                                         </TableRow>
                                     ))

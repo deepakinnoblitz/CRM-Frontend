@@ -28,6 +28,7 @@ import { TableNoData } from 'src/components/table';
 import { Scrollbar } from 'src/components/scrollbar';
 
 import { ProposalTableHead } from 'src/sections/proposal/proposal-table-head';
+import { MetaSyncWizardDialog } from 'src/sections/meta-app/meta-sync-wizard-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -46,13 +47,33 @@ type MetaPageSelectionCardProps = {
     isConnectedAccount: boolean;
     onRefresh?: () => void;
     refreshSignal?: number;
+    autoOpenWizard?: boolean;
+    onCloseAutoWizard?: () => void;
 };
 
-export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefresh, refreshSignal }: MetaPageSelectionCardProps) {
+export function MetaPageSelectionCard({
+    accountName,
+    isConnectedAccount,
+    onRefresh,
+    refreshSignal,
+    autoOpenWizard,
+    onCloseAutoWizard,
+}: MetaPageSelectionCardProps) {
     const router = useRouter();
     const { enqueueSnackbar } = useSnackbar();
     const [loading, setLoading] = useState(false);
-    const [syncing, setSyncing] = useState(false);
+    const [wizardOpen, setWizardOpen] = useState(false);
+
+    useEffect(() => {
+        if (autoOpenWizard) {
+            setWizardOpen(true);
+        }
+    }, [autoOpenWizard]);
+
+    const handleCloseWizard = () => {
+        setWizardOpen(false);
+        if (onCloseAutoWizard) onCloseAutoWizard();
+    };
     const [pages, setPages] = useState<any[]>([]);
 
     const [filterName, setFilterName] = useState('');
@@ -82,21 +103,13 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
         loadPages();
     }, [loadPages, refreshSignal]);
 
-    const handleSyncPages = async () => {
-        setSyncing(true);
-        try {
-            const res = await fetchMetaPagesFromGraphAPI(accountName || undefined);
-            if (res?.pages) {
-                setPages(res.pages);
-                const pageCount = res.pages.length;
-                enqueueSnackbar(`Synced ${pageCount} Facebook Page${pageCount === 1 ? '' : 's'} successfully`, { variant: 'success' });
-            }
-        } catch (err: any) {
-            console.error('Sync failed:', err);
-            enqueueSnackbar(err?.message || 'Failed to sync Facebook Pages', { variant: 'error' });
-        } finally {
-            setSyncing(false);
-        }
+    const handleWizardSuccess = (importedPagesCount: number, importedFormsCount: number) => {
+        enqueueSnackbar(
+            `Imported ${importedPagesCount} Page${importedPagesCount === 1 ? '' : 's'} and ${importedFormsCount} Form${importedFormsCount === 1 ? '' : 's'} successfully`,
+            { variant: 'success' }
+        );
+        loadPages();
+        if (onRefresh) onRefresh();
     };
 
     const filteredPages = pages.filter((item) => {
@@ -135,9 +148,8 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
 
                 <Button
                     variant="contained"
-                    onClick={handleSyncPages}
-                    disabled={syncing}
-                    startIcon={syncing ? <CircularProgress size={18} color="inherit" /> : <Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }} />}
+                    onClick={() => setWizardOpen(true)}
+                    startIcon={<Iconify icon={"mingcute:refresh-1-line" as any} sx={{ width: 18, height: 18 }} />}
                     sx={{
                         bgcolor: '#1877F2',
                         color: '#ffffff',
@@ -149,7 +161,7 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                         '&:hover': { bgcolor: '#166fe5' },
                     }}
                 >
-                    {syncing ? 'Syncing Pages...' : 'Sync Facebook Pages'}
+                    Sync Facebook Pages
                 </Button>
             </Stack>
 
@@ -409,6 +421,13 @@ export function MetaPageSelectionCard({ accountName, isConnectedAccount, onRefre
                     />
                 </>
             )}
+
+            <MetaSyncWizardDialog
+                open={wizardOpen}
+                onClose={handleCloseWizard}
+                accountName={accountName}
+                onSuccess={handleWizardSuccess}
+            />
         </Card>
     );
 }

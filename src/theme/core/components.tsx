@@ -173,9 +173,65 @@ const MuiAutocomplete: Components<Theme>['MuiAutocomplete'] = {
   },
 };
 
+const defaultPickerPopperSlotProps = {
+  popper: {
+    placement: 'bottom-start' as const,
+    modifiers: [
+      {
+        name: 'flip',
+        enabled: true,
+        options: {
+          fallbackPlacements: ['top-start', 'top', 'bottom-start', 'bottom'],
+          boundary: 'viewport',
+        },
+      },
+      {
+        name: 'preventOverflow',
+        enabled: true,
+        options: {
+          boundary: 'viewport',
+          altAxis: true,
+          tether: false,
+        },
+      },
+    ],
+  },
+};
+
 const MuiDatePicker: Components<Theme>['MuiDatePicker'] = {
   defaultProps: {
     format: 'DD-MM-YYYY',
+    slotProps: defaultPickerPopperSlotProps,
+  },
+};
+
+const MuiTimePicker: Components<Theme>['MuiTimePicker'] = {
+  defaultProps: {
+    slotProps: defaultPickerPopperSlotProps,
+  },
+};
+
+const MuiDateTimePicker: Components<Theme>['MuiDateTimePicker'] = {
+  defaultProps: {
+    slotProps: defaultPickerPopperSlotProps,
+  },
+};
+
+const MuiDesktopDatePicker: Components<Theme>['MuiDesktopDatePicker'] = {
+  defaultProps: {
+    slotProps: defaultPickerPopperSlotProps,
+  },
+};
+
+const MuiDesktopTimePicker: Components<Theme>['MuiDesktopTimePicker'] = {
+  defaultProps: {
+    slotProps: defaultPickerPopperSlotProps,
+  },
+};
+
+const MuiDesktopDateTimePicker: Components<Theme>['MuiDesktopDateTimePicker'] = {
+  defaultProps: {
+    slotProps: defaultPickerPopperSlotProps,
   },
 };
 
@@ -196,4 +252,9 @@ export const components = {
   MuiAutocomplete,
   MuiFormControlLabel,
   MuiDatePicker,
+  MuiTimePicker,
+  MuiDateTimePicker,
+  MuiDesktopDatePicker,
+  MuiDesktopTimePicker,
+  MuiDesktopDateTimePicker,
 };

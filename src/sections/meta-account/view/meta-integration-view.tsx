@@ -16,6 +16,7 @@ export default function MetaIntegrationView() {
     const [refreshSignal, setRefreshSignal] = useState(0);
     const [accountName, setAccountName] = useState<string | null>(null);
     const [isConnected, setIsConnected] = useState(false);
+    const [autoWizardOpen, setAutoWizardOpen] = useState(false);
 
     const loadAccountStatus = useCallback(async () => {
         try {
@@ -42,8 +43,13 @@ export default function MetaIntegrationView() {
         setRefreshSignal((prev) => prev + 1);
     }, []);
 
+    const handleConnectSuccess = useCallback(() => {
+        setRefreshSignal((prev) => prev + 1);
+        setAutoWizardOpen(true);
+    }, []);
+
     return (
-        <DashboardContent maxWidth={false} sx={{ mt: 2 }}>
+        <DashboardContent maxWidth={false} sx={{ pt: 2, pb: 5, bgcolor: '#ffffff', minHeight: '100vh' }}>
             <Typography variant="h4" mb={3}>
                 Meta Integration Dashboard
             </Typography>
@@ -51,7 +57,7 @@ export default function MetaIntegrationView() {
             {/* Stacked Cards in a Single Page */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* 1. Privyr-style Connect Facebook Account Banner */}
-                <MetaAccountConnectCard onRefresh={handleRefreshAll} />
+                <MetaAccountConnectCard onRefresh={handleRefreshAll} onConnectSuccess={handleConnectSuccess} />
 
                 {/* 2. Privyr-style Discover & Select Facebook Pages */}
                 <MetaPageSelectionCard
@@ -59,6 +65,8 @@ export default function MetaIntegrationView() {
                     isConnectedAccount={isConnected}
                     onRefresh={handleRefreshAll}
                     refreshSignal={refreshSignal}
+                    autoOpenWizard={autoWizardOpen}
+                    onCloseAutoWizard={() => setAutoWizardOpen(false)}
                 />
 
                 {/* 3. Privyr-style Discover & Select Meta Lead Forms */}

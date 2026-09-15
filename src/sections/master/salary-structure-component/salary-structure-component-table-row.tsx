@@ -6,10 +6,28 @@ import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
+import { fCurrency } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
+
+const renderCurrency = (amount: any, symbolFontSize: string = '15px') => {
+    const formatted = fCurrency(amount);
+    if (!formatted) return '—';
+    const index = formatted.indexOf('₹');
+    if (index !== -1) {
+        return (
+            <>
+                {formatted.substring(0, index)}
+                <span style={{ fontFamily: 'Arial', fontSize: symbolFontSize, display: 'inline-block', verticalAlign: 'baseline', lineHeight: 'normal' }}>₹</span>{' '}
+                {formatted.substring(index + 1)}
+            </>
+        );
+    }
+    return formatted;
+};
 
 type Props = {
   row: any;
@@ -119,7 +137,7 @@ export function SalaryStructureComponentTableRow({
       <TableCell align="right">
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           {static_amount != null && static_amount > 0
-            ? static_amount.toLocaleString('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 })
+            ? renderCurrency(static_amount)
             : '-'}
         </Typography>
       </TableCell>

@@ -576,7 +576,7 @@ export function SalesTargetEntryReportView() {
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Sales Entry ID</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Sales Person</TableCell>
                                         <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Month</TableCell>
-                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Contact</TableCell>
+                                        <TableCell sx={{ fontWeight: 700, color: 'text.secondary' }}>Client</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Value</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Advance</TableCell>
                                         <TableCell align="right" sx={{ fontWeight: 700, color: 'text.secondary' }}>Balance</TableCell>

@@ -101,41 +101,49 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                 boxShadow: (theme: any) => theme.customShadows?.z4,
                             }}
                         >
-                            <Stack direction="row" alignItems="center" spacing={2.5} sx={{ position: 'relative', zIndex: 1 }}>
-                                <Avatar
-                                    src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image}
-                                    sx={{
-                                        width: 72,
-                                        height: 72,
-                                        borderRadius: '50%',
-                                        border: '3px solid #FFFFFF',
-                                        boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
-                                        bgcolor: (theme: any) => {
-                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
-                                            if (img) return 'transparent';
-                                            const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
-                                            let hash = 0;
-                                            const name = attendance?.employee_name || '';
-                                            for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
-                                            return colors[Math.abs(hash) % colors.length];
-                                        },
-                                        color: (theme: any) => {
-                                            const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
-                                            return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
-                                        },
-                                        fontSize: '1.75rem',
-                                        fontWeight: 900,
-                                    }}
-                                >
-                                    {attendance?.employee_name?.charAt(0) || 'U'}
-                                </Avatar>
-                                <Box sx={{ flexGrow: 1 }}>
-                                    <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary' }}>
-                                        {attendance.employee_name}
-                                    </Typography>
-                                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
-                                        Employee ID: {attendance.employee || attendance.employee_id || '-'}
-                                    </Typography>
+                            <Stack
+                                direction={{ xs: 'column', sm: 'row' }}
+                                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                                spacing={2}
+                                sx={{ position: 'relative', zIndex: 1 }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexGrow: 1, minWidth: 0, width: { xs: '100%', sm: 'auto' } }}>
+                                    <Avatar
+                                        src={employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image}
+                                        sx={{
+                                            width: 72,
+                                            height: 72,
+                                            borderRadius: '50%',
+                                            border: '3px solid #FFFFFF',
+                                            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.12)',
+                                            bgcolor: (theme: any) => {
+                                                const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
+                                                if (img) return 'transparent';
+                                                const colors = ['#E2F0CB', '#B5EAD7', '#C7CEEA', '#FFDAC1', '#FFB7B2', '#FF9AA2'];
+                                                let hash = 0;
+                                                const name = attendance?.employee_name || '';
+                                                for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash * 31) - hash);
+                                                return colors[Math.abs(hash) % colors.length];
+                                            },
+                                            color: (theme: any) => {
+                                                const img = employeeDetails?.profile_picture || employeeDetails?.image || employeeDetails?.user_image || attendance?.profile_picture || attendance?.image;
+                                                return img ? 'inherit' : alpha(theme.palette.common.black, 0.6);
+                                            },
+                                            fontSize: '1.75rem',
+                                            fontWeight: 900,
+                                            flexShrink: 0
+                                        }}
+                                    >
+                                        {attendance?.employee_name?.charAt(0) || 'U'}
+                                    </Avatar>
+                                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                                        <Typography variant="h5" sx={{ fontWeight: 800, lineHeight: 1.2, color: 'text.primary', wordBreak: 'break-word' }}>
+                                            {attendance.employee_name}
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, mt: 0.5, display: 'block' }}>
+                                            Employee ID: {attendance.employee || attendance.employee_id || '-'}
+                                        </Typography>
+                                    </Box>
                                 </Box>
                                 <Label
                                     color={getStatusColor(attendance.status)}
@@ -147,7 +155,9 @@ export function AttendanceDetailsDialog({ open, onClose, attendanceId }: Props) 
                                         px: 1.5,
                                         py: 2,
                                         borderRadius: 1,
-                                        fontSize: '0.75rem'
+                                        fontSize: '0.75rem',
+                                        alignSelf: { xs: 'flex-start', sm: 'center' },
+                                        flexShrink: 0
                                     }}
                                 >
                                     {attendance.status}

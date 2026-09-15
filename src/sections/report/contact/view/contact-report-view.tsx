@@ -642,9 +642,31 @@ export function ContactReportView() {
                                                         <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                             {[row.city, row.state, row.country].filter(Boolean).join(', ') || '-'}
                                                         </TableCell>
-                                                        <TableCell>{row.source_lead || '-'}</TableCell>
-                                                        <TableCell>{row.owner_name || '-'}</TableCell>
-                                                        <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
+                                                         <TableCell sx={{ maxWidth: 180 }}>
+                                                             {row.source_lead ? (
+                                                                 <Stack spacing={0.5}>
+                                                                     <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                         {row.source_lead_name || row.source_lead}
+                                                                     </Typography>
+                                                                     <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                         {row.source_lead}
+                                                                     </Typography>
+                                                                 </Stack>
+                                                             ) : (
+                                                                 '-'
+                                                             )}
+                                                         </TableCell>
+                                                         <TableCell sx={{ maxWidth: 180 }}>
+                                                             <Stack spacing={0.5}>
+                                                                 <Typography variant="subtitle2" noWrap sx={{ fontWeight: 600 }}>
+                                                                     {row.owner_full_name || row.owner_name || '-'}
+                                                                 </Typography>
+                                                                 <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
+                                                                     {row.owner_name || row.owner || '-'}
+                                                                 </Typography>
+                                                             </Stack>
+                                                         </TableCell>
+                                                         <TableCell align="right" sx={{ position: 'sticky', right: 0, bgcolor: 'background.paper', boxShadow: '-2px 0 4px rgba(145, 158, 171, 0.08)' }}>
                                                             <IconButton onClick={() => handleViewContact(row.name)} sx={{ color: 'info.main' }}>
                                                                 <Iconify icon="solar:eye-bold" />
                                                             </IconButton>

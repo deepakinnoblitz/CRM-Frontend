@@ -1,11 +1,12 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
 
 import { Iconify } from 'src/components/iconify';
+
+import { CustomSwitch } from 'src/sections/email-settings/view/email-settings-view';
 
 // ----------------------------------------------------------------------
 
@@ -91,18 +92,9 @@ export function SettingsSidebar({ data, onChange }: Props) {
               secondaryTypographyProps={{ variant: 'caption', color: 'text.secondary' }}
             />
 
-            <Switch
-              color="primary"
+            <CustomSwitch
               checked={Boolean(data?.[item.fieldname] ?? 1)}
-              onChange={(event) => onChange(item.fieldname, event.target.checked ? 1 : 0)}
-              sx={{
-                '& .MuiSwitch-switchBase.Mui-checked': {
-                  color: '#08a3cd',
-                },
-                '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
-                  backgroundColor: '#08a3cd',
-                },
-              }}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange(item.fieldname, event.target.checked ? 1 : 0)}
             />
           </Stack>
         ))}

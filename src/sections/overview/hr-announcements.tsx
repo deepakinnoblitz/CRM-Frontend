@@ -2,7 +2,7 @@ import type { CardProps } from '@mui/material/Card';
 
 import { LuCalendarCheck2 } from "react-icons/lu";
 import { useEffect, useRef, useState } from 'react';
-import { BsBell, BsBellFill  } from "react-icons/bs";
+import { BsBell, BsBellFill } from "react-icons/bs";
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -43,6 +43,19 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
     const [pinned, setPinned] = useState(false);
     const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const contentRef = useRef<HTMLDivElement | null>(null);
+    const [duration, setDuration] = useState(28);
+
+    useEffect(() => {
+        if (contentRef.current) {
+            const width = contentRef.current.offsetWidth;
+            const pixelsPerSecond = 120; // Faster speed: 110 pixels per second
+            if (width > 0) {
+                setDuration(Math.max(10, width / pixelsPerSecond));
+            }
+        }
+    }, [list]);
+
     if (list.length === 0) return null;
 
     const featuredItem = list[0];
@@ -82,8 +95,9 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                     px: { xs: 1.5, sm: 2 },
                     py: { xs: 1.25, sm: 1.5 },
                     display: 'flex',
-                    alignItems: 'center',
-                    gap: { xs: 1.25, sm: 2 },
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    gap: { xs: 1, sm: 2 },
                     overflow: 'hidden',
                     background: `
                         linear-gradient(135deg, ${alpha(theme.palette.primary.light, 0.2)} 0%, ${alpha('#8b5cf6', 0.12)} 48%, ${alpha('#14b8a6', 0.14)} 100%),
@@ -96,7 +110,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                     borderRadius: 4,
                     boxShadow: 'none',
                     position: 'relative',
-                    minHeight: { xs: 72, sm: 80 },
+                    minHeight: { xs: 76, sm: 80 },
                     cursor: 'pointer',
                     transition: theme.transitions.create(['transform', 'box-shadow', 'border-color', 'background'], {
                         duration: theme.transitions.duration.shorter,
@@ -125,57 +139,60 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                 <Stack
                     direction="row"
                     alignItems="center"
+                    justifyContent="space-between"
                     spacing={1.25}
                     sx={{
                         zIndex: 1,
                         flexShrink: 0,
                         minWidth: { sm: 210 },
+                        width: { xs: '100%', sm: 'auto' },
                     }}
                 >
-                    <Box
-                        sx={{
-                            width: 46,
-                            height: 46,
-                            borderRadius: '50%',
-                            display: 'grid',
-                            placeItems: 'center',
-                            color: 'primary.main',
-                            background: `linear-gradient(135deg, ${alpha('#f4faff', 1)} 0%, ${alpha('#dce1e6', 0.6)} 100%)`,
-                            border: `1.5px solid ${alpha(theme.palette.primary.main, 0.12)}`,
-                            boxShadow: `
-                                0 4px 10px ${alpha(theme.palette.primary.main, 0.08)},
-                                inset 0 0 0 1px ${alpha(theme.palette.common.white, 1)}
-                            `,
-                            position: 'relative',
-                        }}
-                    >
-                        <BsBell size={20} />
-
+                    <Stack direction="row" alignItems="center" spacing={1.25}>
                         <Box
                             sx={{
-                                position: 'absolute',
-                                top: -7,
-                                right: -5,
-                                minWidth: 20,
-                                height: 20,
+                                width: { xs: 36, sm: 46 },
+                                height: { xs: 36, sm: 46 },
                                 borderRadius: '50%',
-                                bgcolor: 'primary.main',
-                                color: 'primary.contrastText',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontSize: 11,
-                                fontWeight: 800,
-                                border: `2px solid ${theme.palette.background.paper}`,
-                                boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.16)}`,
+                                display: 'grid',
+                                placeItems: 'center',
+                                color: 'primary.main',
+                                background: `linear-gradient(135deg, ${alpha('#f4faff', 1)} 0%, ${alpha('#dce1e6', 0.6)} 100%)`,
+                                border: `1.5px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                                boxShadow: `
+                                    0 4px 10px ${alpha(theme.palette.primary.main, 0.08)},
+                                    inset 0 0 0 1px ${alpha(theme.palette.common.white, 1)}
+                                `,
+                                position: 'relative',
+                                flexShrink: 0,
                             }}
                         >
-                            {list.length}
-                        </Box>
-                    </Box>
+                            <BsBell size={18} />
 
-                    <Box sx={{ minWidth: 0, pl: 1 }}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: -6,
+                                    right: -4,
+                                    minWidth: 18,
+                                    height: 18,
+                                    borderRadius: '50%',
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: 10,
+                                    fontWeight: 800,
+                                    border: `2px solid ${theme.palette.background.paper}`,
+                                    boxShadow: `0 2px 4px ${alpha(theme.palette.common.black, 0.16)}`,
+                                }}
+                            >
+                                {list.length}
+                            </Box>
+                        </Box>
+
+                        <Box sx={{ minWidth: 0, pl: 0.5 }}>
                             <Typography
                                 variant="subtitle2"
                                 sx={{
@@ -183,22 +200,52 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                     letterSpacing: '0.08em',
                                     textTransform: 'uppercase',
                                     color: '#0f172a',
+                                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
                                 }}
                             >
                                 {title || 'Announcements'}
                             </Typography>
-                        </Stack>
-                        <Typography
-                            variant="caption"
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: alpha('#1f2937', 0.62),
+                                    display: { xs: 'none', sm: 'block' },
+                                    mt: 0.25,
+                                }}
+                            >
+                                {subheader || 'Latest team and policy updates'}
+                            </Typography>
+                        </Box>
+                    </Stack>
+
+                    <IconButton
+                        size="small"
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleToggle();
+                        }}
+                        sx={{
+                            display: { xs: 'inline-flex', sm: 'none' },
+                            width: 32,
+                            height: 32,
+                            borderRadius: 2.5,
+                            color: '#1f2937',
+                            bgcolor: alpha(theme.palette.common.white, 0.34),
+                            border: `1px solid ${alpha(theme.palette.common.white, 0.78)}`,
+                            backdropFilter: 'blur(12px)',
+                        }}
+                    >
+                        <Iconify
+                            icon="solar:alt-arrow-down-bold"
+                            width={16}
                             sx={{
-                                color: alpha('#1f2937', 0.62),
-                                display: { xs: 'none', sm: 'block' },
-                                mt: 0.25,
+                                transition: theme.transitions.create('transform', {
+                                    duration: theme.transitions.duration.shorter,
+                                }),
+                                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
                             }}
-                        >
-                            {subheader || 'Latest team and policy updates'}
-                        </Typography>
-                    </Box>
+                        />
+                    </IconButton>
                 </Stack>
 
                 <Box
@@ -208,9 +255,10 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                         zIndex: 1,
                         display: 'flex',
                         alignItems: 'center',
+                        width: '100%',
                     }}
                 >
-                    <Box sx={{ minWidth: 0 }}>
+                    <Box sx={{ minWidth: 0, width: '100%' }}>
                         <Typography
                             variant="body2"
                             sx={{
@@ -227,7 +275,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                 overflow: 'hidden',
                                 pr: { xs: 0, sm: 1 },
                                 maskImage: {
-                                    xs: 'linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%)',
+                                    xs: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
                                     sm: 'linear-gradient(90deg, transparent 0%, black 5%, black 95%, transparent 100%)',
                                 },
                             }}
@@ -237,14 +285,14 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                     display: 'flex',
                                     width: 'max-content',
                                     minWidth: '200%',
-                                    animation: `${marqueeAnimation} 28s linear infinite`,
+                                    animation: `${marqueeAnimation} ${duration}s linear infinite`,
                                     '&:hover': {
                                         animationPlayState: 'paused',
                                     },
                                 }}
                             >
                                 {[0, 1].map((copy) => (
-                                    <Stack key={copy} direction="row" alignItems="center">
+                                    <Stack key={copy} ref={copy === 0 ? contentRef : null} direction="row" alignItems="center">
                                         {list.map((item, index) => (
                                             <Typography
                                                 key={index}
@@ -252,6 +300,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                                 sx={{
                                                     color: '#1f2937',
                                                     fontWeight: 600,
+                                                    fontSize: { xs: '0.8rem', sm: '1rem' },
                                                     lineHeight: 1.45,
                                                     whiteSpace: 'nowrap',
                                                     pr: 8,
@@ -274,9 +323,8 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                     direction="row"
                     alignItems="center"
                     spacing={1}
-                    sx={{ zIndex: 1, flexShrink: 0, ml: 'auto' }}
+                    sx={{ zIndex: 1, flexShrink: 0, ml: 'auto', display: { xs: 'none', sm: 'flex' } }}
                 >
-
                     <IconButton
                         size="small"
                         onClick={(event) => {
@@ -356,7 +404,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                 bgcolor: alpha(theme.palette.primary.main, 0.08),
                             }}
                         >
-                            <BsBellFill  size={16} />
+                            <BsBellFill size={16} />
                         </Box>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700, flexGrow: 1 }}>
                             Announcements
@@ -401,7 +449,7 @@ export function HRAnnouncements({ title, subheader, list, ...other }: Props) {
                                             color: 'primary.main',
                                         }}
                                     >
-                                        <BsBellFill  size={14} />
+                                        <BsBellFill size={14} />
                                     </Box>
 
                                     <Box sx={{ flexGrow: 1, minWidth: 0 }}>

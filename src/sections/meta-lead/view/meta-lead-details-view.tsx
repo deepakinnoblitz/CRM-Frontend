@@ -17,8 +17,11 @@ import ToggleButton from '@mui/material/ToggleButton';
 import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import { getMetaLeadItem } from 'src/api/meta-lead';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { fetchMetaApps, getMetaApp } from 'src/api/meta-app';
+import { fetchMetaPages, getMetaPage } from 'src/api/meta-page';
+import { fetchMetaForms, getMetaForm } from 'src/api/meta-form';
+import { getMetaLeadItem, retryMetaLead } from 'src/api/meta-lead';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -106,7 +109,7 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
             .replace(/^entry\[\d+\]\.changes\[\d+\]\.value\./g, '')
             .replace(/^entry\[\d+\]\.changes\[\d+\]\./g, '')
             .replace(/^entry\[\d+\]\./g, '');
-        
+
         // Convert snake_case or dot notation suffix to human readable Title Case
         cleanKey = cleanKey.split(/[._]/).map(word => {
             if (!word) return '';
@@ -183,15 +186,15 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
         if (isLeadJson && parsed.field_data && Array.isArray(parsed.field_data)) {
             // Facebook specific payload field mapping extraction
             rows = rows.concat(parsed.field_data.map((item: any) => ({
-                key: item.name || '—',
+                key: formatKeyLabel(item.name || '—'),
                 value: Array.isArray(item.values) ? item.values.join(', ') : String(item.values || '—')
             })));
-            
+
             // Append other root meta parameters
             Object.keys(parsed).forEach(k => {
                 if (k !== 'field_data') {
                     rows.push({
-                        key: k,
+                        key: formatKeyLabel(k),
                         value: typeof parsed[k] === 'object' ? JSON.stringify(parsed[k]) : String(parsed[k] ?? '—')
                     });
                 }
@@ -200,8 +203,9 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
             rows = rows.concat(extract(parsed));
         }
     } catch {
-        rows = [{ key: 'Error Message', value: jsonString }];
+        rows = [{ key: formatKeyLabel('Error Message'), value: jsonString }];
     }
+
 
     return (
         <Card sx={{ p: 3 }}>
@@ -230,12 +234,12 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
                         }
                     }}
                 >
-                    <ToggleButton 
-                        value="table" 
-                        sx={{ 
-                            py: 0.5, 
-                            px: 2, 
-                            textTransform: 'none', 
+                    <ToggleButton
+                        value="table"
+                        sx={{
+                            py: 0.5,
+                            px: 2,
+                            textTransform: 'none',
                             fontWeight: 700,
                             color: 'text.secondary',
                             '&.Mui-selected': {
@@ -249,12 +253,12 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
                     >
                         Table View
                     </ToggleButton>
-                    <ToggleButton 
-                        value="raw" 
-                        sx={{ 
-                            py: 0.5, 
-                            px: 2, 
-                            textTransform: 'none', 
+                    <ToggleButton
+                        value="raw"
+                        sx={{
+                            py: 0.5,
+                            px: 2,
+                            textTransform: 'none',
                             fontWeight: 700,
                             color: 'text.secondary',
                             '&.Mui-selected': {
@@ -315,11 +319,13 @@ function KeyValueTable({ title, jsonString, isLeadJson = false }: { title: strin
 }
 
 const STATUS_COLORS: Record<string, { bg: string; border: string; color: string }> = {
-    Completed:  { bg: 'rgba(34,197,94,0.15)',   border: 'rgba(34,197,94,0.35)',   color: '#15803d' },
-    Failed:     { bg: 'rgba(239,68,68,0.15)',    border: 'rgba(239,68,68,0.35)',   color: '#b91c1c' },
-    Processing: { bg: 'rgba(59,130,246,0.15)',   border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
-    Pending:    { bg: 'rgba(156,163,175,0.15)',  border: 'rgba(156,163,175,0.35)', color: '#374151' },
+    Success: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
+    Completed: { bg: 'rgba(34,197,94,0.15)', border: 'rgba(34,197,94,0.35)', color: '#15803d' },
+    Failed: { bg: 'rgba(239,68,68,0.15)', border: 'rgba(239,68,68,0.35)', color: '#b91c1c' },
+    Processing: { bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.35)', color: '#1d4ed8' },
+    Pending: { bg: 'rgba(156,163,175,0.15)', border: 'rgba(156,163,175,0.35)', color: '#374151' },
 };
+
 
 function formatDatetime(val?: string) {
     if (!val) return undefined;
@@ -335,16 +341,92 @@ export function MetaLeadDetailsView() {
 
     const [item, setItem] = useState<any>(null);
     const [fetching, setFetching] = useState(true);
+    const [retrying, setRetrying] = useState(false);
+    const [appName, setAppName] = useState<string>('');
+    const [pageName, setPageName] = useState<string>('');
+    const [formName, setFormName] = useState<string>('');
+    const [reloadTrigger, setReloadTrigger] = useState(0);
 
     useEffect(() => {
         if (id) {
             setFetching(true);
             getMetaLeadItem(decodeURIComponent(id))
-                .then(setItem)
+                .then(async (leadData) => {
+                    setItem(leadData);
+
+                    const [appsRes, pagesRes, formsRes] = await Promise.allSettled([
+                        fetchMetaApps({ page: 1, page_size: 1000 }),
+                        fetchMetaPages({ page: 1, page_size: 1000 }),
+                        fetchMetaForms({ page: 1, page_size: 1000 }),
+                    ]);
+
+                    const apps = appsRes.status === 'fulfilled' ? appsRes.value.data : [];
+                    const pages = pagesRes.status === 'fulfilled' ? pagesRes.value.data : [];
+                    const forms = formsRes.status === 'fulfilled' ? formsRes.value.data : [];
+
+                    // Resolve App Name
+                    let resolvedApp = leadData.meta_app || '';
+                    if (leadData.meta_app) {
+                        const match = apps.find((a: any) => a.name === leadData.meta_app || a.app_id === leadData.meta_app || a.app_name === leadData.meta_app);
+                        if (match?.app_name) {
+                            resolvedApp = match.app_name;
+                        } else {
+                            try {
+                                const appDoc = await getMetaApp(leadData.meta_app);
+                                if (appDoc?.app_name) resolvedApp = appDoc.app_name;
+                            } catch { /* fallback to raw id */ }
+                        }
+                    }
+                    setAppName(resolvedApp);
+
+                    // Resolve Page Name
+                    let resolvedPage = leadData.meta_page || '';
+                    if (leadData.meta_page) {
+                        const match = pages.find((p: any) => p.name === leadData.meta_page || p.page_id === leadData.meta_page || p.page_name === leadData.meta_page);
+                        if (match?.page_name) {
+                            resolvedPage = match.page_name;
+                        } else {
+                            try {
+                                const pageDoc = await getMetaPage(leadData.meta_page);
+                                if (pageDoc?.page_name) resolvedPage = pageDoc.page_name;
+                            } catch { /* fallback to raw id */ }
+                        }
+                    }
+                    setPageName(resolvedPage);
+
+                    // Resolve Form Name
+                    let resolvedForm = leadData.meta_form || '';
+                    if (leadData.meta_form) {
+                        const match = forms.find((f: any) => f.name === leadData.meta_form || f.form_id === leadData.meta_form || f.form_name === leadData.meta_form);
+                        if (match?.form_name) {
+                            resolvedForm = match.form_name;
+                        } else {
+                            try {
+                                const formDoc = await getMetaForm(leadData.meta_form);
+                                if (formDoc?.form_name) resolvedForm = formDoc.form_name;
+                            } catch { /* fallback to raw id */ }
+                        }
+                    }
+                    setFormName(resolvedForm);
+                })
                 .catch(() => enqueueSnackbar('Failed to load Meta Lead details.', { variant: 'error' }))
                 .finally(() => setFetching(false));
         }
-    }, [id, enqueueSnackbar]);
+    }, [id, reloadTrigger, enqueueSnackbar]);
+
+    const handleRetry = async () => {
+        if (!item?.name) return;
+        setRetrying(true);
+        try {
+            await retryMetaLead(item.name);
+            enqueueSnackbar('Meta Lead processing retried successfully', { variant: 'success' });
+            setReloadTrigger((prev) => prev + 1);
+        } catch (err: any) {
+            enqueueSnackbar(err.message || 'Failed to retry Meta Lead', { variant: 'error' });
+        } finally {
+            setRetrying(false);
+        }
+    };
 
     if (fetching) {
         return (
@@ -386,15 +468,29 @@ export function MetaLeadDetailsView() {
                         </Stack>
                     </Stack>
                 </Stack>
-                <Button
-                    variant="outlined"
-                    color="inherit"
-                    onClick={() => navigate('/lead-integration/meta-leads')}
-                    startIcon={<IoMdArrowBack size={20} />}
-                    sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
-                >
-                    Back to List
-                </Button>
+                <Stack direction="row" spacing={1.5}>
+                    {item.processing_status === 'Failed' && (
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={retrying}
+                            onClick={handleRetry}
+                            startIcon={retrying ? <CircularProgress size={18} color="inherit" /> : <Iconify icon="solar:refresh-bold" />}
+                            sx={{ borderRadius: 1.5, fontWeight: 700, textTransform: 'none', px: 2.5 }}
+                        >
+                            {retrying ? 'Retrying...' : 'Retry Processing'}
+                        </Button>
+                    )}
+                    <Button
+                        variant="outlined"
+                        color="inherit"
+                        onClick={() => navigate('/lead-integration/meta-leads')}
+                        startIcon={<IoMdArrowBack size={20} />}
+                        sx={{ borderRadius: 1.5, fontWeight: 600, textTransform: 'none', px: 2.5 }}
+                    >
+                        Back to List
+                    </Button>
+                </Stack>
             </Stack>
 
             <Stack spacing={3}>
@@ -406,9 +502,9 @@ export function MetaLeadDetailsView() {
                     </Stack>
                     <Box sx={{ display: 'grid', columnGap: 4, rowGap: 3, gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: 'repeat(4, 1fr)' } }}>
                         <DetailRow label="Meta Lead ID" value={item.meta_lead_id} />
-                        <DetailRow label="Meta App" value={item.meta_app} />
-                        <DetailRow label="Meta Page" value={item.meta_page} />
-                        <DetailRow label="Meta Form" value={item.meta_form} />
+                        <DetailRow label="Meta App" value={appName || item.meta_app} />
+                        <DetailRow label="Meta Page" value={pageName || item.meta_page} />
+                        <DetailRow label="Meta Form" value={formName || item.meta_form} />
                         <DetailRow label="Campaign Name" value={item.campaign_name} />
                         <DetailRow label="Ad Set Name" value={item.ad_set_name} />
                         <DetailRow label="Ad Name" value={item.ad_name} />
