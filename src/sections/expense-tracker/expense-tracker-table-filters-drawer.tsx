@@ -167,6 +167,7 @@ export default function ExpenseTrackerTableFiltersDrawer({
                                     label="Start Date"
                                     value={filters.startDate}
                                     onChange={handleFilterStartDate}
+                                    format="DD-MM-YYYY"
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,
@@ -187,6 +188,7 @@ export default function ExpenseTrackerTableFiltersDrawer({
                                     label="End Date"
                                     value={filters.endDate}
                                     onChange={handleFilterEndDate}
+                                    format="DD-MM-YYYY"
                                     slotProps={{
                                         textField: {
                                             fullWidth: true,

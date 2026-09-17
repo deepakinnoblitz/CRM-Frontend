@@ -138,6 +138,7 @@ export default function CRMExpenseTrackerDialog({ open, onClose, onSubmit, curre
                             label="Date"
                             value={date}
                             onChange={(newValue) => setDate(newValue)}
+                            format="DD-MM-YYYY"
                             slotProps={{ textField: { fullWidth: true } }}
                         />
                     </LocalizationProvider>
