@@ -162,6 +162,7 @@ export default function ExpenseTrackerDialog({ open, onClose, onSubmit, currentD
                             label="Date & Time"
                             value={date}
                             onChange={(newValue) => setDate(newValue)}
+                            format="DD-MM-YYYY hh:mm A"
                             slotProps={{
                                 textField: {
                                     fullWidth: true,

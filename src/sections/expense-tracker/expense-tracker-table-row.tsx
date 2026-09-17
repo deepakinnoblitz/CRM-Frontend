@@ -1,5 +1,3 @@
-import dayjs from 'dayjs';
-
 import Box from '@mui/material/Box';
 import { alpha } from '@mui/material/styles';
 import Checkbox from '@mui/material/Checkbox';
@@ -8,6 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
+import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
@@ -110,11 +109,11 @@ export function ExpenseTrackerTableRow({
                 </TableCell>
             )}
 
-            <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                {date_time ? dayjs(date_time).format('DD MMM YYYY · HH:mm') : '-'}
-            </TableCell>
-
             <TableCell sx={{ fontWeight: 600 }}>{titlenotes || '-'}</TableCell>
+
+            <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
+                {date_time ? fDate(date_time) : '-'}
+            </TableCell>
 
             <TableCell>
                 <Label
