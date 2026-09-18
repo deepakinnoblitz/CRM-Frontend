@@ -167,6 +167,23 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
 
             await applyLeaveWorkflowAction(leaveId, actionToApply.action, comment, updateData);
 
+            const lowerAction = actionToApply.action.toLowerCase();
+            const isClarify = lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply');
+
+            if (lowerAction.includes('approve')) {
+                enqueueSnackbar('Leave application approved successfully', { variant: 'success' });
+            } else if (lowerAction.includes('reject')) {
+                enqueueSnackbar('Leave application rejected successfully', { variant: 'success' });
+            } else if (isClarify) {
+                if (clarificationType === 'HR') {
+                    enqueueSnackbar('Clarification requested successfully', { variant: 'success' });
+                } else {
+                    enqueueSnackbar('Reply sent successfully', { variant: 'success' });
+                }
+            } else {
+                enqueueSnackbar(`Leave application ${actionToApply.action.toLowerCase()}ed successfully`, { variant: 'success' });
+            }
+
             setComment('');
             setCommentDialogOpen(false);
             setOpenClarification(false);
@@ -176,14 +193,12 @@ export function LeavesDetailsDialog({ open, onClose, leaveId, onRefresh, socket 
             if (onRefresh) onRefresh();
 
             // Only close if not a clarification/reply
-            const lowerAction = actionToApply.action.toLowerCase();
-            const isClarify = lowerAction.includes('clarification') || lowerAction.includes('query') || lowerAction.includes('reply');
-
             if (!isClarify) {
                 onClose();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to apply action:', error);
+            enqueueSnackbar(error?.message || `Failed to ${actionToApply.action.toLowerCase()} leave application`, { variant: 'error' });
         } finally {
             setSubmitting(false);
         }

@@ -1,3 +1,4 @@
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 import { FaRegCalendarAlt, FaClock, FaHistory, FaUserCheck, FaUserTimes } from 'react-icons/fa';
 
@@ -32,6 +33,7 @@ type Props = {
 };
 
 export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Props) {
+    const { enqueueSnackbar } = useSnackbar();
     const [wfh, setWfh] = useState<any>(null);
     const [employeeDetails, setEmployeeDetails] = useState<any>(null);
     const [loading, setLoading] = useState(false);
@@ -268,10 +270,19 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
             setActionPending(action);
             setActionLoading(true);
             await handleWFHAction(wfhId, action);
+            const actionLower = action.toLowerCase();
+            if (actionLower.includes('approve')) {
+                enqueueSnackbar('WFH record approved successfully', { variant: 'success' });
+            } else if (actionLower.includes('reject')) {
+                enqueueSnackbar('WFH record rejected successfully', { variant: 'success' });
+            } else {
+                enqueueSnackbar(`Record ${actionLower}ed successfully`, { variant: 'success' });
+            }
             const updatedWfh = await getWFHAttendance(wfhId);
             setWfh(updatedWfh);
-        } catch (error) {
+        } catch (error: any) {
             console.error(`Failed to ${action} WFH:`, error);
+            enqueueSnackbar(error?.message || `Failed to ${action.toLowerCase()} WFH record`, { variant: 'error' });
         } finally {
             setActionLoading(false);
             setActionPending(null);
