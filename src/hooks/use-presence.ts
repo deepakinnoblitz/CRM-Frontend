@@ -23,6 +23,16 @@ const requestCurrentLocation = (): Promise<GeolocationPosition> =>
         resolve(position);
       },
       (error) => {
+        // If high accuracy times out in the background, retry with network location (enableHighAccuracy: false)
+        if (error.code === error.TIMEOUT) {
+          navigator.geolocation.getCurrentPosition(
+            (fallbackPosition) => resolve(fallbackPosition),
+            (fallbackError) => reject(new Error('Location request timed out. Please try again.')),
+            { enableHighAccuracy: false, timeout: 10000, maximumAge: 120000 }
+          );
+          return;
+        }
+
         switch (error.code) {
           case error.PERMISSION_DENIED:
             reject(
@@ -40,14 +50,6 @@ const requestCurrentLocation = (): Promise<GeolocationPosition> =>
             );
             break;
 
-          case error.TIMEOUT:
-            reject(
-              new Error(
-                'Location request timed out. Please try again.'
-              )
-            );
-            break;
-
           default:
             reject(
               new Error(
@@ -58,24 +60,229 @@ const requestCurrentLocation = (): Promise<GeolocationPosition> =>
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+        timeout: 15000,
+        maximumAge: 60000, // 1 minute cached position allowed so background tabs don't stall waiting on GPS lock
       }
     );
   });
 
-// ── Module-level singleton for Auto Location Tracking ──
-// usePresence() is mounted in multiple components simultaneously.
-// Without this guard, each instance would create its own setInterval,
-// causing duplicate location logs per tracking cycle.
-let _autoTrackInterval: ReturnType<typeof setInterval> | undefined;
-let _autoTrackEmployeeId: string | null = null;
+// ── Module-level Geolocation Watcher & Background Stream ──
+// Subscribes to browser continuous location updates and caches to localStorage
+// so coordinates are immediately available in memory and persistent across tab states.
+let _locationWatchId: number | null = null;
+let _lastKnownPosition: { latitude: number; longitude: number; accuracy: number; timestamp: number } | null = null;
 
-function clearAutoTrackInterval() {
-  if (_autoTrackInterval) {
-    clearInterval(_autoTrackInterval);
-    _autoTrackInterval = undefined;
-    _autoTrackEmployeeId = null;
+try {
+  const savedPos = localStorage.getItem('last_known_geo_position');
+  if (savedPos) {
+    _lastKnownPosition = JSON.parse(savedPos);
+  }
+} catch (e) {
+  // ignore
+}
+
+function saveKnownPosition(latitude: number, longitude: number, accuracy: number) {
+  _lastKnownPosition = {
+    latitude,
+    longitude,
+    accuracy,
+    timestamp: Date.now(),
+  };
+  try {
+    localStorage.setItem('last_known_geo_position', JSON.stringify(_lastKnownPosition));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function startLocationWatcher() {
+  if (_locationWatchId !== null || typeof navigator === 'undefined' || !navigator.geolocation) {
+    return;
+  }
+
+  try {
+    _locationWatchId = navigator.geolocation.watchPosition(
+      (position) => {
+        saveKnownPosition(
+          position.coords.latitude,
+          position.coords.longitude,
+          position.coords.accuracy
+        );
+      },
+      (error) => {
+        console.warn('[Location Tracking] watchPosition notice:', error.message);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 60000,
+        timeout: 20000,
+      }
+    );
+  } catch (err) {
+    console.warn('[Location Tracking] Could not start watchPosition:', err);
+  }
+}
+
+function stopLocationWatcher() {
+  if (_locationWatchId !== null && typeof navigator !== 'undefined' && navigator.geolocation) {
+    try {
+      navigator.geolocation.clearWatch(_locationWatchId);
+    } catch (e) {
+      // ignore
+    }
+    _locationWatchId = null;
+  }
+}
+
+const getBestLocation = async (): Promise<{ latitude: number; longitude: number; accuracy: number }> => {
+  // 1. If we have a cached location from memory or localStorage, use it immediately
+  if (_lastKnownPosition && _lastKnownPosition.latitude !== undefined && _lastKnownPosition.longitude !== undefined) {
+    return {
+      latitude: _lastKnownPosition.latitude,
+      longitude: _lastKnownPosition.longitude,
+      accuracy: _lastKnownPosition.accuracy || 100,
+    };
+  }
+
+  // 2. Otherwise attempt requestCurrentLocation()
+  try {
+    const position = await requestCurrentLocation();
+    saveKnownPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
+    return {
+      latitude: position.coords.latitude,
+      longitude: position.coords.longitude,
+      accuracy: position.coords.accuracy,
+    };
+  } catch (err) {
+    if (_lastKnownPosition) {
+      return {
+        latitude: _lastKnownPosition.latitude,
+        longitude: _lastKnownPosition.longitude,
+        accuracy: _lastKnownPosition.accuracy || 100,
+      };
+    }
+    throw err;
+  }
+};
+
+// ── Standalone Global Auto-Tracking Manager ──
+// Uses a Web Worker on a background thread so modern browsers do NOT freeze or throttle
+// the interval timer when the user switches to other browser tabs or minimizes the window.
+let _autoTrackWorker: Worker | null = null;
+let _activeTrackingEmployee: string | null = null;
+let _activeTrackingIntervalMs: number | null = null;
+let _autoTrackFallbackInterval: ReturnType<typeof setInterval> | undefined;
+
+async function triggerAutoTrackLog(employeeId: string, currentStatus: string) {
+  try {
+    const { latitude, longitude, accuracy } = await getBestLocation();
+    const statusToLog = currentStatus || localStorage.getItem('user_presence_status') || 'Available';
+    await logLocation(latitude, longitude, accuracy, statusToLog, 'Auto Tracking');
+    localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+    console.log(`[Location Tracking] Auto Tracking logged successfully in background: lat=${latitude}, lng=${longitude}, status=${statusToLog}`);
+  } catch (err) {
+    console.error('[Location Tracking] Background auto-track API failed:', err);
+  }
+}
+
+function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStatus: () => string) {
+  const intervalMs = Math.max(1, intervalMinutes) * 60 * 1000;
+
+  // If already tracking this employee with this interval, keep running!
+  if (_activeTrackingEmployee === employeeId && _activeTrackingIntervalMs === intervalMs && (_autoTrackWorker || _autoTrackFallbackInterval)) {
+    return;
+  }
+
+  // Ensure watcher is active and prime location
+  startLocationWatcher();
+  if (!_lastKnownPosition) {
+    requestCurrentLocation().then(pos => {
+      saveKnownPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
+    }).catch(() => {
+      // Ignore initial GPS acquisition failure in background
+    });
+  }
+
+  // Clear previous worker if changing interval/employee
+  if (_autoTrackWorker) {
+    try {
+      _autoTrackWorker.postMessage({ action: 'stop' });
+      _autoTrackWorker.terminate();
+    } catch (e) {
+      // Ignore worker termination error
+    }
+    _autoTrackWorker = null;
+  }
+  if (_autoTrackFallbackInterval) {
+    clearInterval(_autoTrackFallbackInterval);
+    _autoTrackFallbackInterval = undefined;
+  }
+
+  _activeTrackingEmployee = employeeId;
+  _activeTrackingIntervalMs = intervalMs;
+
+  // Try creating an unthrottled Web Worker
+  if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined') {
+    try {
+      const workerCode = `
+        let timerId = null;
+        self.onmessage = function(e) {
+          if (e.data.action === 'start') {
+            if (timerId) clearInterval(timerId);
+            timerId = setInterval(function() {
+              self.postMessage({ action: 'tick' });
+            }, e.data.intervalMs);
+          } else if (e.data.action === 'stop') {
+            if (timerId) {
+              clearInterval(timerId);
+              timerId = null;
+            }
+          }
+        };
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
+      _autoTrackWorker = new Worker(workerUrl);
+      _autoTrackWorker.onmessage = (e) => {
+        if (e.data?.action === 'tick' && _activeTrackingEmployee) {
+          triggerAutoTrackLog(_activeTrackingEmployee, getStatus());
+        }
+      };
+      _autoTrackWorker.postMessage({ action: 'start', intervalMs });
+      console.log(`[Location Tracking] Background worker auto-tracker started for ${employeeId} (every ${intervalMinutes} min)`);
+      return;
+    } catch (err) {
+      console.warn('[Presence] Failed to initialize background worker, falling back to interval:', err);
+    }
+  }
+
+  // Fallback to standard setInterval if Web Worker is not supported
+  _autoTrackFallbackInterval = setInterval(() => {
+    if (_activeTrackingEmployee) {
+      triggerAutoTrackLog(_activeTrackingEmployee, getStatus());
+    }
+  }, intervalMs);
+}
+
+function stopAutoTrackingIfOffline(employeeId: string) {
+  if (_activeTrackingEmployee === employeeId) {
+    if (_autoTrackWorker) {
+      try {
+        _autoTrackWorker.postMessage({ action: 'stop' });
+        _autoTrackWorker.terminate();
+      } catch (e) {
+        // Ignore worker termination error
+      }
+      _autoTrackWorker = null;
+    }
+    if (_autoTrackFallbackInterval) {
+      clearInterval(_autoTrackFallbackInterval);
+      _autoTrackFallbackInterval = undefined;
+    }
+    _activeTrackingEmployee = null;
+    _activeTrackingIntervalMs = null;
+    stopLocationWatcher();
+    console.log(`[Location Tracking] Auto-tracker stopped for ${employeeId}`);
   }
 }
 
@@ -134,16 +341,18 @@ export function usePresence() {
     if (source === 'Status Change' && !trackOnStatusChangeRef.current) return;
 
     try {
-      const position = await requestCurrentLocation();
-      const { latitude, longitude, accuracy } = position.coords;
+      const { latitude, longitude, accuracy } = await getBestLocation();
 
       // Call api
       await logLocation(latitude, longitude, accuracy, currentStatus, source);
+      if (source === 'Auto Tracking' && employeeId) {
+        localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+      }
       console.log(`[Location Tracking] Location logged successfully for source: ${source}`);
     } catch (err) {
       console.error('[Location Tracking] Failed to log location:', err);
     }
-  }, []);
+  }, [employeeId]);
 
   const fetchStatus = useCallback(async () => {
     if (!employeeId) return;
@@ -264,15 +473,14 @@ export function usePresence() {
     }
 
     try {
-      const position = await requestCurrentLocation();
-
-      if (!position?.coords) {
+      const coords = await getBestLocation();
+      if (coords.latitude === undefined || coords.longitude === undefined) {
         throw new Error("Unable to get location");
       }
 
       return true;
     } catch (err: any) {
-      console.error(err);
+      console.error('[Location Tracking] Validation error:', err);
 
       setLocationDialogOpen(true);
       return false;
@@ -295,8 +503,7 @@ export function usePresence() {
         // If logging out, check if location tracking is enabled for logout
         if (enableLocationTrackingRef.current && trackOnLogoutRef.current) {
           try {
-            const position = await requestCurrentLocation();
-            const { latitude, longitude, accuracy } = position.coords;
+            const { latitude, longitude, accuracy } = await getBestLocation();
             // Log location first
             await logLocation(latitude, longitude, accuracy, newStatus, 'Logout');
           } catch (err) {
@@ -460,12 +667,22 @@ export function usePresence() {
             changeStatus('Available', 'Auto-resumed upon returning to tab', 'Idle');
           }
         }
+
+        // Catch-up check for Auto Tracking if tab was sleeping/inactive and overdue
+        if (statusRef.current !== 'Offline' && employeeId && enableLocationTrackingRef.current) {
+          const lastTrack = parseInt(localStorage.getItem(`last_auto_track_time_${employeeId}`) || '0', 10);
+          const intervalMs = (trackingIntervalMinutesRef.current || 10) * 60 * 1000;
+          if (lastTrack > 0 && Date.now() - lastTrack >= intervalMs) {
+            console.log('[Location Tracking] Catching up missed auto tracking cycle after tab wake-up');
+            logLocationIfAllowed('Auto Tracking', statusRef.current);
+          }
+        }
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [fetchStatus, isAutoStatusEnabled]);
+  }, [fetchStatus, isAutoStatusEnabled, employeeId, logLocationIfAllowed]);
 
   // Initial fetch
   useEffect(() => {
@@ -488,29 +705,16 @@ export function usePresence() {
     };
   }, [status, loading, employeeId]);
 
-  // Periodic Auto Location Tracking (singleton — only ONE interval runs across all hook instances)
+  // Periodic Auto Location Tracking (singleton Web Worker — unthrottled in background tabs)
   useEffect(() => {
-    const shouldTrack = status !== 'Offline' && !loading && employeeId && enableLocationTracking;
+    if (loading || !employeeId) return;
 
-    if (shouldTrack) {
-      // Only recreate the interval if the employee changed or none exists yet
-      if (_autoTrackEmployeeId !== employeeId || !_autoTrackInterval) {
-        clearAutoTrackInterval();
-        _autoTrackEmployeeId = employeeId;
-        _autoTrackInterval = setInterval(() => {
-          logLocationIfAllowed('Auto Tracking', statusRef.current);
-        }, trackingIntervalMinutes * 60 * 1000);
-      }
-    } else {
-      // Clear if we go offline or tracking is disabled
-      if (_autoTrackEmployeeId === employeeId) {
-        clearAutoTrackInterval();
-      }
+    if (status !== 'Offline' && enableLocationTracking) {
+      ensureAutoTracking(employeeId, trackingIntervalMinutes || 10, () => statusRef.current);
+    } else if (status === 'Offline') {
+      stopAutoTrackingIfOffline(employeeId);
     }
-
-    // No cleanup here — the singleton is intentionally shared across instances.
-    // It gets cleared when any instance detects Offline/disabled tracking.
-  }, [status, loading, employeeId, enableLocationTracking, trackingIntervalMinutes, logLocationIfAllowed]);
+  }, [status, loading, employeeId, enableLocationTracking, trackingIntervalMinutes]);
 
   return {
     status,
