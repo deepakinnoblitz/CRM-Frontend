@@ -221,17 +221,30 @@ function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStat
   _activeTrackingEmployee = employeeId;
   _activeTrackingIntervalMs = intervalMs;
 
-  // Try creating an unthrottled Web Worker
+  // Try creating an unthrottled Web Worker with Wall-Clock Heartbeat
+  // The 5-second heartbeat checks Date.now() elapsed time, so when the system wakes up from sleep
+  // it immediately detects the elapsed time and triggers auto-tracking without waiting for tab focus.
   if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined') {
     try {
       const workerCode = `
         let timerId = null;
+        let intervalMs = 600000;
+        let lastTickTime = Date.now();
+
         self.onmessage = function(e) {
           if (e.data.action === 'start') {
+            intervalMs = e.data.intervalMs || 600000;
+            lastTickTime = Date.now();
             if (timerId) clearInterval(timerId);
+
+            // 5-second Wall-Clock Heartbeat loop (immune to sleep blindness)
             timerId = setInterval(function() {
-              self.postMessage({ action: 'tick' });
-            }, e.data.intervalMs);
+              const now = Date.now();
+              if (now - lastTickTime >= intervalMs) {
+                lastTickTime = now;
+                self.postMessage({ action: 'tick' });
+              }
+            }, 5000);
           } else if (e.data.action === 'stop') {
             if (timerId) {
               clearInterval(timerId);
@@ -249,19 +262,48 @@ function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStat
         }
       };
       _autoTrackWorker.postMessage({ action: 'start', intervalMs });
-      console.log(`[Location Tracking] Background worker auto-tracker started for ${employeeId} (every ${intervalMinutes} min)`);
+      console.log(`[Location Tracking] Background worker auto-tracker started for ${employeeId} (every ${intervalMinutes} min, wall-clock heartbeat)`);
       return;
     } catch (err) {
       console.warn('[Presence] Failed to initialize background worker, falling back to interval:', err);
     }
   }
 
-  // Fallback to standard setInterval if Web Worker is not supported
+  // Fallback heartbeat if Web Worker is not supported
+  let lastFallbackTick = Date.now();
   _autoTrackFallbackInterval = setInterval(() => {
-    if (_activeTrackingEmployee) {
+    const now = Date.now();
+    if (_activeTrackingEmployee && now - lastFallbackTick >= intervalMs) {
+      lastFallbackTick = now;
       triggerAutoTrackLog(_activeTrackingEmployee, getStatus());
     }
-  }, intervalMs);
+  }, 5000);
+}
+
+// ── Global System Wake-Up / Network Reconnection Listener ──
+// When a computer wakes up from sleep or reconnects to WiFi, this fires across background tabs
+// to immediately catch up and restart location tracking without waiting for the tab to be focused.
+if (typeof window !== 'undefined') {
+  const handleSystemWakeUp = () => {
+    if (_activeTrackingEmployee) {
+      console.log('[Location Tracking] System wake-up or network reconnection detected.');
+      startLocationWatcher();
+
+      const lastTrack = parseInt(localStorage.getItem(`last_auto_track_time_${_activeTrackingEmployee}`) || '0', 10);
+      const intervalMs = _activeTrackingIntervalMs || 10 * 60 * 1000;
+      if (Date.now() - lastTrack >= intervalMs) {
+        console.log('[Location Tracking] Firing overdue auto-track catch-up after wake-up.');
+        const currentStatus = localStorage.getItem('user_presence_status') || 'Available';
+        triggerAutoTrackLog(_activeTrackingEmployee, currentStatus);
+      }
+    }
+  };
+
+  window.addEventListener('online', handleSystemWakeUp);
+  window.addEventListener('focus', handleSystemWakeUp);
+  if ('addEventListener' in document) {
+    document.addEventListener('resume' as any, handleSystemWakeUp);
+  }
 }
 
 function stopAutoTrackingIfOffline(employeeId: string) {
