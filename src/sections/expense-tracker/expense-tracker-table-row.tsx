@@ -6,7 +6,7 @@ import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { fDate } from 'src/utils/format-time';
+import { fDateTime } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
@@ -111,16 +111,12 @@ export function ExpenseTrackerTableRow({
 
             <TableCell sx={{ fontWeight: 600 }}>{titlenotes || '-'}</TableCell>
 
-            <TableCell sx={{ color: 'text.secondary', whiteSpace: 'nowrap' }}>
-                {date_time ? fDate(date_time) : '-'}
+            <TableCell sx={{ color: 'text.secondary', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {date_time ? fDateTime(date_time) : '-'}
             </TableCell>
 
             <TableCell>
-                <Label
-                    variant="soft"
-                    color={(type === 'Income' && 'success') || 'error'}
-                    sx={{ textTransform: 'capitalize' }}
-                >
+                <Label color={(type === 'Income' && 'success') || 'error'}>
                     {type}
                 </Label>
             </TableCell>
