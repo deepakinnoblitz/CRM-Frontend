@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { useSnackbar } from 'notistack';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -38,6 +39,7 @@ type Props = {
 
 export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket }: Props) {
     const { user } = useAuth();
+    const { enqueueSnackbar } = useSnackbar();
     const hasCustomPerms = user?.permissions?.custom_permissions_assigned && (user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list);
     const actionPerms = user?.permissions?.actions?.request_list || user?.permissions?.actions?.my_request_list;
     const canEdit = hasCustomPerms && actionPerms ? !!actionPerms?.edit : true;
@@ -113,6 +115,20 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
             }
 
             await updateRequestStatus(internalRequest.name, status, updateData);
+
+            const statusLower = status.toLowerCase();
+            if (statusLower.includes('approve')) {
+                enqueueSnackbar('Request approved successfully', { variant: 'success' });
+            } else if (statusLower.includes('reject')) {
+                enqueueSnackbar('Request rejected successfully', { variant: 'success' });
+            } else if (status === 'Clarification Requested') {
+                enqueueSnackbar('Clarification requested successfully', { variant: 'success' });
+            } else if (isEmployee && status === 'Pending') {
+                enqueueSnackbar('Reply sent successfully', { variant: 'success' });
+            } else {
+                enqueueSnackbar(`Request ${statusLower}ed successfully`, { variant: 'success' });
+            }
+
             if (onRefresh) onRefresh();
 
             // For clarify actions, don't close, just refresh local data
@@ -124,8 +140,9 @@ export function RequestDetailsDialog({ open, onClose, request, onRefresh, socket
                 setOpenClarification(false);
                 onClose();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to update status:', error);
+            enqueueSnackbar(error?.message || `Failed to ${status.toLowerCase()} request`, { variant: 'error' });
         } finally {
             setLoading(null);
         }

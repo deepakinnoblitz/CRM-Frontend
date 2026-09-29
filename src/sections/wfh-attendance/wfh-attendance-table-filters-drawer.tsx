@@ -274,6 +274,7 @@ export function WFHAttendanceTableFiltersDrawer({
                 <Stack spacing={2}>
                     <DatePicker
                         label="Start Date"
+                        format="DD-MM-YYYY"
                         value={filters.startDate ? dayjs(filters.startDate) : null}
                         onChange={(newValue) => handleFilterChange('startDate', newValue?.format('YYYY-MM-DD') || null)}
                         slotProps={{
@@ -285,6 +286,7 @@ export function WFHAttendanceTableFiltersDrawer({
                     />
                     <DatePicker
                         label="End Date"
+                        format="DD-MM-YYYY"
                         value={filters.endDate ? dayjs(filters.endDate) : null}
                         onChange={(newValue) => handleFilterChange('endDate', newValue?.format('YYYY-MM-DD') || null)}
                         slotProps={{
