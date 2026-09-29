@@ -13,7 +13,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import { Button, Stack, DialogActions, Avatar } from '@mui/material';
 
-import { fTime } from 'src/utils/format-time';
+import { fDate, fTime } from 'src/utils/format-time';
 
 import { getEmployee } from 'src/api/employees';
 import { handleWFHAction, getWFHAttendance } from 'src/api/wfh-attendance';
@@ -180,7 +180,7 @@ export function WFHAttendanceDetailsDialog({ open, onClose, wfhId, socket }: Pro
                                     gridTemplateColumns: { xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
                                 }}
                             >
-                                <DetailCard label="Date" value={wfh.date} icon={<FaRegCalendarAlt size={20} />} />
+                                <DetailCard label="Date" value={wfh.date ? fDate(wfh.date, 'DD-MM-YYYY') : '-'} icon={<FaRegCalendarAlt size={20} />} />
                                 <DetailCard label="From Time" value={wfh.from_time ? fTime(wfh.from_time) : '-'} icon={<FaClock size={20} />} />
                                 <DetailCard label="To Time" value={wfh.to_time ? fTime(wfh.to_time) : '-'} icon={<FaClock size={20} />} />
                                 <DetailCard
