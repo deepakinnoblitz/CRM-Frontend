@@ -63,6 +63,7 @@ import { getHolidayList, populateHolidays, createHolidayList, updateHolidayList,
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
+import { ConfirmDialog } from 'src/components/confirm-dialog';
 
 import { TableNoData } from 'src/sections/lead/table-no-data';
 import { TableEmptyRows } from 'src/sections/lead/table-empty-rows';
@@ -129,6 +130,7 @@ export function HolidaysView() {
     const [isEdit, setIsEdit] = useState(false);
     const [currentHoliday, setCurrentHoliday] = useState<any>(null);
     const [confirmDelete, setConfirmDelete] = useState<{ open: boolean, id: string | null }>({ open: false, id: null });
+    const [deleting, setDeleting] = useState(false);
 
     // View state
     const [openView, setOpenView] = useState(false);
@@ -310,6 +312,7 @@ export function HolidaysView() {
 
     const handleConfirmDelete = async () => {
         if (!confirmDelete.id) return;
+        setDeleting(true);
         try {
             await deleteHolidayList(confirmDelete.id);
             setSnackbar({ open: true, message: 'Holiday list deleted successfully', severity: 'success' });
@@ -317,6 +320,7 @@ export function HolidaysView() {
         } catch (error: any) {
             setSnackbar({ open: true, message: error.message || 'Failed to delete holiday list', severity: 'error' });
         } finally {
+            setDeleting(false);
             setConfirmDelete({ open: false, id: null });
         }
     };
@@ -624,6 +628,14 @@ export function HolidaysView() {
                                         Total: {holidays.filter(h => h.is_working_day === 0).length} holiday(s)
                                     </Typography>
                                 </Typography>
+                                <Button
+                                    size="small"
+                                    variant="outlined"
+                                    startIcon={<Iconify icon="mingcute:add-line" />}
+                                    onClick={handleAddHoliday}
+                                >
+                                    Add Holiday
+                                </Button>
                             </Box>
 
                             <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, overflow: 'hidden' }}>
@@ -633,7 +645,7 @@ export function HolidaysView() {
                                             <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Date</TableCell>
                                             <TableCell sx={{ fontWeight: 700, py: 1.5 }}>Description</TableCell>
                                             <TableCell sx={{ fontWeight: 700, py: 1.5, textAlign: 'center' }}>Working Day</TableCell>
-                                            <TableCell sx={{ fontWeight: 700, py: 1.5, width: 80 }} />
+                                            <TableCell sx={{ fontWeight: 700, py: 1.5, width: 80, textAlign: 'center' }}>Action</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -690,6 +702,11 @@ export function HolidaysView() {
                                                             onChange={(e) => handleHolidayChange(index, 'is_working_day', e.target.checked ? 1 : 0)}
                                                         />
                                                     </TableCell>
+                                                    <TableCell sx={{ py: 1.5, textAlign: 'center' }}>
+                                                        <IconButton size="small" color="error" onClick={() => handleDeleteHoliday(index)}>
+                                                            <Iconify icon="solar:trash-bin-trash-bold" />
+                                                        </IconButton>
+                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         )}
@@ -712,6 +729,26 @@ export function HolidaysView() {
                 open={openView}
                 onClose={() => setOpenView(false)}
                 holidayList={viewHoliday}
+            />
+
+            {/* Confirm Delete Dialog */}
+            <ConfirmDialog
+                open={confirmDelete.open}
+                onClose={() => setConfirmDelete({ open: false, id: null })}
+                title="Confirm Delete"
+                content="Are you sure you want to delete this holiday list? This action cannot be undone."
+                isLoading={deleting}
+                action={
+                    <Button
+                        variant="contained"
+                        color="error"
+                        disabled={deleting}
+                        onClick={handleConfirmDelete}
+                        sx={{ borderRadius: 1.5, minWidth: 100 }}
+                    >
+                        {deleting ? 'Deleting...' : 'Delete'}
+                    </Button>
+                }
             />
 
             {/* Snackbar */}
