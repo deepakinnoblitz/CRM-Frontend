@@ -485,11 +485,11 @@ export function TimesheetsView() {
         if (!timesheetDate) {
             errors.timesheetDate = 'Timesheet Date is required';
         } else {
-            const isHoliday = holidays.some((h) => h.date === timesheetDate);
+            const isHoliday = holidays.some((h) => (h.date === timesheetDate || h.holiday_date === timesheetDate) && (!h.is_working_day || h.is_working_day === 0));
             const isSunday = dayjs(timesheetDate).day() === 0;
 
             if (isHoliday) {
-                const holiday = holidays.find((h) => h.date === timesheetDate);
+                const holiday = holidays.find((h) => (h.date === timesheetDate || h.holiday_date === timesheetDate) && (!h.is_working_day || h.is_working_day === 0));
                 errors.timesheetDate = `Cannot create timesheet on a holiday: ${holiday?.description || 'Holiday'}`;
             } else if (isSunday) {
                 errors.timesheetDate = 'Cannot create timesheet on a Sunday';

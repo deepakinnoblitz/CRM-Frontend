@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 
 import { useUnreadCountsContext } from 'src/hooks/unread-counts-context';
 
-import { fTime, fTimeDist } from 'src/utils/format-time';
+import { fDate, fTime, fTimeDist } from 'src/utils/format-time';
 
 import { markAsRead } from 'src/api/unread-counts';
 
@@ -166,7 +166,7 @@ export function WFHAttendanceTableRow({
 
                 <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
                     <Typography variant="body2" noWrap>
-                        {row.date}
+                        {row.date ? fDate(row.date, 'DD-MM-YYYY') : '-'}
                     </Typography>
                 </TableCell>
 
