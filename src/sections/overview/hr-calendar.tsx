@@ -21,6 +21,7 @@ type Props = CardProps & {
         title: string;
         start: string;
         color?: string;
+        is_working_day?: number | boolean;
     }[];
     onDateChange?: (date: Date) => void;
 };
@@ -32,39 +33,81 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
     const [calendarTitle, setCalendarTitle] = useState('');
     const [activeView, setActiveView] = useState('dayGridMonth');
 
-    const applyHolidayStyle = (cellEl: HTMLElement, holidayTitle: string) => {
-        cellEl.style.backgroundColor = alpha(theme.palette.error.main, 0.05);
-        cellEl.style.removeProperty('box-shadow');
-        cellEl.style.removeProperty('border');
+    const applyHolidayStyle = (cellEl: HTMLElement, holidayTitle: string, isWorkingDay?: number | boolean, eventColor?: string) => {
+        const isWorking = isWorkingDay === 1 || isWorkingDay === true;
 
-        const dayNumber = cellEl.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
-        if (dayNumber) {
-            dayNumber.style.color = theme.palette.error.main;
-            dayNumber.style.fontWeight = '700';
-        }
+        if (isWorking) {
+            cellEl.style.backgroundColor = '';
+            cellEl.style.removeProperty('box-shadow');
+            cellEl.style.removeProperty('border');
 
-        const frameEl = cellEl.querySelector('.fc-daygrid-day-frame');
-        if (frameEl) {
-            const existing = frameEl.querySelector('.holiday-desc-label');
-            if (existing) {
-                existing.remove();
+            const dayNumber = cellEl.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+            if (dayNumber) {
+                dayNumber.style.removeProperty('color');
+                dayNumber.style.fontWeight = '600';
             }
 
-            const descEl = document.createElement('div');
-            descEl.className = 'holiday-desc-label';
-            descEl.innerText = holidayTitle;
-            descEl.style.fontSize = '0.675rem';
-            descEl.style.fontWeight = '700';
-            descEl.style.color = '#be123c';
-            descEl.style.textAlign = 'center';
-            descEl.style.padding = '4px 6px';
-            descEl.style.borderRadius = '6px';
-            descEl.style.whiteSpace = 'nowrap';
-            descEl.style.overflow = 'hidden';
-            descEl.style.textOverflow = 'ellipsis';
-            descEl.style.width = 'calc(100% - 12px)';
-            descEl.style.margin = '8px auto 0 auto';
-            frameEl.appendChild(descEl);
+            const frameEl = cellEl.querySelector('.fc-daygrid-day-frame');
+            if (frameEl) {
+                const existing = frameEl.querySelector('.holiday-desc-label');
+                if (existing) {
+                    existing.remove();
+                }
+
+                if (holidayTitle) {
+                    const descEl = document.createElement('div');
+                    descEl.className = 'holiday-desc-label';
+                    descEl.innerText = holidayTitle;
+                    descEl.style.fontSize = '0.675rem';
+                    descEl.style.fontWeight = '700';
+                    descEl.style.color = eventColor || '#08a3cd';
+                    descEl.style.textAlign = 'center';
+                    descEl.style.padding = '4px 6px';
+                    descEl.style.borderRadius = '6px';
+                    descEl.style.whiteSpace = 'nowrap';
+                    descEl.style.overflow = 'hidden';
+                    descEl.style.textOverflow = 'ellipsis';
+                    descEl.style.width = 'calc(100% - 12px)';
+                    descEl.style.margin = '8px auto 0 auto';
+                    frameEl.appendChild(descEl);
+                }
+            }
+        } else {
+            cellEl.style.backgroundColor = alpha(theme.palette.error.main, 0.05);
+            cellEl.style.removeProperty('box-shadow');
+            cellEl.style.removeProperty('border');
+
+            const dayNumber = cellEl.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
+            if (dayNumber) {
+                dayNumber.style.color = theme.palette.error.main;
+                dayNumber.style.fontWeight = '700';
+            }
+
+            const frameEl = cellEl.querySelector('.fc-daygrid-day-frame');
+            if (frameEl) {
+                const existing = frameEl.querySelector('.holiday-desc-label');
+                if (existing) {
+                    existing.remove();
+                }
+
+                if (holidayTitle) {
+                    const descEl = document.createElement('div');
+                    descEl.className = 'holiday-desc-label';
+                    descEl.innerText = holidayTitle;
+                    descEl.style.fontSize = '0.675rem';
+                    descEl.style.fontWeight = '700';
+                    descEl.style.color = '#be123c';
+                    descEl.style.textAlign = 'center';
+                    descEl.style.padding = '4px 6px';
+                    descEl.style.borderRadius = '6px';
+                    descEl.style.whiteSpace = 'nowrap';
+                    descEl.style.overflow = 'hidden';
+                    descEl.style.textOverflow = 'ellipsis';
+                    descEl.style.width = 'calc(100% - 12px)';
+                    descEl.style.margin = '8px auto 0 auto';
+                    frameEl.appendChild(descEl);
+                }
+            }
         }
     };
 
@@ -107,7 +150,7 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
         events.forEach((event) => {
             const cell = calendarRef.current?.querySelector(`td[data-date="${event.start}"]`);
             if (cell) {
-                applyHolidayStyle(cell as HTMLElement, event.title);
+                applyHolidayStyle(cell as HTMLElement, event.title, event.is_working_day, event.color);
             }
         });
     }, [events, theme.palette.error.main]);
@@ -453,7 +496,7 @@ export function HRCalendar({ title, subheader, events, onDateChange, ...other }:
 
                         const event = events.find((e) => e.start === dateStr);
                         if (event) {
-                            applyHolidayStyle(arg.el, event.title);
+                            applyHolidayStyle(arg.el, event.title, event.is_working_day, event.color);
                         } else {
                             clearHolidayStyle(arg.el);
                         }

@@ -280,9 +280,9 @@ export function EmployeeDashboardView() {
                                                 bgColor = '#9E9E9E';
                                             }
                                         } else if (isHoliday) {
-                                            // Future Working Holiday
+                                            // Future Working Holiday / Day with description
                                             eventTitle = record.holiday_info || 'Holiday';
-                                            bgColor = '#B71D18';
+                                            bgColor = isNonWorkingHoliday ? '#B71D18' : '#08a3cd';
                                         } else {
                                             return null;
                                         }
@@ -291,10 +291,16 @@ export function EmployeeDashboardView() {
                                     return {
                                         title: eventTitle,
                                         subTitle: record.leave_type || '',
-                                        extendedProps: { subTitle: record.leave_type || '' },
+                                        extendedProps: {
+                                            subTitle: record.leave_type || '',
+                                            isWorkingDay: record.holiday_is_working_day === 1,
+                                            isHoliday: isNonWorkingHoliday,
+                                        },
                                         start: record.date,
                                         color: bgColor,
                                         textColor: '#FFFFFF',
+                                        isWorkingDay: record.holiday_is_working_day === 1,
+                                        isHoliday: isNonWorkingHoliday,
                                     };
                                 })
                                 .filter(Boolean) as any[]
