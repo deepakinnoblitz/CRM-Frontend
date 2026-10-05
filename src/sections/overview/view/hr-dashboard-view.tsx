@@ -353,9 +353,9 @@ export function HRDashboardView() {
                             const mappedEvents = (data.holidays || []).map((h: any) => ({
                                 title: h.description,
                                 start: h.date || h.holiday_date,
-                                color: '#FF4842'
+                                color: h.is_working_day ? '#08a3cd' : '#FF4842',
+                                is_working_day: h.is_working_day
                             }));
-                            console.log('Mapped holiday events:', mappedEvents);
                             return mappedEvents;
                         })()}
                     />

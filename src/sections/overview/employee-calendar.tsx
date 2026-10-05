@@ -24,6 +24,9 @@ type Props = CardProps & {
         color?: string;
         textColor?: string;
         backgroundColor?: string;
+        isWorkingDay?: boolean;
+        isHoliday?: boolean;
+        extendedProps?: any;
     }[];
     onDateChange?: (date: Date) => void;
 };
@@ -83,10 +86,11 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
         if (!calendarRef.current || !events.length) return;
 
         // Apply colors to existing cells when events update
-        events.forEach((event) => {
+        events.forEach((event: any) => {
             const cell = calendarRef.current?.querySelector(`td[data-date="${event.start}"]`);
             if (cell) {
-                const isHolidayCell = isHoliday(event.title);
+                const isWorking = event.isWorkingDay || event.extendedProps?.isWorkingDay;
+                const isHolidayCell = !isWorking && (event.isHoliday !== undefined ? event.isHoliday : isHoliday(event.title));
 
                 if (isHolidayCell) {
                     (cell as HTMLElement).style.backgroundColor = alpha(theme.palette.error.main, 0.08);
@@ -100,7 +104,7 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
 
                 const dayNumber = cell?.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
                 if (dayNumber) {
-                    if (isHolidayCell || shouldShowRedDayNumber(event.title)) {
+                    if (isHolidayCell || (!isWorking && shouldShowRedDayNumber(event.title))) {
                         dayNumber.style.color = theme.palette.error.main;
                     } else {
                         dayNumber.style.removeProperty('color');
@@ -482,9 +486,10 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                         const day = String(date.getDate()).padStart(2, '0');
                         const dateStr = `${year}-${month}-${day}`;
 
-                        const event = events.find((e) => e.start === dateStr);
+                        const event: any = events.find((e) => e.start === dateStr);
                         if (event) {
-                            const isHolidayCell = isHoliday(event.title);
+                            const isWorking = event.isWorkingDay || event.extendedProps?.isWorkingDay;
+                            const isHolidayCell = !isWorking && (event.isHoliday !== undefined ? event.isHoliday : isHoliday(event.title));
 
                             if (isHolidayCell) {
                                 arg.el.style.backgroundColor = alpha(theme.palette.error.main, 0.08);
@@ -497,8 +502,12 @@ export function EmployeeCalendar({ title, subheader, events, onDateChange, ...ot
                             }
 
                             const dayNumber = arg.el.querySelector('.fc-daygrid-day-number') as HTMLElement | null;
-                            if (dayNumber && (isHolidayCell || shouldShowRedDayNumber(event?.title))) {
-                                dayNumber.style.color = theme.palette.error.main;
+                            if (dayNumber) {
+                                if (isHolidayCell || (!isWorking && shouldShowRedDayNumber(event?.title))) {
+                                    dayNumber.style.color = theme.palette.error.main;
+                                } else {
+                                    dayNumber.style.removeProperty('color');
+                                }
                             }
                         }
                     }}
