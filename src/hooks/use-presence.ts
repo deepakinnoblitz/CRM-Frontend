@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
+import { enqueueOfflineLocation, flushOfflineLocations } from 'src/utils/offline-geo-queue';
+
 import { getPresence, pingPresence, updatePresence as apiUpdatePresence, checkTodayTimesheet, getPresenceSettings, logLocation } from 'src/api/presence';
 
 import { useAuth } from 'src/auth/auth-context';
@@ -134,9 +136,14 @@ function stopLocationWatcher() {
   }
 }
 
-const getBestLocation = async (): Promise<{ latitude: number; longitude: number; accuracy: number }> => {
-  // 1. If we have a cached location from memory or localStorage, use it immediately
-  if (_lastKnownPosition && _lastKnownPosition.latitude !== undefined && _lastKnownPosition.longitude !== undefined) {
+const MAX_CACHE_AGE_MS = 2 * 60 * 1000; // 2 minutes
+
+const getBestLocation = async (forceFresh = false): Promise<{ latitude: number; longitude: number; accuracy: number }> => {
+  const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+  // 1. In background / minimized mode, Chromium/Webkit strictly blocks or defers navigator.geolocation
+  // until the window is opened. NEVER call requestCurrentLocation() when hidden if we have any known location!
+  if (isHidden && _lastKnownPosition && _lastKnownPosition.latitude !== undefined) {
     return {
       latitude: _lastKnownPosition.latitude,
       longitude: _lastKnownPosition.longitude,
@@ -144,7 +151,21 @@ const getBestLocation = async (): Promise<{ latitude: number; longitude: number;
     };
   }
 
-  // 2. Otherwise attempt requestCurrentLocation()
+  const isCacheFresh = _lastKnownPosition &&
+    _lastKnownPosition.latitude !== undefined &&
+    _lastKnownPosition.longitude !== undefined &&
+    (Date.now() - (_lastKnownPosition.timestamp || 0) < MAX_CACHE_AGE_MS);
+
+  // 2. If we have a fresh cached location and not forced, return immediately
+  if (!forceFresh && isCacheFresh && _lastKnownPosition) {
+    return {
+      latitude: _lastKnownPosition.latitude,
+      longitude: _lastKnownPosition.longitude,
+      accuracy: _lastKnownPosition.accuracy || 100,
+    };
+  }
+
+  // 3. Otherwise actively fetch fresh location from browser/device
   try {
     const position = await requestCurrentLocation();
     saveKnownPosition(position.coords.latitude, position.coords.longitude, position.coords.accuracy);
@@ -154,7 +175,8 @@ const getBestLocation = async (): Promise<{ latitude: number; longitude: number;
       accuracy: position.coords.accuracy,
     };
   } catch (err) {
-    if (_lastKnownPosition) {
+    if (_lastKnownPosition && _lastKnownPosition.latitude !== undefined) {
+      console.warn('[Location Tracking] Fresh GPS lookup failed, falling back to cached position:', err);
       return {
         latitude: _lastKnownPosition.latitude,
         longitude: _lastKnownPosition.longitude,
@@ -165,6 +187,58 @@ const getBestLocation = async (): Promise<{ latitude: number; longitude: number;
   }
 };
 
+// ── Desktop Keep-Alive via Web Audio Oscillator ──
+// Prevents Chrome/Edge from suspending or throttling background tabs on laptops and desktops.
+let _audioKeepAliveCtx: AudioContext | null = null;
+function startDesktopKeepAlive() {
+  if (typeof window === 'undefined') return;
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx || _audioKeepAliveCtx) return;
+    _audioKeepAliveCtx = new AudioCtx();
+    if (_audioKeepAliveCtx.state === 'suspended') {
+      _audioKeepAliveCtx.resume().catch(() => {});
+    }
+    const osc = _audioKeepAliveCtx.createOscillator();
+    const gain = _audioKeepAliveCtx.createGain();
+    gain.gain.value = 0.00001; // Silent / inaudible to human ear
+    osc.connect(gain);
+    gain.connect(_audioKeepAliveCtx.destination);
+    osc.start();
+  } catch (e) {
+    // Ignore audio context autoplay restrictions
+  }
+}
+
+// User-gesture unlock for AudioContext (required by Chrome autoplay policy)
+if (typeof window !== 'undefined') {
+  const unlockAudioOnGesture = () => {
+    if (_audioKeepAliveCtx && _audioKeepAliveCtx.state === 'suspended') {
+      _audioKeepAliveCtx.resume().catch(() => {});
+    } else if (!_audioKeepAliveCtx) {
+      startDesktopKeepAlive();
+    }
+  };
+  window.addEventListener('click', unlockAudioOnGesture, { passive: true, once: true });
+  window.addEventListener('keydown', unlockAudioOnGesture, { passive: true, once: true });
+  window.addEventListener('touchstart', unlockAudioOnGesture, { passive: true, once: true });
+}
+
+// ── Mobile Screen Wake Lock ──
+let _screenWakeLock: any = null;
+async function requestScreenWakeLock() {
+  if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
+    try {
+      _screenWakeLock = await (navigator as any).wakeLock.request('screen');
+      _screenWakeLock.addEventListener('release', () => {
+        _screenWakeLock = null;
+      });
+    } catch (e) {
+      // Ignored if device policy prevents
+    }
+  }
+}
+
 // ── Standalone Global Auto-Tracking Manager ──
 // Uses a Web Worker on a background thread so modern browsers do NOT freeze or throttle
 // the interval timer when the user switches to other browser tabs or minimizes the window.
@@ -173,15 +247,43 @@ let _activeTrackingEmployee: string | null = null;
 let _activeTrackingIntervalMs: number | null = null;
 let _autoTrackFallbackInterval: ReturnType<typeof setInterval> | undefined;
 
+let _isAutoTrackingInProgress = false;
+let _lastAutoTrackTimestamp = 0;
+
 async function triggerAutoTrackLog(employeeId: string, currentStatus: string) {
+  const now = Date.now();
+  if (_isAutoTrackingInProgress || (now - _lastAutoTrackTimestamp < 45000)) {
+    console.log('[Location Tracking] Skipping duplicate or throttled auto-track trigger.');
+    return;
+  }
+
+  _isAutoTrackingInProgress = true;
+  _lastAutoTrackTimestamp = now;
+  localStorage.setItem(`last_auto_track_time_${employeeId}`, String(now));
+
   try {
-    const { latitude, longitude, accuracy } = await getBestLocation();
+    const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+    const { latitude, longitude, accuracy } = await getBestLocation(!isHidden);
     const statusToLog = currentStatus || localStorage.getItem('user_presence_status') || 'Available';
-    await logLocation(latitude, longitude, accuracy, statusToLog, 'Auto Tracking');
-    localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
-    console.log(`[Location Tracking] Auto Tracking logged successfully in background: lat=${latitude}, lng=${longitude}, status=${statusToLog}`);
+
+    // If offline, save directly to IndexedDB offline queue
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      await enqueueOfflineLocation({ latitude, longitude, accuracy, status: statusToLog, source: 'Auto Tracking' });
+      console.log(`[Location Tracking] Saved Auto Tracking coordinates offline (network offline): lat=${latitude}, lng=${longitude}`);
+      return;
+    }
+
+    try {
+      await logLocation(latitude, longitude, accuracy, statusToLog, 'Auto Tracking');
+      console.log(`[Location Tracking] Auto Tracking logged successfully: lat=${latitude}, lng=${longitude}, status=${statusToLog}`);
+    } catch (apiErr) {
+      console.warn('[Location Tracking] Online API call failed, buffering offline:', apiErr);
+      await enqueueOfflineLocation({ latitude, longitude, accuracy, status: statusToLog, source: 'Auto Tracking' });
+    }
   } catch (err) {
-    console.error('[Location Tracking] Background auto-track API failed:', err);
+    console.error('[Location Tracking] Background auto-track failed to obtain coordinates:', err);
+  } finally {
+    _isAutoTrackingInProgress = false;
   }
 }
 
@@ -193,8 +295,11 @@ function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStat
     return;
   }
 
-  // Ensure watcher is active and prime location
+  // Ensure watcher is active, prime location, and activate keep-alive
   startLocationWatcher();
+  startDesktopKeepAlive();
+  requestScreenWakeLock();
+
   if (!_lastKnownPosition) {
     requestCurrentLocation().then(pos => {
       saveKnownPosition(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy);
@@ -222,8 +327,6 @@ function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStat
   _activeTrackingIntervalMs = intervalMs;
 
   // Try creating an unthrottled Web Worker with Wall-Clock Heartbeat
-  // The 5-second heartbeat checks Date.now() elapsed time, so when the system wakes up from sleep
-  // it immediately detects the elapsed time and triggers auto-tracking without waiting for tab focus.
   if (typeof Worker !== 'undefined' && typeof Blob !== 'undefined') {
     try {
       const workerCode = `
@@ -282,9 +385,17 @@ function ensureAutoTracking(employeeId: string, intervalMinutes: number, getStat
 
 // ── Global System Wake-Up / Network Reconnection Listener ──
 // When a computer wakes up from sleep or reconnects to WiFi, this fires across background tabs
-// to immediately catch up and restart location tracking without waiting for the tab to be focused.
+// to immediately catch up, flush offline queue, and restart location tracking.
 if (typeof window !== 'undefined') {
   const handleSystemWakeUp = () => {
+    // 1. Flush any queued offline locations
+    flushOfflineLocations().catch(() => {});
+
+    // 2. Reactivate audio keep-alive and screen wake lock if needed
+    startDesktopKeepAlive();
+    requestScreenWakeLock();
+
+    // 3. Check for overdue auto tracking
     if (_activeTrackingEmployee) {
       console.log('[Location Tracking] System wake-up or network reconnection detected.');
       startLocationWatcher();
@@ -302,6 +413,11 @@ if (typeof window !== 'undefined') {
   window.addEventListener('online', handleSystemWakeUp);
   window.addEventListener('focus', handleSystemWakeUp);
   if ('addEventListener' in document) {
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        handleSystemWakeUp();
+      }
+    });
     document.addEventListener('resume' as any, handleSystemWakeUp);
   }
 }
@@ -380,19 +496,48 @@ export function usePresence() {
     // Check specific conditions
     if (source === 'Login' && !trackOnLoginRef.current) return;
     if (source === 'Logout' && !trackOnLogoutRef.current) return;
-    if (source === 'Status Change' && !trackOnStatusChangeRef.current) return;
+    if (source === 'Auto Tracking') {
+      const now = Date.now();
+      if (_isAutoTrackingInProgress || (now - _lastAutoTrackTimestamp < 45000)) {
+        console.log('[Location Tracking] Skipping redundant Auto Tracking log call.');
+        return;
+      }
+      _lastAutoTrackTimestamp = now;
+      if (employeeId) {
+        localStorage.setItem(`last_auto_track_time_${employeeId}`, String(now));
+      }
+    }
 
     try {
-      const { latitude, longitude, accuracy } = await getBestLocation();
+      const isHidden = typeof document !== 'undefined' && document.visibilityState === 'hidden';
+      const { latitude, longitude, accuracy } = await getBestLocation(!isHidden);
 
-      // Call api
-      await logLocation(latitude, longitude, accuracy, currentStatus, source);
-      if (source === 'Auto Tracking' && employeeId) {
-        localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+      // If offline, save directly to IndexedDB offline queue
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        await enqueueOfflineLocation({ latitude, longitude, accuracy, status: currentStatus, source });
+        if (source === 'Auto Tracking' && employeeId) {
+          localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+        }
+        console.log(`[Location Tracking] Saved ${source} location offline (network offline)`);
+        return;
       }
-      console.log(`[Location Tracking] Location logged successfully for source: ${source}`);
+
+      // Call API with fallback to offline queue
+      try {
+        await logLocation(latitude, longitude, accuracy, currentStatus, source);
+        if (source === 'Auto Tracking' && employeeId) {
+          localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+        }
+        console.log(`[Location Tracking] Location logged successfully for source: ${source}`);
+      } catch (apiErr) {
+        console.warn(`[Location Tracking] Failed to log location online for ${source}, saving offline:`, apiErr);
+        await enqueueOfflineLocation({ latitude, longitude, accuracy, status: currentStatus, source });
+        if (source === 'Auto Tracking' && employeeId) {
+          localStorage.setItem(`last_auto_track_time_${employeeId}`, String(Date.now()));
+        }
+      }
     } catch (err) {
-      console.error('[Location Tracking] Failed to log location:', err);
+      console.error('[Location Tracking] Failed to obtain location for:', source, err);
     }
   }, [employeeId]);
 
@@ -710,15 +855,8 @@ export function usePresence() {
           }
         }
 
-        // Catch-up check for Auto Tracking if tab was sleeping/inactive and overdue
-        if (statusRef.current !== 'Offline' && employeeId && enableLocationTrackingRef.current) {
-          const lastTrack = parseInt(localStorage.getItem(`last_auto_track_time_${employeeId}`) || '0', 10);
-          const intervalMs = (trackingIntervalMinutesRef.current || 10) * 60 * 1000;
-          if (lastTrack > 0 && Date.now() - lastTrack >= intervalMs) {
-            console.log('[Location Tracking] Catching up missed auto tracking cycle after tab wake-up');
-            logLocationIfAllowed('Auto Tracking', statusRef.current);
-          }
-        }
+        // Flush any queued offline coordinates
+        flushOfflineLocations().catch(() => {});
       }
     };
 
