@@ -89,12 +89,29 @@ export async function updatePresenceSettings(settings: {
   return data.message;
 }
 
-export async function logLocation(latitude: number, longitude: number, accuracy?: number, status?: string, source?: string) {
+export async function logLocation(latitude: number, longitude: number, accuracy?: number, status?: string, source?: string, logged_at?: string) {
   const res = await frappeRequest('/api/method/company.company.presence_api.log_location', {
     method: 'POST',
-    body: JSON.stringify({ latitude, longitude, accuracy, status, source }),
+    body: JSON.stringify({ latitude, longitude, accuracy, status, source, logged_at }),
   });
   if (!res.ok) throw new Error('Failed to log location');
+  const data = await res.json();
+  return data.message;
+}
+
+export async function logLocationBatch(logs: Array<{
+  latitude: number;
+  longitude: number;
+  accuracy?: number;
+  status?: string;
+  source?: string;
+  logged_at?: string;
+}>) {
+  const res = await frappeRequest('/api/method/company.company.presence_api.log_location_batch', {
+    method: 'POST',
+    body: JSON.stringify({ logs }),
+  });
+  if (!res.ok) throw new Error('Failed to log batch locations');
   const data = await res.json();
   return data.message;
 }
