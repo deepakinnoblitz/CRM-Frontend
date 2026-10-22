@@ -282,7 +282,7 @@ export async function fetchProjects(search?: string): Promise<{ name: string; pr
         doctype: "Project",
         fields: JSON.stringify(["name", "project"]),
         filters: JSON.stringify(filters),
-        limit_page_length: "1000",
+        limit_page_length: "0",
         order_by: "project asc"
     });
 
