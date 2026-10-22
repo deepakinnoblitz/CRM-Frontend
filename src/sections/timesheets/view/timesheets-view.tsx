@@ -185,10 +185,10 @@ export function TimesheetsView() {
         fetchEmployees({ page: 1, page_size: 1000, search: '' }).then((res) => {
             setEmployees(res.data || []);
         });
-        fetchProjects({ page: 1, page_size: 1000 }).then((res: any) => {
+        fetchProjects({ page_size: 0 }).then((res: any) => {
             setProjects(res.data || []);
         });
-        fetchActivityTypes({ page: 1, page_size: 1000 }).then((res: any) => {
+        fetchActivityTypes({ page_size: 0 }).then((res: any) => {
             setActivityTypes(res.data || []);
         });
         fetchMonthHolidays().then((res) => {
@@ -398,7 +398,7 @@ export function TimesheetsView() {
     const loadProjects = useCallback(async () => {
         setLoadingProjects(true);
         try {
-            const res = await fetchProjects({ page: 1, page_size: 1000 });
+            const res = await fetchProjects({ page_size: 0 });
             setProjects(res.data || []);
         } catch (error) {
             console.error('Failed to fetch projects:', error);
@@ -410,7 +410,7 @@ export function TimesheetsView() {
     const loadActivityTypes = useCallback(async () => {
         setLoadingActivityTypes(true);
         try {
-            const res = await fetchActivityTypes({ page: 1, page_size: 1000 });
+            const res = await fetchActivityTypes({ page_size: 0 });
             setActivityTypes(res.data || []);
         } catch (error) {
             console.error('Failed to fetch activity types:', error);
