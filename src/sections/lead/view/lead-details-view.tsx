@@ -581,7 +581,7 @@ export function LeadDetailsView() {
             bgColor = '#1B53F4';
             icon = <FaStar />;
             iconColor = '#FFFFFF';
-        } else if (status === 'Qualified' || status === 'Proposal Approved') {
+        } else if (status === 'Qualified' || status === 'Proposal Approved' || status === 'Project Awarded') {
             bgColor = '#0E9F6E';
             icon = 'solar:check-circle-bold';
             iconColor = '#6EE7B7';

@@ -62,10 +62,15 @@ const getStatusStyle = (status: string) => {
       border: '1px solid rgba(139, 92, 246, 0.45)',
       color: '#4c1d95'
     },
+    'Project Awarded': {
+      bgcolor: 'rgba(34, 197, 94, 0.25)',
+      border: '1px solid rgba(34, 197, 94, 0.45)',
+      color: '#15803d'
+    },
     'Closed': {
-      bgcolor: 'rgba(220, 38, 38, 0.25)',   // red background
-      border: '1px solid rgba(220, 38, 38, 0.45)',
-      color: '#7f1d1d'                     // dark red text
+      bgcolor: 'rgba(34, 197, 94, 0.25)',
+      border: '1px solid rgba(34, 197, 94, 0.45)',
+      color: '#15803d'
     },
     'Pending': {
       bgcolor: 'rgba(249, 115, 22, 0.25)',
