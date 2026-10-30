@@ -132,7 +132,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
     const renderStatus = (status: string) => {
         let color: 'default' | 'primary' | 'secondary' | 'info' | 'success' | 'warning' | 'error' = 'default';
         if (status === 'New Lead') color = 'info';
-        if (status === 'Qualified' || status === 'Closed') color = 'success';
+        if (status === 'Qualified' || status === 'Closed' || status === 'Project Awarded') color = 'success';
         if (status === 'Not Interested' || status === 'In Active') color = 'error';
         if (status === 'Contacted' || status === 'Proposal Sent' || status === 'In Negotiation') color = 'warning';
 
@@ -152,7 +152,7 @@ export function LeadDetailsDialog({ open, onClose, leadId, onEdit }: Props) {
             bgColor = '#1B53F4';
             icon = <FaStar />;
             iconColor = '#FFFFFF';
-        } else if (status === 'Qualified' || status === 'Closed') {
+        } else if (status === 'Qualified' || status === 'Closed' || status === 'Project Awarded') {
             bgColor = '#0E9F6E';
             icon = 'solar:check-circle-bold';
             iconColor = '#6EE7B7';
