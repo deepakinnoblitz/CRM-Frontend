@@ -20,10 +20,9 @@ const STAGES = [
     'In Negotiation',
     'Follow-up Scheduled',
     'On Hold',
-    'Proposal Approved',
-    'Proposal Rejected',
     'In Active',
     'Not Interested',
+    'Project Awarded',
 ];
 
 const NEXT_STEPS: Record<string, string[]> = {
@@ -34,10 +33,9 @@ const NEXT_STEPS: Record<string, string[]> = {
     'In Negotiation': ['Contract draft', 'Final discount approval', 'Legal review'],
     'Follow-up Scheduled': ['Prepare for follow-up', 'Address pending questions'],
     'On Hold': ['Check back in 2 weeks', 'Send monthly newsletter'],
-    'Proposal Approved': ['Ready to Convert Lead', 'Ready to make Prospects'],
-    'Proposal Rejected': ['Check back in 2 weeks', 'Send monthly newsletter'],
     'In Active': ['Archive lead', 'Move to cold storage'],
     'Not Interested': ['Ask for feedback', 'Update CRM notes'],
+    'Project Awarded': ['Onboarding', 'Introduction to CSM', 'Handover to delivery'],
     'Closed': ['Onboarding', 'Introduction to CSM', 'Handover to delivery'],
 };
 

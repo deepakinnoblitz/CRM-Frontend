@@ -96,9 +96,9 @@ export function LeadView() {
     { value: 'In Negotiation', label: 'In Negotiation' },
     { value: 'Follow-up Scheduled', label: 'Follow-up Scheduled' },
     { value: 'On Hold', label: 'On Hold' },
-    { value: 'Not Interested', label: 'Not Interested' },
     { value: 'In Active', label: 'In Active' },
-    { value: 'Closed', label: 'Closed' },
+    { value: 'Not Interested', label: 'Not Interested' },
+    { value: 'Project Awarded', label: 'Project Awarded' },
   ];
 
   const [openCreate, setOpenCreate] = useState(false);
