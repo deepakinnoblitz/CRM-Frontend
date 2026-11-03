@@ -242,45 +242,45 @@ export function DealDetailsView() {
     const handleStageUpdateClick = useCallback(async () => {
         if (!deal || !selectedStage) return;
 
-        if (selectedStage === 'Estimation Created' || selectedStage === 'Estimation Sent') {
-            try {
-                setUpdatingStage(true);
-                const estimations = await fetchRelatedEstimations(deal.name);
-                setUpdatingStage(false);
-                if (estimations.length === 0) {
-                    setSnackbar({
-                        open: true,
-                        message: 'At least one Estimation must be created.',
-                        severity: 'error'
-                    });
-                    setSelectedStage(deal.stage);
-                    return;
-                }
-            } catch (err) {
-                setUpdatingStage(false);
-                console.error('Failed to validate estimations:', err);
-            }
-        }
+        // if (selectedStage === 'Estimation Created' || selectedStage === 'Estimation Sent') {
+        //     try {
+        //         setUpdatingStage(true);
+        //         const estimations = await fetchRelatedEstimations(deal.name);
+        //         setUpdatingStage(false);
+        //         if (estimations.length === 0) {
+        //             setSnackbar({
+        //                 open: true,
+        //                 message: 'At least one Estimation must be created.',
+        //                 severity: 'error'
+        //             });
+        //             setSelectedStage(deal.stage);
+        //             return;
+        //         }
+        //     } catch (err) {
+        //         setUpdatingStage(false);
+        //         console.error('Failed to validate estimations:', err);
+        //     }
+        // }
 
-        if (selectedStage === 'Invoice Created' || selectedStage === 'Invoice Sent') {
-            try {
-                setUpdatingStage(true);
-                const invoices = await fetchRelatedInvoices(deal.name);
-                setUpdatingStage(false);
-                if (invoices.length === 0) {
-                    setSnackbar({
-                        open: true,
-                        message: 'At least one Invoice must be created.',
-                        severity: 'error'
-                    });
-                    setSelectedStage(deal.stage);
-                    return;
-                }
-            } catch (err) {
-                setUpdatingStage(false);
-                console.error('Failed to validate invoices:', err);
-            }
-        }
+        // if (selectedStage === 'Invoice Created' || selectedStage === 'Invoice Sent') {
+        //     try {
+        //         setUpdatingStage(true);
+        //         const invoices = await fetchRelatedInvoices(deal.name);
+        //         setUpdatingStage(false);
+        //         if (invoices.length === 0) {
+        //             setSnackbar({
+        //                 open: true,
+        //                 message: 'At least one Invoice must be created.',
+        //                 severity: 'error'
+        //             });
+        //             setSelectedStage(deal.stage);
+        //             return;
+        //         }
+        //     } catch (err) {
+        //         setUpdatingStage(false);
+        //         console.error('Failed to validate invoices:', err);
+        //     }
+        // }
 
         setConfirmUpdate(true);
     }, [deal, selectedStage]);
