@@ -117,8 +117,8 @@ export function LeadView() {
   const [leadsType, setLeadsType] = useState('Incoming');
   const [leadsFrom, setLeadsFrom] = useState('');
   const [service, setService] = useState('');
-  const [country, setCountry] = useState('');
-  const [state, setState] = useState('');
+  const [country, setCountry] = useState('India');
+  const [state, setState] = useState('Tamil Nadu');
   const [city, setCity] = useState('');
   const [workflowState, setWorkflowState] = useState('');
   const [status, setStatus] = useState('Not Converted');
@@ -377,6 +377,10 @@ export function LeadView() {
 
   const handleOpenCreate = (initialWorkflowState?: any) => {
     setViewOnly(false);
+    setCurrentLeadId(null);
+    setCountry('India');
+    setState('Tamil Nadu');
+    setCity('');
     setOpenCreate(true);
     if (initialWorkflowState && typeof initialWorkflowState === 'string') {
       setWorkflowState(initialWorkflowState);
@@ -397,8 +401,8 @@ export function LeadView() {
     setLeadsType('Incoming');
     setLeadsFrom('');
     setService('');
-    setCountry('');
-    setState('');
+    setCountry('India');
+    setState('Tamil Nadu');
     setCity('');
     setWorkflowState('');
     setStatus('Not Converted');
@@ -1085,7 +1089,16 @@ export function LeadView() {
                 disabled={viewOnly}
                 options={countryOptions.filter(o => o !== '')}
                 value={country}
-                onChange={(e, newValue) => setCountry(newValue || '')}
+                onChange={(e, newValue) => {
+                  const val = newValue || '';
+                  setCountry(val);
+                  if (val === 'India') {
+                    setState('Tamil Nadu');
+                  } else {
+                    setState('');
+                    setCity('');
+                  }
+                }}
                 renderInput={(params) => <TextField {...params} label="Country" />}
               />
 
