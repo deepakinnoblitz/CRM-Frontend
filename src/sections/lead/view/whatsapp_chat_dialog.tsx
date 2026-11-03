@@ -23,6 +23,8 @@ type Props = {
     open: boolean;
     onClose: () => void;
     lead: any;
+    initialMessage?: string;
+    initialAttachment?: { url: string; name: string } | null;
 };
 
 const isImageFile = (url: string) => {
@@ -35,12 +37,14 @@ export function WhatsappChatDialog({
     open,
     onClose,
     lead,
+    initialMessage = '',
+    initialAttachment = null,
 }: Props) {
     const [messages, setMessages] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [messageText, setMessageText] = useState('');
+    const [messageText, setMessageText] = useState(initialMessage);
     const [sending, setSending] = useState(false);
     const chatEndRef = useRef<HTMLDivElement | null>(null);
     const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -50,7 +54,18 @@ export function WhatsappChatDialog({
     const [emojiCategory, setEmojiCategory] = useState<string>('smileys');
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [uploadingFile, setUploadingFile] = useState(false);
-    const [pendingAttachment, setPendingAttachment] = useState<{ url: string; name: string } | null>(null);
+    const [pendingAttachment, setPendingAttachment] = useState<{ url: string; name: string } | null>(initialAttachment);
+
+    useEffect(() => {
+        if (open) {
+            if (initialMessage) {
+                setMessageText(initialMessage);
+            }
+            if (initialAttachment) {
+                setPendingAttachment(initialAttachment);
+            }
+        }
+    }, [open, initialMessage, initialAttachment]);
 
     const handleEmojiClick = (event: React.MouseEvent<HTMLButtonElement>) => {
         setEmojiAnchorEl(event.currentTarget as HTMLButtonElement);

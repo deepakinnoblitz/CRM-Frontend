@@ -70,6 +70,7 @@ import { LeadProposalDetails } from '../lead-proposal-details';
 import { LeadPipelineTimeline } from '../lead-pipeline-timeline';
 import { EmailAutomationDialog } from '../email-automation-dialog';
 import { WhatsappAutomationDialog } from '../whatsapp-automation-dialog';
+import { SendWhatsappTemplateDialog } from './send-whatsapp-template-dialog';
 import { AccountDetailsDialog } from '../../report/account/account-details-dialog';
 import { ContactDetailsDialog } from '../../report/contact/contact-details-dialog';
 
@@ -115,6 +116,8 @@ export function LeadDetailsView() {
     const canCreateCompany = hasCustomCompany ? !!clientPerms?.create : true;
 
     const [openWhatsapp, setOpenWhatsapp] = useState(false);
+    const [whatsappMenuAnchorEl, setWhatsappMenuAnchorEl] = useState<null | HTMLElement>(null);
+    const [openSendTemplateDialog, setOpenSendTemplateDialog] = useState(false);
     const [automationData, setAutomationData] = useState<any>(null);
     const [openAutomationDialog, setOpenAutomationDialog] = useState(false);
 
@@ -756,10 +759,16 @@ export function LeadDetailsView() {
                     <Button
                         variant="contained"
                         color="success"
-                        onClick={() => setOpenWhatsapp(true)}
+                        onClick={(e) => setWhatsappMenuAnchorEl(e.currentTarget)}
                         startIcon={
                             <Iconify
                                 icon={"ic:baseline-whatsapp" as any}
+                            />
+                        }
+                        endIcon={
+                            <Iconify
+                                icon="solar:alt-arrow-down-bold"
+                                width={16}
                             />
                         }
                         sx={{
@@ -778,6 +787,102 @@ export function LeadDetailsView() {
                     >
                         WhatsApp
                     </Button>
+
+                    <Menu
+                        anchorEl={whatsappMenuAnchorEl}
+                        open={Boolean(whatsappMenuAnchorEl)}
+                        onClose={() => setWhatsappMenuAnchorEl(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        slotProps={{
+                            paper: {
+                                sx: {
+                                    mt: 1,
+                                    minWidth: 260,
+                                    borderRadius: 2,
+                                    boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+                                    p: 0.75,
+                                },
+                            },
+                        }}
+                    >
+                        <MenuItem
+                            onClick={() => {
+                                setWhatsappMenuAnchorEl(null);
+                                setOpenWhatsapp(true);
+                            }}
+                            sx={{
+                                py: 1.25,
+                                px: 1.5,
+                                borderRadius: 1.25,
+                                gap: 1.5,
+                                '&:hover': { bgcolor: alpha('#25D366', 0.08) },
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: 1.25,
+                                    bgcolor: alpha('#25D366', 0.12),
+                                    color: '#25D366',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Iconify icon={"ic:baseline-whatsapp" as any} width={22} />
+                            </Box>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                    Direct Message
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                    Opens the WhatsApp direct message
+                                </Typography>
+                            </Box>
+                        </MenuItem>
+
+                        <MenuItem
+                            onClick={() => {
+                                setWhatsappMenuAnchorEl(null);
+                                setOpenSendTemplateDialog(true);
+                            }}
+                            sx={{
+                                py: 1.25,
+                                px: 1.5,
+                                borderRadius: 1.25,
+                                gap: 1.5,
+                                mt: 0.5,
+                                '&:hover': { bgcolor: alpha('#1877F2', 0.08) },
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: 38,
+                                    height: 38,
+                                    borderRadius: 1.25,
+                                    bgcolor: alpha('#1877F2', 0.12),
+                                    color: '#1877F2',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                }}
+                            >
+                                <Iconify icon="solar:document-text-bold" width={22} />
+                            </Box>
+                            <Box>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                                    Send a Template
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                                    Opens a dialog to choose and send
+                                </Typography>
+                            </Box>
+                        </MenuItem>
+                    </Menu>
                 </Stack>
             </Stack>
 
@@ -1579,6 +1684,12 @@ export function LeadDetailsView() {
             <WhatsappChatDialog
                 open={openWhatsapp}
                 onClose={() => setOpenWhatsapp(false)}
+                lead={lead}
+            />
+
+            <SendWhatsappTemplateDialog
+                open={openSendTemplateDialog}
+                onClose={() => setOpenSendTemplateDialog(false)}
                 lead={lead}
             />
 
